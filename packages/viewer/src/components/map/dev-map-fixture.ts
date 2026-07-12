@@ -1,8 +1,13 @@
 // Fixture map state for the /dev/map first-light route (P1). Shaped exactly
 // like M1's map-state schema (packages/ax/src/effects/map-state.ts; decoded
 // browser-side by MapStateSchema in src/app/runtime/schemas.ts) — the same
-// document shape as docs/alexandria/map/map-state.json. P1 renders only the
-// parchment ground grid; tiles/regions over this fixture arrive in V1/V2.
+// document shape as docs/alexandria/map/map-state.json.
+//
+// V2 (Owner view) additions, kept owner-focused: a human-owned domain
+// (chores → human:danvers), one deliberately unclaimed domain (outreach —
+// the demand-signal case, a feature not an error), and the four locked
+// future-seat plots as `seat:` landmark positions (plan §1.1 "Locked plots
+// for future bench seats").
 
 import type { MapState } from "../../app/runtime/schemas";
 import { createHex, hexDistance } from "./hex";
@@ -20,7 +25,14 @@ export const DEV_MAP_FIXTURE = {
       id: "chores",
       name: "Chores",
       half: "personal",
+      owner: "human:danvers",
       region: { center: [0, 3], radius: 2 },
+    },
+    {
+      id: "outreach",
+      name: "Outreach",
+      half: "work",
+      region: { center: [3, -1], radius: 1 },
     },
   ],
   contexts: [
@@ -34,6 +46,11 @@ export const DEV_MAP_FIXTURE = {
       id: "household",
       name: "Household",
       domainId: "chores",
+    },
+    {
+      id: "campaigns",
+      name: "Campaigns",
+      domainId: "outreach",
     },
   ],
   entities: [
@@ -60,12 +77,25 @@ export const DEV_MAP_FIXTURE = {
       contextId: "household",
       lifecycle: "planted",
     },
+    {
+      id: "prj-demo-video",
+      kind: "project",
+      name: "Demo video",
+      contextId: "campaigns",
+      lifecycle: "active",
+    },
   ],
   positions: [
     { q: 1, r: -4, entityType: "system", entityId: "sys-raven-duty-loop" },
     { q: -1, r: -3, entityType: "project", entityId: "prj-map-tab" },
     { q: 0, r: 0, entityType: "landmark", entityId: "colleague:raven" },
     { q: 1, r: 3, entityType: "system", entityId: "sys-weekly-reset" },
+    { q: 4, r: -2, entityType: "project", entityId: "prj-demo-video" },
+    // The four locked future-seat plots, benched along the eastern rim.
+    { q: 5, r: -3, entityType: "landmark", entityId: "seat:bench-1" },
+    { q: 5, r: -2, entityType: "landmark", entityId: "seat:bench-2" },
+    { q: 5, r: -1, entityType: "landmark", entityId: "seat:bench-3" },
+    { q: 5, r: 0, entityType: "landmark", entityId: "seat:bench-4" },
   ],
 } as const satisfies MapState;
 

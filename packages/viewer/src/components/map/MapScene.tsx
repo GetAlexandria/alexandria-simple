@@ -5,6 +5,7 @@
 // gets written fresh against our schema in later flights.
 
 import { Canvas } from "@react-three/fiber";
+import type { ReactNode } from "react";
 import { MAP_SCENE_COLORS } from "./colors";
 import type { HexGridCell } from "./hex";
 import { HexCell } from "./HexCell";
@@ -14,9 +15,11 @@ import { CameraRig } from "./CameraRig";
 type MapSceneProps = {
   cells: readonly HexGridCell[];
   parchmentSeed?: number;
+  /** View-specific layers rendered above the ground grid (V1/V2 looks). */
+  children?: ReactNode;
 };
 
-export function MapScene({ cells, parchmentSeed = 0 }: MapSceneProps) {
+export function MapScene({ cells, parchmentSeed = 0, children }: MapSceneProps) {
   return (
     <Canvas
       orthographic
@@ -44,6 +47,7 @@ export function MapScene({ cells, parchmentSeed = 0 }: MapSceneProps) {
       {cells.map((cell) => (
         <HexCell key={cell.key} coord={cell.coord} parchmentSeed={parchmentSeed} />
       ))}
+      {children}
     </Canvas>
   );
 }

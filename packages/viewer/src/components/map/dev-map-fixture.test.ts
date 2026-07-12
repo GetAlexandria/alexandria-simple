@@ -17,7 +17,10 @@ describe("DEV_MAP_FIXTURE", () => {
     const entityIds = new Set(DEV_MAP_FIXTURE.entities.map((entity) => entity.id));
     for (const position of DEV_MAP_FIXTURE.positions) {
       if (position.entityType === "landmark") {
-        expect(position.entityId.startsWith("colleague:")).toBe(true);
+        // Landmarks are colleagues (M1) or locked future-seat plots (V2).
+        expect(
+          position.entityId.startsWith("colleague:") || position.entityId.startsWith("seat:"),
+        ).toBe(true);
       } else {
         expect(entityIds.has(position.entityId)).toBe(true);
       }

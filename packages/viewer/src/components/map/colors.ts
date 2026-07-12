@@ -51,3 +51,37 @@ export const HEX_CELL_HIGHLIGHTS: Record<HexCellVisualState, { color: string; st
     targeted: { color: "#de9654", strength: 0.24 },
     blocked: { color: "#918270", strength: 0.2 },
   };
+
+/**
+ * Landmark sprite tints per Owner-view marker (FixedBuilding). Owned
+ * buildings render near-white (the watercolor sprites carry their own
+ * color); the two vacant markers are the deliberately quiet ones — the
+ * vacant plot reads sepia-dimmed (a demand signal, not an error) and the
+ * locked seat reads as a ghosted future building.
+ */
+export const LANDMARK_SPRITE_COLORS = {
+  colleague: { tint: "#ffffff", opacity: 0.96 },
+  human: { tint: "#f4ede1", opacity: 0.96 },
+  vacantPlot: { tint: "#c9b493", opacity: 0.78 },
+  lockedSeat: { tint: "#8d8478", opacity: 0.38 },
+} as const;
+
+/** Owner-view territory overlays, work markers, and floating labels. */
+export const OWNER_VIEW_COLORS = {
+  /** Soft warm wash over a claimed domain's territory. */
+  claimedTerritory: { color: "#c98f4a", opacity: 0.2 },
+  /** Heavier dim over an unclaimed domain — visibly ownerless at a glance. */
+  unclaimedTerritory: { color: "#4f4638", opacity: 0.3 },
+  /** Small work-marker discs by entity kind. */
+  work: { project: "#a86f32", system: "#5f7d64" },
+  /** Floating landmark label chips (DOM, via drei Html). */
+  label: {
+    background: "rgba(255, 248, 236, 0.92)",
+    border: MAP_FALLBACK_COLORS.border,
+    heading: MAP_FALLBACK_COLORS.heading,
+    subtext: MAP_FALLBACK_COLORS.subtext,
+    /** Muted variant for the vacant-plot and locked-seat chips. */
+    mutedBackground: "rgba(239, 226, 205, 0.78)",
+    mutedText: "#6c6152",
+  },
+} as const;
