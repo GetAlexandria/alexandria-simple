@@ -15,7 +15,13 @@ import { FileSystem, isMissingFileError } from "./filesystem.js";
  */
 
 export const INFO_HUB_CARD_TYPES = ["task", "improvement", "bug", "testing"] as const;
-export const INFO_HUB_CARD_STATUSES = ["open", "in-progress", "done", "wont-do"] as const;
+export const INFO_HUB_CARD_STATUSES = [
+  "open",
+  "in-progress",
+  "needs-a-human",
+  "done",
+  "wont-do",
+] as const;
 
 export type InfoHubCardType = (typeof INFO_HUB_CARD_TYPES)[number];
 export type InfoHubCardStatus = (typeof INFO_HUB_CARD_STATUSES)[number];

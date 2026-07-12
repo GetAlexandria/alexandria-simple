@@ -1117,7 +1117,13 @@ export const InfoHubCardTypeSchema = Schema.Literal("task", "improvement", "bug"
 
 export type InfoHubCardType = Schema.Schema.Type<typeof InfoHubCardTypeSchema>;
 
-export const InfoHubCardStatusSchema = Schema.Literal("open", "in-progress", "done", "wont-do");
+export const InfoHubCardStatusSchema = Schema.Literal(
+  "open",
+  "in-progress",
+  "needs-a-human",
+  "done",
+  "wont-do",
+);
 
 export type InfoHubCardStatus = Schema.Schema.Type<typeof InfoHubCardStatusSchema>;
 

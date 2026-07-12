@@ -13,7 +13,10 @@ import type { InfoHubCard } from "../../../app/runtime/schemas";
 
 export type WorkOrderType = InfoHubCard["type"];
 export type WorkOrderStatus = InfoHubCard["status"];
-export type ActiveWorkOrderStatus = Extract<WorkOrderStatus, "open" | "in-progress" | "done">;
+export type ActiveWorkOrderStatus = Extract<
+  WorkOrderStatus,
+  "open" | "in-progress" | "needs-a-human" | "done"
+>;
 export type TerminalWorkOrderStatus = Extract<WorkOrderStatus, "done" | "wont-do">;
 export type ArchiveDisposition = TerminalWorkOrderStatus;
 

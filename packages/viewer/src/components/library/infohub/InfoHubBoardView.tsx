@@ -30,8 +30,19 @@ import {
  */
 
 const WORK_ORDER_TYPES: WorkOrderType[] = ["bug", "task", "testing", "improvement"];
-const WORK_ORDER_STATUSES: ActiveWorkOrderStatus[] = ["open", "in-progress", "done"];
-const WORK_ORDER_STATUS_FILTERS: WorkOrderStatus[] = ["open", "in-progress", "done", "wont-do"];
+const WORK_ORDER_STATUSES: ActiveWorkOrderStatus[] = [
+  "open",
+  "in-progress",
+  "needs-a-human",
+  "done",
+];
+const WORK_ORDER_STATUS_FILTERS: WorkOrderStatus[] = [
+  "open",
+  "in-progress",
+  "needs-a-human",
+  "done",
+  "wont-do",
+];
 
 const WORK_ORDER_TYPE_LABELS: Readonly<Record<WorkOrderType, string>> = {
   bug: "Bug",
@@ -43,6 +54,7 @@ const WORK_ORDER_TYPE_LABELS: Readonly<Record<WorkOrderType, string>> = {
 const WORK_ORDER_STATUS_LABELS: Readonly<Record<WorkOrderStatus, string>> = {
   done: "Done",
   "in-progress": "In Progress",
+  "needs-a-human": "Needs a Human",
   open: "Open",
   "wont-do": "Won't Do",
 };
