@@ -1,0 +1,369 @@
+#!/usr/bin/env bash
+# Manage a local Fabro server for browser UI and Docker-backed workflow runs.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+STATE_DIR="${FABRO_LOCAL_STATE_DIR:-$HOME/.fabro/alexandria-local}"
+STORAGE_DIR="${FABRO_LOCAL_STORAGE_DIR:-$STATE_DIR/storage}"
+SERVER_ENV_FILE="$STORAGE_DIR/server.env"
+VAULT_SECRETS_FILE="$STORAGE_DIR/vaults/default/secrets.json"
+SESSION_SECRET_FILE="$STATE_DIR/session-secret"
+DEV_TOKEN_FILE="$STATE_DIR/dev-token"
+DEFAULT_CONFIG="$REPO_ROOT/.fabro/local-server.toml"
+TAILSCALE_CONFIG="$STATE_DIR/local-server-tailscale.toml"
+PAUSE_MARKER="$REPO_ROOT/.fabro/LOCAL_FACTORY_PAUSED.md"
+
+if [ -n "${FABRO_LOCAL_SERVER_CONFIG:-}" ]; then
+	CONFIG="$FABRO_LOCAL_SERVER_CONFIG"
+elif [ -f "$TAILSCALE_CONFIG" ]; then
+	CONFIG="$TAILSCALE_CONFIG"
+else
+	CONFIG="$DEFAULT_CONFIG"
+fi
+
+usage() {
+	cat <<'EOF'
+Usage: ./scripts/fabro-local-server [start|restart|status|stop] [fabro server args...]
+
+Defaults to `restart`. Start/restart bind the server to 127.0.0.1:3000 with
+the web UI enabled and Docker as the default sandbox provider.
+
+Examples:
+  ./scripts/fabro-local-server
+  ./scripts/fabro-local-server status
+  ./scripts/fabro-local-server restart --force
+  ./scripts/fabro-local-server restart --max-concurrent-runs 2
+
+If present, $FABRO_LOCAL_STATE_DIR/local-server-tailscale.toml is used so
+browser redirects and generated links point at the Tailnet URL instead of
+loopback. Set FABRO_LOCAL_SERVER_CONFIG to override the config path explicitly.
+Set FABRO_LOCAL_ALLOW_ACTIVE_RESTART=1, or pass restart --force, to restart
+even when active runs are present.
+
+EOF
+}
+
+if ! command -v fabro >/dev/null 2>&1; then
+	echo "Fabro is required but was not found on PATH." >&2
+	exit 1
+fi
+
+if [ -z "${DOCKER_HOST:-}" ] && command -v docker >/dev/null 2>&1; then
+	docker_host="$(
+		docker context inspect "$(docker context show)" \
+			--format '{{json .Endpoints.docker.Host}}' 2>/dev/null |
+			tr -d '"'
+	)"
+	if [ -n "$docker_host" ] && [ "$docker_host" != "null" ]; then
+		export DOCKER_HOST="$docker_host"
+	fi
+fi
+
+random_hex() {
+	if command -v openssl >/dev/null 2>&1; then
+		openssl rand -hex 32
+	elif command -v python3 >/dev/null 2>&1; then
+		python3 -c 'import secrets; print(secrets.token_hex(32))'
+	else
+		echo "openssl or python3 is required to generate local Fabro secrets." >&2
+		exit 1
+	fi
+}
+
+ensure_local_secret_files() {
+	mkdir -p "$STATE_DIR" "$STORAGE_DIR"
+	chmod 700 "$STATE_DIR" "$STORAGE_DIR"
+
+	if [ ! -f "$SESSION_SECRET_FILE" ]; then
+		umask 077
+		random_hex >"$SESSION_SECRET_FILE"
+	fi
+
+	if [ ! -f "$DEV_TOKEN_FILE" ]; then
+		umask 077
+		printf 'fabro_dev_%s\n' "$(random_hex)" >"$DEV_TOKEN_FILE"
+	fi
+}
+
+export_github_token_from_gh() {
+	if [ -n "${GITHUB_TOKEN:-}" ] || [ -n "${GH_TOKEN:-}" ]; then
+		return
+	fi
+
+	if command -v gh >/dev/null 2>&1; then
+		github_token="$(gh auth token 2>/dev/null || true)"
+		if [ -n "$github_token" ]; then
+			export GITHUB_TOKEN="$github_token"
+		fi
+	fi
+}
+
+github_strategy() {
+	local strategy
+
+	strategy="$(
+		awk -F= '
+			/^\[server\.integrations\.github\]/ { in_section = 1; next }
+			/^\[/ { in_section = 0 }
+			in_section && $1 ~ /^[[:space:]]*strategy[[:space:]]*$/ {
+				value = $2
+				gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+				gsub(/^"|"$/, "", value)
+				print value
+				exit
+			}
+		' "$CONFIG"
+	)"
+
+	printf '%s\n' "${strategy:-token}"
+}
+
+server_secret_file_value() {
+	local name="$1"
+
+	if [ -f "$SERVER_ENV_FILE" ]; then
+		awk -v name="$name" '
+			function trim(value) {
+				gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+				return value
+			}
+			/^[[:space:]]*(#|$)/ { next }
+			{
+				line = $0
+				sub(/^[[:space:]]*export[[:space:]]+/, "", line)
+				eq = index(line, "=")
+				if (eq == 0) {
+					next
+				}
+				key = trim(substr(line, 1, eq - 1))
+				if (key == name) {
+					print trim(substr(line, eq + 1))
+					found = 1
+					exit
+				}
+			}
+			END { exit found ? 0 : 1 }
+		' "$SERVER_ENV_FILE"
+		return
+	fi
+
+	return 1
+}
+
+server_secret_present() {
+	local name="$1"
+	local value
+
+	if [ -n "${!name+x}" ]; then
+		[ -n "${!name}" ]
+		return
+	fi
+
+	if value="$(server_secret_file_value "$name")"; then
+		[ -n "$value" ] && [ "$value" != '""' ] && [ "$value" != "''" ]
+		return
+	fi
+
+	if [ -f "$VAULT_SECRETS_FILE" ] && command -v python3 >/dev/null 2>&1; then
+		python3 - "$VAULT_SECRETS_FILE" "$name" <<'PY'
+import json
+import sys
+
+path, name = sys.argv[1], sys.argv[2]
+try:
+    with open(path, "r", encoding="utf-8") as handle:
+        data = json.load(handle)
+except Exception:
+    sys.exit(1)
+
+sys.exit(0 if name in data else 1)
+PY
+		return
+	fi
+
+	return 1
+}
+
+github_app_private_key_has_truncated_pem_shape() {
+	local value
+
+	if [ -n "${GITHUB_APP_PRIVATE_KEY+x}" ]; then
+		value="$GITHUB_APP_PRIVATE_KEY"
+	elif ! value="$(server_secret_file_value GITHUB_APP_PRIVATE_KEY)"; then
+		return 1
+	fi
+
+	case "$value" in
+	-----BEGIN\ *KEY-----*)
+		case "$value" in
+		*-----END\ *KEY-----*) return 1 ;;
+		*) return 0 ;;
+		esac
+		;;
+	*) return 1 ;;
+	esac
+}
+
+ensure_github_credentials() {
+	case "$(github_strategy)" in
+	app)
+		if ! server_secret_present GITHUB_APP_PRIVATE_KEY; then
+			cat >&2 <<EOF
+GitHub App mode is configured, but GITHUB_APP_PRIVATE_KEY is not available.
+Export it for this process or store it in:
+  $SERVER_ENV_FILE
+EOF
+			exit 1
+		fi
+		if github_app_private_key_has_truncated_pem_shape; then
+			cat >&2 <<EOF
+GITHUB_APP_PRIVATE_KEY looks like a raw multi-line PEM first line only.
+Store it in $SERVER_ENV_FILE as base64, or as a quoted JSON string with escaped
+newlines, instead of pasting a raw multi-line PEM value.
+EOF
+			exit 1
+		fi
+		;;
+	token)
+		export_github_token_from_gh
+		;;
+	*)
+		echo "Unsupported GitHub strategy in $CONFIG." >&2
+		exit 1
+		;;
+	esac
+}
+
+active_run_summary() {
+	local server_url="${FABRO_LOCAL_SERVER_URL:-http://127.0.0.1:3000}"
+	local runs_json
+
+	if ! runs_json="$(fabro ps --server "$server_url" --json 2>/dev/null)"; then
+		return 1
+	fi
+
+	if command -v python3 >/dev/null 2>&1; then
+		RUNS_JSON="$runs_json" python3 <<'PY'
+import json
+import os
+import sys
+
+try:
+    rows = json.loads(os.environ["RUNS_JSON"])
+except Exception:
+    sys.exit(1)
+
+if not isinstance(rows, list) or len(rows) == 0:
+    sys.exit(0)
+
+for row in rows[:20]:
+    if not isinstance(row, dict):
+        continue
+    status = row.get("status")
+    if isinstance(status, dict):
+        status_label = status.get("kind", "unknown")
+    else:
+        status_label = str(status or "unknown")
+    print(f"{row.get('run_id', 'unknown')} ({status_label})")
+PY
+		return
+	fi
+
+	printf '%s\n' "$runs_json" | grep -o '"run_id"[[:space:]]*:[[:space:]]*"[^"]*"' |
+		sed 's/.*"run_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1 (unknown)/'
+}
+
+guard_no_active_runs_before_restart() {
+	local summary
+
+	if [ "${FABRO_LOCAL_ALLOW_ACTIVE_RESTART:-}" = "1" ]; then
+		return
+	fi
+
+	if ! summary="$(active_run_summary)"; then
+		# The server may be stopped or unreachable. In that case restart is the
+		# recovery path, so do not block it.
+		return
+	fi
+
+	if [ -z "$summary" ]; then
+		return
+	fi
+
+	cat >&2 <<EOF
+Refusing to restart local Fabro server because active runs are present:
+$summary
+
+Restarting while a run is active can kill workers before Fabro emits terminal
+stage/run events, which also prevents run_failed Discord/GitHub hooks from
+firing. Wait for active runs to finish, or rerun with:
+
+  ./scripts/fabro-local-server restart --force
+
+or set FABRO_LOCAL_ALLOW_ACTIVE_RESTART=1.
+EOF
+	exit 1
+}
+
+action="${1:-restart}"
+
+case "$action" in
+--help | -h)
+	usage
+	exit 0
+	;;
+start | restart | status | stop)
+	shift || true
+	;;
+*)
+	echo "Unknown action: $action" >&2
+	usage >&2
+	exit 1
+	;;
+esac
+
+allow_active_restart="${FABRO_LOCAL_ALLOW_ACTIVE_RESTART:-}"
+if [ "$action" = "restart" ] && [ "${1:-}" = "--force" ]; then
+	allow_active_restart=1
+	shift
+fi
+export FABRO_LOCAL_ALLOW_ACTIVE_RESTART="$allow_active_restart"
+
+if { [ "$action" = "start" ] || [ "$action" = "restart" ]; } && [ -f "$PAUSE_MARKER" ]; then
+	cat >&2 <<EOF
+The local Fabro factory is intentionally paused while its replacement agent
+authentication pattern is undecided. See:
+  $PAUSE_MARKER
+
+The status and stop commands remain available. Re-enabling the factory requires
+an explicit repository change that removes the pause marker after a replacement
+authentication design and workflow have been approved.
+EOF
+	exit 1
+fi
+
+case "$action" in
+start | restart)
+	ensure_local_secret_files
+	ensure_github_credentials
+	export SESSION_SECRET="${SESSION_SECRET:-$(cat "$SESSION_SECRET_FILE")}"
+	export FABRO_DEV_TOKEN="${FABRO_DEV_TOKEN:-$(cat "$DEV_TOKEN_FILE")}"
+	if [ "$action" = "restart" ]; then
+		guard_no_active_runs_before_restart
+	fi
+	exec fabro server "$action" \
+		--config "$CONFIG" \
+		--storage-dir "$STORAGE_DIR" \
+		--bind 127.0.0.1:3000 \
+		--web \
+		--max-concurrent-runs 1 \
+		"$@"
+	;;
+status | stop)
+	exec fabro server "$action" \
+		--storage-dir "$STORAGE_DIR" \
+		"$@"
+	;;
+esac

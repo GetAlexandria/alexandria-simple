@@ -1,0 +1,4 @@
+interface:
+  display_name: "Story Spine"
+  short_description: "Turn a demo thesis into proof beats"
+  default_prompt: "Use $story-spine to turn the demo thesis into a causal beat outline and claim-proof map."

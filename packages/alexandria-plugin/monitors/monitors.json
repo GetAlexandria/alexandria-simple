@@ -1,0 +1,7 @@
+[
+  {
+    "name": "alexandria-state-wake-loop",
+    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/claude-monitor.sh --follow --json-lines",
+    "description": "Alexandria event monitor"
+  }
+]

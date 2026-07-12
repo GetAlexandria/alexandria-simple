@@ -1,0 +1,4 @@
+interface:
+  display_name: "Demo Thesis"
+  short_description: "Define the demo belief-change brief"
+  default_prompt: "Use $demo-thesis to define the audience, belief change, proof burden, and CTA for this software product demo."

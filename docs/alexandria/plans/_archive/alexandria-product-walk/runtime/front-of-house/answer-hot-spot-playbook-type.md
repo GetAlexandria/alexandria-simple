@@ -1,0 +1,1 @@
+Confirmed: the Playbook is the registry, not the page. A company has plays divided up by role; agents fill role seats and get access to plays. The /playbook page in the viewer is a derived view of the playbook-as-registry.

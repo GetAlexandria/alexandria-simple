@@ -1,0 +1,7 @@
+Play: frame-the-problem
+Status: succeeded
+Play run: 94c2bea6-ad72-49b4-a219-e806db02739e
+Fabro run: 01KVDRKG8HVVDXWB0175VVBV5H
+Workspace: /Users/danvers/conductor/workspaces/alexandria-internal/cebu/docs/alexandria
+Workflow: /Users/danvers/conductor/workspaces/alexandria-internal/cebu/docs/alexandria/.ax-runtime/workflows/frame-the-problem/workflow.fabro
+Ledger: /Users/danvers/conductor/workspaces/alexandria-internal/cebu/docs/alexandria/ledger/events.jsonl

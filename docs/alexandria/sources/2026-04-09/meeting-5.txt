@@ -1,0 +1,137 @@
+Was this my meeting? I think this was your meeting. I think so too.
+
+I said, the way that we'd be judging this is if you felt like you needed a transitional, like, the goal was, bottom up, giving you the plays that matter. We pivoted away from the wizard and into the core library. And I was like, look, jobs to be done, top down, blah blah blah. And you're like, I was thinking of it like this. And I was like, you know what? Stop. Stop. Here's the thing. We're just going to talk about two plays. And that was our meeting. We talked about two plays. And all the implications from those two plays, how it related to Solomon's job, all that other stuff.
+
+But we started with bottom up, very specific stuff. I tried to start with bottom up, very specific stuff. And you're going to let me know whether that was what that was. Mm-hmm. Yeah, it was. Yeah, I think the I thought the process was a win. I thought we did the process like a six, maybe six and a half. Just there's good pivots there, like you just described, to what turned out to be a very useful meeting to me.
+
+From an outcomes perspective, I was hoping to have more specificity in terms of not what you put on the board, but in terms of mapping. I wanted a diagram that brought all these pieces together. And I just didn't have it in the tank to do it. And I probably will tomorrow morning. I'll probably wake up at like 4:30 in the morning and be like, here it is, and get down and like scribble it all out in 12 minutes or something.
+
+But it was definitely like I started writing it and was like, ah, no. So what the meeting turned into from an outcome perspective is really just sheer absorption of like, I was absorbing the library at a level that you and I had never talked about it before. We've never gone that into the weeds. Yeah. And so there was a lot to get out of your brain that I could not have gotten by just reading the library alone.
+
+No way. Or it would have taken weeks. So this was like extremely efficient from like an interrogate Danvers about some of the details of why things are the way they are, how he pictures them in the future, how he thinks about certain things, how he thinks about certain agents.
+
+So from an interview the product owner and get the context out of their brain and into mine. Yeah, that was good. It just wasn't the outcome that I expected at the beginning of the meeting or before the meeting started.
+
+Yeah. I mean, on my end, we punted from that as soon as your eyes went crossed from the initial jobs to be done thing. And I think coming back to that would be good at a time when my mind's fresher.
+
+Well, even past that, like going one play at a time, like honestly going one, here's the third most important play, here's the fourth most important play, here's the fifth most important play. That's how you build a coverage map. Like we went through steps one and two and it's just adding after that, adding after that.
+
+Like if we have these two things, then what do we need? And to some extent, I bet there's like all kinds of stuff we can do. Like if we can determine the health of the library, then we probably need to put something new in the library. It was like, it's like very natural.
+
+Like we have a library, we can tell you whether it's healthy. Now let's put something new in it. Well, it's really cool. It's like those two are the big ones. There's all kinds of other stuff, but like you get those two, you get a lot of this.
+
+Yeah, they really are. Yeah. And then, you know, like federated gets interesting. We don't have motions for like feeding data to the mothership. That's interesting. Like there's lots, there's lots more past that, but it was just getting useful.
+
+Yeah. So anyway, what were your scores? Maybe you said. Six and a half, and I gave like a below five outcome rating, because my expectations were that I would make it further, and that I would make it further along progress towards a goal that changed really quickly when I realized I could not actually accomplish that goal today.
+
+Well, I mean, it's interesting. My understanding of the goal was we'd be printing at five. So obviously outcomes. Yeah, four and a half or whatever. You know, and then for process, yeah, it's like I think six in terms of like, so we didn't hit the outcome, but the process goals were met of just a highly tactical specific bottom-up conversation about this.
+
+And I even think we've stumbled onto the process we can keep doing of like, just keep stacking on. And then I can also be like, all right, Raven, we've done the four most important ones. Like what do we have that's left?
+
+Well, the other thing is there's also a go a level deeper on the ones that we have. There's like, take that step one and actually like go, really? How does that work? Go like pick.
+
+Yeah, exactly. Like we automated all these pits of knit. Do we really need all these sweeps? Really? Like sweep five. What value is that getting us? Do we believe that's valuable? Okay, cut it.
+
+And that's the interesting, that's the argument for like rebuilding is as soon as you rebuild one part, like it's a pretty complex dynamic system. Like once knit gets pulled out and it's just software and happens like on the person's box automatically, all the plays that involve knit, any play that is involved in, which is pretty much every play needs to be reconsidered.
+
+Even if it's just, okay, we're pulling knit. Yeah, exactly. Yeah. And the other thing is that if we can have triggers and orchestration, that's a whole other ballgame. We can cut a lot of fat if some stuff is just happening.
+
+I'm actually considering building in a really simple orchestrator. You can call it like a proto orchestrator or something like that. Just because there's some pretty simple, well-known patterns for building an orchestrator that would just be, you know, do this, then that, then that.
+
+And if that allows us to orchestrate a few things while we figure out what our relationship is to the other orchestrators on the market, then I think that that might be kind of like we've done with the factory of like, great, we have a factory.
+
+We do not intend to run this factory forever. We hope to burn it down one day in favor of someone else's factory that is, you know, two to three X better. But until that factory comes along and we have the time to move to it, we're absolutely going to run our factory all day long and keep it running.
+
+We're going to maintain it. But one day we will high five when we close that repo.
+
+Yeah. Let's see. So yeah, maybe it's 6.15 instead of 5. But yeah, here we go.
+
+Yeah. One experience I've had with Elycid over the last couple of days that has been very eye-opening is there's, we're building this agentic line, which is a factory that has stations.
+
+And the stations are, there's a workflow that is the deterministic part. And then the stations are mostly agents doing things. One of the most valuable things, surprisingly, has been slowing down, running one single thing through it and literally reading every single line of the thinking traces and the prompts to see where it's getting confused.
+
+And a lot of times the thinking traces will call out like, oh, I got this instruction from the prompt and I'm reading this instruction in my cloud.md. Which one will I do? I'll do the first one.
+
+Like, and you're just like, oh my gosh. Okay. Well, let's go fix that. So I had been, last night I was running, I was having Codex run it and read the thinking traces and give me reports on what were the problems that were coming up.
+
+And it was catching stuff. And it was like making improvements and making improvements. But it wasn't catching everything. And the other two guys on the team, John and Ian, are just a little bit more detail oriented than I am and a little more patient, I think.
+
+And so they were going like line by line and they were picking up on stuff that I was missing. And technically the Codex was missing and I was missing because I was using Codex as a tool to read the stuff.
+
+And like, dang. And it was so clear to me as I was watching them iterate on it, as I had been also trying to iterate on it and not catching some of the things, that like, this is how we're going to have to improve the library.
+
+Like, we're going to have to go painfully slow. Neither Danvers nor I as a real detail guy, oh, this is going to be hard. This is going to be hard, really hard for us.
+
+But it's going to be so valuable. Like, I see the process. It's going to be getting all the way down into the guts once we know what we want to accomplish and we're heading towards it to really improve it.
+
+There'll be things that Codex can catch for us, that Cloud Code can catch for us and all that kind of stuff. But then there's the, we're running the library, we're running Alexandria on Hearthfire and that kind of stuff.
+
+And instead of just like blazing through it, we're going to need to like slow down and read every damn line. And like, oh my gosh.
+
+So it was both hopeful and also like humbling. Like, oh my, oh my lord. Am I ready for that? Am I ready for that?
+
+Anyway. We might be able to get 80% of that with a specialized agent that we train to do what we're doing while we do it.
+
+Yeah. Don't disagree. I don't disagree. There may be like a, we can figure out like executive function as a service type thing of like go through every line.
+
+Yeah, absolutely. And maybe there, maybe we can actually train it and say, here's some examples of things that I caught. I will say yes.
+
+And part of what was happening that I, of things that I noticed John and Ian catching were actually designed decisions that weren't strictly wrong.
+
+There was times where like unagent, a station was doing a task instead of this other station doing the task. The task got done. And at the end of the process, it looked like the task was completed.
+
+Fairly successfully most of the time. But if you looked at where it got done, it's like slightly more right that it should be done over here.
+
+It's kind of like if Conan did something that Nit did. It's like, I mean, you know, Conan could do that, but that should really be a Nit thing.
+
+And those are, that's the kind of like, when you really got the system in your head, it's not clear to me that Codex could make those kinds of judgments easily.
+
+It's like, hey, yeah, you wanted that thing to happen and it happened. And it's like, well, that's not really how we think about that particular agent.
+
+So you can maybe teach Codex to like observe that and that kind of thing. But there is a finger on the button thing that you did.
+
+I think this is why the library is as good as it is right now, because you did a lot of this in Conductor. Man, rubric, Conan's rubrics.
+
+I mean, rubric, what you're talking about, grading how things are, grading how things are done are not that different. Giving Conan a readout and being like, this is how it was supposed to work.
+
+How did it work? Like what you're describing, Conan would be so much better than me if I gave Conan a rubric for grading process.
+
+That's a really interesting process out of words. So do you want to pause and just get the factory going?
+
+I will. I will. I'm just going to like summarize this conversation real quick, and then I'm going to get the factory going.
+
+And I'm going to summarize it by saying there's probably a really important self-improvement tool for the library where we teach it to read its own session logs or traces to extract from it nuanced opinions about how the library should actually work and strategic opportunities for improving the evals, the prompts, whatever it might be.
+
+Instead of a library health check, it is a play health check. Bingo.
+
+Yeah. And we don't need to build that today or anytime in the next three days, because we've got lots of things to do.
+
+But that feels like one of those compounding edge things of like if we had a play health check that we could feed the session logs to.
+
+Because I mean, I've seen it over the last several days of like John and Ian have been that play health check.
+
+And the fruit that that has borne is incredible. And I've been doing it with a roughshod version with Codex.
+
+And it's just awesome. It's like, hey, Codex, just watch everything running and tell me what's going wrong.
+
+It's like, oh, I found this. I'm like, hell yeah, fix that. And even last night, I put it to sleep.
+
+All right. I went to bed and I was like, hey, Codex, watch these three things. And every time something's broken, fix it, restart it, and then just keep keep bashing your head against it until all three of them make it through the end.
+
+And it ran for like an hour and a half and fixed all kinds of crap of like, oh, my gosh, a self-improving play checker can be so powerful.
+
+It's just like, hey, run all these plays tonight all night long. Don't stop until 8 a.m. And every time you see something wrong, fix it, and then just keep going.
+
+I'm like, oh, my goodness. Yeah, I think I'll say one more thing about it, and then I really will go make the factory run, is one thing that relates back to what we're talking about in the factory is teaching it how to know the difference between a clear problem that it can make a judgment about without any human input, that it can just unilaterally fix, and a design or taste decision that deserves to be elevated to human input.
+
+And to be able to put those into two piles, fix the things that can be fixed immediately, and then bring you a pile of decisions that you get to make.
+
+That would be an incredible process of like, which one do you want? This, this, or this?
+
+I thought of these three different ways we could handle this. What do you think?
+
+Man. All right. I'm going to do this on my Mac Studio at home. That way it can run. The factory can run while I close the laptop lid.
+
+All right.
+
+

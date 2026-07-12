@@ -1,0 +1,1 @@
+The visual, traversable interface that makes the whole system real and usable to a human director — what you get instead of just a prompt window. The director works across the Viewer (the web UI) and the AX CLI together. The Viewer translates the library, playbook, ledger, and agents into something you can see and interact with, with each agent represented spatially as a coin.

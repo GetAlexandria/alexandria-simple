@@ -1,0 +1,57 @@
+{
+  "playId": "atomic-card-planning",
+  "legs": [
+    {
+      "nodeId": "validate_inputs",
+      "label": "Validate confirmed inputs",
+      "description": "AX proves the bundle is EL4-confirmed, the lexicon loads, and source manifest hashes match.",
+      "lead": "No atomization starts until the confirmed library gate holds.",
+      "beats": [
+        "Checks the bundle through the Ledger-derived library.confirmed gate.",
+        "Loads lexicon prefLabels and altLabels.",
+        "Validates every source document hash in the EL1 manifest."
+      ],
+      "typicalSeconds": 10,
+      "kind": "command"
+    },
+    {
+      "nodeId": "triage",
+      "label": "Draft shelf-constrained plan",
+      "description": "Raven resolves source candidates to confirmed stubs and lexicon names, or emits gap reports.",
+      "lead": "Triage may not create shelves, categories, or names.",
+      "beats": [
+        "Produces write_new only for an existing confirmed stub and lexicon prefLabel.",
+        "Produces gap_report when shelf or lexicon support is missing.",
+        "Keeps covered_existing, defer_human, and reject separate."
+      ],
+      "typicalSeconds": 300,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "validate_plan",
+      "label": "Validate plan",
+      "description": "AX validates the build-plan schema and rechecks stub and lexicon matches.",
+      "lead": "The schema rejects category-derived folders and off-lexicon names.",
+      "beats": [
+        "Requires atomic-card-build-plan.v1.",
+        "Requires targetCard.shelfPath and targetCard.lexiconMatch.",
+        "Checks planned source ranges against current source hashes."
+      ],
+      "typicalSeconds": 10,
+      "kind": "command"
+    },
+    {
+      "nodeId": "audit",
+      "label": "Render coverage audit",
+      "description": "AX reports filled contracts, gap reports, deferrals, rejects, and shelf-fit findings.",
+      "lead": "The audit is the director-readable accounting for EL5.",
+      "beats": [
+        "Counts write_new contracts and gap reports.",
+        "Lists source documents with no emitted candidate.",
+        "Keeps gap reports as reports, not markdown cards."
+      ],
+      "typicalSeconds": 5,
+      "kind": "command"
+    }
+  ]
+}

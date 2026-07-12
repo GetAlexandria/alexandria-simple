@@ -1,0 +1,19 @@
+{
+  "description": "Alexandria canvas-spike: wake Raven when the director hits Save on the canvas",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/canvas-watcher.sh",
+            "asyncRewake": true,
+            "timeout": 700,
+            "rewakeMessage": "Canvas update — the director just hit Save:",
+            "rewakeSummary": "Canvas Save — react"
+          }
+        ]
+      }
+    ]
+  }
+}

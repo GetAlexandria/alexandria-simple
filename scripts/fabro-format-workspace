@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Deterministic format pass for a Fabro workflow run: format the packages the
+# run touched, commit the result if the tree dirties. Zero-LLM.
+# (Factory efficiency review rec #2, 2026-07-09.)
+
+set -euo pipefail
+
+BASE_BRANCH="${FABRO_PR_BASE_BRANCH:-main}"
+
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+	echo "format-workspace: not inside a git worktree." >&2
+	exit 1
+fi
+
+git fetch --quiet origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH" || true
+
+changed_packages="$(
+	git diff --name-only "origin/$BASE_BRANCH"...HEAD |
+		grep -o '^packages/[^/]*' | sort -u || true
+)"
+
+if [ -z "$changed_packages" ]; then
+	echo "format-workspace: no package changes; nothing to format."
+	exit 0
+fi
+
+for pkg in $changed_packages; do
+	[ -f "$pkg/package.json" ] || continue
+	if jq -e '.scripts.format' "$pkg/package.json" >/dev/null 2>&1; then
+		echo "format-workspace: running format in $pkg"
+		(cd "$pkg" && pnpm run format >/dev/null)
+	fi
+done
+
+if git diff --quiet; then
+	echo "format-workspace: tree already clean."
+	exit 0
+fi
+
+git add -u
+git -c user.name="Fabro" \
+	-c user.email="285810526+fabro-of-alexandria[bot]@users.noreply.github.com" \
+	commit --quiet -m "Format workflow-changed packages"
+echo "format-workspace: committed format pass for: $changed_packages"

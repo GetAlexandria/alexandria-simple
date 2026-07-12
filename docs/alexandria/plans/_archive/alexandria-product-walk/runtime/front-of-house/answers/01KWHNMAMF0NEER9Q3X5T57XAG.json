@@ -1,0 +1,10 @@
+{
+  "agendaItemId": "hot-spot-play-polysemy",
+  "agendaItemKind": "hot_spot",
+  "answerEventId": "c58dcb61-243d-44e1-956a-e6632ceb0185",
+  "answerText": "\"The play\" means the play definition — the playbook entry that says what this play is, what agent owns it, what it does. The Workflow Package (the runnable workflow template) and the Play Skill (the agent-facing skill file) are components of a play and should keep their own separate cards. Three artifacts, one noun, two subordinate parts.\n",
+  "fabroRunId": "01KWHFN1SA5R413ASARCRN79VW",
+  "playRunId": "949f76ce-f518-4ba6-bd58-a85f6c45c9ff",
+  "questionId": "01KWHNMAMF0NEER9Q3X5T57XAG",
+  "schemaVersion": 1
+}

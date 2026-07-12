@@ -1,0 +1,10 @@
+{
+  "agendaItemId": "hot-spot-two-card-taxonomies",
+  "agendaItemKind": "hot_spot",
+  "answerEventId": "317d6d27-e305-4a7f-98e8-9c1d498902aa",
+  "answerText": "Not a conflict — two complementary layers of the same system.\n\nAtomic card categories (10 buckets: Rationale, Research, Roles, Domains, Surfaces, Entities, Capabilities, Mechanisms, Patterns, Economy) are the superstructure — the universal buckets that most product companies' nouns land in, regardless of the specific product. This is Alexandria's meta-schema for product libraries.\n\nProduct card v1 is the format each card follows once filed into one of those buckets — carrying a type (which category), a name, plane (strategy/product/learning), status (stub through confirmed), confidence, and links to other cards.\n\nLegacy mode in the catalog schema is backward compatibility with the old 208-card quarantined library, kept for QA and comparison but not part of this process.\n\nNo card changes needed. The hot spot is resolved: categories are the superstructure, product card is the format. Two layers, one system.\n",
+  "fabroRunId": "01KWHFN1SA5R413ASARCRN79VW",
+  "playRunId": "949f76ce-f518-4ba6-bd58-a85f6c45c9ff",
+  "questionId": "01KWHKKNP6VMC59QRB6374YGXM",
+  "schemaVersion": 1
+}

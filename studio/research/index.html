@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Research — Raven Technical Product Playbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --fg:#e8e0d4; --fg-dim:#9a8c78; --fg-faint:#6a5e4e;
+  --accent:#d4a052; --accent-dim:#b8863a; --accent-glow:#e8b86d;
+  --teal:#4fb8a8; --teal-soft:#7ad4c4; --gold:#f0c060;
+  --panel-bd:rgba(212,160,82,0.18); --card-bg:rgba(28,20,12,0.80);
+  --font-ui:'Inter',system-ui,sans-serif; --font-display:'Cormorant Garamond',Georgia,serif;
+  --parchment-light:#c9a878; --parchment-dark:#b8946a; --ink:rgba(40,24,10,0.85);
+}
+html,body{font-family:var(--font-ui);font-size:13.5px;color:var(--fg);
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(0,0,0,0) 18%, rgba(0,0,0,0.7) 100%),
+    radial-gradient(ellipse at 25% 25%, hsla(28,30%,55%,0.20) 0%, transparent 60%),
+    hsl(28,14%,18%);
+  background-attachment:fixed;}
+.binder{max-width:900px;min-height:100vh;margin:0 auto;
+  border-left:1px solid rgba(212,160,82,0.12);border-right:1px solid rgba(212,160,82,0.12);}
+.hdr{display:flex;align-items:center;gap:20px;padding:16px 30px;
+  background:rgba(8,5,2,0.86);border-bottom:2px solid var(--accent-dim);
+  position:sticky;top:0;z-index:50;backdrop-filter:blur(8px);}
+.plate{display:flex;flex-direction:column;gap:3px;padding:9px 20px;
+  background:linear-gradient(135deg,rgba(212,160,82,0.18),rgba(184,134,58,0.08));
+  border:1px solid rgba(212,160,82,0.35);border-radius:3px;
+  box-shadow:inset 1px 1px 0 rgba(255,230,160,0.12),inset -1px -1px 0 rgba(0,0,0,0.35),0 2px 8px rgba(0,0,0,0.4);}
+.eyebrow{font-size:9px;font-weight:600;letter-spacing:.26em;color:var(--accent-dim);text-transform:uppercase;}
+.plate h1{font-family:var(--font-display);font-size:22px;font-weight:600;color:var(--accent-glow);letter-spacing:.01em;line-height:1;}
+.back{margin-left:auto;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--fg-faint);text-decoration:none;border:1px solid rgba(212,160,82,0.2);
+  border-radius:3px;padding:5px 12px;transition:all .15s;white-space:nowrap;}
+.back:hover{color:var(--accent-glow);border-color:rgba(212,160,82,0.5);}
+
+.body{padding:40px 30px 60px;}
+.lede{font-family:var(--font-display);font-size:19px;font-style:italic;color:var(--teal-soft);
+  line-height:1.6;margin-bottom:30px;max-width:680px;}
+.lede b{font-style:normal;color:var(--teal);}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:40px;}
+.doc-card{background:var(--card-bg);border:1px solid var(--panel-bd);border-left:4px solid var(--accent-dim);
+  border-radius:5px;padding:20px 18px 18px;text-decoration:none;color:inherit;transition:all .18s;display:block;}
+.doc-card:hover{box-shadow:0 4px 20px rgba(0,0,0,0.5);border-left-color:var(--accent-glow);transform:translateY(-2px);}
+.doc-card.teal{border-left-color:var(--teal);}
+.doc-card.teal:hover{border-left-color:var(--teal-soft);}
+.doc-icon{font-size:22px;margin-bottom:10px;}
+.doc-title{font-family:var(--font-display);font-size:19px;font-weight:600;color:var(--accent-glow);margin-bottom:6px;line-height:1.1;}
+.doc-card.teal .doc-title{color:var(--teal-soft);}
+.doc-desc{font-size:11.5px;color:var(--fg-dim);line-height:1.5;}
+.doc-meta{margin-top:12px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-faint);}
+
+h2{font-family:var(--font-display);font-size:26px;font-weight:600;color:var(--accent-glow);
+  margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(212,160,82,0.15);}
+.prose{font-size:13px;color:var(--fg-dim);line-height:1.7;max-width:680px;margin-bottom:30px;}
+.prose b{color:var(--teal-soft);font-weight:500;}
+.prose em{color:var(--fg);}
+.callout{background:rgba(79,184,168,0.07);border:1px solid rgba(79,184,168,0.2);
+  border-radius:4px;padding:14px 18px;margin:18px 0;font-size:12.5px;color:var(--fg-dim);line-height:1.6;}
+.callout b{color:var(--teal);}
+
+.weight-table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:12px;}
+.weight-table th{text-align:left;padding:6px 14px;font-size:9.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--fg-faint);border-bottom:1px solid var(--panel-bd);}
+.weight-table td{padding:7px 14px;border-bottom:1px solid rgba(212,160,82,0.06);color:var(--fg-dim);}
+.weight-table tr:hover td{background:rgba(255,255,255,0.02);}
+.w3c{color:var(--gold)}.w2c{color:var(--teal-soft)}.w1c{color:var(--fg-faint)}
+.job-name{color:var(--fg);font-weight:500;}
+</style>
+</head>
+<body>
+<div class="binder">
+  <div class="hdr">
+    <div class="plate">
+      <span class="eyebrow">Build-an-Employee · Research</span>
+      <h1>Raven — Technical Product</h1>
+    </div>
+    <a class="back" href="../index.html">← Playbook</a>
+  </div>
+  <div class="body">
+    <p class="lede">Supporting research for the Technical Product playbook — the role framework, the eight-job model, and the full play inventory that underpins every slot in the mockup.</p>
+
+    <div class="grid">
+      <a class="doc-card" href="tiers.html">
+        <div class="doc-icon">◆</div>
+        <div class="doc-title">Tier Framework</div>
+        <div class="doc-desc">How the three tiers — Coordinator, PM, Sr. Manager — were defined. What differentiates each, where ownership shifts, and how the weight assignments were derived.</div>
+        <div class="doc-meta">3 tiers · 8 weight profiles each</div>
+      </a>
+      <a class="doc-card teal" href="plays.html">
+        <div class="doc-icon">📋</div>
+        <div class="doc-title">Play Inventory</div>
+        <div class="doc-desc">All 67 plays catalogued by tier and job category. Shows the base-vs-technical split and the rationale for how plays were assigned across the three tiers.</div>
+        <div class="doc-meta">67 plays · 8 jobs · base + technical overlay</div>
+      </a>
+      <a class="doc-card" href="model.html">
+        <div class="doc-icon">⬡</div>
+        <div class="doc-title">The Overlay Model</div>
+        <div class="doc-desc">Why "Technical" is an additive overlay rather than a separate job family — and where it concentrates vs. stays absent across the eight job categories.</div>
+        <div class="doc-meta">Base product · technical delta · concentration pattern</div>
+      </a>
+    </div>
+
+    <h2>Background</h2>
+    <div class="prose">
+      The playbook was built by researching the actual responsibilities of technical product professionals across three career tiers. The goal was to answer: <em>what do people at each level actually do, and where does "technical" change the job?</em>
+      <br><br>
+      The eight job categories are drawn from the product management literature and practice — they represent the durable, universal jobs that every PM owns regardless of company, stage, or domain. The weight assignments (Heavy / Owns / Shares / Supports / Light) capture how much of a tier's time and decision authority goes to each job.
+    </div>
+
+    <div class="callout">
+      <b>Key finding:</b> "Technical" is not a separate job family — it is an additive overlay on top of a shared product core. The overlay concentrates in three jobs (Insight, Definition, Delivery) and is nearly absent in two (Launch, Communication). This means every technical PM is first a PM, and the technical layer is the <em>differential</em> — the part that changes when you hire specifically for technical depth.
+    </div>
+
+    <h2>Weight Profiles at a Glance</h2>
+    <div class="prose">How much each tier engages each of the eight jobs. <b>Gold = Heavy/Owns, Teal = Shares/Supports, Dim = Light.</b></div>
+    <table class="weight-table">
+      <thead><tr>
+        <th>Job</th><th>Coordinator</th><th>PM</th><th>Sr. Manager</th>
+      </tr></thead>
+      <tbody>
+        <tr><td class="job-name">🔍 Customer &amp; Market Insight</td><td class="w2c">Supports</td><td class="w3c">Owns</td><td class="w2c">Sets the thesis</td></tr>
+        <tr><td class="job-name">🎯 Strategy &amp; Prioritization</td><td class="w1c">Light</td><td class="w2c">Shares</td><td class="w3c">Owns</td></tr>
+        <tr><td class="job-name">📐 Product Definition</td><td class="w2c">Supports</td><td class="w3c">Owns</td><td class="w2c">Reviews</td></tr>
+        <tr><td class="job-name">🛠️ Delivery &amp; Execution</td><td class="w3c">Heavy</td><td class="w3c">Owns</td><td class="w1c">Light</td></tr>
+        <tr><td class="job-name">🚀 Launch &amp; Go-to-Market</td><td class="w2c">Supports</td><td class="w3c">Owns</td><td class="w2c">Calls it</td></tr>
+        <tr><td class="job-name">📊 Analytics &amp; Outcomes</td><td class="w2c">Supports</td><td class="w3c">Owns</td><td class="w3c">Decides</td></tr>
+        <tr><td class="job-name">📣 Stakeholder Communication</td><td class="w3c">Heavy</td><td class="w3c">Owns</td><td class="w2c">Narrative</td></tr>
+        <tr><td class="job-name">⚙️ Product Operations</td><td class="w3c">Owns</td><td class="w1c">Light</td><td class="w1c">Light</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</body>
+</html>

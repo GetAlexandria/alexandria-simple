@@ -1,0 +1,44 @@
+{
+  "playId": "frame-the-problem",
+  "legs": [
+    {
+      "nodeId": "pre_fill",
+      "label": "Draft the framing to react to",
+      "description": "Draft the first problem-framing from the handed-in material, for the director to react to.",
+      "lead": "Backstage hands Raven a strong first draft — never a blank question.",
+      "beats": [
+        "Reads what the director handed in and frames the problem(s) underneath it, in service of facts and logic, not the solution.",
+        "Marks each piece of evidence honestly — first-hand, assumed, or hypothetical — and names the thin spot that still needs a real instance.",
+        "Hands Raven the draft plus the one thing to draw out, carrying the evidence bar and the Mom-Test follow-up."
+      ],
+      "typicalSeconds": 120,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "review",
+      "label": "React to the draft — give feedback, or approve to finish",
+      "description": "The director reacts to the draft through Raven — feedback to fold in, or approval to finish.",
+      "lead": "The one switchback: the director is the checker, in his own voice.",
+      "beats": [
+        "Raven puts the current draft in front of the director.",
+        "He reacts — gives feedback to fold in, or approves to finish.",
+        "Approval ends the run; any feedback loops back to a revise pass."
+      ],
+      "typicalSeconds": 180,
+      "kind": "human"
+    },
+    {
+      "nodeId": "revise",
+      "label": "Fold in the director's reaction",
+      "description": "Rewrite the framing whole to fold in the director's reaction, holding the evidence line.",
+      "lead": "Backstage folds his reaction in and rewrites the document, not a diff.",
+      "beats": [
+        "Keeps what he confirmed, changes what he corrected, adds the evidence he gave — re-marked honestly.",
+        "Surfaces contradictions instead of silently picking, and holds that support for the solution needs a real instance.",
+        "Signals readiness when nothing real is still open; the draft returns to the director."
+      ],
+      "typicalSeconds": 120,
+      "kind": "agent"
+    }
+  ]
+}

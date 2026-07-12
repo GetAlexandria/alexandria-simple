@@ -1,0 +1,556 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      shared: ${{ steps.filter.outputs.shared }}
+      versions: ${{ steps.filter.outputs.versions }}
+      shell: ${{ steps.filter.outputs.shell }}
+      workspace: ${{ steps.filter.outputs.workspace }}
+      markdown: ${{ steps.filter.outputs.markdown }}
+      plugin: ${{ steps.filter.outputs.plugin }}
+      marketplace: ${{ steps.filter.outputs.marketplace }}
+      ax: ${{ steps.filter.outputs.ax }}
+      viewer: ${{ steps.filter.outputs.viewer }}
+      deploy: ${{ steps.filter.outputs.deploy }}
+      plugin_runtime: ${{ steps.filter.outputs.plugin_runtime }}
+      factory: ${{ steps.filter.outputs.factory }}
+      pms: ${{ steps.filter.outputs.pms }}
+      studio: ${{ steps.filter.outputs.studio }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed areas
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            shared:
+              - ".github/workflows/validate-plugin.yml"
+              - ".prettierignore"
+              - ".prettierrc"
+              - ".tool-versions"
+              - "eslint.config.js"
+              - "package.json"
+              - "pnpm-lock.yaml"
+              - "pnpm-workspace.yaml"
+              - "tsconfig.json"
+            versions:
+              - "VERSION"
+              - "package.json"
+              - "packages/ax/package.json"
+              - "packages/viewer/package.json"
+              - "packages/alexandria-plugin/package.json"
+              - "packages/alexandria-plugin/.claude-plugin/plugin.json"
+            shell:
+              - "install.sh"
+              - "setup"
+              - "scripts/**"
+              - "packages/deploy/build-tarball.sh"
+            workspace:
+              - "package.json"
+              - "pnpm-lock.yaml"
+              - "pnpm-workspace.yaml"
+              - "packages/*/package.json"
+            markdown:
+              - "**/*.md"
+              - "!repos/**"
+              - ".markdownlint-cli2.jsonc"
+            plugin:
+              - "packages/alexandria-plugin/**"
+            marketplace:
+              - "packages/alexandria-marketplace/**"
+            ax:
+              - "packages/ax/**"
+              - "install.sh"
+              - "setup"
+              - "VERSION"
+              - "packages/alexandria-plugin/**"
+              - "packages/viewer/**"
+              # check-ax runs real-bundle regression tests (the #628/#633
+              # pins load docs/alexandria/library directly), so a
+              # library-only change must re-run it — #699 (Learning plane
+              # L1) broke those pins invisibly because card-only diffs
+              # skipped this job. Same silent-skip class as #627/#649.
+              - "docs/alexandria/library/**"
+            viewer:
+              - "packages/viewer/**"
+            pms:
+              - "packages/pms/**"
+              - "studio/**"
+              - "packages/alexandria-plugin/workflows/**"
+            deploy:
+              - "packages/deploy/**"
+              - ".github/workflows/release.yml"
+            factory:
+              - "packages/factory/**"
+              # The factory tests pin path lists inside scripts/fabro-*
+              # helpers, so a scripts/ change must re-run this gate (#589
+              # moved paths in fabro-validate-impacted-if-changed and broke
+              # the factory tests silently; fixed in #601).
+              - "scripts/**"
+            plugin_runtime:
+              - "packages/plugin-runtime/**"
+              - "README.public.md"
+              - "install.sh"
+              - "VERSION"
+              - "CHANGELOG.md"
+              - "LICENSE"
+              - "packages/alexandria-plugin/**"
+              - "packages/alexandria-marketplace/**"
+            studio:
+              - "studio/**"
+              # The Studio data guards import the shipped ax domain parsers
+              # (threads, search-prior), and their tests pin the parsers'
+              # message strings — so an ax-domain change must re-run this gate
+              # too (the #469 cross-root lesson).
+              - "packages/ax/src/domain/**"
+              # Post boundary migration (#568) the risk-map/move guards import
+              # the PMS viewer's studio components instead — a pms change must
+              # re-run this gate for the same reason (#570 broke it silently
+              # before this job existed).
+              - "packages/pms/**"
+              # check.sh's story-lint/machine-language gates read the product
+              # library bundle directly — a library-only change (e.g. a card
+              # edit) must re-run this gate too, or the no-orphans/diagram-
+              # parity gate silently skips (#627 shipped an orphan card and a
+              # diagram-parity gap this way; the #649 fix).
+              - "docs/alexandria/library/**"
+
+  validate-alexandria-plugin:
+    needs: changes
+    if: needs.changes.outputs.plugin == 'true' || needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Setup pnpm
+        run: corepack enable pnpm
+
+      - name: Validate Alexandria plugin package
+        run: pnpm --filter @alexandria/plugin run validate
+
+  validate-marketplace:
+    needs: changes
+    if: needs.changes.outputs.marketplace == 'true' || needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Setup pnpm
+        run: corepack enable pnpm
+
+      - name: Validate Alexandria marketplace package
+        run: pnpm --filter @alexandria/marketplace run validate
+
+  validate-plugin:
+    needs:
+      - changes
+      - validate-alexandria-plugin
+      - validate-marketplace
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check plugin validation results
+        env:
+          NEEDS_CONTEXT: ${{ toJson(needs) }}
+        run: |
+          node <<'NODE'
+          const needs = JSON.parse(process.env.NEEDS_CONTEXT);
+          const failed = Object.entries(needs).filter(([, job]) =>
+            ["failure", "cancelled"].includes(job.result),
+          );
+          if (failed.length > 0) {
+            console.error(
+              `Required plugin validation jobs failed: ${failed
+                .map(([name]) => name)
+                .join(", ")}`,
+            );
+            process.exit(1);
+          }
+          console.log("Required plugin validation jobs passed or were skipped.");
+          NODE
+
+  check-versions:
+    needs: changes
+    if: needs.changes.outputs.versions == 'true' || needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check version consistency
+        run: |
+          set -euo pipefail
+          PKG_VERSION=$(node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('package.json','utf8')).version)")
+          FILE_VERSION=$(cat VERSION)
+          AX_VERSION=$(node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('packages/ax/package.json','utf8')).version)")
+          VIEWER_VERSION=$(node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('packages/viewer/package.json','utf8')).version)")
+          PLUGIN_PKG_VERSION=$(node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('packages/alexandria-plugin/package.json','utf8')).version)")
+          PLUGIN_VERSION=$(node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('packages/alexandria-plugin/.claude-plugin/plugin.json','utf8')).version)")
+          if [ "$PKG_VERSION" != "$FILE_VERSION" ] || [ "$PKG_VERSION" != "$AX_VERSION" ] || [ "$PKG_VERSION" != "$VIEWER_VERSION" ] || [ "$PKG_VERSION" != "$PLUGIN_PKG_VERSION" ] || [ "$PKG_VERSION" != "$PLUGIN_VERSION" ]; then
+            echo "Version mismatch: root=$PKG_VERSION VERSION=$FILE_VERSION ax=$AX_VERSION viewer=$VIEWER_VERSION plugin-package=$PLUGIN_PKG_VERSION plugin-json=$PLUGIN_VERSION"
+            exit 1
+          fi
+          echo "Versions consistent: $PKG_VERSION"
+
+  check-shell:
+    needs: changes
+    if: needs.changes.outputs.shell == 'true' || needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install shell tooling
+        run: ./scripts/ensure-shell-tools --install
+
+      - name: ShellCheck shell scripts
+        run: |
+          shellcheck -x \
+            install.sh \
+            setup \
+            scripts/ensure-shell-tools \
+            scripts/fabro-host-bun \
+            scripts/fabro-local-prune \
+            scripts/fabro-local-server \
+            scripts/fabro-setup-env \
+            scripts/fabro-validate-plugin-if-changed \
+            scripts/setup-dev \
+            packages/deploy/build-tarball.sh
+
+      - name: Check shell formatting
+        run: |
+          shfmt -d \
+            install.sh \
+            setup \
+            scripts/ensure-shell-tools \
+            scripts/fabro-host-bun \
+            scripts/fabro-local-prune \
+            scripts/fabro-local-server \
+            scripts/fabro-setup-env \
+            scripts/fabro-validate-plugin-if-changed \
+            scripts/setup-dev \
+            packages/deploy/build-tarball.sh
+
+  check-workspace-install:
+    needs: changes
+    if: needs.changes.outputs.workspace == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup pnpm
+        run: corepack enable pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+  check-markdown:
+    needs: changes
+    if: needs.changes.outputs.markdown == 'true' || needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        run: corepack enable pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Markdown checks
+        run: pnpm exec markdownlint-cli2 "**/*.md" "#node_modules" "#**/node_modules" "#repos" "#**/repos" "#.repos" "#**/.repos" "#dist" "#.tmp" "#.var" "#.claude"
+
+  check-ax:
+    needs: changes
+    if: needs.changes.outputs.ax == 'true' || needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup pnpm
+        run: corepack enable pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint ax
+        run: pnpm --filter @alexandria/ax run lint
+
+      - name: Check ax formatting
+        run: pnpm --filter @alexandria/ax run format:check
+
+      - name: Typecheck ax
+        run: pnpm --filter @alexandria/ax run typecheck
+
+      - name: Test ax
+        run: pnpm --filter @alexandria/ax run test
+
+  check-viewer:
+    needs: changes
+    if: needs.changes.outputs.viewer == 'true' || needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup pnpm
+        run: corepack enable pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check viewer
+        run: pnpm --filter @alexandria/viewer run check
+
+      - name: Check viewer formatting
+        run: pnpm --filter @alexandria/viewer run format:check
+
+      - name: Test viewer
+        run: pnpm --filter @alexandria/viewer run test
+
+      - name: Build viewer
+        run: pnpm --filter @alexandria/viewer run build
+
+      - name: Build viewer Storybook
+        run: pnpm --filter @alexandria/viewer run storybook:build
+
+  test-viewer-e2e:
+    needs: changes
+    if: needs.changes.outputs.viewer == 'true' || needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup pnpm
+        run: corepack enable pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: packages/viewer
+
+      # The Playwright config's webServer builds the viewer itself and serves
+      # it via tests/serve-viewer-fixture.ts, a self-contained fixture server
+      # — the whole suite runs hermetically against that fixture, with no
+      # live Alexandria runtime, so it runs unmodified here.
+      - name: Run viewer e2e
+        run: pnpm --filter @alexandria/viewer run test:e2e
+
+      # test-results/ (traces, screenshots) is only populated on failure — no
+      # explicit html reporter is configured, so there is no playwright-report/
+      # to upload in the passing case.
+      - name: Upload Playwright test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: viewer-playwright-report
+          path: packages/viewer/test-results/
+          retention-days: 14
+
+  check-pms:
+    needs: changes
+    if: needs.changes.outputs.pms == 'true' || needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup pnpm
+        run: corepack enable pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check pms formatting
+        run: pnpm --filter @alexandria/pms run format:check
+
+      - name: Typecheck pms
+        run: pnpm --filter @alexandria/pms run typecheck
+
+      - name: Test pms
+        run: pnpm --filter @alexandria/pms run test
+
+      - name: Check pms viewer formatting
+        run: pnpm --filter @alexandria/pms-viewer run format:check
+
+      - name: Typecheck pms viewer
+        run: pnpm --filter @alexandria/pms-viewer run typecheck
+
+      - name: Test pms viewer
+        run: pnpm --filter @alexandria/pms-viewer run test
+
+      - name: Build pms viewer
+        run: pnpm --filter @alexandria/pms-viewer run build
+
+  test-deploy:
+    needs: changes
+    if: needs.changes.outputs.deploy == 'true' || needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup pnpm
+        run: corepack enable pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test deploy
+        run: bun test packages/deploy
+
+  test-plugin-runtime:
+    needs: changes
+    if: needs.changes.outputs.plugin_runtime == 'true' || needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup pnpm
+        run: corepack enable pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test plugin runtime
+        run: bun test packages/plugin-runtime
+
+  test-factory:
+    needs: changes
+    if: needs.changes.outputs.factory == 'true' || needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup pnpm
+        run: corepack enable pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test factory
+        run: bun test packages/factory
+
+  check-studio:
+    needs: changes
+    if: needs.changes.outputs.studio == 'true' || needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup pnpm
+        run: corepack enable pnpm
+
+      # check.sh shells out to python3 (stdlib only) and node — both
+      # preinstalled on the runner — plus bun. Most guards import only
+      # dependency-free relative-import modules (ax domain parsers,
+      # pms-viewer studio parsers), but check-keystone.ts imports `effect`
+      # from the ax workspace, so the gate needs the workspace install.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check Studio data
+        run: sh studio/tools/check.sh
+
+  check-and-test:
+    needs:
+      - changes
+      - check-versions
+      - check-shell
+      - check-workspace-install
+      - check-markdown
+      - check-ax
+      - check-viewer
+      - test-viewer-e2e
+      - check-pms
+      - test-deploy
+      - test-plugin-runtime
+      - test-factory
+      - check-studio
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check package CI results
+        env:
+          NEEDS_CONTEXT: ${{ toJson(needs) }}
+        run: |
+          node <<'NODE'
+          const needs = JSON.parse(process.env.NEEDS_CONTEXT);
+          const failed = Object.entries(needs).filter(([, job]) =>
+            ["failure", "cancelled"].includes(job.result),
+          );
+          if (failed.length > 0) {
+            console.error(
+              `Required package CI jobs failed: ${failed
+                .map(([name]) => name)
+                .join(", ")}`,
+            );
+            process.exit(1);
+          }
+          console.log("Required package CI jobs passed or were skipped.");
+          NODE

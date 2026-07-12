@@ -1,0 +1,10 @@
+{
+  "agendaItemId": "gap-operating-plane-category",
+  "agendaItemKind": "stage2_question",
+  "answerEventId": "48e61807-df91-413f-aa8a-5e6b400303bf",
+  "answerText": "\"Operating plane / mission control\" is positioning prose for what Alexandria is, not a product noun. No card.\n\nThe director clarified the product's job to be done during this item: an AI colleague executes on a task or project as independently as a human peer would. Human peers are wise to have check-ins with their bosses sometimes; sometimes it's better that they just execute entirely independently. The goal is an AI colleague that fits the rhythm and culture of a director's workflows.\n\nThe index card needs revision to reflect this JTBD. The coin (the spatial representation of an agent/colleague) is the payoff to the whole system — everything else (library, playbook, ledger, triggers) exists to make that coin work. AI Colleagues may be a missing major concept in the product map. Raven is the one built-out example. These are structural observations for the index revision, not items to resolve in this walk.\n",
+  "fabroRunId": "01KWHFN1SA5R413ASARCRN79VW",
+  "playRunId": "949f76ce-f518-4ba6-bd58-a85f6c45c9ff",
+  "questionId": "01KWHJ11BMF4Y6QPCMHY3Z93AD",
+  "schemaVersion": 1
+}

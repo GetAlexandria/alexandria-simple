@@ -1,0 +1,2268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Alexandria · Taxonomy Lock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --page-bg: #faf8f4;
+    --panel-bg: #fffdf8;
+    --ink: #1f1d18;
+    --ink-soft: #2b2924;
+    --muted: #5c6470;
+    --muted-warm: #6b665b;
+    --hairline: #e7e1d4;
+    --hairline-soft: #d9d4c5;
+    --gold: #b8863a;
+    --gold-bright: #d4a052;
+
+    --serif: "Cormorant Garamond", Georgia, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+    /* altitude lens palette */
+    --alt-pillar: #b8863a;
+    --alt-aggregate: #be123c;
+    --alt-value: #0e7490;
+    --alt-component: #0f766e;
+    --alt-capability: #047857;
+    --alt-context: #2563eb;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--page-bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    min-height: 100vh;
+    padding-bottom: 6rem;
+  }
+
+  ::selection {
+    background: #f0dfc0;
+  }
+
+  /* ---------- top bar ---------- */
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 0.9rem 2rem;
+    background: rgba(250, 248, 244, 0.92);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .topbar-title {
+    font-family: var(--serif);
+    font-size: 1.35rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--ink-soft);
+  }
+
+  .topbar-title .dot {
+    color: var(--gold);
+    margin: 0 0.15em;
+    font-weight: 400;
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .progress-pill {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+    min-width: 3.2rem;
+    text-align: right;
+  }
+
+  .segmented {
+    display: inline-flex;
+    background: var(--panel-bg);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 999px;
+    padding: 3px;
+    gap: 2px;
+  }
+
+  .segmented button {
+    border: none;
+    background: transparent;
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 0.4rem 1.1rem;
+    border-radius: 999px;
+    color: var(--muted-warm);
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease;
+  }
+
+  .segmented button.active {
+    background: var(--ink-soft);
+    color: #fdf6e8;
+  }
+
+  .segmented button:not(.active):hover {
+    color: var(--ink);
+    background: var(--hairline);
+  }
+
+  /* ---------- mode containers ---------- */
+
+  .mode {
+    display: none;
+  }
+
+  .mode.active {
+    display: block;
+  }
+
+  /* ================= WALK MODE ================= */
+
+  #walk-mode.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3.2rem 1.5rem 2rem;
+  }
+
+  .walk-stage {
+    width: 100%;
+    max-width: 720px;
+  }
+
+  /* dot nav */
+
+  .dot-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    margin-bottom: 1.1rem;
+    flex-wrap: wrap;
+  }
+
+  .dot-nav button {
+    width: 11px;
+    height: 11px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1.5px solid;
+    background: transparent;
+    cursor: pointer;
+    transition: transform 0.15s ease, width 0.15s ease, height 0.15s ease;
+  }
+
+  .dot-nav button:hover {
+    transform: scale(1.25);
+  }
+
+  .dot-nav button.current {
+    width: 15px;
+    height: 15px;
+  }
+
+  /* fixed bottom nav bar */
+
+  .bottom-nav-bar {
+    display: none;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 60;
+    align-items: center;
+    justify-content: center;
+    gap: 1.4rem;
+    padding: 0.85rem 1.5rem;
+    background: rgba(250, 248, 244, 0.94);
+    backdrop-filter: blur(6px);
+    border-top: 1px solid var(--hairline);
+    box-shadow: 0 -8px 24px -16px rgba(31,29,24,0.18);
+  }
+
+  .bottom-nav-bar.show {
+    display: flex;
+  }
+
+  .bottom-nav-bar .nav-btn {
+    flex-shrink: 0;
+  }
+
+  .bottom-nav-center {
+    font-family: var(--sans);
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-align: center;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .bottom-nav-center .bottom-nav-count {
+    font-family: var(--mono);
+    font-weight: 400;
+    color: var(--muted);
+    margin-left: 0.5em;
+  }
+
+  .chunk-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--hairline);
+    border-radius: 20px;
+    padding: 3rem 3.2rem 2.6rem;
+    box-shadow: 0 1px 2px rgba(31, 29, 24, 0.03), 0 12px 32px -18px rgba(31, 29, 24, 0.18);
+    animation: fadeUp 0.32s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .chunk-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.9rem;
+  }
+
+  .chunk-name {
+    font-family: var(--serif);
+    font-size: 2.5rem;
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: 0.005em;
+  }
+
+  .brightness-wrap {
+    display: flex;
+    align-items: center;
+  }
+
+  .brightness-pill {
+    font-family: var(--sans);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    border: 1px solid transparent;
+    cursor: help;
+  }
+
+  .brightness-gloss {
+    font-family: var(--sans);
+    font-size: 0.74rem;
+    color: var(--muted);
+    margin: 0.3rem 0 0.9rem;
+    cursor: help;
+  }
+
+  .chunk-def {
+    font-family: var(--serif);
+    font-size: 1.28rem;
+    font-style: italic;
+    color: var(--muted-warm);
+    line-height: 1.5;
+    margin: 0 0 2.1rem;
+    max-width: 56ch;
+  }
+
+  .cat-note {
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin: -1.5rem 0 1.9rem;
+    max-width: 60ch;
+  }
+
+  .section-label {
+    font-family: var(--sans);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.75rem;
+  }
+
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.9rem;
+  }
+
+  .chip {
+    font-family: var(--sans);
+    font-size: 0.86rem;
+    font-weight: 500;
+    padding: 0.42rem 0.85rem;
+    border-radius: 10px;
+    border: 1px solid;
+    line-height: 1.3;
+    cursor: default;
+    position: relative;
+  }
+
+  .chip.flagged {
+    padding-right: 1.7rem;
+  }
+
+  .chip.flagged::after {
+    content: "⚑";
+    position: absolute;
+    right: 0.55rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.78rem;
+    opacity: 0.75;
+  }
+
+  /* ---------- status treatment (confirmed / stub / deprecated) ---------- */
+
+  .status-tag {
+    font-family: var(--sans);
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-left: 0.45em;
+    opacity: 0.75;
+    vertical-align: middle;
+  }
+
+  .chip.status-stub,
+  .mini-chip.status-stub {
+    background: transparent !important;
+    border-style: dashed !important;
+  }
+
+  .chip.status-deprecated,
+  .mini-chip.status-deprecated {
+    opacity: 0.45;
+  }
+
+  .chip.status-deprecated .chip-label,
+  .mini-chip.status-deprecated .chip-label {
+    text-decoration: line-through;
+  }
+
+  /* proposed: candidate to add — lighter than confirmed, never dimmed like
+     deprecated. Name keeps the category accent; the tag is a muted neutral
+     pill rather than the plain uppercase status-tag text. */
+
+  .status-tag.tag-proposed {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.5em;
+    padding: 0.12em 0.55em;
+    border-radius: 999px;
+    background: var(--hairline);
+    color: var(--muted-warm);
+    opacity: 1;
+    font-size: 0.6rem;
+    vertical-align: middle;
+  }
+
+  .chip.status-proposed {
+    border-style: dotted !important;
+  }
+
+  .def-row.status-proposed {
+    border-left-style: dotted;
+  }
+
+  /* ---------- definition list (categories whose members carry a `def`) ---------- */
+
+  .def-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    margin-bottom: 1.9rem;
+  }
+
+  .def-row {
+    padding-left: 0.9rem;
+    border-left: 2px solid var(--hairline-soft);
+  }
+
+  .def-row-name {
+    display: block;
+    font-family: var(--sans);
+    font-size: 0.92rem;
+    font-weight: 700;
+  }
+
+  .def-row-text {
+    display: block;
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-top: 0.2rem;
+    max-width: 60ch;
+  }
+
+  .def-row.status-stub {
+    border-left-style: dashed;
+  }
+
+  .def-row.status-stub .def-row-name {
+    opacity: 0.75;
+  }
+
+  .def-row.status-deprecated {
+    opacity: 0.5;
+  }
+
+  .def-row.status-deprecated .def-row-name .chip-label {
+    text-decoration: line-through;
+  }
+
+  /* muted sub-header row between groups in a grouped def-list */
+
+  .def-header {
+    font-family: var(--sans);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 1.3rem 0 0.15rem;
+    padding-left: 0.9rem;
+  }
+
+  .def-header:first-child {
+    margin-top: 0;
+  }
+
+  .cat-maturity {
+    font-family: var(--sans);
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin: -0.5rem 0 0.9rem;
+  }
+
+  .cat-card-maturity {
+    font-family: var(--sans);
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin: -0.6rem 0 0.75rem;
+  }
+
+  /* status legend */
+
+  .status-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-family: var(--sans);
+    font-size: 0.72rem;
+    color: var(--muted-warm);
+    white-space: nowrap;
+  }
+
+  .status-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+  }
+
+  .status-legend-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    border: 1px solid var(--hairline-soft);
+    background: var(--gold);
+    flex-shrink: 0;
+  }
+
+  .status-legend-swatch.stub {
+    background: transparent;
+    border-style: dashed;
+    border-color: var(--gold);
+  }
+
+  .status-legend-swatch.deprecated {
+    background: var(--muted);
+    opacity: 0.45;
+  }
+
+  .status-legend-arrow {
+    color: var(--hairline-soft);
+  }
+
+  .chip-empty-note {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1rem;
+    color: var(--muted);
+    padding: 0.3rem 0 0.2rem;
+  }
+
+  .flag-inset {
+    font-family: var(--serif);
+    font-size: 0.98rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    background: rgba(0,0,0,0.015);
+    border-left: 3px solid;
+    padding: 0.7rem 1.1rem;
+    border-radius: 0 8px 8px 0;
+    margin: -0.6rem 0 1.9rem;
+  }
+
+  /* quiet variant: neutral muted note (e.g. "belongs elsewhere"), not
+     colored to the category accent like the flag/coverage insets above. */
+
+  .flag-inset.quiet-inset {
+    font-family: var(--sans);
+    font-size: 0.84rem;
+    font-style: normal;
+    color: var(--muted-warm);
+    border-left-color: var(--hairline-soft);
+  }
+
+  /* parts expander (collapsed component/grain sub-chips) */
+
+  .parts-expander {
+    margin: -0.9rem 0 1.9rem;
+  }
+
+  .parts-toggle {
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--muted-warm);
+    background: transparent;
+    border: 1px dashed var(--hairline-soft);
+    border-radius: 999px;
+    padding: 0.4rem 0.9rem;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .parts-toggle:hover {
+    color: var(--gold);
+    border-color: var(--gold);
+  }
+
+  .parts-caret {
+    display: inline-block;
+    width: 0.9em;
+  }
+
+  .parts-body {
+    margin-top: 0.2rem;
+  }
+
+  .parts-note {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.92rem;
+    color: var(--muted);
+    margin: -0.6rem 0 0.4rem;
+  }
+
+  .compare-block {
+    margin-bottom: 2rem;
+  }
+
+  .compare-tabs {
+    display: inline-flex;
+    gap: 0.3rem;
+    margin-bottom: 0.85rem;
+    background: var(--page-bg);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 999px;
+    padding: 3px;
+  }
+
+  .compare-tab {
+    font-family: var(--sans);
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    padding: 0.32rem 0.85rem;
+    border-radius: 999px;
+    border: none;
+    background: transparent;
+    color: var(--muted-warm);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .compare-tab.active {
+    background: var(--panel-bg);
+    color: var(--ink-soft);
+    box-shadow: 0 1px 3px rgba(31,29,24,0.08);
+  }
+
+  .compare-tab:not(.active):hover {
+    color: var(--ink);
+  }
+
+  .ghost-chip {
+    font-family: var(--sans);
+    font-size: 0.84rem;
+    font-weight: 500;
+    padding: 0.4rem 0.8rem;
+    border-radius: 10px;
+    border: 1.3px dashed var(--hairline-soft);
+    color: var(--muted-warm);
+    background: transparent;
+  }
+
+  .ghost-empty {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.96rem;
+    color: var(--muted);
+  }
+
+  .actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--hairline);
+    margin-bottom: 0.3rem;
+  }
+
+  .action-pill {
+    font-family: var(--sans);
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.42rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--hairline-soft);
+    background: var(--page-bg);
+    color: var(--muted-warm);
+    cursor: default;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .action-pill:hover {
+    box-shadow: 0 2px 8px -2px rgba(31,29,24,0.15);
+    transform: translateY(-1px);
+    color: var(--ink);
+  }
+
+  .action-pill.primary {
+    border-color: #cdeadb;
+    background: #f2fbf6;
+    color: #0d6b47;
+  }
+
+  /* nav */
+
+  .walk-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.6rem;
+    max-width: 720px;
+    width: 100%;
+  }
+
+  .nav-btn {
+    font-family: var(--sans);
+    font-size: 0.88rem;
+    font-weight: 600;
+    padding: 0.6rem 1.3rem;
+    border-radius: 12px;
+    border: 1px solid var(--hairline-soft);
+    background: var(--panel-bg);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .nav-btn:hover:not(:disabled) {
+    border-color: var(--gold);
+    color: var(--gold);
+    box-shadow: 0 2px 10px -4px rgba(184,134,58,0.35);
+  }
+
+  .nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .nav-hint {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.92rem;
+    color: var(--muted);
+    text-align: center;
+    flex: 1;
+  }
+
+  .reveal-cta {
+    display: none;
+    margin-top: 1.8rem;
+    text-align: center;
+  }
+
+  .reveal-cta.show {
+    display: block;
+  }
+
+  .reveal-cta button {
+    font-family: var(--serif);
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    padding: 0.85rem 2.2rem;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold));
+    color: #fffaf0;
+    cursor: pointer;
+    box-shadow: 0 8px 24px -10px rgba(184,134,58,0.55);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .reveal-cta button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px -8px rgba(184,134,58,0.6);
+  }
+
+  /* ================= REVEAL MODE ================= */
+
+  #reveal-mode {
+    padding: 2.4rem 2rem 2rem;
+    max-width: 1360px;
+    margin: 0 auto;
+  }
+
+  .reveal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+
+  .reveal-title {
+    font-family: var(--serif);
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+
+  .reveal-sub {
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--muted-warm);
+    font-size: 1.05rem;
+    margin-top: 0.2rem;
+  }
+
+  .lens-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    background: var(--panel-bg);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 14px;
+    padding: 0.7rem 1rem;
+  }
+
+  .lens-toggle-label {
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+
+  .switch {
+    position: relative;
+    width: 42px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .switch-track {
+    position: absolute;
+    inset: 0;
+    background: var(--hairline-soft);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .switch-track::before {
+    content: "";
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    top: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  }
+
+  .switch input:checked + .switch-track {
+    background: var(--gold);
+  }
+
+  .switch input:checked + .switch-track::before {
+    transform: translateX(18px);
+  }
+
+  .lens-legend {
+    display: none;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    margin: -0.8rem 0 1.6rem;
+    padding: 0.85rem 1.1rem;
+    background: var(--panel-bg);
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+  }
+
+  .lens-legend.show {
+    display: flex;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    color: var(--muted-warm);
+  }
+
+  .legend-swatch {
+    width: 11px;
+    height: 11px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .reveal-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 1.8rem;
+    align-items: start;
+  }
+
+  .reveal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.1rem;
+  }
+
+  .category-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--hairline);
+    border-radius: 16px;
+    padding: 1.3rem 1.4rem 1.5rem;
+    box-shadow: 0 1px 2px rgba(31,29,24,0.03);
+  }
+
+  .category-card.ghost {
+    background: transparent;
+    border: 1.5px dashed var(--hairline-soft);
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 160px;
+  }
+
+  .cat-card-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin-bottom: 0.2rem;
+    border-bottom: 2px solid;
+    padding-bottom: 0.6rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .cat-card-name {
+    font-family: var(--serif);
+    font-size: 1.32rem;
+    font-weight: 600;
+  }
+
+  .cat-card-count {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  .cat-card-def {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.92rem;
+    color: var(--muted-warm);
+    margin: 0 0 0.9rem;
+    line-height: 1.45;
+  }
+
+  .cat-chip-group {
+    margin-bottom: 0.6rem;
+  }
+
+  .cat-chip-group-label {
+    font-family: var(--sans);
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+
+  .mini-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .mini-chip {
+    font-family: var(--sans);
+    font-size: 0.76rem;
+    font-weight: 500;
+    padding: 0.28rem 0.6rem;
+    border-radius: 8px;
+    border: 1px solid;
+    line-height: 1.3;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .ghost-card-count {
+    font-family: var(--serif);
+    font-size: 2.6rem;
+    font-weight: 600;
+    color: var(--hairline-soft);
+    line-height: 1;
+  }
+
+  .ghost-card-label {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1rem;
+    color: var(--muted);
+    margin-top: 0.4rem;
+  }
+
+  /* side panel */
+
+  .side-panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--hairline);
+    border-radius: 16px;
+    padding: 1.5rem 1.5rem 1.7rem;
+    position: sticky;
+    top: 5.2rem;
+  }
+
+  .side-panel h3 {
+    font-family: var(--serif);
+    font-size: 1.35rem;
+    font-weight: 600;
+    margin: 0 0 1rem;
+    color: var(--ink-soft);
+  }
+
+  .read-item {
+    font-family: var(--serif);
+    font-size: 0.98rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    padding: 0.9rem 0;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .read-item:first-of-type {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .read-item b {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* decisions */
+
+  .decisions-section {
+    margin-top: 2.6rem;
+  }
+
+  .decisions-title {
+    font-family: var(--serif);
+    font-size: 1.7rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 0.3rem;
+  }
+
+  .decisions-sub {
+    font-family: var(--sans);
+    font-size: 0.86rem;
+    color: var(--muted);
+    margin-bottom: 1.3rem;
+  }
+
+  .decisions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.1rem;
+  }
+
+  .decision-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--hairline-soft);
+    border-left: 4px solid var(--gold);
+    border-radius: 4px 14px 14px 4px;
+    padding: 1.3rem 1.4rem;
+    box-shadow: 0 1px 2px rgba(31,29,24,0.03);
+  }
+
+  .decision-num {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.4rem;
+  }
+
+  .decision-q {
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.35;
+    margin-bottom: 0.6rem;
+    color: var(--ink-soft);
+  }
+
+  .decision-context {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.9rem;
+    color: var(--muted-warm);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+
+  .decision-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .option-btn {
+    font-family: var(--sans);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.48rem 0.95rem;
+    border-radius: 10px;
+    border: 1.4px solid var(--hairline-soft);
+    background: var(--page-bg);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .option-btn:hover {
+    border-color: var(--gold);
+    background: #fdf6e8;
+    color: var(--gold);
+    transform: translateY(-1px);
+  }
+
+  .option-btn.selected {
+    border-color: var(--gold);
+    background: var(--gold);
+    color: #fffaf0;
+  }
+
+  /* lock */
+
+  .lock-section {
+    margin-top: 2.8rem;
+    text-align: center;
+    padding: 2.4rem 1rem 1rem;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .lock-btn {
+    font-family: var(--serif);
+    font-size: 1.35rem;
+    font-weight: 600;
+    padding: 1rem 2.6rem;
+    border-radius: 16px;
+    border: none;
+    background: var(--ink-soft);
+    color: #fdf6e8;
+    cursor: pointer;
+    box-shadow: 0 10px 28px -12px rgba(31,29,24,0.45);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .lock-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 32px -10px rgba(31,29,24,0.5);
+  }
+
+  .lock-btn.locked {
+    background: linear-gradient(135deg, #1a7a4f, #0d6b47);
+  }
+
+  .lock-hint {
+    font-family: var(--sans);
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.9rem;
+  }
+
+  @media (max-width: 980px) {
+    .reveal-layout {
+      grid-template-columns: 1fr;
+    }
+    .side-panel {
+      position: static;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .chunk-card {
+      padding: 2.2rem 1.5rem 2rem;
+    }
+    .chunk-name {
+      font-size: 2rem;
+    }
+    .topbar {
+      padding: 0.8rem 1.1rem;
+      flex-wrap: wrap;
+    }
+    .status-legend {
+      order: 3;
+      width: 100%;
+      justify-content: center;
+      padding-top: 0.4rem;
+    }
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-title">Alexandria<span class="dot">·</span>Taxonomy Lock</div>
+    <div class="status-legend" title="Realness descends confirmed › stub › deprecated">
+      <span class="status-legend-item"><span class="status-legend-swatch"></span>Confirmed (live)</span>
+      <span class="status-legend-arrow">›</span>
+      <span class="status-legend-item"><span class="status-legend-swatch stub"></span>Stub (placeholder)</span>
+      <span class="status-legend-arrow">›</span>
+      <span class="status-legend-item"><span class="status-legend-swatch deprecated"></span>Deprecated (parked)</span>
+    </div>
+    <div class="topbar-right">
+      <span class="progress-pill" id="progress-pill">1 / 9</span>
+      <div class="segmented">
+        <button id="tab-walk" class="active" onclick="setMode('walk')">Walk</button>
+        <button id="tab-reveal" onclick="setMode('reveal')">Reveal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= WALK MODE ================= -->
+  <div id="walk-mode" class="mode active">
+    <div class="walk-stage">
+      <div class="dot-nav" id="dot-nav"></div>
+      <div id="chunk-container"></div>
+      <div class="reveal-cta" id="reveal-cta">
+        <button onclick="setMode('reveal')">Reveal the map →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- persistent bottom nav — always visible regardless of chunk length -->
+  <div class="bottom-nav-bar show" id="bottom-nav-bar">
+    <button class="nav-btn" id="prev-btn" onclick="prevChunk()">‹ Prev</button>
+    <div class="bottom-nav-center" id="bottom-nav-center"></div>
+    <button class="nav-btn" id="next-btn" onclick="nextChunk()">Next ›</button>
+  </div>
+
+  <!-- ================= REVEAL MODE ================= -->
+  <div id="reveal-mode" class="mode">
+    <div class="reveal-header">
+      <div>
+        <div class="reveal-title">The Reveal — Alexandria's shape</div>
+        <div class="reveal-sub">All nine categories, on one screen.</div>
+      </div>
+      <label class="lens-toggle" for="lens-switch">
+        <span class="lens-toggle-label">Altitude lens</span>
+        <span class="switch">
+          <input type="checkbox" id="lens-switch" onchange="toggleLens()" />
+          <span class="switch-track"></span>
+        </span>
+      </label>
+    </div>
+
+    <div class="lens-legend" id="lens-legend"></div>
+
+    <div class="reveal-layout">
+      <div class="reveal-grid" id="reveal-grid"></div>
+
+      <div class="side-panel">
+        <h3>What the shape says</h3>
+        <div id="reads-list"></div>
+      </div>
+    </div>
+
+    <div class="decisions-section">
+      <div class="decisions-title">Decisions</div>
+      <div class="decisions-sub">Three calls only the director can make.</div>
+      <div class="decisions-grid" id="decisions-grid"></div>
+    </div>
+
+    <div class="lock-section">
+      <button class="lock-btn" id="lock-btn" onclick="toggleLock()">Lock the type axis ✓</button>
+      <div class="lock-hint">Entities, Surfaces, Capabilities, Systems/Mechanics, Roles, Patterns, Economy, Domains, Rationale, Research.</div>
+    </div>
+  </div>
+
+<script>
+/* ===================== DATA ===================== */
+
+const ALTITUDE_COLORS = {
+  pillar:     "#b8863a",
+  aggregate:  "#be123c",
+  value:      "#0e7490",
+  component:  "#0f766e",
+  capability: "#047857",
+  context:    "#2563eb",
+};
+
+// Realness order, most real first. Canonical enum: stub / confirmed / deprecated,
+// plus `proposed` — a candidate that isn't a card yet at all. Ranked last: less
+// real than a deprecated (parked, but was once a real card), while still reading
+// visually lighter than confirmed and never dimmed like deprecated (see CSS).
+// Only used inline (Capabilities grouped rows); no product noun in STATUS_MAP
+// carries it.
+const STATUS_ORDER = ["confirmed", "stub", "deprecated", "proposed"];
+const STATUS_RANK = { confirmed: 0, stub: 1, deprecated: 2, proposed: 3 };
+const STATUS_LABEL = { confirmed: "CONFIRMED", stub: "STUB", proposed: "PROPOSED", deprecated: "DEPRECATED" };
+
+// Per-noun status, read from each card's `status:` frontmatter in
+// docs/alexandria/sweeps/alexandria-product (find + grep ^status:, matched by prefLabel).
+// Every noun below matched a real card 1:1 — nothing here is a default.
+const STATUS_MAP = {
+  "AI Colleague": "confirmed",
+  "AX CLI": "confirmed",
+  "AX Runtime Server": "stub",
+  "Alexandria Config": "stub",
+  "Alexandria Product Library": "confirmed",
+  "Atomic Card Category": "confirmed",
+  "Atomic Card": "deprecated",
+  "Basic Product Description": "stub",
+  "Bundle Patch": "stub",
+  "Canvas Review": "stub",
+  "Canvas Step": "stub",
+  "Canvas": "stub",
+  "Cards": "confirmed",
+  "Catalog Schema Mode": "confirmed",
+  "Coin": "confirmed",
+  "Confirmation Gate": "stub",
+  "Connection Lease": "stub",
+  "Cursor": "stub",
+  "Damien": "confirmed",
+  "Director Ruling": "deprecated",
+  "Director": "confirmed",
+  "Draft Overlay": "stub",
+  "Event Type": "stub",
+  "Fabro Orchestrator": "confirmed",
+  "Front-of-House Walk": "stub",
+  "Frozen Source of Truth": "deprecated",
+  "Human Gate": "stub",
+  "Human Input Request": "stub",
+  "Idempotency Key": "deprecated",
+  "Inbox": "deprecated",
+  "Knowledge Bank Area": "deprecated",
+  "Ledger Event": "stub",
+  "Ledger": "stub",
+  "Match Rule": "stub",
+  "Monitor": "stub",
+  "Move": "stub",
+  "Pending Trigger Kind": "stub",
+  "Plane": "confirmed",
+  "Play Run Status": "stub",
+  "Play Run": "confirmed",
+  "Play Skill": "confirmed",
+  "Play": "confirmed",
+  "Playbook": "confirmed",
+  "Playmaker's Studio Library": "confirmed",
+  "Project": "stub",
+  "Provenance Record": "stub",
+  "Raven": "confirmed",
+  "Review Gate": "stub",
+  "Review Level": "stub",
+  "Run Labels": "deprecated",
+  "Section": "stub",
+  "Session": "stub",
+  "Slot Status": "stub",
+  "Source Assessment": "deprecated",
+  "Source Conversion": "deprecated",
+  "Source Item": "stub",
+  "Source of Truth": "confirmed",
+  "Source": "deprecated",
+  "State Store": "deprecated",
+  "Studio Operation": "deprecated",
+  "Thread Status": "stub",
+  "Thread": "stub",
+  "Tray": "confirmed",
+  "Trigger": "stub",
+  "Viewer Route": "stub",
+  "Viewer": "confirmed",
+  "Vision Slot": "confirmed",
+  "Wake Subscription": "stub",
+  "Wake": "stub",
+  "Walk Turn": "stub",
+  "Workflow Package": "confirmed",
+};
+
+function statusOf(name) {
+  return STATUS_MAP[name] || "confirmed";
+}
+
+const BRIGHTNESS_TOOLTIP_RAW = "How much this kind of category tends to light up for products like this one (agentic AI tools). Bright = usually rich; ‘quiet — a gap’ = usually sparse.";
+const BRIGHTNESS_TOOLTIP = escapeAttr(BRIGHTNESS_TOOLTIP_RAW);
+const BRIGHTNESS_GLOSS = "“Brightness” = how much this category usually lights up for agentic AI products — not a judgment on this one.";
+
+const DATA = {
+  frame: "You read as Family 2 (Software-with-agents) — Claude Code / Cursor's family; here's your starting frame.",
+
+  categories: [
+    {
+      key: "surfaces",
+      name: "Surfaces",
+      brightness: "bright — frontier",
+      def: "The places a person or agent actually touches the product — screens, panes, entry points.",
+      colors: { accent: "#2563eb", bg: "#dbeafe", border: "#93c5fd" },
+      members: ["AX CLI","Inbox","Tray","Viewer"],
+      defs: {
+        "Viewer": "The product's primary visual interface — the traversable web UI that makes the whole system usable, not just a prompt window. Houses the other screens (12+ routes), the Tray, and the Canvas; sibling to the AX CLI.",
+        "Tray": "The persistent area for coordinating your AI colleagues — holds one Coin per colleague, each a hub to that colleague's hotplays, playbook, knowledge bank, and page.",
+        "AX CLI": "The terminal place the product is met — its command set is the product's verb map (initialize · start · run · inspect · work with Raven); it spins up the runtime behind the surfaces. Sibling to the Viewer.",
+        "Inbox": "Parked prototyping intake — where raw Source landed before assessment. A deprecated ghost (d9f227a0); not a live room."
+      },
+      coverageGap: "Coverage gap: the Viewer houses 12+ routes/screens (currently modeled as Viewer Routes) the library should name — the many screens that replaced the single-canvas model.",
+      subgroups: [],
+      compare: {
+        "Claude Code": ["Composer/Chat","Plan Mode","Stream","Diff Review","Interrupt/Takeover","Tab/Inline Edit"],
+        "Cursor": ["Tab","Composer","Cmd-K","Inline Edit"]
+      },
+      revealCount: 4,
+      revealNote: "(4)"
+    },
+    {
+      key: "capabilities",
+      name: "Capabilities",
+      brightness: "densest",
+      def: "What the product can be asked to do — the callable, invokable units of behavior.",
+      note: "Should be the densest category for an agentic product; today it's the thinnest + most polluted. Below: the 4 existing cards cleaned up + the proposed fill.",
+      colors: { accent: "#047857", bg: "#d1fae5", border: "#6ee7b7" },
+      members: ["Source Assessment","Studio Operation","Wake"],
+      groups: [
+        {
+          header: "Build & maintain libraries",
+          rows: [
+            { name: "Source Scan", status: "proposed", def: "Turn raw sources into a draft empty-library bundle — stub cards, keystone index, open threads. [EL2, Back-of-House]" },
+            { name: "Section Comprehension Walk", status: "proposed", def: "Walk a draft library section-by-section with the director, checking comprehension and applying only validated corrections. [EL3, Front-of-House]" },
+            { name: "Library Confirmation", status: "proposed", def: "Record the director's approve/reject verdict on a draft library's structure; route rejects back to the walk. [EL4]" },
+            { name: "Atomize", status: "proposed", def: "Break a confirmed library into card bodies — plan, then draft / validate / grade / publish each. (One capability, or split plan vs build?)" },
+            { name: "Vision Drafting", status: "proposed", def: "Co-author the product's onboarding Vision with Raven, one slot at a time, then bank it as canonical." },
+            { name: "Source Assessment", status: "deprecated", def: "Parked prototyping capability: judged landed Source material and recorded a verdict. Superseded by the live pipeline above." },
+            { name: "Studio Operation", status: "deprecated", def: "Parked knowledge-ops (capture / deprecate / quarantine). If you mean Playmaker Studio play-ops, that federates to the PMS library." }
+          ]
+        },
+        {
+          header: "Plays in playbooks",
+          rows: [
+            { name: "Run a Play", status: "proposed", def: "Execute a guided play through the factory (Fabro), optionally detached; produces a tracked Play Run." },
+            { name: "Answer / Human-Feedback", status: "proposed", def: "Answer a running play's pending question (yes/no/select/text) and resume it; banks Front-of-House answers to the Ledger." },
+            { name: "Inspect State", status: "proposed", def: "Read and validate the project's derived state, event ledger, triggers, and orchestration readiness." },
+            { name: "Wake", status: "stub", def: "Deliver a matched event to a live agent's Session so it picks up work independently (via the Monitor loop). Open: Capability or Entity?" }
+          ]
+        },
+        {
+          header: "Governance verbs (from the data-model doc — decide if shipped-enough to card)",
+          rows: [
+            { name: "Grant / Revoke", status: "proposed", def: "Authorize (or withdraw) an agent to run a play, within its authority ceiling." },
+            { name: "Trigger Arm / Fire", status: "proposed", def: "Arm a trigger to fire a play on a condition; fire it." },
+            { name: "Play Freeze / Resume / Abort", status: "proposed", def: "Freeze a running play at a branch, resume it, or abort to a safe state." },
+            { name: "Card Revise / Retire / Surgery", status: "proposed", def: "Revise a card, retire it, or split / merge via pre-approved surgery." }
+          ]
+        }
+      ],
+      insetNote: "Not capabilities — card elsewhere: authoring standards → Patterns · `init` / `start server` / `--reactions` → Mechanisms · Raven/Damien themselves → Entities · New Media → separate product line. And a specific play (Frame-a-Problem) isn't its own capability — Play is an Entity, ‘Run a Play’ is the verb.",
+      subgroups: [],
+      compare: {
+        "Claude Code": ["Tool call","Skill","Hook"],
+        "Cursor": ["Agent","Apply","Review"]
+      },
+      revealCount: 3,
+      revealNote: "(3 carded — 12 proposed)"
+    },
+    {
+      key: "roles",
+      name: "Roles",
+      brightness: "bright",
+      def: "Who's acting — the agents, tools, and humans the product casts as actors.",
+      colors: { accent: "#4f46e5", bg: "#e0e7ff", border: "#a5b4fc" },
+      // Given order, not alphabetical — Director, AI Colleague, Raven, Damien
+      // reads as a hierarchy (human owner → the class → the flagship → the
+      // other instance). renderChunk/categoryCardHtml special-case "roles"
+      // to skip sortByStatus and keep this order everywhere.
+      members: ["Director","AI Colleague","Raven","Damien"],
+      defs: {
+        "Director": "The human running the show — the product owner whose knowledge the library captures, and who delegates work to the AI colleagues. The one non-AI role.",
+        "AI Colleague": "The class of AI colleague (renamed from ‘Agent’) — a named teammate with real areas of responsibility it handles independently, not a prompt window. Up to five coined direct-report slots (two unnamed); Raven & Damien are the built instances. The *why* behind it lives on the Strategy plane.",
+        "Raven": "The flagship AI Colleague — the product-owner colleague the director works with most, and the one built-out example; drafts & mediates the product's own account of itself.",
+        "Damien": "An AI Colleague instance — coined with a few off-playbook skills (New Media / demo production); less built-out than Raven."
+      },
+      insetNote: "William moved to the Playmaker's Studio (PMS) library — its own agent, federated. And ‘agent’ stays reserved: the workers colleagues delegate to (Fabro workflows / skills) are Skills/Plays, not carded as agents — per the data model.",
+      subgroups: [],
+      compare: {
+        "Claude Code": ["Agent","Subagent","Tool","Operator (human, e.g. \"Director\")"],
+        "Cursor": ["Agent","User"]
+      },
+      revealCount: 4,
+      revealNote: "(4 confirmed)"
+    },
+    {
+      key: "entities",
+      name: "Entities",
+      brightness: "bright",
+      def: "The nameable things the product tracks and persists — the nouns with an identity and a lifecycle.",
+      note: "Two-axis lock ruling — these are the product-descriptive nouns; altitude (component/aggregate/context/pillar) rides alongside as a separate structural axis, not a competing category.",
+      colors: { accent: "#be123c", bg: "#ffe4e6", border: "#fda4af" },
+      readout: "18 members — 6 confirmed · 7 stub · 5 deprecated",
+      // Given order, not alphabetical — the file's grouping (Source cluster →
+      // Cards/Bank → Thread → Library → Description/Item → Playbook/Play/Run
+      // → Ledger/Session/Wake → Project) is intentional; kept everywhere via
+      // the "entities" render special-case, not sortByStatus.
+      members: [
+        "Source","Source Conversion","Frozen Source of Truth","Source of Truth","Atomic Card","Cards",
+        "Knowledge Bank Area","Thread","Alexandria Product Library","Basic Product Description","Source Item",
+        "Playbook","Play","Play Run","Ledger Event","Session","Wake Subscription","Project"
+      ],
+      defs: {
+        "Source": "Raw material entered into the parked prototyping pipeline; lifecycle pending-assessment → assessed, sitting in the Inbox while pending. [parked per d9f227a0, not deleted]",
+        "Source Conversion": "The parked pipeline run that works a Source toward freeze; lifecycle started → ready-to-freeze → completed/failed. [parked per d9f227a0, not deleted]",
+        "Frozen Source of Truth": "Merged away by ruling cd27ef06 — \"frozen\" is a state of Source of Truth, not a second noun; this card survives only as the record of that merge.",
+        "Source of Truth": "The gathered objective/subjective reality cards get built from, one noun with a frozen state (locked at atomization) rather than two cards; for the Basic Product Description play it derives from resolved Vision Slots.",
+        "Atomic Card": "The parked prototyping-atomizer's card unit, created then updated as it's produced; the taxonomy question it used to carry is now settled (categories are superstructure, the card contract is format). [parked per d9f227a0, not deleted]",
+        "Cards": "One card of the live library — typed, planed, linked, lifecycle-bearing stub → confirmed, draft-patched along the way; renamed from \"Product Card\" since future plays will produce strategy- and learning-plane cards too.",
+        "Knowledge Bank Area": "Parked subject band of company knowledge (vision/vocabulary/bets/guardrails/user-research) worked toward the bank; lifecycle available → in-progress → ready-to-atomize → banked (+ locked).",
+        "Thread": "An open question the library carries about itself — a gap or hot spot raised by a scan; lifecycle open → answered or residual.",
+        "Alexandria Product Library": "The company-wide, product-plane knowledge graph itself — cards, threads, and the schema mode they conform to; the initial build of what future strategy- and learning-plane libraries will join.",
+        "Basic Product Description": "The director's own account of the product, drafted slot by slot and banked, seeding the library scan's search prior; lifecycle not-started → in-progress → ready-to-bank → banked. Naming residual: director-facing name is set, internal id (\"vision\") pending cleanup.",
+        "Source Item": "Source material the director hands Raven while working the description, tracked at attach and consumed at banking; identity-bearing but its lifecycle rides the description.",
+        "Playbook": "The registry of plays a team can reliably run — one of the product's two innovations (work processes made atomic and accessible to agents); the registry itself, not the viewer's playbook page (that's a derived view).",
+        "Play": "A definition living in the playbook — a reusable combination of agentic, software, and human activities, assigned to an agent and callable by the director or a trigger; \"the play\" means the definition, not its workflow-package or skill-file parts.",
+        "Play Run": "The unit of work the whole system organizes around — a play instantiated and advancing: requested → submitted → running → suspended-at-gates → resumed → terminated.",
+        "Ledger Event": "One recorded, past-tense fact — identity but no lifecycle, since once appended it never changes; the atom inside the Ledger, serving the Play Run (not the reverse).",
+        "Session": "A live host connection an agent works in, the thing recorded facts must reach; lifecycle connected → wakeable once subscriptions register.",
+        "Wake Subscription": "A standing request to be woken when certain facts are recorded, registered and removed independently of any one session wake.",
+        "Project": "The initialized workspace everything else (ledger, library, source of truth) is scoped to; open residual — the director doesn't yet recognize \"Project\" as a familiar product noun."
+      },
+      insetNote: "The 18 type: Component cards fold under Entities as grain: component — the collapsed structural parts of these aggregates (e.g. Vision Slot, Move, Workflow Package), not authored individually here.",
+      subgroups: [
+        {
+          label: "type: Component — [grain: component], structural parts filed under Entities",
+          flag: "Component isn't a families category — every card here is altitude: component (mostly) describing a part of a parent Entity, filed under Entities at the [grain: component] tag rather than standing alone.",
+          members: [
+            "Alexandria Config","Bundle Patch","Canvas Step","Coin","Connection Lease","Cursor","Human Input Request",
+            "Idempotency Key","Match Rule","Move","Play Skill","Provenance Record","Run Labels","Section",
+            "Viewer Route","Vision Slot","Walk Turn","Workflow Package"
+          ]
+        }
+      ],
+      compare: {
+        "Claude Code": ["Message","Thread/Session","Brief/Context","Memory","Checkpoint","Knowledge/Document/Source"],
+        "Cursor": ["Message","Thread","Context","Checkpoint"]
+      },
+      revealCount: 34,
+      revealNote: "(34 confirmed members — 18 core + 18 folded-in Components)"
+    },
+    {
+      key: "systems",
+      name: "Systems/Mechanics",
+      brightness: "bright",
+      def: "The engines running underneath — loops, orchestration, the machinery that moves state without being touched directly.",
+      note: "Four of these are pure engines flagged by the Model-vs-Machine ruling (nothing executable is ever a card) — open calls, not resolved here.",
+      colors: { accent: "#6d28d9", bg: "#ede9fe", border: "#c4b5fd" },
+      readout: "11 members — 1 confirmed · 9 stub · 1 deprecated",
+      // Given order, not alphabetical (Canvas trails as the odd one out) —
+      // kept via the "systems" render special-case, not sortByStatus.
+      members: [
+        "AX Runtime Server","Confirmation Gate","Draft Overlay","Fabro Orchestrator","Human Gate","Ledger",
+        "Monitor","Review Gate","State Store","Trigger","Canvas"
+      ],
+      defs: {
+        "AX Runtime Server": "The local runtime process the CLI's start command brings up; serves the surfaces and holds session/subscription state.",
+        "Confirmation Gate": "The whole-library ruling — confirmed or rejected and sent back — answered only by the Director, the last gate of the elicitation chain.",
+        "Draft Overlay": "The durable draft layer over a frozen base: walk answers become an appended patch log while base cards stay untouched.",
+        "Fabro Orchestrator": "The embedded engine that executes plays — starts, suspends at gates, and terminates each Play Run.",
+        "Human Gate": "The suspend-for-director mechanism: a play reaches a point only a human can rule, records the question, and waits without blocking.",
+        "Ledger": "The append-only, immutable record of what has happened in the company — coordination, QA, and the best source for triggers.",
+        "Monitor": "The coding-tool-managed loop that follows the ledger so recorded facts become live attention, producing Wake on a matching subscription.",
+        "Review Gate": "The staged, named design- and proven-confirmation gates a reviewed run passes, each confirmed by the director.",
+        "State Store": "The machinery that writes new events onto the ledger; already demoted by ruling c7f0ed14 as engineering plumbing, kept only as a demotion record.",
+        "Trigger": "A condition derived from recorded ledger history that suggests a play should run; the least documented, least implemented part of the system.",
+        "Canvas": "Dormant generic \"build artifact → request review → wake\" mechanism (retyped from Surface; no UI, no play uses it yet)."
+      },
+      insetNote: "Ledger reads as a pillar, not a peer Mechanism, alongside these — flagged as its own open call.",
+      subgroups: [],
+      compare: {
+        "Claude Code": ["Loop","Plan","Workflow/Chain/Flow/Graph","Reasoning"],
+        "Cursor": ["Loop","Plan","Model"]
+      },
+      revealCount: 11,
+      revealNote: "(11)"
+    },
+    {
+      key: "patterns",
+      name: "Patterns",
+      brightness: "medium",
+      def: "Recurring shapes of interaction — named moves the product repeats across different content.",
+      note: "Front-of-House Walk is the only carded Pattern today. Its body argues its own type (\"a capability, not a place\") while the families taxonomy reserves Pattern for a recurring named arc — which is exactly what this card describes (turn → answer → patch → section-confirm → residual).",
+      colors: { accent: "#c2410c", bg: "#ffedd5", border: "#fdba74" },
+      readout: "1 stub — a room of one, and its own type is under dispute",
+      members: ["Front-of-House Walk"],
+      defs: {
+        "Front-of-House Walk": "The recurring turn → answer → patch → section-confirm → residual arc that refines a draft library with the director; named by its own family of ledger events."
+      },
+      subgroups: [],
+      compare: {
+        "Claude Code": ["ReAct","RAG","Planner-Executor","Human-in-the-Loop"],
+        "Cursor": ["Autocomplete","Agent-loop"]
+      },
+      revealCount: 1,
+      revealNote: "(1)"
+    },
+    {
+      key: "economy",
+      name: "Economy",
+      brightness: "quiet — a gap",
+      def: "The scarce-resource layer — what's metered, spent, or rate-limited.",
+      note: "Per the two-axis taxonomy ruling (2026-07-05), Economy is reserved for real economics (money, exchange, marketplace dynamics). All 8 cards currently typed Economy are actually altitude: value value-objects — lifecycle/mode enums riding on entities elsewhere in the library. None of them describe an exchange. All 8 are ejected (marked deprecated here); each is rehomed as a value-attribute of the entity it already links to.",
+      colors: { accent: "#0e7490", bg: "#cffafe", border: "#67e8f9" },
+      readout: "0 — a tool, not a marketplace (8 ejected)",
+      members: [],
+      // Given order (matches the file, already alphabetical) — all 8 render
+      // with a forced "deprecated" status treatment regardless of STATUS_MAP,
+      // since the file marks every one ejected/deprecated in this room.
+      ejected: [
+        "Catalog Schema Mode","Event Type","Pending Trigger Kind","Plane","Play Run Status",
+        "Review Level","Slot Status","Thread Status"
+      ],
+      ejectedDefs: {
+        "Catalog Schema Mode": "The legacy-vs-current schema-version flag on a library bundle's manifest — a lifecycle mode value of Alexandria Product Library, not economics.",
+        "Event Type": "The ledger's 41-name vocabulary of fact-kinds — a classification value of Ledger Event, not economics.",
+        "Pending Trigger Kind": "The two shipped trigger values (source-pending, ruling-pending) — a derivation-rule value of Trigger, not economics.",
+        "Plane": "The three knowledge bands (strategy/product/learning) carried on every card — an organizing concept for the whole library, not a value-object and not economics.",
+        "Play Run Status": "The run's lifecycle values (submitted/succeeded/failed/unknown) — a status value of Play Run, not economics.",
+        "Review Level": "The review-composition value a run selects — a configuration value tied to Review Gate, not economics.",
+        "Slot Status": "The ruling values (needs_review/approved/skipped) on a Vision slot — a status value of Vision Slot, not economics.",
+        "Thread Status": "The thread's lifecycle values (open/answered/residual) — a status value of Thread, not economics."
+      },
+      insetNote: "Plane is flagged separately — it is not a lifecycle value at all but a Library organizing concept (an altitude-like axis: strategy / product / learning), already confirmed correct as named by ruling 2598b89e. It doesn't just leave Economy, it leaves \"card\" entirely once organizers get their own home.",
+      flag: "candidate eject → all 8 are altitude: value (lifecycle/mode value-objects), not real Economy. None of these are token cost, context window, or rate limit. This category reads as empty, not populated — its members belong elsewhere (mostly attached to their parent Entities as value-typed attributes; Plane is an organizer concept, not a card type at all).",
+      subgroups: [],
+      compare: {
+        "Claude Code": ["Context Window","Token cost","Rate limit"],
+        "Cursor": []
+      },
+      revealCount: 0,
+      revealNote: "(0 confirmed — 8 ejected)",
+      isEmpty: true
+    },
+    {
+      key: "domains",
+      name: "Domains",
+      brightness: "suspiciously flat",
+      def: "Specialization areas — named only if agents or work genuinely differ by subject-matter turf.",
+      note: "This room holds references OUT of Alexandria's product library to a sibling product's own library. Playmaker's Studio Library was moved here from Reference per the two-axis ruling (\"Reference → redistribute\"). William, the PMS agent, is moved here too, out of Roles — same logic: he's a role in the PMS library, not an instance of Alexandria's own AI-Colleague roster in the way Raven/Damien are.",
+      colors: { accent: "#9333ea", bg: "#f3e8ff", border: "#d8b4fe" },
+      readout: "2 confirmed — both are federation pointers, not native product nouns",
+      members: ["Playmaker's Studio Library","William"],
+      defs: {
+        "Playmaker's Studio Library": "The federation pointer to the Playmaker's Studio's own separate, sibling product library — a distinct product that will be spun out and keeps its own bounded library rather than living inside Alexandria's.",
+        "William": "The planned agent for Playmaker Studio — a reserved-but-unbuilt identity whose beat is the PMS product that Playmaker's Studio Library points at, not Alexandria's own agent roster."
+      },
+      subgroups: [],
+      compare: {
+        "Claude Code": ["usually undifferentiated; named only when agents specialize"],
+        "Cursor": []
+      },
+      revealCount: 2,
+      revealNote: "(2 confirmed)"
+    },
+    {
+      key: "rationale",
+      name: "Rationale / Research",
+      brightness: "owner-supplied, no exemplars",
+      def: "Rationale: the director's own stated reasoning, recorded as fact. Research: the meta-scaffolding the taxonomy itself is built from.",
+      note: "Both cards are moved here from Reference per the two-axis ruling (\"Reference → redistribute\": Director Ruling → Rationale; Atomic Card Category → Research/meta). The AI Colleague thesis — \"the job the product is hired to do\" — is explicitly NOT filed here. It is typed Concept today and is being retired from that type; the thesis itself moves to a Strategy-plane card the director will author, connecting down to Role - AI Colleague. Nothing in this room should restate that thesis.",
+      colors: { accent: "#52525b", bg: "#f4f4f5", border: "#d4d4d8" },
+      readout: "2 — 1 Rationale, 1 Research; the room's obvious headline card is deliberately absent",
+      // Given order, not alphabetical — Director Ruling (Rationale) then
+      // Atomic Card Category (Research) matches the file's own "1 Rationale,
+      // 1 Research" framing.
+      members: ["Director Ruling","Atomic Card Category"],
+      defs: {
+        "Director Ruling": "Owner-supplied rationale captured as a ledger fact — a ruling that stays live and pending until a Studio Operation capture cites it; parked prototyping machinery, not deleted.",
+        "Atomic Card Category": "The ten universal category buckets (Rationale, Research, Roles, Domains, Surfaces, Entities, Capabilities, Mechanisms, Patterns, Economy) that this whole taxonomy walk is auditing — Alexandria's meta-schema for product libraries, layered alongside (not in conflict with) the card format itself."
+      },
+      subgroups: [],
+      compare: { "Claude Code": [], "Cursor": [] },
+      revealCount: 2,
+      revealNote: "(2)"
+    }
+  ],
+
+  reveal: {
+    entitiesGrain: "Entities is overloaded at 34/73 (47%) because Component absorbed 18 cards that should never have been their own type.",
+    altitudeLens: [
+      { altitude: "pillar", text: "Alexandria Product Library, Playbook, Director, Viewer, AX CLI, Ledger (Mechanism), AI Colleague — the load-bearing few." },
+      { altitude: "context", text: "Canvas, Play, Project, the two non-Director instance Roles (Damien, Raven), Playmaker's Studio Library — framing nouns that hold other cards rather than acting themselves." },
+      { altitude: "aggregate", text: "Most core Entities (Atomic Card, Cards, Source*, Thread, Play Run, Basic Product Description, Session, Wake Subscription, Knowledge Bank Area) — composite root objects." },
+      { altitude: "component", text: "The bulk of the ejected Component cohort (13 of 18) plus a few Mechanisms/Entities acting as parts of a parent." },
+      { altitude: "value", text: "Every single Economy card (8/8, confirming the eject is category-wide) plus 5 of the 18 Component cards (Idempotency Key, Run Labels, Cursor, Match Rule, Viewer Route) — lifecycle-state and mode flags, not standalone things." },
+      { altitude: "capability", text: "The 4 Capability-typed cards plus most Mechanisms and Front-of-House Walk (Pattern) — capability as altitude and Capabilities as category describe the same DDD grain from two lenses." }
+    ],
+    reads: [
+      "<b>Economy is empty → confirmed.</b> Alexandria is a tool, not a marketplace — this family's known gap (Context Window / Token cost / Rate limit) shows up here as zero real members, exactly as predicted. The 8 mis-filed value-objects were never economics; they're lifecycle flags on Thread, Play Run, Trigger, and friends.",
+      "<b>Entities is overloaded at 34/73 (47%)</b> because Component absorbed 18 cards that should never have been their own type — once folded in at [grain: component], Entities is doing real double duty as both \"the graph's real nouns\" and \"every structural sub-part.\" Worth watching whether the parent/part distinction needs its own visual treatment later, but the type axis itself is intact.",
+      "<b>Reference dissolved as predicted</b> — all 3 members redistribute cleanly (Rationale, Research, Domains), confirming Reference was never a families category, just a junk drawer.",
+      "<b>Domains is real but currently one card</b> — Playmaker's Studio Library is a legitimate federation/domain-label, but Alexandria itself doesn't yet differentiate by subject-matter turf the way this family's \"suspiciously flat\" pattern predicts. Thin, not wrong.",
+      "<b>One untyped straggler surfaced</b>: Concept (AI Colleague) wasn't in the known-types list and needs a home — Rationale fits its content and altitude, but it's the one true ambiguity in this walk."
+    ]
+  },
+
+  decisions: [
+    {
+      q: "“AI Colleague” — a stray Concept, altitude: pillar",
+      context: "The founding thesis statement (“the job the product is hired to do, in the director's words”) currently sits untyped. Where does it belong?",
+      options: ["Rationale", "Strategy-plane thesis", "its own concept"]
+    },
+    {
+      q: "Playmaker's Studio Library",
+      context: "Currently type: Reference. Reads as a federation pointer to a sibling product's own library — not a Rationale statement, not a native Entity.",
+      options: ["Domains", "Entity — sibling library", "keep as Reference"]
+    },
+    {
+      q: "Entities is 47% of all cards (18 folded-in Components)",
+      context: "Component absorbed 18 structural parts that were never their own type. Is the [grain: component] tag enough, or does parent/part need its own view?",
+      options: ["fine — grain tag is enough", "give parent/part its own view later"]
+    }
+  ]
+};
+
+/* ===================== STATE ===================== */
+
+let currentChunk = 0;
+let compareState = {}; // key -> "Claude Code" | "Cursor"
+let lensOn = false;
+let lockClicked = false;
+let expandedSubgroups = {}; // expanderId -> bool, persists across chunk re-renders
+
+/* ===================== WALK RENDER ===================== */
+
+function renderChunk(idx) {
+  const cat = DATA.categories[idx];
+  if (!compareState[cat.key]) compareState[cat.key] = "Claude Code";
+  const activeExemplar = compareState[cat.key];
+
+  const c = cat.colors;
+
+  // members chips (confirmed -> stub -> deprecated, alphabetical within each band)
+  // Given order, not sortByStatus, for categories whose file/hierarchy order
+  // is intentional (Roles: hierarchy; Entities: file grouping; Systems:
+  // Canvas trails; Rationale: Rationale-then-Research framing). Rendered
+  // up front so a category with subgroups (Entities) can still append its
+  // parts-expander afterward instead of it being clobbered.
+  const GIVEN_ORDER_KEYS = ["roles", "entities", "systems", "rationale"];
+
+  let membersHtml = "";
+  if (cat.key === "economy") {
+    // All 8 render as a def-list with a forced "deprecated" treatment
+    // (ejectedDefs), regardless of each card's own STATUS_MAP entry — the
+    // file marks every one ejected in this room. Given order (already
+    // alphabetical in the source).
+    membersHtml += `<div class="def-list">` + cat.ejected.map(m => defRowHtml(m, c, cat.ejectedDefs[m], "deprecated")).join("") + `</div>`;
+  } else if (GIVEN_ORDER_KEYS.includes(cat.key)) {
+    membersHtml += `<div class="def-list">` + cat.members.map(m => defRowHtml(m, c, cat.defs[m])).join("") + `</div>`;
+  } else if (cat.groups && cat.groups.length) {
+    // grouped def-list: pillar-ordered headers, rows keep their given order
+    // (not re-sorted by status — the group is the primary structure here).
+    membersHtml += `<div class="def-list">` + cat.groups.map(g =>
+      defHeaderHtml(g.header) + g.rows.map(r => defRowHtml(r.name, c, r.def, r.status)).join("")
+    ).join("") + `</div>`;
+  } else if (cat.members && cat.members.length) {
+    membersHtml += cat.defs
+      ? `<div class="def-list">` + sortByStatus(cat.members).map(m => defRowHtml(m, c, cat.defs[m])).join("") + `</div>`
+      : `<div class="chip-row">` + sortByStatus(cat.members).map(m => chipHtml(m, c)).join("") + `</div>`;
+  }
+  if (cat.subgroups && cat.subgroups.length) {
+    cat.subgroups.forEach((sg, sgIdx) => {
+      const expanderId = `parts-expander-${cat.key}-${sgIdx}`;
+      const isOpen = !!expandedSubgroups[expanderId];
+      const sortedParts = sortByStatus(sg.members);
+      membersHtml += `
+        <div class="parts-expander">
+          <button class="parts-toggle" onclick="toggleSubgroup('${expanderId}')">
+            <span class="parts-caret">${isOpen ? "▾" : "▸"}</span> ${sg.members.length} parts (grain: component)
+          </button>
+          <div class="parts-body" style="display:${isOpen ? "block" : "none"};">
+            <div class="section-label" style="margin-top:0.9rem;">${escapeHtml(sg.label)}</div>
+            <div class="cat-maturity">${maturityReadout(sg.members)}</div>
+            <div class="chip-row">${sortedParts.map(m => chipHtml(m, c, sg.flag)).join("")}</div>
+            <div class="parts-note">Pieces that live inside the entities above — not their own type.</div>
+          </div>
+        </div>
+      `;
+    });
+  }
+  if (cat.contested && cat.contested.length) {
+    membersHtml += `<div class="chip-row">` + sortByStatus(cat.contested).map(m => chipHtml(m.name, c, m.note)).join("") + `</div>`;
+  }
+  if (cat.members && cat.members.length === 0 && !cat.ejected && !cat.contested) {
+    membersHtml += `<div class="chip-empty-note">none currently.</div>`;
+  }
+
+  // per-category maturity readout (standalone members; components subgroup folded into its own line above)
+  const maturityText = cat.readout
+    ? cat.readout
+    : cat.groups && cat.groups.length
+    ? maturityReadoutFromRows(cat.groups.flatMap(g => g.rows))
+    : maturityReadout(
+        (cat.contested && cat.contested.length)
+          ? cat.contested.map(m => m.name)
+          : (cat.members || [])
+      );
+  const maturityHtml = maturityText ? `<div class="cat-maturity">${maturityText}</div>` : "";
+
+  // category note (short muted line under the def)
+  const noteHtml = cat.note ? `<p class="cat-note">${escapeHtml(cat.note)}</p>` : "";
+
+  // flag inset (category-level)
+  let flagHtml = "";
+  if (cat.flag) {
+    flagHtml = `<div class="flag-inset" style="border-left-color:${c.accent}; background:${c.bg}22;">${escapeHtml(cat.flag)}</div>`;
+  }
+  if (cat.coverageGap) {
+    flagHtml += `<div class="flag-inset" style="border-left-color:${c.accent}; background:${c.bg}22;">${escapeHtml(cat.coverageGap)}</div>`;
+  }
+  if (cat.insetNote) {
+    flagHtml += `<div class="flag-inset quiet-inset">${escapeHtml(cat.insetNote)}</div>`;
+  }
+
+  // compare block
+  const exemplars = Object.keys(cat.compare);
+  const compareTabsHtml = exemplars.map(ex =>
+    `<button class="compare-tab ${ex === activeExemplar ? "active" : ""}" onclick="setCompare('${cat.key}','${ex}')">${ex}</button>`
+  ).join("");
+
+  const compareNouns = cat.compare[activeExemplar] || [];
+  const compareChipsHtml = compareNouns.length
+    ? compareNouns.map(n => `<span class="ghost-chip">${escapeHtml(n)}</span>`).join("")
+    : `<span class="ghost-empty">— none —</span>`;
+
+  const html = `
+    <div class="chunk-card">
+      <div class="chunk-head">
+        <div class="chunk-name" style="color:${c.accent};">${escapeHtml(cat.name)}</div>
+        <div class="brightness-wrap">
+          <div class="brightness-pill" style="background:${c.bg}; color:${c.accent}; border-color:${c.border};" title="${BRIGHTNESS_TOOLTIP}">${escapeHtml(cat.brightness)}</div>
+        </div>
+      </div>
+      <div class="brightness-gloss" title="${BRIGHTNESS_TOOLTIP}">${BRIGHTNESS_GLOSS}</div>
+      <p class="chunk-def">${escapeHtml(cat.def)}</p>
+      ${noteHtml}
+
+      <div class="section-label">Your nouns</div>
+      ${maturityHtml}
+      ${membersHtml}
+      ${flagHtml}
+
+      <div class="compare-block">
+        <div class="section-label">Compare — how others name this</div>
+        <div class="compare-tabs">${compareTabsHtml}</div>
+        <div class="chip-row">${compareChipsHtml}</div>
+      </div>
+
+      <div class="actions-row">
+        <span class="action-pill primary">✓ fits</span>
+        <span class="action-pill">rename</span>
+        <span class="action-pill">mark empty</span>
+        <span class="action-pill">eject</span>
+        <span class="action-pill">flag → thread</span>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("chunk-container").innerHTML = html;
+  document.getElementById("progress-pill").textContent = `${idx + 1} / ${DATA.categories.length}`;
+  document.getElementById("prev-btn").disabled = idx === 0;
+
+  const isLast = idx === DATA.categories.length - 1;
+  document.getElementById("next-btn").style.display = isLast ? "none" : "inline-block";
+  document.getElementById("reveal-cta").classList.toggle("show", isLast);
+
+  document.getElementById("bottom-nav-center").innerHTML =
+    `${escapeHtml(cat.name)}<span class="bottom-nav-count">${idx + 1} / ${DATA.categories.length}</span>`;
+
+  renderDotNav(idx);
+}
+
+function renderDotNav(idx) {
+  const dotNav = document.getElementById("dot-nav");
+  dotNav.innerHTML = DATA.categories.map((cat, i) => {
+    const cc = cat.colors;
+    const isCurrent = i === idx;
+    return `<button
+      class="${isCurrent ? "current" : ""}"
+      style="border-color:${cc.accent}; background:${isCurrent ? cc.accent : "transparent"};"
+      title="${escapeAttr(cat.name)}"
+      onclick="goToChunk(${i})"
+    ></button>`;
+  }).join("");
+}
+
+function goToChunk(idx) {
+  if (idx < 0 || idx >= DATA.categories.length) return;
+  currentChunk = idx;
+  renderChunk(currentChunk);
+}
+
+function chipHtml(name, colors, flagNote, isUntyped) {
+  const flagged = !!flagNote;
+  const title = flagNote ? ` title="${escapeAttr(flagNote)}"` : "";
+  const st = statusOf(name);
+  const statusClass = st !== "confirmed" ? ` status-${st}` : "";
+  return `<span class="chip${flagged ? " flagged" : ""}${statusClass}" style="background:${colors.bg}; border-color:${colors.border}; color:${darken(colors.accent)};"${title}><span class="chip-label">${escapeHtml(name)}</span>${statusTagHtml(st)}</span>`;
+}
+
+// Definition-list row: noun name (existing status treatment) + one-line def, muted.
+// Used when a category's members carry `def` values (Surfaces; also the
+// Capabilities grouped def-list, which passes an explicit `statusOverride`
+// for proposed/not-yet-carded rows that aren't in STATUS_MAP at all).
+function defRowHtml(name, colors, def, statusOverride) {
+  const st = statusOverride || statusOf(name);
+  const statusClass = st !== "confirmed" ? ` status-${st}` : "";
+  const title = def ? ` title="${escapeAttr(def)}"` : "";
+  return `<div class="def-row${statusClass}"${title}>
+    <span class="def-row-name" style="color:${darken(colors.accent)};"><span class="chip-label">${escapeHtml(name)}</span>${statusTagHtml(st)}</span>
+    ${def ? `<span class="def-row-text">${escapeHtml(def)}</span>` : ""}
+  </div>`;
+}
+
+// Muted uppercase sub-header row between groups in a grouped def-list
+// (currently: Capabilities' three pillar groups).
+function defHeaderHtml(label) {
+  return `<div class="def-header">${escapeHtml(label)}</div>`;
+}
+
+function darken(hex) {
+  return hex; // accent colors are already legible on their tinted bg
+}
+
+/* ---------- status treatment helpers ---------- */
+
+// Sort a member list confirmed -> stub -> deprecated, alphabetical within each band.
+// Accepts either plain name strings or {name, ...} objects.
+function sortByStatus(list, nameOf) {
+  const getName = nameOf || (x => (typeof x === "string" ? x : x.name));
+  return [...list].sort((a, b) => {
+    const na = getName(a), nb = getName(b);
+    const ra = STATUS_RANK[statusOf(na)];
+    const rb = STATUS_RANK[statusOf(nb)];
+    if (ra !== rb) return ra - rb;
+    return na.localeCompare(nb);
+  });
+}
+
+function statusTagHtml(st) {
+  if (st === "confirmed") return "";
+  if (st === "proposed") return `<span class="status-tag tag-proposed">＋ PROPOSED</span>`;
+  return `<span class="status-tag">${STATUS_LABEL[st]}</span>`;
+}
+
+// Compact "N confirmed · N stub · N deprecated" readout, zero counts omitted.
+function maturityReadout(names) {
+  if (!names || !names.length) return "";
+  const counts = { confirmed: 0, stub: 0, proposed: 0, deprecated: 0 };
+  names.forEach(n => counts[statusOf(n)]++);
+  return STATUS_ORDER
+    .filter(st => counts[st] > 0)
+    .map(st => `${counts[st]} ${st}`)
+    .join(" · ");
+}
+
+// Same readout, but for grouped def-list rows carrying an explicit `status`
+// (proposed rows aren't real cards, so they can't be looked up via statusOf).
+function maturityReadoutFromRows(rows) {
+  if (!rows || !rows.length) return "";
+  const counts = { confirmed: 0, stub: 0, proposed: 0, deprecated: 0 };
+  rows.forEach(r => counts[r.status || statusOf(r.name)]++);
+  return STATUS_ORDER
+    .filter(st => counts[st] > 0)
+    .map(st => `${counts[st]} ${st}`)
+    .join(" · ");
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function escapeAttr(str) {
+  return String(str).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
+function setCompare(key, exemplar) {
+  compareState[key] = exemplar;
+  renderChunk(currentChunk);
+}
+
+function toggleSubgroup(expanderId, rerenderReveal) {
+  expandedSubgroups[expanderId] = !expandedSubgroups[expanderId];
+  if (rerenderReveal) {
+    renderReveal();
+  } else {
+    renderChunk(currentChunk);
+  }
+}
+
+function nextChunk() {
+  if (currentChunk < DATA.categories.length - 1) {
+    currentChunk++;
+    renderChunk(currentChunk);
+  }
+}
+
+function prevChunk() {
+  if (currentChunk > 0) {
+    currentChunk--;
+    renderChunk(currentChunk);
+  }
+}
+
+document.addEventListener("keydown", (e) => {
+  const walkActive = document.getElementById("walk-mode").classList.contains("active");
+  if (!walkActive) return;
+  if (e.key === "ArrowRight") nextChunk();
+  if (e.key === "ArrowLeft") prevChunk();
+});
+
+/* ===================== MODE TOGGLE ===================== */
+
+function setMode(mode) {
+  document.getElementById("walk-mode").classList.toggle("active", mode === "walk");
+  document.getElementById("reveal-mode").classList.toggle("active", mode === "reveal");
+  document.getElementById("tab-walk").classList.toggle("active", mode === "walk");
+  document.getElementById("tab-reveal").classList.toggle("active", mode === "reveal");
+  document.getElementById("bottom-nav-bar").classList.toggle("show", mode === "walk");
+  if (mode === "reveal") renderReveal();
+}
+
+/* ===================== REVEAL RENDER ===================== */
+
+// Explicit per-noun altitude map, derived from the reveal's altitude-lens prose.
+const ALTITUDE_MAP = {
+  "Alexandria Product Library": "pillar",
+  "Playbook": "pillar",
+  "Director": "pillar",
+  "Viewer": "pillar",
+  "AX CLI": "pillar",
+  "Ledger": "pillar",
+  "AI Colleague": "pillar",
+
+  "Canvas": "context",
+  "Play": "context",
+  "Project": "context",
+  "Damien": "context",
+  "Raven": "context",
+  "Playmaker's Studio Library": "context",
+
+  "Atomic Card": "aggregate",
+  "Cards": "aggregate",
+  "Source": "aggregate",
+  "Source of Truth": "aggregate",
+  "Source Item": "aggregate",
+  "Source Conversion": "aggregate",
+  "Frozen Source of Truth": "aggregate",
+  "Thread": "aggregate",
+  "Play Run": "aggregate",
+  "Basic Product Description": "aggregate",
+  "Session": "aggregate",
+  "Wake Subscription": "aggregate",
+  "Knowledge Bank Area": "aggregate",
+
+  "Idempotency Key": "value",
+  "Run Labels": "value",
+  "Cursor": "value",
+  "Match Rule": "value",
+  "Viewer Route": "value",
+  "Catalog Schema Mode": "value",
+  "Event Type": "value",
+  "Pending Trigger Kind": "value",
+  "Plane": "value",
+  "Play Run Status": "value",
+  "Review Level": "value",
+  "Slot Status": "value",
+  "Thread Status": "value",
+
+  "Alexandria Config": "component",
+  "Bundle Patch": "component",
+  "Canvas Step": "component",
+  "Coin": "component",
+  "Connection Lease": "component",
+  "Human Input Request": "component",
+  "Move": "component",
+  "Play Skill": "component",
+  "Provenance Record": "component",
+  "Section": "component",
+  "Vision Slot": "component",
+  "Walk Turn": "component",
+  "Workflow Package": "component",
+
+  "Canvas Review": "capability",
+  "Source Assessment": "capability",
+  "Studio Operation": "capability",
+  "Wake": "capability",
+  "AX Runtime Server": "capability",
+  "Confirmation Gate": "capability",
+  "Draft Overlay": "capability",
+  "Fabro Orchestrator": "capability",
+  "Human Gate": "capability",
+  "Monitor": "capability",
+  "Review Gate": "capability",
+  "State Store": "capability",
+  "Trigger": "capability",
+  "Front-of-House Walk": "capability",
+};
+
+function renderReveal() {
+  const grid = document.getElementById("reveal-grid");
+  grid.innerHTML = DATA.categories.map(cat => categoryCardHtml(cat)).join("");
+
+  const reads = document.getElementById("reads-list");
+  reads.innerHTML = DATA.reveal.reads.map(r => `<div class="read-item">${r}</div>`).join("");
+
+  const decisions = document.getElementById("decisions-grid");
+  decisions.innerHTML = DATA.decisions.map((d, i) => decisionCardHtml(d, i)).join("");
+
+  applyLensToChips();
+  renderLegend();
+}
+
+function categoryCardHtml(cat) {
+  const c = cat.colors;
+
+  if (cat.isEmpty) {
+    // Given order (already alphabetical) — all 8 forced to a "deprecated"
+    // look regardless of STATUS_MAP, matching the walk card's def-list.
+    return `
+      <div class="category-card ghost">
+        <div class="ghost-card-count">0</div>
+        <div class="ghost-card-label">a tool, not a marketplace</div>
+        <div class="section-label" style="margin-top:1rem;">Ejected (8) — rehomed as value attributes</div>
+        <div class="cat-card-maturity">${escapeHtml(cat.readout || "")}</div>
+        <div class="mini-chip-row">${cat.ejected.map(m => miniChipHtml(m, c, cat.ejectedDefs[m], "deprecated")).join("")}</div>
+      </div>
+    `;
+  }
+
+  let bodyHtml = "";
+
+  if (cat.key === "roles" || cat.key === "entities" || cat.key === "systems" || cat.key === "rationale") {
+    // Given order, not sortByStatus — see the walk-mode members comment.
+    bodyHtml = `<div class="mini-chip-row">${cat.members.map(m => miniChipHtml(m, c, cat.defs[m])).join("")}</div>`;
+  } else if (cat.members && cat.members.length && typeof cat.members[0] === "string") {
+    bodyHtml += `<div class="mini-chip-row">${sortByStatus(cat.members).map(m => miniChipHtml(m, c, cat.defs ? cat.defs[m] : undefined)).join("")}</div>`;
+  }
+
+  if (cat.subgroups && cat.subgroups.length) {
+    cat.subgroups.forEach((sg, sgIdx) => {
+      const expanderId = `revealParts-${cat.key}-${sgIdx}`;
+      const isOpen = !!expandedSubgroups[expanderId];
+      const sortedParts = sortByStatus(sg.members);
+      bodyHtml += `
+        <div class="parts-expander">
+          <button class="parts-toggle" onclick="toggleSubgroup('${expanderId}', true)">
+            <span class="parts-caret">${isOpen ? "▾" : "▸"}</span> ${sg.members.length} parts (grain: component)
+          </button>
+          <div class="parts-body" style="display:${isOpen ? "block" : "none"};">
+            <div class="parts-note">Pieces that live inside the entities above — not their own type.</div>
+            <div class="cat-card-maturity">${maturityReadout(sg.members)}</div>
+            <div class="mini-chip-row">${sortedParts.map(m => miniChipHtml(m, c, sg.flag)).join("")}</div>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  if (cat.contested && cat.contested.length) {
+    bodyHtml += `<div class="cat-chip-group"><div class="cat-chip-group-label">contested</div>
+      <div class="mini-chip-row">${sortByStatus(cat.contested).map(m => miniChipHtml(m.name, c, m.note)).join("")}</div></div>`;
+  }
+
+  if (!bodyHtml) {
+    bodyHtml = `<div class="chip-empty-note">none.</div>`;
+  }
+
+  // per-category maturity readout (standalone members; components subgroup folded into its own line above)
+  const maturityNames = (cat.contested && cat.contested.length)
+    ? cat.contested.map(m => m.name)
+    : (cat.members || []);
+  const maturityText = cat.readout || maturityReadout(maturityNames);
+  const maturityHtml = maturityText ? `<div class="cat-card-maturity">${escapeHtml(maturityText)}</div>` : "";
+
+  return `
+    <div class="category-card">
+      <div class="cat-card-head" style="border-bottom-color:${c.accent};">
+        <div class="cat-card-name" style="color:${c.accent};">${escapeHtml(cat.name)}</div>
+        <div class="cat-card-count">${escapeHtml(cat.revealNote)}</div>
+      </div>
+      <p class="cat-card-def">${escapeHtml(cat.def)}</p>
+      ${maturityHtml}
+      ${bodyHtml}
+    </div>
+  `;
+}
+
+function miniChipHtml(name, colors, flagNote, statusOverride) {
+  const title = flagNote ? ` title="${escapeAttr(flagNote)}"` : "";
+  const altitude = ALTITUDE_MAP[name];
+  const st = statusOverride || statusOf(name);
+  const statusClass = st !== "confirmed" ? ` status-${st}` : "";
+  return `<span class="mini-chip lens-chip${statusClass}" data-name="${escapeAttr(name)}" data-altitude="${altitude || ""}" data-cat-bg="${colors.bg}" data-cat-border="${colors.border}" data-cat-accent="${colors.accent}" style="background:${colors.bg}; border-color:${colors.border}; color:${colors.accent};"${title}><span class="chip-label">${escapeHtml(name)}</span>${statusTagHtml(st)}</span>`;
+}
+
+function decisionCardHtml(d, i) {
+  return `
+    <div class="decision-card">
+      <div class="decision-num">DECISION ${i + 1}</div>
+      <div class="decision-q">${escapeHtml(d.q)}</div>
+      <p class="decision-context">${escapeHtml(d.context)}</p>
+      <div class="decision-options" data-decision="${i}">
+        ${d.options.map((opt, j) => `<button class="option-btn" onclick="selectOption(${i},${j})">${escapeHtml(opt)}</button>`).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function selectOption(decisionIdx, optIdx) {
+  const container = document.querySelector(`.decision-options[data-decision="${decisionIdx}"]`);
+  if (!container) return;
+  [...container.children].forEach((btn, i) => btn.classList.toggle("selected", i === optIdx));
+}
+
+function toggleLens() {
+  lensOn = document.getElementById("lens-switch").checked;
+  applyLensToChips();
+  document.getElementById("lens-legend").classList.toggle("show", lensOn);
+}
+
+function applyLensToChips() {
+  document.querySelectorAll(".lens-chip").forEach(chip => {
+    const altitude = chip.getAttribute("data-altitude");
+    if (lensOn && altitude && ALTITUDE_COLORS[altitude]) {
+      const color = ALTITUDE_COLORS[altitude];
+      chip.style.background = hexToRgba(color, 0.14);
+      chip.style.borderColor = hexToRgba(color, 0.55);
+      chip.style.color = color;
+    } else {
+      // restore this chip's original category coloring
+      chip.style.background = chip.getAttribute("data-cat-bg");
+      chip.style.borderColor = chip.getAttribute("data-cat-border");
+      chip.style.color = chip.getAttribute("data-cat-accent");
+    }
+  });
+}
+
+function renderLegend() {
+  const legend = document.getElementById("lens-legend");
+  legend.innerHTML = Object.entries(ALTITUDE_COLORS).map(([name, color]) =>
+    `<div class="legend-item"><span class="legend-swatch" style="background:${color};"></span>${name}</div>`
+  ).join("");
+  legend.classList.toggle("show", lensOn);
+}
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function toggleLock() {
+  lockClicked = !lockClicked;
+  const btn = document.getElementById("lock-btn");
+  btn.classList.toggle("locked", lockClicked);
+  btn.textContent = lockClicked ? "Locked ✓" : "Lock the type axis ✓";
+}
+
+/* ===================== INIT ===================== */
+
+renderChunk(0);
+</script>
+</body>
+</html>

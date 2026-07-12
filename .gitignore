@@ -1,0 +1,45 @@
+.eval-runs/
+.claude/
+.agents/skills/
+.tmp/
+.var/
+CONVERSATION_COMPLETE.sentinel
+.DS_Store
+.obsidian/
+node_modules/
+dist/
+.astro/
+bin/.compiled/
+.release-artifacts/
+
+# Python bytecode caches. studio/tools/check.sh runs `python3 -m py_compile`
+# on tools/play-resync.py, writing studio/tools/__pycache__/*.pyc. Left
+# untracked and unignored it dirties the tree on every Studio data check, which
+# stalled Fabro ax-feature runs (validate/review/verify never saw a clean tree).
+__pycache__/
+*.pyc
+
+# Alexandria Next local runtime state (ax2 init)
+.alexandria-next/
+.ax2-runtime/
+docs/alexandria/.runtime/
+docs/alexandria/.ax-runtime/
+# The Ledger (docs/alexandria/ledger/events.jsonl) IS tracked: it is the
+# project's shared, append-only history — never transient, local-only, or
+# user-specific (director ruling 2026-07-08; the previous ignore rule here
+# was a bug). Branches merge it with the union driver in .gitattributes.
+# Per-machine runtime state (cursors, connections) lives under
+# docs/alexandria/.ax-runtime/ and stays ignored above.
+
+.playwright-mcp/
+
+# Embedded-factory per-run node outputs (not tracked)
+studio/plays/*/runtime/
+studio/plays/*/fixtures/*/runtime/
+# Generated Studio Operations disposition projection (refreshed from the ledger).
+studio/inheritance/dispositions.md
+.alexandria/*
+!.alexandria/alexandria-config.json
+
+# Editor swap files
+.*.sw?

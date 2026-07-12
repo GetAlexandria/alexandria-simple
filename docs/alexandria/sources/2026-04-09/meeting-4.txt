@@ -1,0 +1,576 @@
+Had a pretty big influence on how I think about triggers and measurement of, like, when we're looking at stuff, what are we really saying?
+
+And so I'm going to give you a couple, like, choices, the most simple. Do you want to take a picture and I erase and then walk this through?
+
+Because answering this question, this trigger question, trigger on maintenance, also gets down to trigger on anything.
+
+Like, how do we, from a principled perspective, what do we believe about triggers?
+
+And then there's the, I want to make this point, that guy who said that, people might have stoned him out of the conversation if a positionally powerful person in the community had shouted.
+
+But because a positionally powerful person thought it was great, everybody adopted it.
+
+And that is oftentimes how decisions get made in communities.
+
+Hippos or whatever.
+
+So we can talk about triggers from dumb to articulate.
+
+The dumbest trigger would be, hey, I've already mentioned this.
+
+Every night, can you just run a check?
+
+Yep.
+
+That's like, and that would, I mean, like, that's not crazy.
+
+And let's just assume that when something gets added, that downstream sink is, like, solid and, you know.
+
+Yeah, so you're assuming something changed between last night and tonight.
+
+Unless you didn't finish the work the night before, unless you did, like, I'm going to do one sweep, but I'm not going to just keep going.
+
+I'm not going to go in a loop forever.
+
+I'm going to just do one sweep, make one round of changes, and I'm going to sleep.
+
+In my idiot player blackjack for 50 ways of directly answering your question honestly about when have I run this, I usually run this after three updates.
+
+If I've run three updates, my spider sense tells me, well, it's not even my spider sense.
+
+What's your prompt and or slash command and or, like, how do you ask for it in that particular case?
+
+Like, what do you say?
+
+Things have changed, Conan. Check things out.
+
+Like, what are your, like.
+
+I type in library health check.
+
+Okay, that's what I was, okay, cool.
+
+That's what I was expecting, but I didn't know if you.
+
+Thank you for asking.
+
+Yeah.
+
+I think it's great.
+
+Yeah.
+
+I, I love these bottom-up conversations.
+
+I can, I, I'm kind of.
+
+Because I can picture, like, a button that you click in the UI, right?
+
+Yeah.
+
+It says, like, check the health of the library.
+
+Totally.
+
+And, like, you haven't clicked this button in 24 hours.
+
+You should probably click it.
+
+Or three things have changed.
+
+Right, right.
+
+You might need to click the health button.
+
+Imagine, imagine there's a button.
+
+When is the button red?
+
+Yeah.
+
+Like, there's a red button to hit.
+
+Why is it red?
+
+Yeah.
+
+So.
+
+It's been at least 24 hours.
+
+And, or, three things have changed.
+
+You have, you probably should press the button.
+
+You probably should.
+
+So.
+
+Anyway.
+
+Three plus updates.
+
+But, like, okay, that's still pretty blunt.
+
+Like, if I were thinking about this like a professional gambler, and I were, and, like, my life depended on it.
+
+I was really getting into it.
+
+Like, what am I really saying with three updates?
+
+Well, one of the things I'm really saying is, like, plus 20 cards?
+
+Maybe, like, plus 50 card updates?
+
+Like, to some extent, what I'm saying could also be number of agent handoffs?
+
+Like, to some extent, where do problems happen?
+
+Like, where are there issues?
+
+To some extent, I'm actually talking about run time.
+
+And in run time, because now that I'm running multi-agent orchestrated, I'm even boiling down somewhat to how many tokens got burned.
+
+Like, to some extent, the longer the token burned, and then to some extent, I'm talking about tokens burned on production and editing relative to token to software used to nitpick.
+
+And right now, this is pretty fucking weak.
+
+Yeah, and you can't even tell the difference between the two.
+
+So, like, sometimes I've been, like, haven't run it in a while.
+
+Probably should run it.
+
+Sometimes I've been, like, you know what?
+
+I've updated a bunch of stuff.
+
+I bet I broke something.
+
+Sometimes I'll be, like, hey, this is before Raven.
+
+Conan, like, how's life build work?
+
+And he's, like, oh, it's a cloud of vodka.
+
+And I'm, like, what the fuck?
+
+And he's, like, yeah, yeah, yeah, this card says so.
+
+And then I'll be, like, Conan, how did that happen?
+
+That card is so wrong.
+
+Do an audit.
+
+What the fuck, man?
+
+And he'll be, like, Saturday 1 a.m. on Saturday night.
+
+And he'll basically be, like, oh, when we were running this play, it wasn't Sam.
+
+It was just a regular agent.
+
+And they couldn't find what they wanted, and they hallucinated it.
+
+Sorry.
+
+So another, like, the third trigger for me in real life, not giving the answer I wish I was giving you, is I found something that was broken.
+
+And I'm, like, whoa, what else is broken?
+
+And it's, like, oh, yeah, the splash zone on that hallucination is incredible.
+
+Like, every part of the library is wrong.
+
+And so much vodka.
+
+So much vodka.
+
+Another one, are we still recording?
+
+Another one is I look at the index.
+
+And I'm, like, Conan, what the fuck?
+
+There's this whole category that shouldn't even exist.
+
+Like, I remember looking at it one time and seeing a category called time.
+
+And I was, like, you've got to be fucking kidding me, time?
+
+And it's, like, yeah, you know, like, you want the past and the present, right, Danvers?
+
+So I'm, like, in the cards?
+
+Not its own card category?
+
+Oh, how did this happen?
+
+And so part of my, like, prompt updates and agent updates and play updates have been these things happening and being, like, Conan, I never want that to happen again.
+
+What are we fixing?
+
+Oh, we can do the play differently.
+
+This is confusing.
+
+You can do that differently.
+
+Okay, cool.
+
+And then all the while, I'm, like, God, when is Jessica going to get here and software this shit?
+
+Nuts!
+
+But, and so, then it's just like, okay, I run maintenance, then I run maintenance again, and then I run maintenance again, and if I run it three times, the library's probably pretty good.
+
+And it's like, goodness, I just kick it, and I kick it.
+
+Like, I do the nighttime thing, like, back when I was working on LifeBuilder, which I haven't touched in ages.
+
+I'm just like, okay, it's 8 o'clock.
+
+I'll, like, kick my agents to update the library.
+
+Less clouds of vodka and time cards.
+
+God.
+
+So, so, anyway, that blackjack analogy of, I think it's really helpful to boil down to, and I don't even know the answer.
+
+I don't understand agents enough to know what this should be, but I know that this is, like, not great.
+
+And it's not principled, but it is useful.
+
+And that this is, like, obviously, the cloud of vodka and the time cards, like, that is, when do I 100% do a health check?
+
+When there's clearly a big problem, and I'm seeing performance issues.
+
+No, I mean, there's similar problems.
+
+There's similar questions.
+
+This is similar to the retailer problem of you run a, you have a, sorry, not a factory, a warehouse.
+
+You have a warehouse, or you have a store.
+
+You have, like, you had to go evaluate your inventory and see if your inventory actually matches what you have in the computer.
+
+How often do you do that?
+
+Well, a whole bunch of ways you could think about that.
+
+Like, you've been measuring shrink over time in your store, and so giving an estimated amount of shrink, then your inventory's probably off by X amount, and, you know, all sorts of stuff.
+
+Or in the warehouse setting of, like, well, we just got three large shipments.
+
+Whenever we get particularly large shipments, inventory can shift really, you know, significantly, because a larger shipment takes longer to unpack, and we have to hire part-time staff, and part-time staff is less familiar with the warehouse, and they're more likely to stick something in the wrong spot.
+
+Blah, blah, blah, blah, blah.
+
+So there's, like, yeah, there's heuristics, but there's also just, like, it feels wrong.
+
+Like, I'm looking at the spine, and I notice a category that's wrong.
+
+Press the big red button.
+
+I came across a car called Cloud of Vodka.
+
+Press the big red button.
+
+I don't know.
+
+There's been a lot of agent handoffs.
+
+I just feel like things are not quite right, and, you know, hell, man, it's been so, we've burned so many tokens in the last few weeks, plus the big red button.
+
+So, yeah.
+
+It's interesting.
+
+So we'll get to the heuristics, like the programmatic heuristics at some point, probably, but until then, it's just fine to be like, all right, just run this after some arbitrary number of changes or whatever.
+
+Totally fine.
+
+Yeah, and, like, we just said after three updates, and updates are, like, update these cards.
+
+Make these new cards.
+
+Right, well, we'll quantify it in terms of plays, right?
+
+It'll be three plus plays from this category, from this set of plays.
+
+If any of these plays are run, yeah, across all these plays, once three of them are run, we need to do a health check.
+
+Yeah, it strikes me that I was thinking about, here's an anti-pattern for you.
+
+Back when illicit was called aught, before it spun out illicit, they did all this work around factored cognition, which is, yeah, like, how do you break down problems into smaller context-free problems that individual agents can work on, right?
+
+It's like, hey, this sounds relevant to what we're doing, right?
+
+And, yeah, they have some interesting, like, papers on this, a taxonomy of approaches to capability implication, set of tasks for evaluating.
+
+So here's evals for scalable problem solving.
+
+Network of workspaces, a user-friendly approach to capability implication.
+
+Sounds like, if you just squint, like, federated libraries.
+
+So, and there's all sorts of really interesting stuff in here, like meta-execution, internal dialogue.
+
+Yeah, and this is back from, like, 2018, maybe?
+
+Wow.
+
+Yeah, wow is right.
+
+This is how they got funded, right?
+
+They did all this stuff in, like, 2018, and then things went big.
+
+I guess some of this is newer.
+
+No, this is, like, their new, this is their summary stuff that they used to get funded.
+
+Their earliest work, yeah, 2018.
+
+Factored cognition, they wrote in May of 2018.
+
+Amazing stuff.
+
+And they built some cool demos around it.
+
+Patchwork, mosaic, you know, yeah, different collaborative programming experiments that put factored cognition into place.
+
+Anyway, this is how they got monies.
+
+I can tell you from experience that, like, nothing in, very few things in Elicit today are actually based on this.
+
+Right?
+
+It's, like, we're in, like, a new world, and, yeah, there's not, it comes up all the time in terms of internal conversations.
+
+Like, we should be thinking about this from a factored cognition approach.
+
+How would we think about factored cognition?
+
+But where the rubber meets the road, like, it doesn't land all the way down into the actual guts of the product, which is too bad.
+
+Because there's some really cool ideas here, and this was one of the reasons that I was, like, excited to initially work with them.
+
+I read all this stuff, and I was like, hell yeah.
+
+Yeah, I'm going to learn a lot from these guys.
+
+I'm going to learn a ton from these guys.
+
+And, yeah, so, like, the anti-pattern here is if you squint and you read through this stuff, it sounds like you're describing Solomon.
+
+Like, looking at Solomon, like, we use the word epistemic all the time internally and all that kind of stuff.
+
+It's like, yeah, okay.
+
+And you're, like, trying to break out the concepts in, you know, this material, and you're trying to, you know, assess whether the concepts are, like, meaningful.
+
+Like, what is truth here?
+
+What should we, you know, how do we evaluate the epistemic status of these different?
+
+How do we break things into claims?
+
+And all of those kind of stuff.
+
+Those are really, I don't know that I have a point here, other than the fact that, like, this can be a very scary rabbit hole, potentially.
+
+And also, like, let's not do this.
+
+Like, let's not, like, claim that we have a library that has epistemic status.
+
+Like, let's say the quiet part.
+
+Let's not say the quiet part out loud.
+
+Like, if people, like, dig into how Solomon works, it's like, great, yeah, there's some cool ideas in here, and that kind of stuff.
+
+But, like, leading with that as we're factoring cognition and, like, and categorizing claims according to their epistemic status.
+
+If that turns out to be useful, hell yeah, let's do it.
+
+But also, my goodness, it can come across as you sounding really smart and then not actually doing anything practical with it at all.
+
+And then all your practical stuff is actually very blasé and very sort of close to the mean.
+
+Yeah, yeah.
+
+Interesting.
+
+Yeah, no, and definitely where I landed with, you know, my Solomon design.
+
+Yeah.
+
+The whole thing of defaulting to parking and just his job, like, Solomon disorder.
+
+Like, you know, maybe you shouldn't do that.
+
+And I can understand why you would make it be obvious, right?
+
+Of, like, when I was looking through there, I was like, yeah, these are hard things.
+
+These are hard things.
+
+Yeah.
+
+Of, like, breaking things into claims and all that kind of stuff.
+
+Yeah.
+
+But it really was just sort of basically, like, having some, we need a screen or a process to keep junk from making it into the library.
+
+Yes.
+
+And we need a screen or a process for surfacing and resolving disagreements.
+
+Absolutely, yeah.
+
+And so that's not Conan's job.
+
+Conan, going back to Dewey Decimal, Conan defines and enforces the Dewey Decimal system, just like me.
+
+Like, and so this is not his job.
+
+Right.
+
+And Raven is your, like, chatty friend who's talking product.
+
+She's not.
+
+Yeah.
+
+Solomon is meant to be this, like, it's funny because the way that we did the drawing for Conan, the librarian and the artist, how I think about Solomon, just this, like, chill, neutral, like.
+
+Yeah.
+
+Like, and again, the failure case is drunk Uncle Sal, but him just sort of being like, okay, hey, these two things don't agree.
+
+Like, I can't send him the library.
+
+No, it's totally from Alyssa.
+
+Who?
+
+The, one of the founders.
+
+Yeah, like, that's, like, if you met him, that is absolutely his persona.
+
+Like, autistically focused on, like, right, wrong.
+
+Claim, like, you know, almost like robotic.
+
+Yeah.
+
+In the sense of, like, well, this claim opposes this claim and that kind of stuff.
+
+But that's kind of what you want.
+
+Like, I think it's actually a feature, not a bug.
+
+I think the fact that Solomon passes the sniff test of, like, being close to this stuff, I actually think is really cool and really good.
+
+And this stuff can help us make him better.
+
+Exactly.
+
+Exactly.
+
+And it would be a fun conversation to have with Andreas sometime because, like, he actually does know this stuff really well.
+
+He hasn't been able to translate that into a transformational product.
+
+But I got to admit, that's probably really effing hard.
+
+Yeah.
+
+No, dude.
+
+Totally.
+
+So, like,
+
+And I never would have even made Solomon.
+
+I mean, you remember our Thunderquake email about, like, hey, Opus 4 or 6 came out and the whole world changed.
+
+Only after that did I even consider making a Solomon.
+
+Yeah.
+
+It wasn't even on the table.
+
+The original thing was going to be okay.
+
+You have one human.
+
+They own the library.
+
+Everybody goes through that.
+
+Yep.
+
+And then I was just like, man, that person is getting, like, the insurance stuff is never going to make it in and the CEO stuff is always going to make it in.
+
+Like, man.
+
+And then it's like, gosh, so every Slack conversation, like, oh, no.
+
+Yeah.
+
+So.
+
+Yeah.
+
+That's cool.
+
+Okay.
+
+So.
+
+So that's what I mean by placeholder.
+
+And that's what I mean by, it's not that I'm down on Solomon.
+
+I just.
+
+He's unknown.
+
+Nope.
+
+Unknown.
+
+Unknown.
+
+Untested.
+
+Like.
+
+And.
+
+Yeah.
+
+Not even.
+
+Not even.
+
+Even us just running him a couple times.
+
+But.
+
+Yeah.
+
+Yeah.
+
+That'll tell us a lot.
+
+But anyway, in a world without Solomon, that very first step is Conan on the quick epistemic check.
+

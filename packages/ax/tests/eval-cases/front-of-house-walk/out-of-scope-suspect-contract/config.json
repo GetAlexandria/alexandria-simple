@@ -1,0 +1,49 @@
+{
+  "caseId": "front-of-house-walk/out-of-scope-suspect-contract",
+  "description": "Front-of-House skill treats out-of-scope suspects as ordinary adopt/drop rulings without section reads or card invention.",
+  "checks": [
+    {
+      "description": "Raven skill has a dedicated suspect movement and keeps it on the normal answer loop.",
+      "file": "packages/alexandria-plugin/skills/front-of-house-walk/SKILL.md",
+      "contains": [
+        "### Out-of-Scope Suspects",
+        "`kind: \"out_of_scope_suspect\"`",
+        "ordinary agenda items, not a new gate type",
+        "mine, include next sweep",
+        "not mine, drop",
+        "normal `ax raven answer` loop",
+        "empty `cardUpdates`",
+        "inclusion happens in the next Back-of-House sweep"
+      ]
+    },
+    {
+      "description": "Raven skill keeps suspect items out of section comprehension.",
+      "file": "packages/alexandria-plugin/skills/front-of-house-walk/SKILL.md",
+      "contains": [
+        "`agendaItem.kind` is not `hot_spot` or `out_of_scope_suspect`",
+        "`kind: \"hot_spot\"` or `kind: \"out_of_scope_suspect\"` item",
+        "Do not present any `hot_spot` or `out_of_scope_suspect` item during Section Comprehension",
+        "Do not present the suspect as a section read",
+        "the cards were intentionally not emitted"
+      ]
+    },
+    {
+      "description": "Patch-planning prompt writes an empty resolved patch for adopted/dropped suspect rulings unless a real emitted card update is safe.",
+      "file": "packages/alexandria-plugin/workflows/front-of-house-walk/prompts/plan_bundle_patch.md",
+      "contains": [
+        "kind: \"out_of_scope_suspect\"",
+        "banked disposition for the next Back-of-House sweep",
+        "Write a valid resolved patch with an empty `cardUpdates` array",
+        "Do not create card updates for the absent pile"
+      ]
+    },
+    {
+      "description": "Workflow prose stages generic agenda items instead of only Stage-2 questions or hot spots.",
+      "file": "packages/alexandria-plugin/workflows/front-of-house-walk/legs.json",
+      "contains": [
+        "Pick the next agenda item not yet answered or residualed",
+        "later wakes mediate one agenda item"
+      ]
+    }
+  ]
+}

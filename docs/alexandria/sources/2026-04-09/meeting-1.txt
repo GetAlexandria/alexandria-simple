@@ -1,0 +1,697 @@
+All right, the library. How does this relate to all the other things?
+
+Okay. So, what are our game pieces for the library? There's a couple of game pieces that we have that we need to figure out how they fit together with other things.
+
+So, one is a CLI, which the way that you can think of the CLI is like packaging up tools. The thing that I haven't even showed you yet because it's so bad is the WebViewer.
+
+I did not provide nearly enough direction, design direction about what this should be. So, it just was like, "Aah." It made something that is completely useless. Like, it shows things about the library. It's like, you have 2 cards. Two, nine. It's like, great. It was bad.
+
+We need to do some work on that, but that is definitely something that we will need is basically like a viewer for the library. And this is more like, there's a bunch of different pieces of this. There's like cards, plans, that kind of stuff.
+
+And I'm distinguishing that from what I'll call agent play up here or corporate wars or whatever you want to call it. Like, what are the agents actually doing at this exact moment, which is a visualization layer.
+
+There is the agents themselves that actually use the tools. And then, there are - there's a really interesting thing of like, how do we visualize this?
+
+Like, the library, the way the library is built up is, there are principles behind it, right? And then, that isn't exactly the agents. Like, you could, the agents are there to do, to run specific plays based on the principles and on the cards and plans.
+
+So, I don't know what to, what would you call this other than principles? It's certainly a component of the library. In fact, you could imagine building a library with all of these things without strong principles and just letting the agents sort of like, figure it out.
+
+They just sort of like, YOLO a structure. Yeah, I mean, so, I, are you sort of referring to like, the plays or the motions that are the rules, if you will? The rules. The rules. The rules.
+
+Yeah, that would be another way of saying it, which is distinct from the tools, because the tools exist to operate and enforce and lint and all of those kind of things.
+
+The rules, but the rules are, you can imagine having one without the other, right? You can imagine having tools that all they do is like, check that the markdown is formatted correctly.
+
+And the other, and the way that agent play treats it, is the playbook of basically like, it's those, you know, when this happens, do this. Do it this way. When that happens, do this. Do it that way.
+
+And so, like, you can, there's agents, the agents have skills, and what the playbook calls for, and orchestration is spot on, is saying in certain situations, you do this skill, then you do that skill, then you do this skill, then you do that skill.
+
+And it's, it's modeled very much after franchises. The library is like a McDonald's franchise, in terms of like, you could probably use robots, but like, hey, like, check to make sure this is cooked.
+
+Like, like, you know, agent, a combination of agents and software is probably better than, is definitely better than just agents.
+
+And I think better than just software. But tool using agents following plays for managing, curating, call it managing the library, kind of behind the scenes, like they are, they are running their library franchise.
+
+And why is it a franchise? Because in one organization, with Federation, we could have 12 libraries. If we're successful, we could have 100,000 companies with one to 12 libraries.
+
+And so every library is a franchise. And the power of a franchise is when McDonald's realizes that a step they have is leading to undercooked burgers, they update the playbook in every franchise in the world.
+
+The million of McDonald's franchises around the globe now do a better job of how they flip that burger. And so having, having this, having the franchise plan laid out in every library for how you do it, and then instrumenting and learning from every library to improve the plan is our data mode.
+
+It is our excellence. In addition to your hiring best practices, like what are the best people to hire for McDonald's? Like, gosh, college degrees are actually a problem.
+
+Generally speaking, they leave. We need someone with just a high school degree, but no high school degree in general is. So it's like knowing the right models to use for the, like, this is the best agent to use for Raven.
+
+Here's a Raven mod that people do when they want like a, and you know, and then, and then the other thing we don't have that was coming out loud and clear when I was talking about our, our risks is settings.
+
+We don't have settings. So settings, settings are actually like, okay, here's your playbook. Like, so I'm switching metaphors now, but on the football team, like there's certain plays that I'm never going to be on the field for it.
+
+Those don't need to be in my playbook. Right. So there's, there's like running your library on token saver. And then there's running your library on like max and having their, and it's different combinations of models, plays, and then orchestration timelines.
+
+Like if I'm running my, if the library is just like, whatever, who cares, or I only do my runs at night. If I only do my runs at night, then the night shift library should look like, okay, from like 10 PM to noon, midnight, we update the library.
+
+And then from midnight to 5 AM we print. And I just saved all this money by doing it then. And, and, you know, token, so there's like night shift, but then there's like token saver where it's like, okay, like we can't really afford much of a library.
+
+So this is, this is like, I really, you know, like I have a supply chain issue. And so all we're going to do is burgers and fries. We're going to do in and out burger model with McDonald's.
+
+Like, so when you only do burger and fries, like if you're going to do anything with your library, you just, you have to at least do this. You have to at least update the library based on the software that you build.
+
+And that's it. All the documentation, all the meetings, all that stuff, like we'll save tokens that way. So, so like our, our plays, our orchestration, and our rules are like very primitive right now.
+
+They're like in the early stages of this, because I haven't had any software. I've been doing everything with agents and it's really unreliable.
+
+Agents are bad orchestrators. And so the plays, sometimes it's not just that they don't run the play. It's that they, they pull the player.
+
+They use a different player to run the play. And so like, actually why we're having this conversation, because how we solve that problem using, and things that are, how, how much of that problem we own and how much of that problem we say, we're delegating the solution to this one platform or these three platforms.
+
+Like we have to design the API between them such that we can run plays reliably on someone else's orchestrator, or we have to own it ourselves.
+
+Yeah, and a lot of it is going to come down to, I think, I think what drives what we own and what we don't own is actually the business model piece.
+
+Exactly. What must we own to own what data? And so if we have to own the orchestration process to own the data, it's partially what we own, it's partially business model, and it's partially the constraints that we have as a team of like, back to what you said, of like having a, an ecosystem that we can reliably resource.
+
+Going back to, can we reliably resource all these things? Of course we can't. We're not training models, right? We're not hosting and deploying those things.
+
+So there's certain things that are like definitively out, but there are some things that we can say. There's weird stuff, like no one, no one owns, owns storage, but there's a world where like, we actually kind of want to own storage, or we want to be renting and reselling storage, I could be.
+
+Yeah. But like, my rant is, it is a franchise system. Yeah. Like from an organizational design perspective, we built a library franchise system.
+
+Dude, it is, that's super powerful, because I had thought, let me start, keep it going for just a second.
+
+I've been thinking of the opinions that we have as our opinions that we need to like, that would be good, because our opinions would be in there, and you'd be starting with something, and you'd have some structure, and things would like work, because we've like eval against our opinions, that kind of stuff.
+
+But the fact that like, you could be running versions of our opinions, and get the new versions, and get the new updates, and all of that kind of stuff, like that becomes an incredibly, it's procedural knowledge codified in such a way that we can roll it out across all franchising libraries, which is nuts.
+
+And where I think is, we can actually like, sell franchises. Here's the team you're getting. Like, here's the agents that come with your franchise.
+
+Here's the rules that come with your franchise. Like, wouldn't it be interesting, I mean, this is, now I'm just being goofy, but like, imagine it's like buying a booster pack, where it's like, you know, what are their names going to be?
+
+What are their values going to be? Like, you know, oh man, I'm going to upgrade this agent with that agent. Like, imagine if we had a talent marketplace.
+
+Imagine if we had playbooks. Like, you're getting the basic talent, and the basic playbooks, but you can buy a booster pack.
+
+I mean, not literally, right? Because no one wants to run that. Dude, that's the way WordPress works. You buy themes on WordPress, and you buy plugins.
+
+Yeah. And so, no, making this pluginable and themable to where, I mean, I think that's where Paperclip wants to go, right?
+
+Like, that's their company's protocol, like company specification, where you can say, these are the agents I have, this is the way they work together, which is another thing of like, do we want to try to own that, or do you just want to leverage what they've done?
+
+Yeah. Or are we another thing? Like, how we relate to all of that. Yeah. I think it comes back to like, minimum valuable slice that we build now, and then there's this really interesting thing of like, if we're building for acquisition, we're building this minimum valuable slice S, and it has these things around it, like S prime and S double prime, that we're not actually going to do.
+
+But if we architect S such that we could do those things, then we get acquired for this by being able to point to these and say, hey, actually the bigger value is here.
+
+Yeah. We've done this. Which, which interestingly is the two-pagers saying, we're the operating system.
+
+Exactly, exactly. I want to make it like super tangible. Yeah, yeah, yeah.
+
+Now shift S, people are using S. Yes, yes, yes.
+
+So Ah, hardness. So
+
+Okay. There's a couple of other things that are outside.
+
+So let's talk about, I think you're, I think we're pretty well acquainted with what's inside.
+
+Let's talk about the outside things real quick. The obvious one is the model itself.
+
+The interesting thing about the model being outside is that you absolutely could do this on self-hosted, like local models, right?
+
+Like this, there is a local first play here where like, I don't want to do the big labs. I'm going to download Alexandria and I'm going to use, I'm going to run GLM 5.1 locally on my Mac studio.
+
+And I'm going to just run my whole business on this self-contained thing. And that's why there's also opportunities for like government, military, like all of the things where, or, you know, Lockheed Martin could use this because it doesn't lock you into buying tokens from the big labs.
+
+The orchestrator we've talked a little bit about, but it's the fuzziest thing because no one knows the shape of it yet. And everyone's trying.
+
+And so how much of orchestration do we own? What do we even mean by it? And also it's inside too.
+
+Orchestration is inside. The plays that are being orchestrated are for sure inside. And we're describing what should happen.
+
+What is the thing that enforces that they happen? That's the part that is probably outside. Mainly because, yeah, I think this is the thing that could potentially be inside.
+
+Like Paperclip seems to be trying to do most of the things that we're doing with also an orchestrator. But I, my hypothesis is that you either boil down to doing what we're doing or being an orchestrator and not both.
+
+Because they're, they're separate problems. They're orthogonal problems that, and they're both complex enough that you need to, you're, you're either going to be the teamwork layer that enforces how team, like enables teamwork to happen operationally.
+
+Or you're going to be the teamwork layer that encodes the teamwork that is happening and, and does self-improvement on the teamwork.
+
+Like you're either the plays or the machine that runs the plays. And I think Paperclip's going to end up being the machine that runs the play.
+
+And we will be the plays. So version control is just worth mentioning that like most of this stuff lives in version control so that you can improve it over time.
+
+Right now we're just leaning on Git. We probably need to do something other than Git, but we ain't gonna own that.
+
+Factory, what I mean by that is like all the production facilities that we plug into.
+
+The reason I put a question mark is because we might actually want to bring some of those inside as plays that run on the orchestrator, right?
+
+Like Zelda, you could probably just have the Zelda factory inside of Alexandria.
+
+You probably don't want to have an entire software factory inside of Alexandria though because that's too much, too much complexity.
+
+I don't know. So there's like a, there's like work orders that you ship outside of Alexandria to like a, a neighboring province or something.
+
+But then there's things that you can do inside the village.
+
+Interesting.
+
+Sources. Oh yeah, sources.
+
+So this is like Notion, your product analytics, like Mixpanel.
+
+This is all the data that goes into our, into the library, right?
+
+And we're not going to own that, but we want to, we absolutely want to consume it.
+
+Like this is a core part of what we do.
+
+So it's really good that that's outside.
+
+And then the knowledge data layer, we've already talked about this a little bit as well.
+
+We're using like knowledge graph, wiki style markdown, but this could be anything.
+
+And I am almost damn sure we don't want to own this.
+
+There are so many competitors in this space and there's so many wrong answers.
+
+And I'm pretty sure that there's a degree of, it doesn't really matter.
+
+That there are like 10% better and 10% worse.
+
+Right. I deeply don't understand, but if I had to throw a dart, if I was trying to aim my dart and this, which one of these is the most commoditizable?
+
+Bingo.
+
+Cause it's the closest thing to a database and we've been doing databases for like 60 years.
+
+Chances are there's not going to be anything amazing there.
+
+And this is where, this is also where rag lives in vector databases and all that kind of stuff.
+
+Like we've been, this is the most mature, this thing has been through multiple product cycles within AI alone, much less the history of computing.
+
+So it's like the most mature and the most undifferentiated.
+
+Harness is where a lot of interesting stuff is happening right now.
+
+So Cloud Code, Codex Pi, this sits on top of the model and takes your tools and your agent definitions and routes them to the model.
+
+So the easiest way for you to think about this tactically is Cloud Code requires a certain structure for your agent files and your skills files and works best with your skills written a certain way because Cloud Code is the thing that's picking it up and feeding it to a model.
+
+And it's not so much about Opus versus Sonic versus Haiku.
+
+Those have different performance characteristics that are a little bit different, but the way you write your skill, the way you write your agent file matters for Cloud Code, if that's your harness.
+
+Codex, totally different setup, totally different skill expectations, not totally different skill expectations.
+
+Actually, the skill expectations are the thing that's most normalized right now, but the way that you manage agents, absolutely different.
+
+Pi is different again.
+
+There's another one called OpenCode.
+
+There's another called like Hermes.
+
+Actually, I think Hermes uses, I'm not sure if Hermes has it, but I don't know.
+
+Harness. Container or sandbox, this basically just means where is the harness running that runs the model, that's like communicating with the model.
+
+And so for your case, this is like your local machine is the container.
+
+And that what we're doing right now is Alexandria runs on your local box.
+
+We don't own that.
+
+We're not shipping that.
+
+But some companies are absolutely shipping this.
+
+This is an entire product category right now that is like crazy competitive.
+
+There's a new container or sandbox company jumping, like launching on a daily basis right now because it's the cloud compute of like agents basically.
+
+And yeah, you can bet that all the cloud players are going to have a solution in this space too.
+
+Again, a thing we don't want to own.
+
+Are there things that I'm missing down here that are outside?
+
+And just for context, I do have a meeting in 30 minutes that I'm going to at least say hi and bye to the Elicit team and say, good luck guys.
+
+I've given you what we need.
+
+So yeah, we have about 30 minutes for this conversation, just to set context, and then I'll need to take a little break.
+
+Feel free to do more than say hi and bye.
+
+But yeah, outside.
+
+What's outside?
+
+Do the insides make sense?
+
+Am I missing a category?
+
+Oh, I am missing some categories, actually.
+
+The cross library data layer.
+
+This is what you were talking about in the in the one pager as the thing that allows us to learn across all.
+
+And the reason I didn't think about it is because I was thinking about only a single library.
+
+And this is the thing that exists across all of them.
+
+Really important one.
+
+And then the other one would be hosting.
+
+I'll just leave it in hosting.
+
+But the kind of things that we would be hosting here would be agents plus skills.
+
+Now, yeah.
+
+So this
+
+And then probably like CLI versions and that kind of stuff.
+
+And then maybe there's like a yeah.
+
+There's another hosting aspect, which is we could host the WebViewer slash AgentPlay.
+
+You can't host AgentPlay because it depends on what container you're running on.
+
+So here's the weird thing about AgentPlay.
+
+AgentPlay, in order to know what's actually happening in your library, has to be able to inspect the harness because the harness is what is sitting on top of the model, because the harness is what is sitting on top of the model, sending actual model calls to like the model getting back those tool calls.
+
+And it can say, it can like report on current status.
+
+I just called this tool call.
+
+I've got these three sub-agents that are doing the thing, that kind of stuff.
+
+And so AgentPlay, in order to be effective, has got to see what's happening in the harness.
+
+The harness has to be running somewhere on some container or sandbox and firing off things to some model somewhere.
+
+So these three container, sandbox and model, all go together and AgentPlay, in order to be effective, has to sit on top of that.
+
+The WebViewer does not.
+
+The WebViewer is just showing you outputs.
+
+It's like once the thing gets made, checked into version control, then WebViewer like updates.
+
+It's like yeah, here's what's currently in your library.
+
+Here's your current set of agents.
+
+Here's your current set of plays.
+
+Here's your current settings.
+
+And here's the last time anything changed.
+
+Here's the status of all the plans that I'm aware of and that kind of thing.
+
+And then as all of the, as the harness is running one of these plays or plays via the orchestrator, the way the orchestrator sits above the harness.
+
+So another way of looking at this, this is, if you ignore this for a second, this is the orchestration layer.
+
+And then this A is a combination of, which order do I put it in?
+
+Container plus harness plus model.
+
+Plus some tools.
+
+So plus agent definition plus tools.
+
+And those things are being coordinated via this orchestration layer.
+
+So I'm working, I'm still figuring, everyone is still figuring out what this looks like, by the way.
+
+Like no one has a good diagram for this.
+
+I've been collecting people's diagrams, which has been fun because they're all contradictory to one another.
+
+But yeah, the biggest concern for me about agent play as a product category is it depends on the harness container and model.
+
+Like where is the execution happening?
+
+And if we need it to be real time and not, and we need it to like exist in some place where the whole organization can see all of the workers that are happening across the whole org, that means it can't be running on individuals' boxes, right?
+
+It has to be running on a hosted container somewhere.
+
+And that means, even if we don't own the containers, that means that we have to like provision it and all this kind of stuff.
+
+And that becomes like a whole nother hosting category here.
+
+And like agent play gets super complicated.
+
+If it's just like, well, I'm just running this via the CLI on my local Mac and I just want to know what's happening on my local Mac, then agent plays like, and that's why I was saying agent plays great as a debugger, because it's like, what's happening right here, right now?
+
+But like once there's five of us inside of our organization, all running Alexandria on our local machines at the same time, agent play breaks.
+
+It can't actually know what's going on on all those machines.
+
+Does that make sense?
+
+Yeah, I didn't have that mental model, but now that I do, it's helpful and it gives me, it creates some fun for solving.
+
+And I'll say this, that if all agent play did was show me my team that I have to manage in real time, that is, I think, well over 80% of its value.
+
+I agree.
+
+For now, for now, once we get into like highly federated situations, you're going to need agent play for the whole organization.
+
+Sure.
+
+Having that as the better version of my 11 open tabs would be a revelation.
+
+Also, what I've been dying to do is just do this, like,
+
+Oh, I did some work on that today, and this morning, and I found an open source tool that would allow us to do this really easily.
+
+Do what really easily?
+
+Get dollars spent per, and a lot of different ways you can slice it.
+
+And holy cow, it's so cool.
+
+Yeah, so like, if it's, if you mean by that, here's how much, it's a meter, yeah, yeah, yeah, there's so, so like, which, you know, goes back into deep thinking, like, because you can't manage what you can't measure, like agents are, agents are utility as much as anything right now.
+
+And just like, oh, and so then you can put another dollar sign of like, agent play is something you pay for. Agent play is something where we say, agent play can be used with just Claude.
+
+Sorry, like, like, agent play is almost a catty corner business. It's a, or it's a line item on our website. Like agent play is premium. It is not part of the open source experience. Maybe you get a little bit of it, like, like you get a little sample of it.
+
+A flip of that, potentially, is that agent play is the thing we give away. It's a loss leader, like a lead you to the library. That could be another way of seeing it. It's like, okay, great. So everyone, regardless of whether you're using Alexandria or not. Everyone wants to see that.
+
+I want to see what's going on, where you're spending money across the different agents on your thing. Install agent play and find out. If you want to step up and use agents more sophisticatedly, download Alexandria, pay for our hosting service.
+
+And we'll actually, on our hosting service, we'll track all of your agent play expenses. Which comes back to the agents and agent play being Alexandria branded team members.
+
+Yeah. Right. So like, so that's, that's the whole branding experience that we haven't even gotten into. So fun. Of like, all the agents are, are ancient Greek art. Like we move away from watercolors.
+
+We go for the vibe of ancient Greek art. Dude, I love the, the old oil painting style. I'm even thinking of like, the cracked canvas. I'm even thinking of like the drawings on pottery.
+
+Oh yeah. You know what I mean? Like, like, uh, yeah. So lots of fun, uh, Vibey, uh, branding work to do here. Um, which I, I actually think matters.
+
+It's the only, nobody has it. Nobody has good brands in the space right now because they're fucking Steve Yegi. Yeah. Well, even, even Yegi is a brand.
+
+No, I know. Right? He's not, it's not good. He's actually, he's actually on the far end of branding. Yes, exactly. And that's what, I think there's a, there's a, a branding thing that exists in this world
+
+Because you can build so fast and it's hard to tell these things apart. And so you're going, you're going a lot of times on vibes. I remember talking about, I was, I was sharing this, the poor fucking 25 year old Mike Keller.
+
+I was like, dude, when you were a baby and the internet was out, no one knew what the business models were. And like, until CPM existed, no one knew what to do.
+
+Like it was just this, like there needed to be business model innovations and, and, but like one of the very few things people are reeling on now is if I can make a product in a week, brands really going to matter.
+
+And so like, yeah, this super matters. Um, yeah. So then the question becomes, what's the minimum valuable slice that we're going to build?
+
+I do have a diagram of the, of these things showing how they relate and then getting specific. So not just saying we have CLI tools, but like, these are the tools.
+
+These are the plays. Here's how the current set of plays that we're aware of the current set of tools that we have. And then the system that they live inside of,
+
+And then what you use the web viewer for of like, it more like the JTBD within each system and how all of those systems play together. That becomes like a really powerful diagram
+
+That will allow us to print basically. Um, so these are the generic concepts, but we need to get down to the instances. You have Raven and Raven does this and Solomon lives over here.
+
+Sources come in here through Solomon, which does this, which, and then here's Solomon's plays, hit these plays, touch these agents like that.
+
+Um, but I feel like that's probably like a TL draw. Maybe there's a first version that's like I mean, that's like shit is like, yeah, no, that I love it.
+
+No. So there's a, there's like, um, there's like a play map, uh, because it's a combination of basically I, I had a whole thing of, and I, I don't even know that I'm sold on the answer for,
+
+For behind the scenes agents. One of my thoughts was what if plays was just a chain of skills and there were no names. Hmm.
+
+And I was convinced in our getting back and forth with the cloud that we should stick with names, um, partially just because it makes it easier to think about managing them and updating them
+
+And communicating them in a UI. Like this play is happening. It's very similar to how we're doing a knowledge graph, but that the book spine really matters,
+
+But the folders really matter. Like the folders really matter to the humans. And I think the agent names really matter to humans.
+
+Um, that, that it's, it makes it so much easier to conceive of what's going on and manage it. But like the agents themselves in many of these cases, not Raven,
+
+But behind the scenes, behind the scenes, the agent themselves are similar to the folders. Like what really matters is the skills.
+
+And some plays are just one agent doing their skills and some plays involve a lot of handoffs. But even when an agent is doing a chain of skills inside of themselves,
+
+There's handoffs. There's not that much difference, maybe barely any between handing off between skills inside of an agent versus, you know,
+
+The agent quote unquote sitting next to them. And that was part of what I was seeing. Um, just in my very preliminary debugger is like,
+
+Oh yeah. For when I think of a play, it's like Jimmy passes to John, John runs forward, James tackles them.
+
+But a play could be like, Jimmy passes to himself, Jimmy runs, Jimmy tackles himself. Like one, two, three, all happens on top of Jimmy in this.
+
+And I'm like, that's not visually interesting. Fascinating. Like my very, very first iteration of the agent play.
+
+I'm like, Oh, that's confusing. That's not, that's not visually clear or interesting. Wow. I hadn't thought of that.
+
+Um, so, and yeah, like getting more and more actually building the visual things and playing with them, because that's the hardest thing for me to fast forward in my imagination
+
+Is, is why I was like, I'm going to use my tokens on agent play. I'm going to make corporate wars, like whatever it takes to be actually playing with visual interfaces,
+
+That part I can't use my imagination for as well. Um, so anyway, um, you're right. Like you just basically said,
+
+I'll simplify it. Maintaining, I want to be able to maintain our playbook as a coverage map.
+
+Like there's, it's, it's almost like freaking cell phone towers. Like, does the library have the appropriate coverage, depth and breadth of, of the jobs to be done
+
+By the agents and like how, and it's similar. Man, it's so similar to freaking cell phones because of all of a sudden we're in an organization
+
+That's making way more documentation than we ever dreamed of. They have a documentation factory and they're producing a hundred pages an hour.
+
+Whatever our standard setting is, even for like prank would never have taken into account the level of play coverage we would need for turning those into cards
+
+And then curating the library. Right. Or maybe they have the other one is the other case there that we don't have, may not have coverage for
+
+Is what if they have so much historical information that it would just blow up the library from a, from a complexity and size perspective,
+
+Like do we know how to effectively triage that down? Yeah, there's an interesting, there's also an interesting thing of when we think about the map of all the plays,
+
+Being able to visualize which ones have evals for what cases of like, yeah, you can run this play, but this play only runs,
+
+It really only works for these types of inputs. These are the ones we've evaled for. We have not evaled for this, this, this, this, this, this,
+
+Like here's all the missing evals. Like being able to see on a visual map. It's another layer of coverage. It's another layer of coverage.
+
+It's like, yeah, we don't cover that. Sorry, we don't cover that case. And what's, what's cool.
+
+That gets down to this cross library data layer learning piece of like if we can dynamically be pulling in data from all these libraries
+
+And then building a, an eval, especially like a missing eval of like this part's missing, this part's missing.
+
+People are using it like this. They're holding it like that. We need to eval for that.
+
+Like, oh my goodness. Well, what's, what's great about what you're saying and where we're landing and, and this is a way that is so very, very different
+
+Than we're just making a context library for our weird ass lifebuilder product is, is like in terms of what do we own,
+
+That is what we own. That is what you pay us for. This is the thing.
+
+And just like we don't want to be in the business, probably it's interesting because if, so from a dart throwing perspective,
+
+People making factories would potentially be smart to get into libraries.
+
+And I could see it if we had funding and a bigger team being actually reasonable to go full stack with a factory.
+
+That if I had to throw a dart at the thing that I would want in on, it's the factory.
+
+Why? For the, for the very reason your demo looks like it was selling this instead of this.
+
+That if we can control and tune the wow, like we know this is, we know. Hopefully this is the important part.
+
+But even if it is, it's Intel inside. You need that really fast running computer to be like, holy shit.
+
+And so like Apple has both. And some of our full stack competitors like ONA and Augment Labs or Augment Code,
+
+They do have a wink at a library solution because they understand that's important.
+
+And they're, and they own the factory. They're focusing primarily on the factory,
+
+But they know they need this context layer. But they don't have, they don't have a agent teamwork layer maintaining the context layer.
+
+Like that's the, that's where that enables your reading, your rebrain of it's at the top of the, of the two pager is so good.
+
+I'm like, yeah, this is the orchestrated teamwork layer. Yeah, it's good.
+
+So like, it's, it's interesting. And, and maybe we whiteboard this. What do we own a hundred percent for sure?
+
+I think a hundred percent for sure. If you're buying something from us, what would we never outsource, right?
+
+Like, I don't think we would never outsource the plays and agents, the whole point of this.
+
+So, and, and here's why, here's where I think it's explosive, where it goes well past hooking into a software factory.
+
+We own the plays and the agents for running the library, running plays and agents to run the library enables people to run plays and agents in their companies.
+
+And where the data layer gets like unbelievably valuable is that we have the best data layer for the agents people use as employees,
+
+Like where we have gold standard tests to say, okay, are you hiring the right AI agent?
+
+We can help come to Alexandria. Yeah, no, this made it, this all made it really simple.
+
+It's this, it's this trifecta. We own the agents, the plays and the cross library data layer about the agents to place.
+
+And if we just build everything around, well, in order to use agents with plays, you need an orchestrator
+
+And we don't care what that orchestrator is. So we're just going to say, like, we support these three out of the box.
+
+You get these three. If you want to customize your own orchestrator, go for it.
+
+You need a CLI in order to do this, just as like a developer experience thing.
+
+So we'll have a CLI and we'll give you a web viewer because you probably want to like view things and not like that kind of stuff.
+
+But like the web viewer isn't the important part. Like, in fact, we're fine with you.
+
+If you just want to use obsidian, you don't even have to install our web viewer.
+
+Like it's not that special. Agent play is cool in the sense that like it gives you like this visual experience.
+
+But even this, it's almost like it lets you see the value of the agents in plays.
+
+But the real value is in the are these agents doing the right thing? Do we know?
+
+And then are they coordinating with each other? And then are we capturing that that value?
+
+And so then if you were thinking of the minimal slice that we want to build is we need to get
+
+We need to get people agents in plays on their in their system.
+
+We need to capture data about it so that we can show that we can even if we're not using it.
+
+It's like the minimal slice is like, let's just make sure we're gathering it.
+
+And then we're like improving on this piece. And so showing that like we're continually upgrading your agents in plays.
+
+We're capturing data about it. So that means probably like emails, ish, blah, blah, blah, blah.
+
+Then that's probably the minimal slice. And we add other things around it to make this experience better.
+
+But they're all multipliers as opposed to as opposed to like core business value.
+
+Like WebViewer is a multiplier. CLI, just a multiplier. Agent play, just a multiplier.
+
+And the other the other piece that may go along with this is like packs or franchises or whatever.
+
+Because that leans on that demonstrates our ability to know what is good.
+
+Bundle it up and get it in people's hands. Yeah.
+
+And all this other stuff stays outside for now. It's pretty simple, really.
+
+Yeah. And so I actually I want to pick I want to pick up where you were just talking, right?
+
+So there's what we 100 percent own. Right. Those things.
+
+And then the next piece, this comes back to your line for your factory situation.
+
+Like, OK, where where is DIY easier than renting?
+
+And like where where what's the next level?
+
+Like if that's level alpha. Yeah. What's level beta?
+
+And so just as a just as a like, yeah, that's a good one.
+
+Like what would be the next thing you would build? Assume that we built and deployed that and we were using it.
+
+We're cooking. Then where would you go next? Where would you go?
+
+Where's S prime? This is S. Yeah.
+
+And so you have thoughts?
+
+Well, I have areas of curiosity, right?
+
+Because part of it is part of it is like where you get your most edge and where would we need to get our most edge at scale?
+
+And certainly this idea of and I don't know how much it's implied in here or not,
+
+But funnily enough, going back to the knowledge data layer and just thinking about context management and context briefings
+
+And slums and all that other stuff, that is a like a piece of well, OK, I'll go back to S.
+
+If we own S, what are our jobs to be done?
+
+If we own agents, plays, orchestration and the cross library data layer, we own roughly worker agents, employee agents,
+
+Agent employees, OK? Agent employees run on Alexandria are better, cheaper, faster.
+
+We're in agent staffing work. Yeah.
+
+We're really, really coming back to next LX now, really leaning into Peter's Aiken.
+
+We are we're in agent staffing work where you build and hire agents from us.
+
+Or it's so funny, one of the things I was so slight aside,
+
+But I think it's Germaine Keller sends me his. He's like, hey, here's here's auto me.
+
+It's like two files, like a four page long skill file with all these conditionals
+
+And then like a knowledge file. And I just run a quick analysis on it
+
+And it says what I'm expecting, which is like it's a really good separation of concerns, great architecture.
+
+I'm like, hold on, look deeper.
+
+And it's like, oh, yeah, the two files disagree with each other all the time
+
+Because his knowledge is processing his processes, processing his knowledge, talks about the process
+
+And they don't 100 percent align.
+
+So an agent probably wouldn't know what to do.
+
+And so I'm like, and also the skill, the one big giant skill
+
+Is here's how to do sales calls and here's how to do emails.
+
+One skill. So, so like he and millions of non-technical people like him and me
+
+Are making their own agents right now and they don't even know.
+
+Like he asked me to give it a spin and I can just look at how he built it
+
+And very politely be like, I give it a spin if you like, I don't know exactly how you want to slice this up,
+
+But definitely just have a skill be like, it could just be email and sales
+
+And even sales. It looks like those are three skills.
+
+So like, basically, no matter how big the AI revolution goes,
+
+Mike is probably not going to be the guy to be building and maintaining his team.
+
+Like you need fucking technicians. You need evals.
+
+You'd like, like cost uptime.
+
+Like, like, think about this.
+
+Think about like fast forward into the future and really think about where we're going here.
+
+If agents are utilities and we're an agent staffing agency, right?
+
+We're like, Hey, your agent, like got the outcome you wanted 70% of the time,
+
+But bad news. They, they did it the way you wanted them to do it 20% of the time.
+
+And so by our estimate, now you may remember us as the guys who AI-ified the Kentucky Derby.
+
+Okay. We AI-ified the fucking Kentucky Derby.
+
+Okay. So we know a thing or two about the odds and our odds say next month, 52% accuracy
+
+Because... Oh crap. I gotta go.
+
+It's my call. It's 1245.
+
+This is so good. Dude, you've got me. You've got...
+
+

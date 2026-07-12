@@ -1,0 +1,20 @@
+name: Deployment or Use-Case Request
+description: Describe a deployment scenario or use case that Alexandria should support better.
+title: "[Deployment]: "
+labels:
+  - deployment
+body:
+  - type: textarea
+    id: scenario
+    attributes:
+      label: Deployment or use case
+      description: Describe the target environment and what Alexandria needs to do there.
+    validations:
+      required: true
+  - type: textarea
+    id: blockers
+    attributes:
+      label: Current blockers
+      description: What prevents Alexandria from working well there today?
+    validations:
+      required: true

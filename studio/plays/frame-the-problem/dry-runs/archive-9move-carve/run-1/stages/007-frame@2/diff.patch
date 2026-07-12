@@ -1,0 +1,14 @@
+diff --git a/runtime/draft-brief.md b/runtime/draft-brief.md
+index 24cb62b..9fcdd7e 100644
+--- a/runtime/draft-brief.md
++++ b/runtime/draft-brief.md
+@@ -29,7 +29,8 @@ So stuff just never makes it in.
+ - `opinion` (high conviction)
+ 
+ ```text
+-Half my best source material dies in tabs.
++Half my best source
++material dies in tabs.
+ ```
+ 
+ - `specific-past`

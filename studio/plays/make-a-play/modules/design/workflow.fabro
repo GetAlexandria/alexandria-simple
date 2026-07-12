@@ -1,0 +1,58 @@
+// DERIVED RENDERING — projected from make-a-play brief.md §4.
+digraph MakeAPlayDesign {
+    graph [
+        goal="Carry make-a-play from an empty Studio slot to a Gate 1-approved design.",
+        max_node_visits=12,
+        stall_timeout="2h"
+    ]
+    rankdir=LR
+
+    start [shape=Mdiamond, label="Start"]
+    exit  [shape=Msquare, label="Exit"]
+
+    ground [
+        label="Ground the play in Studio canon",
+        prompt="@prompts/ground.md",
+        backend="acp",
+        acp.command=__AX_ACP_COMMAND_JSON__,
+        timeout="20m"
+    ]
+
+    draft_brief [
+        label="Draft the Gate 1 brief",
+        prompt="@prompts/draft_brief.md",
+        backend="acp",
+        acp.command=__AX_ACP_COMMAND_JSON__,
+        timeout="20m"
+    ]
+
+    harden [
+        label="Harden the graph",
+        prompt="@prompts/harden.md",
+        backend="acp",
+        acp.command=__AX_ACP_COMMAND_JSON__,
+        timeout="20m"
+    ]
+
+    gate_design [
+        shape=hexagon,
+        label="Gate 1 — confirm design and graph shape"
+    ]
+
+    acp_failed [
+        shape=parallelogram,
+        label="Fail the run on ACP failure",
+        script="echo \"ACP run failed; refusing to advance make-a-play design\" >&2; exit 1",
+        timeout="1m"
+    ]
+
+    start -> ground
+    ground -> draft_brief
+    ground -> acp_failed [label="ACP failed", condition="outcome!=succeeded"]
+    draft_brief -> harden
+    draft_brief -> acp_failed [label="ACP failed", condition="outcome!=succeeded"]
+    harden -> gate_design
+    harden -> acp_failed [label="ACP failed", condition="outcome!=succeeded"]
+    gate_design -> exit [label="[A] Approve"]
+    gate_design -> draft_brief [label="[R] Revise", freeform=true, fidelity="compact"]
+}

@@ -1,0 +1,133 @@
+What a day yesterday.
+
+Okay, so went to Chapel Hill to hang out with Dan Bridge yesterday and work on, um, wow. Yeah, work on Alexandria. And we got clear on a lot of things, which was huge, huge clarity of what is Alexandria and what makes it really tick.
+
+But what does it need in order to really hum? Like, what's the differentiator? And then what's the thing that it uses? It needs orchestration in the sense that it needs some of the well, what's the core? The core is plays and agents and these agents and plays, um, that maintain the library.
+
+So it's the library that's made by the agents and plays that, uh, enable. And the plays, I mean, even calling it the plays is the core thing, um, omits the detail of what those plays are and those plays being able to, um, grow over time, get better, improve, you know, uh, take on more and more of your business, all that kind of stuff.
+
+That's the, that's the real magic is that you can do more and more. And then the magic there is knowing that what you are doing, um, is really valuable. Um, it's been eval, it's been, it works, you know, that it's, and you know, that it's continually improving and that you can extend it in important ways that you can train for new skills and that kind of thing.
+
+Um, so I think, yeah, that's interesting. So that central loop of your, like training and not training the work of Alexandria is to train and improve, but the work that Alexandria is doing, the Alexandrians are doing, uh, in various companies is, uh, really valuable and multiplicative.
+
+And so it's having an opinion on how, yeah, we're an AI staffing agency. Um, and then the structure that enables, it's not just a staffing agency because what enables the agents to work so well is the fact that there is a library.
+
+Um, and so there's all these, it's the library that's well-structured and maintained by the agents that then from that you have, yeah, this idea of sort of magic documentation and plans that are continually updated.
+
+It's all of that together, which absolutely needs orchestration, but would be better served by leveraging other people's orchestration and execution. Um, in fact, like the models, um, yeah, it's, it's really interesting.
+
+It's like, you need all of that stuff in order for Alexandria to really hum, but you don't have to own all of that stuff. You can buy it, not build it. Um, or can you like the orchestrator space is moving so quickly.
+
+It's hard to say, should we just like the orchestration and execution, um, like the harness layer, all that kind of stuff. It actually does have an influence on performance in order to be able to, um, visualize what's happening inside of Alexandria, um, or visualize what your agents are doing.
+
+You need to own the orchestration layer and the execution layer need to have transparency into what's happening there. And so you can't even really build agent play without it. Um, and I don't want to build a durable execution orchestration layer, but maybe we could leverage one that exists and bundle it inside of Alexandria.
+
+Yeah. And then interesting. So maybe it's not a plugin model. Who is this for? I think that's the big question here. Is it for developers or is it for product managers?
+
+This is interesting. So you download this binary Alexandria it's an, or maybe it distributes as a full application. So I think the challenge, I guess that we're having is that the agentic execution of Alexandria needs to happen through a model and that model.
+
+Yeah. We need to draw, uh, draw this out because it could be that if we ship the whole stack, we're not paperclip being trying to be paperclip is like Linux and we're trying to be Apple of like, this is the way that you write your code.
+
+This is the way that you write your code. So we're not trying to be paperclip. We're trying to be Apple. We're trying to be Apple of like, this is the way that you run the thing.
+
+Um, these are the key primitives that a company has. Um, oh man, but there's so many things about the orchestra that I do not want to solve for, like, but if you solved for them, yeah.
+
+So like cost controls and rate limiting and, um, yeah, rate exhaustion and all of those things. Saying that the plays are the important part is basically saying that orchestration is the important part.
+
+Like there's no difference between saying those two things. Um, but if we could get from a framework like lane chain lane agent thing, um, the durable, the durability, the cost control, all of that kind of stuff.
+
+Um, and we could bundle that inside of Alexandria. Then the deployment model for Alexandria could be an app that bundles the CLI. It could be the CLI itself could be, and then, okay.
+
+But still we got to go all the way back to like, how do the agents execute? Um, and I want to use people's like Claude code running on their machine.
+
+Um, like we need to be able to use people's tokens. That's the, that's the big deal there. And Claude code has banned third-party harnesses.
+
+Like you can't use, you have to use, uh, yeah. So could we build in the Claude agent SDK and use the Claude agent SDK inside of an orchestrated framework, um, such that you could get the full, well, okay.
+
+Oh my gosh. This is tricky. Or should we not and just lean all the way into, this is a Claude plugin. Um, probably the short term.
+
+Yeah. I think we need a tiered plan. So this is the whole S S prime S double prime thing of how far do we go with Alexandria?
+
+So S the slimmest version of this is the Claude plugin version of it. Um, and that can have orchestration happen via like agentic rule following and some determinism that ensures that when using, yeah, basically like hooks and other things that enforce certain behaviors after certain actions run.
+
+So lean heavy into like Claude plugins and make it as badass of a plugin as possible. Um, and scheduled tasks and things like that, like just go all in on the anthropic ecosystem would be one way to do it.
+
+And, um, basically build, like forget about model agnosticism for now and say like, we're going to be, this thing is going to be pure. Uh, yeah.
+
+We're just going to do everything. The opus and, um, sonnet and anthropic way. Uh, okay. Yeah. We got to get into the weeds of the, anyway, yesterday was awesome.
+
+Um, we know that there's a couple of key plays that need to, to work really well. And there's some things that need to be software that were agents and there's a initial distribution of a CLI, which can do some sort of initialization work, um, can do some library cleanup and linting work and can allow people to work with the library.
+
+The other thing is we definitely want to expose the library as a CLI tool that, um, allows people to interact with it, not just via agents.
+
+Um, and so, um, basically we'll need to support some of the obsidian CLI type, uh, behaviors for the library. Um, yeah, this is like a structured obsidian ish.
+
+Um, you can definitely use obsidian as a viewer, but you don't want to use the obsidian CLI as an editor because it's going to do things to the library that it should not do.
+
+Um, and so I think our, our, yeah, I mean, we have some cleanup work to do from yesterday. So some of the to do's today would be take all the documentation from yesterday and get it into Alexandria itself, including cleaning up the whiteboards.
+
+And then we need to go further on the diagram to, um, and put that sucker at the top of like Alexandria's, uh, GitHub repo.
+
+And yeah, we have some interesting, I think probably flipping Alexandria, the GitHub repo back to open source makes sense.
+
+Um, I'm not sure what to do in terms of licensing, but we're definitely open sourcing when you get the skill files, the agent files and locally you're, um, you have the, when you get the skill files and the agent files locally, you have the, um, when you get the skill files and the agent files locally, you have the source effectively.
+
+Like that's just marked down. Um, what you're hoping to pay for is the, uh, yeah, so the, what you're hoping to pay for is the fact that these agents are sort of validated to be good.
+
+Um, we've, we've vetted them, we've invested time into improving them, uh, all of those things. And that is the part that is the most valuable.
+
+It's like, we know these things work really well. Um, yeah, man, I'm so freaking excited. This is such a cool project and I know it's going to be useful for us and useful for others.
+
+Um, we have some work to do to get things ready today and keep moving. Um, definitely want to get more people, uh, installing.
+
+I kind of want to encode the whole session log, like the conversation, uh, extracts the, the conversations into, Ooh, maybe, maybe we actually have an event log.
+
+Wait a second. Wait a second. So could we solve the agent play problem by having a distributed event log?
+
+So I think we could build agent play. So I said, we need the harness. There's probably a way to, this is super hacky, but I think can work is you basically tail the session log, uh, the session log parser would be terrible though.
+
+Um, gosh, yeah, you really want those hooks. Like, uh, the strong DM guy was saying I should, I should reach back out to strong DM.
+
+Like we're, in fact, I should go see them in San Francisco is what I should do. But, um, Oh my goodness.
+
+Yeah. This, Oh my goodness. Okay. So I think I know how to make agent play work, which is you have a central, um, the way you make agent play work is you have a central, uh, event log, a distributed event log that any agent and human pair can post into.
+
+And those, um, you basically, you don't need everything. Don't need everything. That's very interesting. You need, um, interesting.
+
+So what if, what if paperclip has it right in the sense that agents now to do is the wrong granularity, like to do is not right.
+
+It's there's all sorts of activities, conversations, um, planning. Like it's not so clean as like, I've got a to do and now I'm going to do some stuff.
+
+It's there's all these sessions where agents are doing things, handing things off between each other to do is wrong in that way.
+
+Um, but when an agent begins to do two is running skills. I mean, I guess there's like a, a couple of different things that are happening on that event log.
+
+One is, uh, in this particular session running on this particular computer, a, and that particular computer is tied to a human.
+
+Um, maybe, maybe not, um, this man, cause it could be like running in the cloud or whatever. Ah, interesting.
+
+So yeah, the substrate of, I mean, you could have more than one Raven. That doesn't make sense. So organizing, organizing the display of agent play around agents is like super confusing.
+
+Um, yeah, that's really confusing. So the, okay. But I know how I can get the data layer and that is, um, posting to a distributed event log.
+
+It's basically like aggregating the session logs, um, but a reduced version of those session logs. And you can either do it by, um, very hackily, um, browsing the, uh, session log, um, or like tailing the session log and filtering on it, um, which seems probably really a bad idea.
+
+Um, or you could do it by having the agents, uh, sort of check in, um, with what they're doing. So they, they post about what they're doing, um, and kind of give updates.
+
+Uh, and that's part of their, part of their, their skill files is posting that to the essential log. And I wonder if I could use dolt for that, um, as a, like a local SQL light, um, and put it in version control or something along those lines and then handle, help it, have it handle merge, merges automatically.
+
+I don't know. That could be kind of magical. Um, I definitely want to get bead support into the library soon, uh, to be able to write out tickets in bead format and man.
+
+Yeah. So the, the library definitely has tasks and you kind of want to be able to assign tasks. Maybe task is an appropriate, one appropriate granularity within the system.
+
+And you like have a task resolver. Um, for now, we're just going to have direct, uh, coordination, but at some point you may want to have like a task queue that different, uh, people can pick up.
+
+Um, it's really funny to me that we built paperclip in 2024 next to Lex and how, um, we're moving forward.
+
+Okay. So yeah, today's going to be about getting even more clarity and even more crisp and then on our plans and inside, outside, and then getting into the guts of, uh, like, what do we build?
+
+And we've got to make S really, really small. S has to be super duper tight so that we are focused on the thing that makes, uh, the library, the thing that makes Alexandria most valuable.
+
+And then we're extending out from there. Um, yeah, it'll be fun.
+
+

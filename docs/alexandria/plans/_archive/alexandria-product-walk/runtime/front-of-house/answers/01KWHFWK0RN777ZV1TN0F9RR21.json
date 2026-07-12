@@ -1,0 +1,10 @@
+{
+  "agendaItemId": "gap-living-business-plan",
+  "agendaItemKind": "stage2_question",
+  "answerEventId": "2598b89e-d3ed-4ecf-867a-6c709ef0d01d",
+  "answerText": "\"Living business plan\" is not a formal noun in the system — no card. It describes what happens when all three planes (strategy, product, learning) are connected and updating with each other. The Library itself is the card; \"living business plan\" is prose for what it becomes when the planes are talking.\n\nAdditional rulings from the director on the Library section:\n\n- \"Product Card\" should be renamed to \"Cards\" — product-plane cards are just the first build; future plays will produce cards for strategy and learning planes too.\n- Planes (strategy, product, learning) confirmed as correct.\n- The machinery items (Thread, Section, Walk Turn, Bundle Patch, Draft Overlay, Confirmation Gate, Catalog Schema Mode) look right to the director pending definitions, not contested.\n- Three plays are being developed independently — the four-question play, back of house, and front of house — and will compound into a \"Start Library Build\" play when proven.\n- Federation is planned but unrealized. The vision: multiple libraries managed by business units (marketing, sales, finance, operations) that link to each other, creating a library of libraries. Not shipped machinery yet.\n",
+  "fabroRunId": "01KWHFN1SA5R413ASARCRN79VW",
+  "playRunId": "949f76ce-f518-4ba6-bd58-a85f6c45c9ff",
+  "questionId": "01KWHFWK0RN777ZV1TN0F9RR21",
+  "schemaVersion": 1
+}

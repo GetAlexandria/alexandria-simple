@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alexandria Architecture Map — S Definition</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0c0c0c;
+    --fg: #e0dcd6;
+    --accent: #c9a84c;
+    --accent-dim: #8a7335;
+    --muted: #6a655e;
+    --card-bg: #161614;
+    --card-border: #2a2825;
+    --green: #5a9b63;
+    --green-dim: #2a3a2a;
+    --blue: #5a8a9b;
+    --blue-dim: #1a2a33;
+    --orange: #9b7a5a;
+    --orange-dim: #332a1a;
+    --red: #9b5a5a;
+    --purple: #7a5a9b;
+    --purple-dim: #2a1a33;
+    --cyan: #5a9b9b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .header {
+    padding: 2rem 3rem 1rem;
+    border-bottom: 1px solid var(--card-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.8rem;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .header .date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .tabs {
+    display: flex;
+    gap: 0;
+    padding: 0 3rem;
+    border-bottom: 1px solid var(--card-border);
+    background: var(--card-bg);
+  }
+  .tab {
+    padding: 0.8rem 1.5rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab:hover { color: var(--fg); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .view { display: none; padding: 2rem 3rem; }
+  .view.active { display: block; }
+
+  /* ── System View ── */
+  .system-diagram {
+    display: grid;
+    grid-template-columns: 180px 1fr 180px;
+    grid-template-rows: auto auto auto auto auto;
+    gap: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .zone {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 1.2rem;
+    position: relative;
+  }
+
+  .zone-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .zone-label .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .zone.inside { border-color: var(--green); border-width: 1.5px; }
+  .zone.inside .zone-label .dot { background: var(--green); }
+  .zone.outside { border-color: var(--muted); border-style: dashed; opacity: 0.7; }
+  .zone.outside .zone-label .dot { background: var(--muted); }
+
+  .agent-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin: 0.2rem;
+    cursor: default;
+    transition: all 0.2s;
+  }
+  .agent-chip:hover { transform: scale(1.05); }
+  .agent-chip.raven { background: #2a1a33; color: #b08adb; border: 1px solid #3a2a4a; }
+  .agent-chip.solomon { background: #1a2a2a; color: #8abab0; border: 1px solid #2a3a3a; }
+  .agent-chip.conan { background: #2a1a1a; color: #db8a8a; border: 1px solid #4a2a2a; }
+  .agent-chip.sam { background: #1a2a1a; color: #8adb8a; border: 1px solid #2a4a2a; }
+  .agent-chip.nit { background: #2a2a1a; color: #dbdb8a; border: 1px solid #4a4a2a; }
+  .agent-chip.bridget { background: #1a1a2a; color: #8a8adb; border: 1px solid #2a2a4a; }
+
+  .skill-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    margin: 0.15rem;
+    background: #1a1a1a;
+    color: var(--accent);
+    border: 1px solid #2a2520;
+  }
+
+  .tool-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    margin: 0.1rem;
+    background: #111;
+    color: var(--muted);
+    border: 1px solid #222;
+  }
+
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 1.2rem;
+  }
+  .flow-arrow.vertical { writing-mode: vertical-lr; }
+
+  .s-boundary {
+    grid-column: 1 / -1;
+    border: 2px solid var(--accent-dim);
+    border-radius: 16px;
+    padding: 1.5rem;
+    position: relative;
+    background: rgba(201, 168, 76, 0.02);
+  }
+  .s-boundary-label {
+    position: absolute;
+    top: -0.7rem;
+    left: 2rem;
+    background: var(--bg);
+    padding: 0 0.8rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  /* ── Agent Detail View ── */
+  .agent-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .agent-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 1.5rem;
+  }
+  .agent-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+  }
+  .agent-card .role {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    font-style: italic;
+  }
+  .agent-card .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin: 0.8rem 0 0.4rem;
+  }
+  .agent-card ul {
+    list-style: none;
+    font-size: 0.85rem;
+  }
+  .agent-card li {
+    padding: 0.2rem 0;
+    color: var(--fg);
+  }
+  .agent-card li::before {
+    content: '>';
+    color: var(--accent-dim);
+    margin-right: 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+  }
+
+  .agent-card.raven { border-color: #3a2a4a; }
+  .agent-card.raven h3 { color: #b08adb; }
+  .agent-card.solomon { border-color: #2a3a3a; }
+  .agent-card.solomon h3 { color: #8abab0; }
+  .agent-card.conan { border-color: #4a2a2a; }
+  .agent-card.conan h3 { color: #db8a8a; }
+  .agent-card.sam { border-color: #2a4a2a; }
+  .agent-card.sam h3 { color: #8adb8a; }
+  .agent-card.nit { border-color: #4a4a2a; }
+  .agent-card.nit h3 { color: #dbdb8a; }
+  .agent-card.bridget { border-color: #2a2a4a; }
+  .agent-card.bridget h3 { color: #8a8adb; }
+
+  /* ── Play View ── */
+  .play-section {
+    max-width: 1000px;
+    margin: 0 auto 2rem;
+  }
+  .play-section h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    color: var(--accent);
+    margin-bottom: 0.3rem;
+  }
+  .play-section .desc {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .play-row {
+    display: grid;
+    grid-template-columns: 120px 1fr auto;
+    gap: 1rem;
+    align-items: start;
+    padding: 0.8rem 1rem;
+    border-left: 2px solid var(--card-border);
+    margin-left: 1rem;
+    transition: border-color 0.2s;
+  }
+  .play-row:hover { border-left-color: var(--accent-dim); }
+  .play-row .play-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent-dim);
+  }
+  .play-row .play-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  .play-row .play-agents {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .play-row .agent-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .agent-dot.raven { background: #b08adb; }
+  .agent-dot.solomon { background: #8abab0; }
+  .agent-dot.conan { background: #db8a8a; }
+  .agent-dot.sam { background: #8adb8a; }
+  .agent-dot.nit { background: #dbdb8a; }
+  .agent-dot.bridget { background: #8a8adb; }
+  .agent-dot.human { background: var(--fg); }
+
+  /* ── Data Flow View ── */
+  .flow-diagram {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .flow-stage {
+    display: grid;
+    grid-template-columns: 150px 1fr 200px;
+    gap: 1.5rem;
+    align-items: start;
+    margin-bottom: 0.5rem;
+    padding: 1.2rem;
+    border-radius: 8px;
+    position: relative;
+  }
+  .flow-stage:nth-child(odd) { background: rgba(255,255,255,0.01); }
+  .flow-stage .stage-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .flow-stage .stage-desc {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  .flow-stage .stage-artifacts {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .flow-stage .stage-artifacts span {
+    display: block;
+    padding: 0.15rem 0;
+  }
+
+  .flow-connector {
+    text-align: center;
+    color: var(--muted);
+    font-size: 1rem;
+    padding: 0.3rem;
+    margin-left: 75px;
+  }
+
+  /* ── S Prime View ── */
+  .expansion-rings {
+    max-width: 800px;
+    margin: 2rem auto;
+    position: relative;
+  }
+  .ring {
+    border: 2px solid var(--card-border);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: -1rem;
+    position: relative;
+  }
+  .ring.s { border-color: var(--accent); background: rgba(201,168,76,0.03); z-index: 3; }
+  .ring.sp { border-color: var(--blue); border-style: dashed; background: rgba(90,138,155,0.02); z-index: 2; padding-top: 3rem; }
+  .ring.spp { border-color: var(--muted); border-style: dotted; background: rgba(106,101,94,0.02); z-index: 1; padding-top: 3rem; }
+  .ring-label {
+    position: absolute;
+    top: -0.7rem;
+    left: 2rem;
+    background: var(--bg);
+    padding: 0 0.8rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+  .ring.s .ring-label { color: var(--accent); }
+  .ring.sp .ring-label { color: var(--blue); }
+  .ring.spp .ring-label { color: var(--muted); }
+  .ring-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .ring-item {
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    border: 1px solid var(--card-border);
+    background: var(--card-bg);
+  }
+  .ring.s .ring-item { border-color: var(--accent-dim); color: var(--accent); }
+  .ring.sp .ring-item { border-color: #2a3a44; color: var(--blue); }
+  .ring.spp .ring-item { border-color: #2a2a2a; color: var(--muted); }
+
+  /* ── Legend ── */
+  .legend {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    padding: 1rem 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--card-border);
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  h2.view-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+  .view-subtitle {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .note {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin: 1.5rem 0;
+    max-width: 1000px;
+  }
+  .note strong { color: var(--fg); }
+
+  @media (max-width: 900px) {
+    .system-diagram { grid-template-columns: 1fr; }
+    .agent-grid { grid-template-columns: 1fr; }
+    .flow-stage { grid-template-columns: 1fr; }
+    .play-row { grid-template-columns: 80px 1fr; }
+    .play-row .play-agents { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Alexandria Architecture Map</h1>
+  <span class="date">2026-04-10 &bull; Defining S</span>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showView('system')">System</div>
+  <div class="tab" onclick="showView('agents')">Agents</div>
+  <div class="tab" onclick="showView('plays')">Plays</div>
+  <div class="tab" onclick="showView('flow')">Data Flow</div>
+  <div class="tab" onclick="showView('expansion')">S / S' / S''</div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SYSTEM VIEW                                  -->
+<!-- ════════════════════════════════════════════ -->
+<div class="view active" id="view-system">
+  <h2 class="view-title">System Architecture</h2>
+  <p class="view-subtitle">What's inside Alexandria, what's outside, and how it connects</p>
+
+  <div class="legend">
+    <div class="legend-item"><span class="agent-dot raven"></span> Raven</div>
+    <div class="legend-item"><span class="agent-dot solomon"></span> Solomon</div>
+    <div class="legend-item"><span class="agent-dot conan"></span> Conan</div>
+    <div class="legend-item"><span class="agent-dot sam"></span> Sam</div>
+    <div class="legend-item"><span class="agent-dot nit"></span> Nit</div>
+    <div class="legend-item"><span class="agent-dot bridget"></span> Bridget</div>
+    <div class="legend-item" style="margin-left: 1rem; border-left: 1px solid var(--card-border); padding-left: 1.5rem;">
+      <span style="display:inline-block;width:12px;height:12px;border:1.5px solid var(--green);border-radius:3px;"></span> Inside S
+    </div>
+    <div class="legend-item">
+      <span style="display:inline-block;width:12px;height:12px;border:1.5px dashed var(--muted);border-radius:3px;"></span> Outside
+    </div>
+  </div>
+
+  <!-- OUTSIDE: Sources -->
+  <div style="max-width:1200px; margin:0 auto;">
+
+    <div style="display:grid; grid-template-columns: 180px 1fr 180px; gap:1.5rem; margin-bottom:0.5rem;">
+      <div class="zone outside">
+        <div class="zone-label"><span class="dot"></span>Sources</div>
+        <div style="font-size:0.8rem; color:var(--muted);">
+          Notion, Slack, GitHub,<br>Linear, Email, Docs,<br>Web articles, Meetings
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:center;">
+        <div style="text-align:center;">
+          <div style="font-size:0.75rem; color:var(--muted); margin-bottom:0.3rem;">ingest via</div>
+          <div style="display:flex; gap:0.4rem; justify-content:center;">
+            <span class="tool-chip">MCP</span>
+            <span class="tool-chip">CLI</span>
+            <span class="tool-chip">API</span>
+            <span class="tool-chip">paste</span>
+          </div>
+          <div style="color:var(--muted); margin-top:0.5rem;">&#8595;</div>
+        </div>
+      </div>
+      <div class="zone outside">
+        <div class="zone-label"><span class="dot"></span>Harness</div>
+        <div style="font-size:0.8rem; color:var(--muted);">
+          Claude Code<br>Codex / OpenClaw<br>Pi / Hermes
+        </div>
+        <div style="font-size:0.7rem; color:var(--accent-dim); margin-top:0.5rem;">
+          Agents + skills<br>run here (for now)
+        </div>
+      </div>
+    </div>
+
+    <!-- S BOUNDARY -->
+    <div class="s-boundary">
+      <div class="s-boundary-label">S &mdash; Alexandria Core</div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:1.2rem; margin-top:0.5rem;">
+
+        <!-- Column 1: Human Interface -->
+        <div>
+          <div class="zone inside" style="margin-bottom:1rem;">
+            <div class="zone-label"><span class="dot"></span>Human Interface</div>
+            <span class="agent-chip raven">Raven</span>
+            <div style="margin-top:0.6rem;">
+              <span class="skill-chip">/library</span>
+              <span class="skill-chip">/wizard</span>
+              <span class="skill-chip">/plan</span>
+              <span class="skill-chip">/revise-plan</span>
+              <span class="skill-chip">/complete-plan</span>
+            </div>
+            <div style="font-size:0.75rem; color:var(--muted); margin-top:0.5rem;">
+              Agentic outer layer<br>Orchestrates across workflow
+            </div>
+          </div>
+
+          <div class="zone inside">
+            <div class="zone-label"><span class="dot"></span>Signal Intake</div>
+            <span class="agent-chip solomon">Solomon</span>
+            <div style="margin-top:0.5rem; font-size:0.75rem; color:var(--muted);">
+              Tension detection (T1-T7)<br>
+              Claim extraction<br>
+              Evidence protocol (E1-E4)<br>
+              Settledness test
+            </div>
+            <div style="margin-top:0.5rem;">
+              <span class="tool-chip">tensions CLI</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 2: Library Core -->
+        <div>
+          <div class="zone inside" style="margin-bottom:1rem; border-color:var(--accent); background:rgba(201,168,76,0.03);">
+            <div class="zone-label"><span class="dot" style="background:var(--accent)"></span>Context Library</div>
+            <div style="font-size:0.8rem; margin-bottom:0.5rem;">
+              <strong style="color:var(--accent);">The Knowledge Graph</strong>
+            </div>
+            <div style="font-size:0.75rem; color:var(--muted); line-height:1.5;">
+              <strong>Rationale</strong> &mdash; Theses, Principles, Standards<br>
+              <strong>Product</strong> &mdash; Domains, Systems, Components, Agents, Capabilities, Artifacts<br>
+              <strong>Experience</strong> &mdash; Loops, Journeys, Goals, Forces<br>
+              <strong>Temporal</strong> &mdash; Decisions, Initiatives, Futures
+            </div>
+            <div style="margin-top:0.6rem;">
+              <span class="tool-chip">retrieve CLI</span>
+              <span class="tool-chip">grade CLI</span>
+              <span class="tool-chip">lint CLI</span>
+              <span class="tool-chip">dag CLI</span>
+            </div>
+          </div>
+
+          <div class="zone inside" style="border-style:dashed; border-color:var(--accent-dim);">
+            <div class="zone-label"><span class="dot" style="background:var(--accent-dim)"></span>Orchestration</div>
+            <div style="font-size:0.75rem; color:var(--muted);">
+              <strong>Plays</strong> define multi-agent workflows<br>
+              Bundled open-source framework (TBD)<br>
+              <em>Pattern: Agentic &rarr; Deterministic &rarr; Agentic</em>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 3: Maintenance & Service -->
+        <div>
+          <div class="zone inside" style="margin-bottom:1rem;">
+            <div class="zone-label"><span class="dot"></span>Quality & Maintenance</div>
+            <span class="agent-chip conan">Conan</span>
+            <span class="agent-chip sam">Sam</span>
+            <span class="agent-chip nit">Nit</span>
+            <div style="margin-top:0.5rem; font-size:0.75rem; color:var(--muted);">
+              Grade &rarr; Diagnose &rarr; Fix &rarr; Re-grade<br>
+              <strong>Most important play</strong><br>
+              6-sweep mechanical linting<br>
+              Surgery plans &rarr; card fixes
+            </div>
+            <div style="margin-top:0.5rem;">
+              <span class="tool-chip">grade CLI</span>
+              <span class="tool-chip">lint CLI</span>
+              <span class="tool-chip">scoreboard</span>
+            </div>
+          </div>
+
+          <div class="zone inside">
+            <div class="zone-label"><span class="dot"></span>Context Delivery</div>
+            <span class="agent-chip bridget">Bridget</span>
+            <div style="margin-top:0.5rem;">
+              <span class="skill-chip">/brief</span>
+              <span class="skill-chip">/sync-tickets</span>
+            </div>
+            <div style="margin-top:0.5rem; font-size:0.75rem; color:var(--muted);">
+              15 retrieval profiles<br>
+              U-shaped attention ordering<br>
+              Provenance logging<br>
+              Gap manifest &rarr; feedback queue
+            </div>
+            <div style="margin-top:0.5rem;">
+              <span class="tool-chip">retrieve CLI</span>
+              <span class="tool-chip">sync-issues CLI</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Internal queues row -->
+      <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:0.8rem; margin-top:1.2rem;">
+        <div style="background:#111; border:1px solid #222; border-radius:6px; padding:0.6rem; text-align:center;">
+          <div style="font-family:'JetBrains Mono'; font-size:0.6rem; color:var(--muted); text-transform:uppercase;">Signal Queue</div>
+          <div style="font-size:0.7rem; color:var(--fg); margin-top:0.2rem;">signal-queue.jsonl</div>
+        </div>
+        <div style="background:#111; border:1px solid #222; border-radius:6px; padding:0.6rem; text-align:center;">
+          <div style="font-family:'JetBrains Mono'; font-size:0.6rem; color:var(--muted); text-transform:uppercase;">Feedback Queue</div>
+          <div style="font-size:0.7rem; color:var(--fg); margin-top:0.2rem;">feedback-queue.md</div>
+        </div>
+        <div style="background:#111; border:1px solid #222; border-radius:6px; padding:0.6rem; text-align:center;">
+          <div style="font-family:'JetBrains Mono'; font-size:0.6rem; color:var(--muted); text-transform:uppercase;">Provenance Log</div>
+          <div style="font-size:0.7rem; color:var(--fg); margin-top:0.2rem;">provenance-log.jsonl</div>
+        </div>
+        <div style="background:#111; border:1px solid #222; border-radius:6px; padding:0.6rem; text-align:center;">
+          <div style="font-family:'JetBrains Mono'; font-size:0.6rem; color:var(--muted); text-transform:uppercase;">Config</div>
+          <div style="font-size:0.7rem; color:var(--fg); margin-top:0.2rem;">wizard-config.json</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Output row -->
+    <div style="text-align:center; color:var(--muted); padding:0.8rem;">&#8595; delivers to &#8595;</div>
+
+    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:1rem;">
+      <div class="zone outside">
+        <div class="zone-label"><span class="dot"></span>Factory</div>
+        <div style="font-size:0.8rem; color:var(--muted);">Software factory, content factory, etc.</div>
+        <div style="font-size:0.7rem; color:var(--accent-dim); margin-top:0.3rem;">Receives: context briefings, tickets</div>
+      </div>
+      <div class="zone outside">
+        <div class="zone-label"><span class="dot"></span>Model</div>
+        <div style="font-size:0.8rem; color:var(--muted);">Claude, GPT, Gemini, local models</div>
+        <div style="font-size:0.7rem; color:var(--accent-dim); margin-top:0.3rem;">Multi-model (settled)</div>
+      </div>
+      <div class="zone outside">
+        <div class="zone-label"><span class="dot"></span>Container</div>
+        <div style="font-size:0.8rem; color:var(--muted);">Local machine, cloud sandbox, VPS</div>
+      </div>
+      <div class="zone outside">
+        <div class="zone-label"><span class="dot"></span>Version Control</div>
+        <div style="font-size:0.8rem; color:var(--muted);">Git (for now)</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- AGENTS VIEW                                  -->
+<!-- ════════════════════════════════════════════ -->
+<div class="view" id="view-agents">
+  <h2 class="view-title">The Agent Team</h2>
+  <p class="view-subtitle">Six agents, each with one verb. The outer layer is agentic (Raven), the inner layer is agentic (everyone else), and plays are the deterministic middle.</p>
+
+  <div class="agent-grid">
+    <div class="agent-card raven">
+      <h3>Raven the Maven</h3>
+      <div class="role">Thinks &bull; Product partner &bull; Outer agentic layer</div>
+      <div class="section-label">Skills</div>
+      <ul>
+        <li>/library &mdash; persistent room</li>
+        <li>/wizard &mdash; configuration</li>
+        <li>/plan &mdash; implementation planning</li>
+        <li>/revise-plan, /complete-plan</li>
+      </ul>
+      <div class="section-label">Dispatches</div>
+      <ul>
+        <li>Solomon (signal triage)</li>
+        <li>Conan (health check, grading)</li>
+        <li>Sam (card construction)</li>
+        <li>Bridget (context assembly)</li>
+        <li>Nit (mechanical checks)</li>
+      </ul>
+      <div class="section-label">Produces</div>
+      <ul>
+        <li>Conversation + strategic insight</li>
+        <li>Handoff blocks (Solomon/Feedback/Conan)</li>
+        <li>Agent dispatches</li>
+      </ul>
+    </div>
+
+    <div class="agent-card solomon">
+      <h3>Solomon the Sorter</h3>
+      <div class="role">Triages &bull; Epistemic gatekeeper &bull; Robust but untested</div>
+      <div class="section-label">Capabilities</div>
+      <ul>
+        <li>6 signal doors (meetings, directives, Slack, customer, Raven handoff, docs)</li>
+        <li>Tension detection T1-T7</li>
+        <li>Evidence protocol E1-E4</li>
+        <li>Settledness test (3 gates)</li>
+      </ul>
+      <div class="section-label">Produces</div>
+      <ul>
+        <li>Tension briefs (5-field claim blocks)</li>
+        <li>Source material files</li>
+        <li>signal-queue.jsonl entries</li>
+      </ul>
+      <div class="section-label">Tools</div>
+      <ul>
+        <li><code>alxndr tensions</code></li>
+      </ul>
+    </div>
+
+    <div class="agent-card conan">
+      <h3>Conan the Auditor</h3>
+      <div class="role">Grades &bull; Quality guardian &bull; Most important play</div>
+      <div class="section-label">Jobs (9 types)</div>
+      <ul>
+        <li>Grade (5D, weighted avg, A-F)</li>
+        <li>Diagnose (root cause analysis)</li>
+        <li>Recommend (surgery plans)</li>
+        <li>Health Check (6-phase)</li>
+        <li>Downstream Sync</li>
+        <li>Inventory, Spot-Check, Audit, Review</li>
+      </ul>
+      <div class="section-label">Tools</div>
+      <ul>
+        <li><code>alxndr grade</code></li>
+        <li><code>alxndr lint</code> (pre-grade)</li>
+        <li><code>alxndr scoreboard</code></li>
+      </ul>
+    </div>
+
+    <div class="agent-card sam">
+      <h3>Sam the Scribe</h3>
+      <div class="role">Creates &bull; Card builder &bull; Executes surgery plans</div>
+      <div class="section-label">Capabilities</div>
+      <ul>
+        <li>Build cards from inventory + source</li>
+        <li>Fix cards per Conan's plans</li>
+        <li>Self-check before handing to Nit</li>
+        <li>Batch construction (rationale &rarr; product &rarr; experience)</li>
+      </ul>
+      <div class="section-label">Does NOT</div>
+      <ul>
+        <li>Grade cards (Conan's job)</li>
+        <li>Assemble briefings (Bridget's job)</li>
+        <li>Run lint checks (Nit's job)</li>
+      </ul>
+    </div>
+
+    <div class="agent-card nit">
+      <h3>Nit the Picker</h3>
+      <div class="role">Verifies &bull; Mechanical linter &bull; Deterministic</div>
+      <div class="section-label">6 Sweep Levels</div>
+      <ul>
+        <li>L1: Lines (formatting, frontmatter)</li>
+        <li>L2: Cards (dimensions, links)</li>
+        <li>L3: Graph (orphans, islands)</li>
+        <li>L4: Layers (type distribution)</li>
+        <li>L5: Library (coverage, counts)</li>
+        <li>L6: Cross-system (grades, plans, wizard)</li>
+      </ul>
+      <div class="section-label">Tools</div>
+      <ul>
+        <li><code>alxndr lint</code> (all sweeps)</li>
+      </ul>
+    </div>
+
+    <div class="agent-card bridget">
+      <h3>Bridget the Briefer</h3>
+      <div class="role">Assembles &bull; Context delivery &bull; Value landing zone</div>
+      <div class="section-label">Capabilities</div>
+      <ul>
+        <li>15 retrieval profiles</li>
+        <li>Task classification (target + task type)</li>
+        <li>U-shaped attention ordering</li>
+        <li>Gap manifest (honest about missing)</li>
+      </ul>
+      <div class="section-label">Produces</div>
+      <ul>
+        <li>CONTEXT_BRIEFING.md</li>
+        <li>provenance-log.jsonl</li>
+        <li>feedback-queue.md entries</li>
+      </ul>
+      <div class="section-label">Tools</div>
+      <ul>
+        <li><code>alxndr retrieve</code></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PLAYS VIEW                                   -->
+<!-- ════════════════════════════════════════════ -->
+<div class="view" id="view-plays">
+  <h2 class="view-title">Playbook</h2>
+  <p class="view-subtitle">Multi-agent workflows organized by lifecycle stage. Each play has a trigger, steps, agents, and exit status.</p>
+
+  <div class="legend">
+    <div class="legend-item"><span class="agent-dot raven"></span> Raven</div>
+    <div class="legend-item"><span class="agent-dot solomon"></span> Solomon</div>
+    <div class="legend-item"><span class="agent-dot conan"></span> Conan</div>
+    <div class="legend-item"><span class="agent-dot sam"></span> Sam</div>
+    <div class="legend-item"><span class="agent-dot nit"></span> Nit</div>
+    <div class="legend-item"><span class="agent-dot bridget"></span> Bridget</div>
+    <div class="legend-item"><span class="agent-dot human"></span> Human</div>
+  </div>
+
+  <div class="play-section">
+    <h2>Stage 0: Genesis</h2>
+    <div class="desc">Library doesn't exist yet. Configure, assess sources, scaffold.</div>
+    <div class="play-row"><span class="play-id">0.1</span><span class="play-name">Configuration (Wizard)</span><span class="play-agents"><span class="agent-dot human"></span><span class="agent-dot raven"></span></span></div>
+    <div class="play-row"><span class="play-id">0.2</span><span class="play-name">Source Assessment</span><span class="play-agents"><span class="agent-dot conan"></span><span class="agent-dot nit"></span></span></div>
+    <div class="play-row"><span class="play-id">0.3</span><span class="play-name">Inventory &amp; Scaffold</span><span class="play-agents"><span class="agent-dot conan"></span><span class="agent-dot sam"></span><span class="agent-dot nit"></span></span></div>
+  </div>
+
+  <div class="play-section">
+    <h2>Stage 1: Construction</h2>
+    <div class="desc">Build the card graph layer by layer. Rationale first, product second, experience last.</div>
+    <div class="play-row"><span class="play-id">1.1</span><span class="play-name">Upstream Build (Standards, Theses, Principles)</span><span class="play-agents"><span class="agent-dot sam"></span><span class="agent-dot nit"></span></span></div>
+    <div class="play-row"><span class="play-id">1.2</span><span class="play-name">Upstream Gate</span><span class="play-agents"><span class="agent-dot conan"></span><span class="agent-dot nit"></span></span></div>
+    <div class="play-row"><span class="play-id">1.3</span><span class="play-name">Product Layer Build</span><span class="play-agents"><span class="agent-dot sam"></span><span class="agent-dot nit"></span></span></div>
+    <div class="play-row"><span class="play-id">1.4</span><span class="play-name">Experience Layer Build</span><span class="play-agents"><span class="agent-dot sam"></span><span class="agent-dot nit"></span></span></div>
+    <div class="play-row"><span class="play-id">1.5</span><span class="play-name">Temporal Enrichment</span><span class="play-agents"><span class="agent-dot sam"></span><span class="agent-dot nit"></span></span></div>
+    <div class="play-row"><span class="play-id">1.6</span><span class="play-name">First Graph Review</span><span class="play-agents"><span class="agent-dot nit"></span><span class="agent-dot conan"></span></span></div>
+  </div>
+
+  <div class="play-section">
+    <h2>Stage 2: Quality</h2>
+    <div class="desc">Grade everything. Find root causes. Fix. Re-grade. The most important play lives here.</div>
+    <div class="play-row" style="border-left-color: var(--accent);"><span class="play-id" style="color:var(--accent);">2.1</span><span class="play-name"><strong>Grade</strong> <span style="font-size:0.75rem; color:var(--accent);">&larr; MOST IMPORTANT PLAY</span></span><span class="play-agents"><span class="agent-dot nit"></span><span class="agent-dot conan"></span></span></div>
+    <div class="play-row" style="border-left-color: var(--accent);"><span class="play-id" style="color:var(--accent);">2.2</span><span class="play-name"><strong>Improvement Loop</strong> (diagnose &rarr; fix &rarr; re-grade)</span><span class="play-agents"><span class="agent-dot conan"></span><span class="agent-dot sam"></span><span class="agent-dot nit"></span></span></div>
+    <div class="play-row"><span class="play-id">2.3</span><span class="play-name">Type Audit</span><span class="play-agents"><span class="agent-dot conan"></span><span class="agent-dot nit"></span></span></div>
+  </div>
+
+  <div class="play-section">
+    <h2>Stage 3: Service</h2>
+    <div class="desc">Deliver context to builders. Plan features. Think with humans.</div>
+    <div class="play-row"><span class="play-id">3.1</span><span class="play-name">Context Assembly (/brief)</span><span class="play-agents"><span class="agent-dot bridget"></span><span class="agent-dot nit"></span></span></div>
+    <div class="play-row"><span class="play-id">3.2</span><span class="play-name">Briefing Retrospective</span><span class="play-agents"><span class="agent-dot bridget"></span><span class="agent-dot conan"></span></span></div>
+    <div class="play-row"><span class="play-id">3.3</span><span class="play-name">Retrieval Profile Tuning</span><span class="play-agents"><span class="agent-dot conan"></span><span class="agent-dot bridget"></span><span class="agent-dot nit"></span></span></div>
+    <div class="play-row"><span class="play-id">3.4</span><span class="play-name">Product Conversation (/library)</span><span class="play-agents"><span class="agent-dot raven"></span><span class="agent-dot human"></span></span></div>
+  </div>
+
+  <div class="play-section">
+    <h2>Stage 4: Maintenance</h2>
+    <div class="desc">Keep the library honest over time. Health checks, analytics, retirement.</div>
+    <div class="play-row"><span class="play-id">4.1</span><span class="play-name">Health Check</span><span class="play-agents"><span class="agent-dot nit"></span><span class="agent-dot conan"></span></span></div>
+    <div class="play-row"><span class="play-id">4.2</span><span class="play-name">Maintenance Improvement Loop</span><span class="play-agents"><span class="agent-dot conan"></span><span class="agent-dot sam"></span><span class="agent-dot nit"></span></span></div>
+    <div class="play-row"><span class="play-id">4.3</span><span class="play-name">Provenance Analytics</span><span class="play-agents"><span class="agent-dot bridget"></span><span class="agent-dot conan"></span></span></div>
+    <div class="play-row"><span class="play-id">4.4</span><span class="play-name">Card Retirement</span><span class="play-agents"><span class="agent-dot conan"></span><span class="agent-dot sam"></span><span class="agent-dot nit"></span></span></div>
+  </div>
+
+  <div class="play-section">
+    <h2>Stage 5: Signal Intake</h2>
+    <div class="desc">New information enters the system. Triage, assess, route.</div>
+    <div class="play-row"><span class="play-id">5.6</span><span class="play-name">Signal Triage</span><span class="play-agents"><span class="agent-dot solomon"></span><span class="agent-dot human"></span></span></div>
+  </div>
+
+  <div class="note">
+    <strong>Open Question:</strong> The four playbook categories (Update Content, Maintain, Deliver Context, Learn) are parked in the signal queue. The current stage-based organization may be reorganized into these categories once the taxonomy is unpacked.
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- DATA FLOW VIEW                               -->
+<!-- ════════════════════════════════════════════ -->
+<div class="view" id="view-flow">
+  <h2 class="view-title">Data Flow</h2>
+  <p class="view-subtitle">How information moves through the system, from raw signal to builder context</p>
+
+  <div class="flow-diagram">
+    <div class="flow-stage">
+      <div class="stage-name">Signal In</div>
+      <div class="stage-desc">
+        Raw information arrives: meeting notes, Slack threads, customer feedback, strategy docs, executive directives.
+        <div style="margin-top:0.5rem;"><span class="agent-chip solomon">Solomon</span> triages via 6 intake doors.</div>
+      </div>
+      <div class="stage-artifacts">
+        <span>&#8594; tension briefs</span>
+        <span>&#8594; source material files</span>
+        <span>&#8594; signal-queue.jsonl</span>
+      </div>
+    </div>
+
+    <div class="flow-connector">&#8595;</div>
+
+    <div class="flow-stage">
+      <div class="stage-name">Construction</div>
+      <div class="stage-desc">
+        Settled claims become source material. <span class="agent-chip sam">Sam</span> builds or updates cards. <span class="agent-chip nit">Nit</span> lint-checks after every batch.
+        Cards follow the build order: rationale &rarr; product &rarr; experience &rarr; temporal.
+      </div>
+      <div class="stage-artifacts">
+        <span>&#8594; library cards (.md)</span>
+        <span>&#8594; wikilink graph</span>
+        <span>&#8594; folder structure</span>
+      </div>
+    </div>
+
+    <div class="flow-connector">&#8595;</div>
+
+    <div class="flow-stage">
+      <div class="stage-name">Quality</div>
+      <div class="stage-desc">
+        <span class="agent-chip nit">Nit</span> pre-sweeps (6 levels) &rarr; <span class="agent-chip conan">Conan</span> grades (5D, A-F) &rarr; diagnoses root causes &rarr; <span class="agent-chip sam">Sam</span> fixes &rarr; re-grade.
+        <div style="margin-top:0.3rem; font-size:0.85rem; color:var(--accent);">This is the most important play. The trunk of the tree.</div>
+      </div>
+      <div class="stage-artifacts">
+        <span>&#8594; grade reports</span>
+        <span>&#8594; surgery plans</span>
+        <span>&#8594; health reports</span>
+        <span>&#8594; scoreboard</span>
+      </div>
+    </div>
+
+    <div class="flow-connector">&#8595;</div>
+
+    <div class="flow-stage">
+      <div class="stage-name">Service</div>
+      <div class="stage-desc">
+        <span class="agent-chip bridget">Bridget</span> assembles context briefings for tasks. 15 retrieval profiles, U-shaped ordering, gap manifests.
+        <span class="agent-chip raven">Raven</span> conducts product conversations and planning.
+      </div>
+      <div class="stage-artifacts">
+        <span>&#8594; CONTEXT_BRIEFING.md</span>
+        <span>&#8594; implementation plans</span>
+        <span>&#8594; outcomes + tickets</span>
+        <span>&#8594; provenance-log.jsonl</span>
+      </div>
+    </div>
+
+    <div class="flow-connector">&#8595;</div>
+
+    <div class="flow-stage">
+      <div class="stage-name">Factory</div>
+      <div class="stage-desc">
+        Builders (human or agent) receive context briefings and tickets. They implement features, fix bugs, build products.
+        <div style="margin-top:0.3rem; font-size:0.8rem; color:var(--muted);">Factory is OUTSIDE Alexandria. We deliver context to it; we don't run it.</div>
+      </div>
+      <div class="stage-artifacts">
+        <span>&#8594; shipped code</span>
+        <span>&#8594; execution learnings</span>
+        <span>&#8594; revised plans</span>
+      </div>
+    </div>
+
+    <div class="flow-connector">&#8595; learns from &#8595;</div>
+
+    <div class="flow-stage" style="border: 1px dashed var(--orange); border-radius:8px;">
+      <div class="stage-name" style="color:var(--orange);">Learn</div>
+      <div class="stage-desc">
+        Execution outcomes, builder feedback, briefing retrospectives, and provenance analytics feed back into the library.
+        <div style="margin-top:0.3rem; font-size:0.8rem; color:var(--orange);">This is the least mature motion. The feedback loop mostly exists on paper.</div>
+      </div>
+      <div class="stage-artifacts">
+        <span>&#8594; feedback-queue.md</span>
+        <span>&#8594; library updates</span>
+        <span>&#8594; retrieval tuning</span>
+        <span style="color:var(--orange);">&#8593; back to Quality</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- EXPANSION VIEW                               -->
+<!-- ════════════════════════════════════════════ -->
+<div class="view" id="view-expansion">
+  <h2 class="view-title">S / S' / S''</h2>
+  <p class="view-subtitle">Staged expansion. Build S tight. Architect for S' and S''. Point to them for the bigger story.</p>
+
+  <div class="expansion-rings">
+    <div class="ring spp">
+      <div class="ring-label">S'' &mdash; The Full Vision</div>
+      <div class="ring-content">
+        <span class="ring-item">Full hosted app</span>
+        <span class="ring-item">Cross-model optimization</span>
+        <span class="ring-item">SOC 2 compliance</span>
+        <span class="ring-item">Enterprise installs</span>
+        <span class="ring-item">Agent talent marketplace</span>
+        <span class="ring-item">Forward-deployed engineers</span>
+        <span class="ring-item">Cross-library analytics</span>
+        <span class="ring-item">Model fine-tuning per domain</span>
+      </div>
+
+      <div class="ring sp" style="margin-top: 1.5rem;">
+        <div class="ring-label">S' &mdash; Next Ring</div>
+        <div class="ring-content">
+          <span class="ring-item">Bundled orchestrator</span>
+          <span class="ring-item">Hosted web viewer</span>
+          <span class="ring-item">Agent Play (analytics)</span>
+          <span class="ring-item">Settings (token modes)</span>
+          <span class="ring-item">Play health check</span>
+          <span class="ring-item">Federation (multi-library)</span>
+          <span class="ring-item">Factory integrations</span>
+        </div>
+
+        <div class="ring s" style="margin-top: 1.5rem;">
+          <div class="ring-label">S &mdash; The Core</div>
+          <div class="ring-content" style="justify-content: center;">
+            <span class="ring-item" style="font-weight:600; font-size:1rem;">Agents</span>
+            <span class="ring-item" style="font-weight:600; font-size:1rem;">Plays</span>
+            <span class="ring-item" style="font-weight:600; font-size:1rem;">Context Library</span>
+          </div>
+          <div style="text-align:center; margin-top:1rem; font-size:0.9rem; color:var(--fg);">
+            <div style="margin-bottom:0.5rem;">
+              <span class="skill-chip">/wizard</span>
+              <span class="skill-chip">/library</span>
+              <span class="skill-chip">/brief</span>
+              <span class="skill-chip">/plan</span>
+            </div>
+            <div style="margin-bottom:0.5rem;">
+              <span class="agent-chip raven" style="font-size:0.7rem;">Raven</span>
+              <span class="agent-chip conan" style="font-size:0.7rem;">Conan</span>
+              <span class="agent-chip sam" style="font-size:0.7rem;">Sam</span>
+              <span class="agent-chip nit" style="font-size:0.7rem;">Nit</span>
+              <span class="agent-chip bridget" style="font-size:0.7rem;">Bridget</span>
+              <span class="agent-chip solomon" style="font-size:0.7rem;">Solomon</span>
+            </div>
+            <div style="font-size:0.8rem; color:var(--muted); margin-top:0.5rem;">
+              <code style="color:var(--accent-dim);">alxndr</code> lint &bull; grade &bull; retrieve &bull; dag &bull; tensions &bull; wizard &bull; scoreboard
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note" style="max-width:800px; margin:2rem auto;">
+    <strong>The principle:</strong> "Architect S such that we could do S' and S''. Build for acquisition by pointing to S'/S'' and saying: the bigger value is here. But S must be tight &mdash; this is the thing it does and it does damn well."
+    <br><br>
+    <strong>Open question:</strong> The precise S boundary is not yet drawn. The bottom-up exercise (start from smallest unit of value, build up) hasn't been completed. Parked in signal queue, revisit by 2026-04-24.
+  </div>
+</div>
+
+<script>
+  function showView(id) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('view-' + id).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+
+</body>
+</html>

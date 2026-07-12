@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "description": "Project-level settings for /canvasdemo. Registers the canvas-watcher Stop hook so Raven auto-wakes when the director hits Save on the canvas. Mirrors hooks/hooks.json which lives there for the plugin-installed flow; this file is what makes the hook fire in dev when the prototype is launched as a Claude Code project instead of via a plugin install.",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/scripts/canvas-watcher.sh",
+            "asyncRewake": true,
+            "timeout": 700,
+            "rewakeMessage": "Canvas update — the director just hit Save:",
+            "rewakeSummary": "Canvas Save — react"
+          }
+        ]
+      }
+    ]
+  }
+}

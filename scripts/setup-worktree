@@ -1,0 +1,219 @@
+#!/usr/bin/env bash
+# Prepare a fresh automation worktree for Alexandria development.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+info() { echo "  → $1"; }
+success() { echo "  ✓ $1"; }
+warn() { echo "  ! $1"; }
+error() { echo "  ✗ $1" >&2; }
+
+prepend_path() {
+	local path_entry="$1"
+
+	case ":${PATH:-}:" in
+	*":$path_entry:"*) ;;
+	*) export PATH="$path_entry${PATH:+:$PATH}" ;;
+	esac
+}
+
+resolve_bun_path() {
+	if [ -n "${ALEXANDRIA_BUN_BIN:-}" ] && [ -x "${ALEXANDRIA_BUN_BIN:-}" ]; then
+		printf '%s\n' "$ALEXANDRIA_BUN_BIN"
+	elif command -v bun >/dev/null 2>&1; then
+		command -v bun
+	elif [ -n "${ALEXANDRIA_BUN_INSTALL:-}" ] && [ -x "$ALEXANDRIA_BUN_INSTALL/bin/bun" ]; then
+		printf '%s\n' "$ALEXANDRIA_BUN_INSTALL/bin/bun"
+	elif [ -x "$REPO_ROOT/.tmp/bun/bin/bun" ]; then
+		printf '%s\n' "$REPO_ROOT/.tmp/bun/bin/bun"
+	elif [ -x "$HOME/.bun/bin/bun" ]; then
+		printf '%s\n' "$HOME/.bun/bin/bun"
+	else
+		return 1
+	fi
+}
+
+ensure_bun() {
+	local bun_path bun_version bun_install_dir
+
+	if bun_path="$(resolve_bun_path)"; then
+		prepend_path "$(dirname "$bun_path")"
+		if [ -n "${ALEXANDRIA_BUN_INSTALL:-}" ] && [ "$bun_path" = "$ALEXANDRIA_BUN_INSTALL/bin/bun" ]; then
+			export BUN_INSTALL="$ALEXANDRIA_BUN_INSTALL"
+		elif [ "$bun_path" = "$REPO_ROOT/.tmp/bun/bin/bun" ]; then
+			export BUN_INSTALL="$REPO_ROOT/.tmp/bun"
+		elif [ "$bun_path" = "$HOME/.bun/bin/bun" ]; then
+			export BUN_INSTALL="$HOME/.bun"
+		fi
+		bun_version="$("$bun_path" --version)"
+		info "Using Bun $bun_version"
+		return
+	fi
+
+	if ! command -v curl >/dev/null 2>&1; then
+		error "curl is required to install Bun for worktree setup."
+		exit 127
+	fi
+
+	if ! command -v unzip >/dev/null 2>&1; then
+		error "unzip is required to install Bun for worktree setup."
+		exit 127
+	fi
+
+	bun_install_dir="${ALEXANDRIA_BUN_INSTALL:-$REPO_ROOT/.tmp/bun}"
+	export BUN_INSTALL="$bun_install_dir"
+	prepend_path "$BUN_INSTALL/bin"
+
+	info "Installing Bun into $BUN_INSTALL"
+	curl -fsSL https://bun.sh/install | bash
+
+	if ! bun_version="$(bun --version 2>/dev/null)"; then
+		error "Bun installation completed, but bun is still unavailable on PATH."
+		exit 1
+	fi
+
+	info "Using Bun $bun_version"
+}
+
+usage() {
+	cat <<'EOF'
+Usage: ./scripts/setup-worktree
+
+Prepares a fresh worktree for Alexandria development automation.
+
+The script refreshes fresh detached/main checkouts from origin/main, pins pnpm
+to package.json, keeps Alexandria state inside the worktree by default, and
+then runs contributor setup. Maintainer skills are linked into the
+project-local .agents/skills directory so simultaneous worktrees can use their
+own maintainer workflows; user-global surfaces (~/.claude/skills,
+~/.claude/plugins) are never touched from a linked worktree.
+
+Environment:
+  ALEXANDRIA_SETUP_WORKTREE_SKIP_REFRESH=1
+            Skip the pre-setup origin/main refresh.
+
+Options:
+  --help    Show this help
+EOF
+}
+
+refresh_from_origin_main() {
+	local branch
+
+	if [ "${ALEXANDRIA_SETUP_WORKTREE_SKIP_REFRESH:-}" = "1" ]; then
+		info "Skipping origin/main refresh"
+		return
+	fi
+
+	if ! command -v git >/dev/null 2>&1; then
+		error "git is required for worktree setup."
+		exit 127
+	fi
+
+	if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+		warn "Skipping origin/main refresh outside a git worktree"
+		return
+	fi
+
+	if ! git remote get-url origin >/dev/null 2>&1; then
+		warn "Skipping origin/main refresh because remote 'origin' is not configured"
+		return
+	fi
+
+	if ! git diff --quiet --ignore-submodules -- || ! git diff --cached --quiet --ignore-submodules --; then
+		warn "Skipping origin/main refresh because the worktree has local changes"
+		return
+	fi
+
+	info "Fetching latest origin/main"
+	if ! git fetch --quiet origin main; then
+		error "Failed to fetch origin/main before worktree setup."
+		exit 1
+	fi
+
+	branch="$(git symbolic-ref --short -q HEAD || true)"
+	case "$branch" in
+	main)
+		info "Fast-forwarding main to origin/main"
+		if ! git merge --ff-only --quiet origin/main; then
+			error "Failed to fast-forward main to origin/main."
+			exit 1
+		fi
+		;;
+	"")
+		info "Checking out latest origin/main"
+		if ! git checkout --detach --quiet origin/main; then
+			error "Failed to check out origin/main."
+			exit 1
+		fi
+		;;
+	*)
+		warn "Skipping origin/main checkout because current branch is '$branch'"
+		;;
+	esac
+}
+
+for arg in "$@"; do
+	case "$arg" in
+	--help | -h)
+		usage
+		exit 0
+		;;
+	*)
+		echo "Unknown option: $arg" >&2
+		usage >&2
+		exit 1
+		;;
+	esac
+done
+
+cd "$REPO_ROOT"
+
+refresh_from_origin_main
+
+if ! command -v node >/dev/null 2>&1; then
+	error "node is required for worktree setup."
+	exit 127
+fi
+
+package_manager="$(
+	node -e 'const fs = require("fs"); const pkg = JSON.parse(fs.readFileSync("package.json", "utf8")); process.stdout.write(pkg.packageManager || "");'
+)"
+
+case "$package_manager" in
+pnpm@*)
+	pnpm_version="${package_manager#pnpm@}"
+	;;
+*)
+	error "Unsupported packageManager in package.json: ${package_manager:-<missing>}"
+	exit 1
+	;;
+esac
+
+current_pnpm=""
+if command -v pnpm >/dev/null 2>&1; then
+	current_pnpm="$(pnpm --version 2>/dev/null || true)"
+fi
+
+if [ "$current_pnpm" != "$pnpm_version" ]; then
+	if ! command -v npm >/dev/null 2>&1; then
+		error "npm is required to install pnpm@$pnpm_version."
+		exit 127
+	fi
+
+	info "Installing pnpm@$pnpm_version"
+	npm install -g "pnpm@$pnpm_version"
+fi
+
+export ALEXANDRIA_STATE_DIR="${ALEXANDRIA_STATE_DIR:-$REPO_ROOT/.tmp/.alexandria-state}"
+
+info "Using pnpm $(pnpm --version)"
+ensure_bun
+info "Using Alexandria state directory: $ALEXANDRIA_STATE_DIR"
+
+"$SCRIPT_DIR/setup-dev" --force-skill-links
+
+success "Worktree setup complete"

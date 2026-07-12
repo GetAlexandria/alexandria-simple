@@ -1,0 +1,1 @@
+Confirmed: the boundary is correct. Fabro-as-orchestrator (the embedded engine that runs plays, manages gates, resumes on answers) belongs in this product library. Fabro-as-factory (the software factory that builds this repository) does not.

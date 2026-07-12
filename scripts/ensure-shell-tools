@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+# Ensure shellcheck and shfmt are available for repo-wide shell checks.
+
+set -euo pipefail
+
+INSTALL=false
+QUIET=false
+
+info() {
+	if [ "$QUIET" = false ]; then
+		echo "  → $1"
+	fi
+}
+
+success() {
+	if [ "$QUIET" = false ]; then
+		echo "  ✓ $1"
+	fi
+}
+
+warn() {
+	echo "  WARNING: $1" >&2
+}
+
+usage() {
+	cat <<'EOF'
+Usage: ./scripts/ensure-shell-tools [--check] [--install] [--quiet]
+
+Options:
+  --check    Only verify that shellcheck and shfmt are installed (default)
+  --install  Install missing tools via brew or apt-get when possible
+  --quiet    Suppress non-error output
+  --help     Show this help
+EOF
+}
+
+have_tool() {
+	command -v "$1" >/dev/null 2>&1
+}
+
+load_missing_tools() {
+	local line
+	missing=()
+	while IFS= read -r line; do
+		if [ -n "$line" ]; then
+			missing+=("$line")
+		fi
+	done < <(missing_tools)
+}
+
+missing_tools() {
+	local missing=()
+
+	if ! have_tool shellcheck; then
+		missing+=("shellcheck")
+	fi
+	if ! have_tool shfmt; then
+		missing+=("shfmt")
+	fi
+
+	if [ "${#missing[@]}" -gt 0 ]; then
+		printf '%s\n' "${missing[@]}"
+	fi
+}
+
+install_with_brew() {
+	local tools=("$@")
+	info "Installing missing shell tools via Homebrew..."
+	brew install "${tools[@]}"
+}
+
+install_with_apt() {
+	local tools=("$@")
+	local apt_cmd=(apt-get)
+
+	if command -v sudo >/dev/null 2>&1 && [ "${EUID:-$(id -u)}" -ne 0 ]; then
+		apt_cmd=(sudo apt-get)
+	fi
+
+	info "Installing missing shell tools via apt-get..."
+	"${apt_cmd[@]}" update
+	"${apt_cmd[@]}" install -y "${tools[@]}"
+}
+
+for arg in "$@"; do
+	case "$arg" in
+	--check)
+		INSTALL=false
+		;;
+	--install)
+		INSTALL=true
+		;;
+	--quiet)
+		QUIET=true
+		;;
+	--help | -h)
+		usage
+		exit 0
+		;;
+	*)
+		echo "Unknown option: $arg" >&2
+		usage >&2
+		exit 1
+		;;
+	esac
+done
+
+load_missing_tools
+
+if [ "${#missing[@]}" -eq 0 ]; then
+	success "shellcheck and shfmt are available"
+	exit 0
+fi
+
+if [ "$INSTALL" = false ]; then
+	warn "Missing required shell tools: ${missing[*]}"
+	warn "Run ./scripts/ensure-shell-tools --install to install them."
+	exit 1
+fi
+
+if command -v brew >/dev/null 2>&1; then
+	install_with_brew "${missing[@]}"
+elif command -v apt-get >/dev/null 2>&1; then
+	install_with_apt "${missing[@]}"
+else
+	warn "Missing required shell tools: ${missing[*]}"
+	warn "No supported package manager found. Install them manually and rerun."
+	exit 1
+fi
+
+load_missing_tools
+
+if [ "${#missing[@]}" -gt 0 ]; then
+	warn "Some shell tools are still missing after installation: ${missing[*]}"
+	exit 1
+fi
+
+success "shellcheck and shfmt are available"

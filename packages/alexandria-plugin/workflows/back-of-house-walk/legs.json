@@ -1,0 +1,96 @@
+{
+  "playId": "back-of-house-walk",
+  "legs": [
+    {
+      "nodeId": "translate_search_prior",
+      "label": "Translate the search prior",
+      "description": "Turn an optional four-section product description into a confidence-tagged search prior.",
+      "lead": "A head start for the source read — leads to confirm, never answers to trust.",
+      "beats": [
+        "If no description was supplied, writes nothing and proceeds source-only.",
+        "Reads only the four sections and emits leads — actors, vocabulary, unit, path, state, places, shape — each with a confidence and open questions for every guess.",
+        "Treats the result as a suspect lineup: positive leads widen the search, only a high-confidence fence entry prunes."
+      ],
+      "typicalSeconds": 120,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "survey",
+      "label": "Survey the source",
+      "description": "Read the manifest and scope, then pick the ~25–35 files worth reading, in order.",
+      "lead": "The manifest is the read boundary; scope is the filing boundary.",
+      "beats": [
+        "Records the in-scope and out-of-scope roots and topics before choosing a single read.",
+        "Walks the file tree paths-only and orders a tier-1 / tier-2 / tier-3 read ladder, capped at 25–35 files.",
+        "Refuses loudly with a refusal report when the manifest points at nothing scannable."
+      ],
+      "typicalSeconds": 240,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "pass1_events",
+      "label": "Surface the events",
+      "description": "Walk the product's history as a time-ordered list of past-tense domain events.",
+      "lead": "Time-first: the timeline is the central record's lifecycle.",
+      "beats": [
+        "Reads tier-1, then tier-2, then a tier-3 language sample.",
+        "Names the central record and, for each event, its trigger, where it lands, and the state it lands in.",
+        "Marks Hot Spots inline where the sources disagree — the primary diagnostic value."
+      ],
+      "typicalSeconds": 240,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "pass2_carve",
+      "label": "Carve the contexts",
+      "description": "Carve bounded contexts where the language changes and classify each noun.",
+      "lead": "A context boundary lands where the vocabulary shifts.",
+      "beats": [
+        "Suspends substantive out-of-scope or borderline piles as suspects — no folders, no cards.",
+        "Classifies each in-scope noun into a canonical category, keeping the architect's word as the label.",
+        "Proposes demotions and splits as Hot Spots rather than silently deleting or picking."
+      ],
+      "typicalSeconds": 240,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "pass3_altitude",
+      "label": "Tag the altitudes",
+      "description": "Tag each carded noun's zoom level so the bundle keeps one level per card.",
+      "lead": "One altitude per card; never mix levels.",
+      "beats": [
+        "Assigns pillar / context / aggregate / component / value / capability per card.",
+        "Adds a rationale only where the call is non-obvious.",
+        "Marks a Hot Spot naming both candidates when two altitudes are equally honest."
+      ],
+      "typicalSeconds": 120,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "emit_bundle",
+      "label": "Write the bundle",
+      "description": "Write the cards, the _index keystone story, the reports, and the JSON sidecars to disk.",
+      "lead": "The body names the product; the frontmatter holds the machine.",
+      "beats": [
+        "Writes one product-English stub card per in-scope noun and the keystone story that names all and only the card-bearing containers.",
+        "Emits workflows.json, records Ledger thread openings with notepad provenance, and writes the three reports.",
+        "Writes every file with its tools — a reply that names files but writes none is a failed run."
+      ],
+      "typicalSeconds": 300,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "check_bundle",
+      "label": "Cold-read and decide",
+      "description": "Read the bundle blind and decide PASS, REPAIR, or FREEZE.",
+      "lead": "A stranger's read — no prior-stage summary contaminates it.",
+      "beats": [
+        "Runs the keystone and machine-language gates before PASS.",
+        "Checks typed-link targets, the Small floor, thread provenance, and work-thread coverage.",
+        "Bounces REPAIR back to the write step, freezes an unsalvageable bundle, or passes a coherent one."
+      ],
+      "typicalSeconds": 180,
+      "kind": "agent"
+    }
+  ]
+}

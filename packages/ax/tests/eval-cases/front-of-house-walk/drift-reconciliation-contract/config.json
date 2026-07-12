@@ -1,0 +1,35 @@
+{
+  "caseId": "front-of-house-walk/drift-reconciliation-contract",
+  "description": "Front-of-House skill handles generated naming mismatches after map confirmation as one proposed decision.",
+  "checks": [
+    {
+      "description": "Raven skill sequences machine-made inconsistency handling strictly after the base map is confirmed.",
+      "file": "packages/alexandria-plugin/skills/front-of-house-walk/SKILL.md",
+      "contains": [
+        "### Director-Facing Turn Discipline",
+        "confirms the base map, handle any machine-made inconsistency as its own turn.",
+        "### Machine-Made Inconsistency Reconciliation",
+        "Use this movement only after the director has confirmed the base product map.",
+        "Each reconciliation turn has one decision"
+      ]
+    },
+    {
+      "description": "Raven skill attributes generated mismatches honestly and proposes a best mapping instead of posing a puzzle.",
+      "file": "packages/alexandria-plugin/skills/front-of-house-walk/SKILL.md",
+      "contains": [
+        "Do not make the director solve an open puzzle.",
+        "Attribute the mismatch to the scan or generated draft.",
+        "Lead with Raven's best mapping in ordinary language.",
+        "Ask the director to confirm or correct that one mapping.",
+        "The scan used two words for what looks like the same thing.",
+        "think Workflow is probably an old name for Authoring.",
+        "Should I merge those?"
+      ]
+    },
+    {
+      "description": "Raven skill forbids combining the reconciliation turn with a section, search-frame, or second naming decision.",
+      "file": "packages/alexandria-plugin/skills/front-of-house-walk/SKILL.md",
+      "contains": ["Do not ask a section question, search-frame question, or second rename/merge"]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+digraph SourceAssessment {
+  graph [goal="Run the Alexandria Product source assessment smoke workflow"]
+
+  start [shape=Mdiamond]
+  assess [
+    type="agent",
+    backend="acp",
+    prompt="You are running inside the Alexandria workspace. Create a directory named orchestration if it does not exist. Then create orchestration/fabro-smoke.md containing a short Markdown status report with the exact heading '# Fabro ACP Smoke'. Do not modify files outside this workspace.",
+    acp.command=__AX_ACP_COMMAND_JSON__
+  ]
+  exit [shape=Msquare]
+  acp_failed [
+    shape=parallelogram,
+    label="Fail the run on ACP failure",
+    script="echo \"ACP run failed; refusing to advance the play\" >&2; exit 1"
+  ]
+
+  start -> assess
+  assess -> exit
+  assess -> acp_failed [label="ACP failed", condition="outcome!=succeeded"]
+}

@@ -1,0 +1,20 @@
+---
+import { LibraryBrowserApp } from "../components/library/LibraryBrowserApp";
+import "../styles/global.css";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Alexandria local library interface"
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Alexandria Library</title>
+  </head>
+  <body class="bg-[#241b13]">
+    <LibraryBrowserApp client:only="react" />
+  </body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "typeMapping": [
+    {
+      "from": "Concept",
+      "to": "Entity",
+      "disposition": "rename",
+      "basis": "every type: Concept card in this bundle is an identity-bearing structural noun, not framework drift"
+    }
+  ]
+}

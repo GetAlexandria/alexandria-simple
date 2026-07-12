@@ -1,0 +1,10 @@
+{
+  "agendaItemId": "hot-spot-vision-slot-altitude",
+  "agendaItemKind": "hot_spot",
+  "answerEventId": "6fe572ed-ce64-4bb5-82c6-a2936ff7d600",
+  "answerText": "Confirmed: Vision Slot is a component — one of four fixed pieces of the Basic Product Description. Not an aggregate with its own lifecycle.\n",
+  "fabroRunId": "01KWHFN1SA5R413ASARCRN79VW",
+  "playRunId": "949f76ce-f518-4ba6-bd58-a85f6c45c9ff",
+  "questionId": "01KWHVJ070WZJDPDCV5KFYB3EQ",
+  "schemaVersion": 1
+}

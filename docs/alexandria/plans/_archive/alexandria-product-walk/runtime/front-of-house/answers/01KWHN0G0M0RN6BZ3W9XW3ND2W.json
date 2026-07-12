@@ -1,0 +1,10 @@
+{
+  "agendaItemId": "hot-spot-library-polysemy",
+  "agendaItemKind": "hot_spot",
+  "answerEventId": "e3365544-2adc-449d-a286-0b1e1c0dd405",
+  "answerText": "The three-way carve is real but none of them is just \"Library\" unqualified:\n\n1. The old 208-card library — a legacy artifact being kept temporarily for QA/comparison against this build. Will be retired once this library is settled.\n\n2. What we're building now — Alexandria's initial Product Library (the 0.1 product library build for the company Alexandria). Not \"a card\" — it's the library itself.\n\n3. The Playmaker's Studio Library — a separate, supporting product that will be spun out. It has its own product library because it's an independent product, even though it works with Alexandria. Companies with multiple products should have separate product libraries for each.\n\nAll three are forms of libraries, but they should each be qualified by what they are. The polysemy is real and resolved by naming: the old library goes away, this build is the Alexandria Product Library, and PMS is a separate product's library.\n",
+  "fabroRunId": "01KWHFN1SA5R413ASARCRN79VW",
+  "playRunId": "949f76ce-f518-4ba6-bd58-a85f6c45c9ff",
+  "questionId": "01KWHN0G0M0RN6BZ3W9XW3ND2W",
+  "schemaVersion": 1
+}

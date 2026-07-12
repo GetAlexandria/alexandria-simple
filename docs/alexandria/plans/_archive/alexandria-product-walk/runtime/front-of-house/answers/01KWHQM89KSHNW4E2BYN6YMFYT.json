@@ -1,0 +1,10 @@
+{
+  "agendaItemId": "hot-spot-fabro-two-hats",
+  "agendaItemKind": "hot_spot",
+  "answerEventId": "8405ad13-5cb8-4ccb-92fa-5948aae6e002",
+  "answerText": "Confirmed: the boundary is correct. Fabro-as-orchestrator (the embedded engine that runs plays, manages gates, resumes on answers) belongs in this product library. Fabro-as-factory (the software factory that builds this repository) does not.\n",
+  "fabroRunId": "01KWHFN1SA5R413ASARCRN79VW",
+  "playRunId": "949f76ce-f518-4ba6-bd58-a85f6c45c9ff",
+  "questionId": "01KWHQM89KSHNW4E2BYN6YMFYT",
+  "schemaVersion": 1
+}

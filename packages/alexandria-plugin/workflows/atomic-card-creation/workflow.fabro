@@ -1,0 +1,38 @@
+digraph AtomicCardCreation {
+    graph [
+        goal="Execute an EL5 atomic-card build plan by running build-atomic-card once per write_new contract.",
+        max_node_visits=20,
+        stall_timeout="2h",
+        default_fidelity="truncate"
+    ]
+    rankdir=LR
+
+    start [shape=Mdiamond, label="Start"]
+    exit  [shape=Msquare, label="Exit"]
+
+    validate_plan [
+        shape=parallelogram,
+        label="Validate the EL5 build plan",
+        script="cd '__AX_PROJECT_ROOT__' && ax cards validate-plan --plan '__AX_INPUT_PLAN_PATH__' --lexicon '__AX_INPUT_VOCABULARY_LEXICON__' --json",
+        timeout="2m"
+    ]
+
+    execute_plan [
+        shape=parallelogram,
+        label="Run build-atomic-card for every write_new contract",
+        script="cd '__AX_PROJECT_ROOT__' && ax cards execute-plan --plan '__AX_INPUT_PLAN_PATH__' --candidate-dir '__AX_INPUT_CANDIDATE_DIR__' --actor '__AX_INPUT_ACTOR__' --lexicon '__AX_INPUT_VOCABULARY_LEXICON__' --json",
+        timeout="2h"
+    ]
+
+    verify_plan [
+        shape=parallelogram,
+        label="Verify coverage after publish",
+        script="cd '__AX_PROJECT_ROOT__' && ax cards verify-plan --plan '__AX_INPUT_PLAN_PATH__' --lexicon '__AX_INPUT_VOCABULARY_LEXICON__' --json",
+        timeout="2m"
+    ]
+
+    start -> validate_plan
+    validate_plan -> execute_plan
+    execute_plan -> verify_plan
+    verify_plan -> exit
+}

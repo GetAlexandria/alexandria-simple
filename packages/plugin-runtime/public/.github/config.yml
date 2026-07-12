@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Alexandria Updates
+    url: https://getalexandria.ai/updates
+    about: Check the release notes before filing regressions or upgrade issues.

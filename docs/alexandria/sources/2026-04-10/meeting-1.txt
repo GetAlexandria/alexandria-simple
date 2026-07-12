@@ -1,0 +1,597 @@
+In the future, the near future, Alexandria is propagating through the universe and people are using it for more than just making software.
+
+We, after successfully instrumenting the Kentucky Derby, they decide that all of their outbound newsletters and updates and everything, just like we made them a software factory, now they're going to have their marketing factory. And so they've got agents that are like, we need to write a newsletter. So they're going back to the library and they're like, OK, so here's the latest trends in fashion. I'm going to get that from this part of the library over here. And then here's the latest betting odds. Winning Trotter is now a 4 to 1 for the Derby. This is so exciting. And I'm going to do it in this voice. It's a very excitable, yet regal voice. And like, OK, cool. Here's everything you need to write the newsletter. Like, go. And it's like, boom. And then it's going to go into the newsletter factory. And the newsletter factory is going to be like, chugga-chugga-chugga-chugga-chugga-chugga-chugga-chugga. Like, OK, boss. I've got the context. Give it to the writer. Writer's going to write. Copy editor's going to edit. Development editor's going to be like, OK, here's what you do. OK, cool. And then it's like, give it to the human for approval. Like, here it is. Like, the development editor and the copy editor and the writer all did the thing. Let's ship it to the people.
+
+That little handoff I just described follows roughly the same beat structure as creating a context briefing.
+
+I think libraries are factories.
+
+No, I, uh, yeah. I think, oh, OK, there you go. No, I'm already with you.
+
+Like, we, uh, I was looking at Paper Club and was like, ah, how do we leverage an orchestrator? The orchestrator's on the outside. And I'm like, ah, fuck. Like, we need to build an orchestrator on the inside. Like, you can't, the library has to be active and not inert. And in order for it to be active and leverage an external orchestrator, you, I can't see any world where we don't build.
+
+So we're basically saying, we think we know how to build the best WordPress theme on the planet. Like, it is, we can, and we can build WordPress themes for any business that are going to be the best website they've had, best performing. And it's going to pull all this data from the way that people are using WordPress themes to build a theme for you.
+
+That, like, if you just subscribe to our theme service, we'll keep your website up to date with, like, the best theme. But we don't run on WordPress. We're just the theme. We don't actually, WordPress is like, you bring your own WordPress, and then we'll have our theme sit on top of your WordPress.
+
+It's like, yeah, that doesn't work. Like, one, from an economic value capture standpoint, it's like, you need to own WordPress, not just the WordPress theme. And the other part is that it's just really hard to have a theme mapped to any underlying WordPress or, like, if the plays, I think the sentence that came to my mind this morning as I was exploring this was, if the plays are the secret sauce, how the plays are orchestrated is part of the secret sauce.
+
+Like, if that's the value, if the plays are the value, then you have, the plays are orchestration. Like, you can't, you can't say, like, we'll use an orchestrator. What if Paperclip goes out of business? What if it, people hate it?
+
+Oh, I looked at it, and I was like, it kind of sucks. Like, a successful open source launch, but, like, they've got months, if not years, of work to do to, like, build a valuable product. They captured people's imagination. Great, good job.
+
+I would love it if we could do that. And, like, they won the social media lottery. But they do not have a good product. In fact, they have basically NextLX. Like, they've got what we had in 2024.
+
+It's like, we're just looking at it and going, oh, yeah, like, people were complaining about certain things. I was like, hey, NextLX did that.
+
+There's 24,000 people that gave it a shot. It's great, but. And now they're all gone.
+
+Well, yeah.
+
+And that's the, that, yeah.
+
+So what I realized, though, when you know an orchestration, libraries and factories, I'm with you.
+
+And then the next thing that I realized was it's still really risky for us to build an orchestrator. What if there are open source products that we could integrate into that would be our orchestration layer, but they're not products in the sense that Paperclip, Paperclip wants to be WordPress.
+
+Right. These are open source frameworks. So it's like, OK, we just need to use an open source orchestration framework.
+
+So there's two or three that are on my mind to evaluate.
+
+If we do that, Danvers, if we do that, the other thing that came to my mind was, if we're giving people a theme and saying, you can run it on any WordPress, who's our target customer in that world?
+
+The business, like the small, I mean, initially it's going to be small businesses. They don't know how to map a theme onto any old WordPress. People that buy themes are developers. Developers buy themes on behalf of the business owner. The business owner picks one and is like, I like that one. Make it happen.
+
+And the developer has to come along and make it happen.
+
+So if we wanted to be Linux, we want to serve developers, then yeah, we can ship a theme.
+
+But that's not what small business owners are going to do.
+
+That's not the right product surface for them to experience Alexandria.
+
+The right product service for them to experience Alexandria is downloading a flopping app. Hosted.
+
+It has to either be hosted on a website, or it has to be running as an app on their desktop, like Claw desktop style.
+
+It can't even be a brew install. No, no, no, no.
+
+And so the other realization is, man, when we package this up, the orchestrator needs to be inside of the running application.
+
+It's not a separate orchestrator that you run on your machine and then you're like, carves a branch.
+
+So it's like, oh, no. Wait a minute. What? What's happening? Take that back.
+
+Yeah, carves a branch. Yeah, oh, it'll get that.
+
+Yeah, it's got it.
+
+Whisper's amazing. Translate the groanings that cannot be put into words.
+
+So yeah, it was just a realization that we need to redraw our inside outside today.
+
+And we need to redraw our SRS prime or S double prime.
+
+So what's awesome is the ridiculousness of how on the same page we are, of my being like, I want to drop a bomb or whatever, is it sounds like you had the same experience of walking away from all those memos you gave me and me being like, as Solomon, you shall not pass.
+
+Like, 3 quarters of that was a first draft, and I don't agree with it.
+
+It was new to me. I hadn't been thinking about what you'd been thinking about for three days.
+
+And so I went along, and then I slept on it.
+
+And I was like, because I kept saying, like, oh, first thing I do is buy a factory.
+
+And I was just like, no, this is a factory. We can't be using somebody else's factory. We are a factory.
+
+Yeah, we are. Yeah, we are. We have to own orchestration.
+
+I think that's the key thing.
+
+We can use the factory language, if that's helpful.
+
+But it really is, we have to run the plays.
+
+Yeah, we have to run the plays. We have to run the plays.
+
+The plays cannot be a play file that you then hand off to something else that runs the plays.
+
+We've got to run them.
+
+And we have to run them because things are changing in the environment.
+
+And you need those sensors to be hitting something that's running, that's actually running and is ready for new information to come in, and then does all the updating.
+
+Like, all night long, our factory was building stuff for Alexandria.
+
+The Alexandria factory, or sorry, the Alexandria for Alexandria is bitterly out of date, bitterly.
+
+Like, the real product has moved way beyond what is in our Alexandria factory.
+
+That's a problem, a huge problem.
+
+Like, every single time a commit lands on main, a thing needs to get triggered.
+
+A play needs to be run by us that updates the Alexandria.
+
+And that's just one kind of trigger.
+
+There's all these other things that we need to land.
+
+And so, yeah, we've got to be running them, which means we need to own orchestration.
+
+Fortunately, there are a couple of orchestration frameworks that I have in mind that are designed to be integrated as a library.
+
+And so I already know the first one that I'm going to try out.
+
+And it should handle things like cost control, and a lot of the stuff that I was scared of, of like, oh, durable execution, restarts, all of that kind of thing.
+
+There's still a question.
+
+Hold on, I need to get a power cord and a refill.
+
+Hold on.
+
+One of the guys I was talking to that I should demo with, he's been going back and forth.
+
+Yeah, yeah.
+
+Yeah. So I heard you made the WebViewer, like a book, that had chapters in it, and had the typography, and all that kind of stuff was suggested, something like 80, and all that kind of stuff.
+
+And then you had a whole bunch of other brand new comments around stuff like that.
+
+I was really excited to see which direction you're going here, because this is really compelling.
+
+Yeah, the idea that I have for branding that I want to play with, have you ever heard of Afrofuturism?
+
+Yeah. Grecofuturism. I'm pretty sure it's not a thing.
+
+And this, like that, is something AI is so good at.
+
+So Afrofuturism, but for Ancient Greece.
+
+Yeah, there was a meme a couple years back about tech bros in Ancient Rome.
+
+Yeah.
+
+I can't even remember what the exact phrase was.
+
+Which is different than Ancient Greece, because Ancient Rome was like, gladiators, and lions, and killings.
+
+Exactly.
+
+This is like, not that. Ancient Greece are like the philosophers.
+
+Yeah.
+
+But I think Grecofuturism, but for tech bro 2.0, or for just a, so we are, even though I hate it, we fall into the AI optimist category.
+
+That's absolutely true.
+
+AI accelerationists are like, AI will make things better. We just need to get it to be available for everybody.
+
+Yeah, get the relationship right.
+
+And so as AI optimists, going with a futuristic heritage brand is really interesting, and a really interesting pivot away from the Claude and, not New Hope Commons, but the place we'd love to get out of.
+
+South Park Commons.
+
+South Park Commons.
+
+It's distinct from that, which is really cool.
+
+I like it.
+
+No, I'm excited about it, and I'm excited to get the right domain and figure it out.
+
+No, because also, both of us drilling this morning is also, again, totally aligned with brand really matters.
+
+We need to launch with a compelling brand, not paperclip.
+
+Yes.
+
+And that's why the container matters.
+
+Because one of the things that was annoying in sharing a demo with people is someone like, run this bash command in your prompt.
+
+And the only way you can use it is if you're using Claude code.
+
+And several people that I've shared it with are product managers who really want this.
+
+They see the value and they're like, I want this so bad.
+
+And that's just the wrong container for them.
+
+They need to be able to download an app that runs.
+
+And that app can absolutely wrap a CLI layer, such that if you are a developer, you can download the WordPress.
+
+You can download WordPress, you can run it locally on your local machine.
+
+And I love showing that you're not firing your tech team with this.
+
+In fact, you're going to need to hire tech people to maintain stuff.
+
+Absolutely.
+
+No, the integration route here.
+
+Unless you hire us.
+
+Yeah, exactly.
+
+And then like, honestly, Raven, going through this whole thing is like, if this gets moving, you're going to need to get SOC 2 compliant, man.
+
+You are covering all this really sensitive information.
+
+And I don't see that in your business plan.
+
+You're talking about enterprise, but there is no enterprise infrastructure.
+
+So that was one of the things that came up with the group that I talked to on Tuesday.
+
+Gosh, I'm going to have to get their name for you.
+
+But yeah, they are required to be SOC 2 compliant.
+
+And so part of our code base is, and part of our things, we have these procedures and all that kind of stuff for SOC 2 and that kind of stuff.
+
+So SOC 2, OK.
+
+But yeah, that would be, if we did some work with them and did like an install of Alexandria there, we would have to, yeah, like, maybe we have to go down the SOC 2 compliance route.
+
+No, this is the, yeah, this is, all of a sudden, in the last few days, Alexandria became so clear.
+
+The company became so clear.
+
+And now, that's where I'm like, man, I could literally hire a staff of 10 people and put them all to work usefully.
+
+Another funny thing about NextLX was it was like, yeah, we want $1 million or $2 million.
+
+We're going to do that.
+
+We need salaries.
+
+And then we'll probably hire a friend.
+
+In a little while, we're going to be cautious to not burn up our salary.
+
+It's just like, oh, my gosh.
+
+Oh, my gosh.
+
+Like, no, it needs to be at least $5 million, if not $10.
+
+Which is such a better story to be coming in.
+
+Oh, my gosh.
+
+Like, we need at least $5 million.
+
+Dude, we're going to be burning a billion tokens a day.
+
+We're going to have a forward-deployed engineer team that is working with across 50 different enterprises that are installing and configuring Alexandria's.
+
+Like, we'll have multiple deploy services that we're going to have to maintain.
+
+Like, yeah, we've got to get SOC 2 compliance because we're working with enterprises.
+
+We've got to be cross-model.
+
+And we're even going to need to do some fine-tuning of models because for each one of these individual areas, you have to like, what we talked about, you have to know the model's context base in order to be able to build a library.
+
+Yeah, it's just like, holy smokes.
+
+Yeah, it gets big.
+
+The S double prime is large.
+
+Yeah.
+
+So yeah, I'm with you.
+
+We've got to turn this thing into a machine.
+
+The one takeaway as I was talking this out with myself on the way here was what doesn't change in the very near future, what does not change, is a really tight S.
+
+A really tight S.
+
+We need a really tight, like, this is the thing that it does and it does damn well.
+
+What has changed, which I'm can't even tell you how excited I am for, and I know maybe different language for this, but you know how a really good library has releases till the end of time?
+
+The story you just told of releases, we can actually make what you just said.
+
+We could create.
+
+And how many tokens you use and how many people you have speaks to your time, but we could show Chad the next 100 releases, now 100 releases based on what you said.
+
+Here's our next 100 releases.
+
+Yes.
+
+And if you're someone like Chad who can walk through 100 releases and know they're legit, that artifact right there is one of the most investable things we could ever do.
+
+No, yeah, Alexandria's Alexandria has a, like, the data room for what you're investing in.
+
+And the fact that these releases evolve every single time you learn something and shift a release, you should be like, purr, purr, it's like, holy crap, because Alexandria is running Alexandria.
+
+It's an example of how you will run businesses in the future, which you will actually have a plan.
+
+You will have a two-year plan, and it will update dynamically, on the fly, because I used to doing it.
+
+Yeah, no, that's wild.
+
+And that's where I want to get to is, like, I want, today needs to be about consolidation, painting a really good S, having an idea of what our S-prime and our S-double primes are, and then getting really sharp about, within S, these are the 10 things we need to do.
+
+And then, which of these can I parallelize across the factory and just go?
+
+So I think we maybe have three or four more tickets before the factory is, like, sitting idle.
+
+Totally fine with that, because if we get this today, which I can't think of anything more important, if we have these 10 things and they also logically read to things we're not doing right now, then the factory can go for the next 14 days, like, productively.
+
+So yeah, today's about plans, generating plans.
+
+You want to see all the X's and O's and formulas flying around?
+
+And we can have S-prime and S-double prime.
+
+So yeah, see, I told you.
+
+Beautiful mind matters.
+
+It's awkward, but we're here for it.
+
+How are you?
+
+How are you doing?
+
+Good.
+
+Yeah, it's good.
+
+I took off from work today and most of the day yesterday.
+
+And yeah, last week, the same thing, took off Wednesday, Thursday, Friday to just work on this.
+
+So it has been so much fun.
+
+Yeah, it's getting big.
+
+It's getting real.
+
+It's getting real.
+
+Oh, the Alexandria rebrand.
+
+I just shared it with him this morning.
+
+It's pretty sweet.
+
+Yeah.
+
+I'm freaking on it.
+
+Yeah, I'm excited about it.
+
+Especially as someone that has a philosophy degree.
+
+I know, classical Greek philosophy.
+
+There you go.
+
+You're like, this is how I get into my people.
+
+I could not vibe with that any harder.
+
+We're bringing the Greeks into the 21st century.
+
+Yep.
+
+Oh, man.
+
+That's pretty cool.
+
+Good luck.
+
+Thank you.
+
+Thanks, guys.
+
+Thanks.
+
+Yeah.
+
+There's some water and maybe some more food.
+
+Yeah, we have six tickets remaining in the factory.
+
+I'm just doing a quick hotel spike.
+
+Yeah.
+
+And so, right.
+
+Factories have stations.
+
+That's interesting.
+
+I was also thinking about how, for everything else, everything else, it's in my mind, as I've imagined this all going through, everything's late-touch Toyota, and the library hasn't been.
+
+But when things break, it needs to be.
+
+Like, we can always fix our Alexandria.
+
+But the idea that libraries break just like everything else breaks, and having line pulls and messages go out, and the owner of the library knows that something broke, where it's broken, what needs to be done.
+
+The more I thought about it, to make the library better maintainable and discernible, that original fucking factory view I made for myself in GitHub is not bad, which is what agent play is off of.
+
+But just this idea of, hey, human, this broke.
+
+Hey, technical human, this broke.
+
+Hey, product human, this broke.
+
+In my mind, the library's just been largely autonomous.
+
+And making it semi-autonomous?
+
+Like, we've talked about this.
+
+There's dials on the factory.
+
+Designing it to be semi-autonomous, and then choosing to run it fully autonomous if you so choose.
+
+Right.
+
+No, this is actually, so yes, we should figure out how to do that.
+
+We should figure out what our opinion is on how this works.
+
+One of the things that stuck out to me from that podcast too is this is a hard problem that it's easier to make a fully autonomous thing than a semi-autonomous thing.
+
+And what is the interface by which you get human attention?
+
+How do you know whether you need to get it?
+
+Once you've gotten it, or if you don't get it after a certain amount of time, how do you design it and just keep going?
+
+All of those things.
+
+The guy at OpenAI Frontier was saying that this is one of the hard problems that they have not been able to solve yet.
+
+We've tried a lot of different things.
+
+He's like, I'm really big on collaboration tooling.
+
+And that is sort of a substrate for AI-human collaboration to kind of start to solve this problem.
+
+He's like, but I'll be honest.
+
+We don't have a solution here.
+
+And I was like, oh my gosh.
+
+It makes the top line of the memo even better.
+
+We're the teamwork layer for AI and human.
+
+The most cutting-edge group in the most cutting-edge company on the planet is trying to solve this problem.
+
+Trying to solve the same problem we're trying to solve and says they don't have a solution.
+
+Like, we're better.
+
+Sharing the tweets, sharing that podcast.
+
+Like, we need a data room of getting up to speed on the state of the state.
+
+Tarpehvi's tweet and that.
+
+OpenAI Frontier.
+
+A data agent and yeah.
+
+This is what I was talking about partly around consolidation.
+
+We have a lot of, we made a lot of decisions yesterday.
+
+We've made some this morning.
+
+We need to get those into Alexandria, get Alexandria updated.
+
+There is a sort of like company level, some company level work that needs to be done that was started around the two major but needs to be further consolidated, bringing, like you even mentioned, the competitors list is pretty thin.
+
+And there's different people that are doing different things.
+
+And like, how are we not paperclip is a really, like I want to write a little paragraph on that of like, here's how we're not paperclip.
+
+And here's the better analog for what we are.
+
+So yeah, lots of little things to do.
+
+I think an important one, yeah, so getting here is important but I think we need to consolidate before we get here because I think this will be sharper if we do the consolidation and we can get more of Raven's help with this if we get the Alexandria updated.
+
+And fortunately, like when it comes to the orchestration layer, for better or for worse, I have a lot of opinions on how that works now because I've been building something for five weeks.
+
+I've built two different orchestration layers or been part of building two different orchestration layers at Elicit.
+
+So we're on, you know, I'm on factory version four.
+
+What's incredible is one of your biggest pains the last five weeks is like, I wish I weren't spending so much time on this.
+
+And now it's like, you know what?
+
+Surprise.
+
+Surprise, we're gonna win.
+
+We're gonna gain from that.
+
+We're gonna build it into Alexandria.
+
+So yeah, I like it.
+
+And that's my super simple question is why wouldn't we just take what you've built and import it?
+
+I have good technical answers to that.
+
+I can't wait.
+
+Yeah, and like, yeah, I could.
+
+I don't even need to understand.
+
+Yeah. technically I could explain why.
+
+Yeah. Well, I mentioned that in my Discord this morning. I don't know if you saw that. We can go ahead and use what I have now, Symphony, to orchestrate our Alexandria now before we have the orchestration layer.
+
+Got it. Because we already have a factory that's sitting there and running on top of our Alexandria repo. So I'm just gonna repurpose Symphony as a jank version of an orchestrator. Fantastic. So we will get orchestration immediately. And the cool thing is I'm gonna do it. It'll be better orchestration than I've had for us. Oh, absolutely.
+
+Yeah, yeah. Basically, the very first thing I'm gonna do is at the end of the software development process, when you merge a thing, run library update. Run the play. Do the thing. So we'll at least get just that one thing alone will be incredible. And so yeah, then being able to put other tasks on this workflow and have it run through.
+
+We don't wanna use Symphony for a lot of good reasons, but the tooling that we will need to build in the library to be able to run these plays, the orchestrator, you can think of the orchestrator as being architecturally independent of those things. So yeah, I'll make it so that we can basically swap out the orchestrator when we have a real one. And until then, we'll use our jank one. And the library will just operate better because it is being orchestrated. Symphony is definitely not going to waste.
+
+Okay. Okay. Okay. Okay. Okay. Yeah, we may use Ling Graph. Will be the first thing I'll look into. For our orchestrator.
+
+Okay. Okay. Yeah, that's amazing. Like, today is about codifying as many decisions as we possibly can until we're just burned out. Like, can't get, can't decide on anything more and getting that into Alexandria such that it is aware of all the decisions that we've made. And then we can build plans out of that.
+
+We're gonna be running some plays this morning on Alexandria itself. Like, bringing in transcripts from yesterday, whiteboards from yesterday. So, I'm gonna talk with Raven about this. But there is a very significant reboot that needs to happen at the corporate level.
+
+So, before we do anything, it goes, like, I need to, and this is the whole, if we had Solomon up, he'd be like, thanks for the whiteboards. I need to, like, redo our corporate layer. And we have a company repo. And I'm wondering if this is the first federation that we do.
+
+Because, like, the company repo has an Alexandria that we don't ship in any form or fashion. Because eventually we may flip Alexandria, the repo, to be open source. And so, can't have all of our socio-technical stuff living in there. It feels weird having a two-pager and competitive layout. Makes no sense. Makes no sense.
+
+So, this might be our first federation of Alexandria is the product. But there's, socio-technical company. Yeah, yeah. Except Alexandria is really spinning out of, socio-technical is a lab. That's true. So, this is Alexandria Co.
+
+Yeah. Okay, yeah, so there's Alexandria Co. You know, you're exactly right. You're exactly right. Because there is a. Because, and it's so funny how, but this is so important why the peanut butter is separate from the jelly. Is there's your product library and then there's your company library.
+
+And the whole company just changed. And it has some impact on the product, but not total impact on the product. It has a huge impact on the release schedule and plan. It definitely has some architectural impact. But like, the.
+
+I think the way we could split this morning, to like, tackle this, is like letting you focus on the, standing up Alexandria, the company, the company layer. Yep. Getting the conversations from yesterday in there. Working with Raven to make that happen.
+
+And then, figuring out what of that goes into, in the relationship between that Alexandria and the Alexandria for the product. Then like, then when you get to the point where you're ingesting things for Alexandria for the product, I'll jump back in with you.
+
+Until then, I think what I'm gonna try and do is map out S. In the way that I wanted to yesterday. Like, getting a big T.L. draw that has, these are the different plays, these are the different agents, these are the way that we relate to the different architectural components.
+
+Because that, getting clarity on that is gonna be essential to get to the plans, the implementation plans, and have real implementation plans that we can run. How's that sound like a place to start?
+
+And I'm happy to like, at any time, drop what I'm doing in Pear, and I may be grabbing you for questions too. Like, wait, how does this work? Are you sure this part's important? Is this, this looks old. Is this new or old? Have you run this? Have you used this?
+
+I'm sure I'll have a lot of questions when I get down to the details. This play looks weird. It has like three steps, but it says it has five over here. Do they actually run back to back? Or did you envision these being two plays and you just mashed them together three months ago and haven't really thought about it since?
+
+So like, I'll have a lot of questions like that. No, I know, and that's what brings me back to like, it may or may not, you're orienting that way is great, but like, me, I'm two chats away with Raven from being like, what do we just need to get rid of for our plays and for our skills?
+
+Like, what's? Let me do it, let me do it. Okay. Because if I do it, I will understand it. And if Raven does it, I won't even know what we lost.
+
+Yeah. And I think there's a, so what I'm doing today is really building understanding and familiarity with the whole thing. I wanna know what every damn thing in the library does. This is very different than code. I don't actually care about how the code works. I'm not gonna read any of the code.
+
+Yeah. But what I do care very much is like, what are the plays? How do they run? And I'm trying to lay them out at a conceptual level. In fact, what I wanna build, and I'm not gonna build today, but I will build in the future, is I'm gonna build a way to visualize all plays and agents automatically by just scanning the repo.
+
+So programmatically, look at all the plays and agents and build a graph, build a visualization. So today I'm gonna build the first version of that by hand, and then I'm gonna build a tool that can recreate that instantly. And that way, every time we change plays, change agents, the visualization just updates for us.
+
+So my whole chat with Raven was what ran the board yesterday. I don't know if you want. Yeah, if you can export, tell Raven you're giving a summary to your co-founder of the chat, and tell her to summarize the key points, and feel free to go into ridiculous amounts of detail for the things that are confusing and are most important to understand.
+
+She doesn't need to compress fully. I can read. We're going to be getting to the point where we prune and cull inefficiencies from our playbook agents.
+
+

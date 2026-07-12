@@ -1,0 +1,28 @@
+"$schema" = "https://conductor.build/schemas/settings.repo.schema.json"
+
+[scripts]
+run_mode = "nonconcurrent"
+setup = "./scripts/setup-worktree"
+
+# In-session agent selector: workspaces start as generic Claude Code; the
+# session itself can switch the workspace's default agent by editing
+# .claude/settings.local.json. The agent is resolved once at session start,
+# so a switch applies to session tabs opened afterwards.
+[prompts]
+general = """
+Agent selector for this workspace: Claude Code can run as a named plugin \
+agent. The workspace default lives in .claude/settings.local.json under the \
+"agent" key (no file or no key = generic Claude Code). Available agents: \
+alexandria:raven (product-thinking colleague, context-library expert), \
+alexandria:damien (New Media executive producer), or generic (no agent).
+
+- If this is the first exchange of the session and the user hasn't picked an \
+agent, append one short line to your reply: the current workspace default \
+(read the file) and that they can say "switch to raven/damien/generic" to \
+change it.
+- When the user asks to switch: update the "agent" key in \
+.claude/settings.local.json (create the file if missing, remove the key for \
+generic, preserve any other keys), confirm the change, and remind them the \
+agent is fixed at session start — they must open a NEW session tab to get \
+the new agent.
+"""

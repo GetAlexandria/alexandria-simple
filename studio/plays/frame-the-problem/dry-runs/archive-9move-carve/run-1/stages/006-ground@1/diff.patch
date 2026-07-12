@@ -1,0 +1,16 @@
+diff --git a/runtime/bounce-note.md b/runtime/bounce-note.md
+new file mode 100644
+index 0000000..fbc1161
+--- /dev/null
++++ b/runtime/bounce-note.md
+@@ -0,0 +1,10 @@
++target: frame
++check failed: Verbatim quotes
++exact text that failed it:
++
++```text
++Half my best source material dies in tabs.
++```
++
++reason: Not findable character-exact in the transcript; the transcript has the line break between `source` and `material`.
++strike count: 1

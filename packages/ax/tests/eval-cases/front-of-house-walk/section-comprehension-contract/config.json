@@ -1,0 +1,71 @@
+{
+  "caseId": "front-of-house-walk/section-comprehension-contract",
+  "description": "Front-of-House skill walks section comprehension before offering held-back problems and banks confirmed section summaries.",
+  "checks": [
+    {
+      "description": "Raven skill reads agenda context, uses the section-comprehension movement for source/inference items, and preserves item-gated answers.",
+      "file": "packages/alexandria-plugin/skills/front-of-house-walk/SKILL.md",
+      "contains": [
+        "runtime/front-of-house/agenda.json",
+        "### Section Comprehension",
+        "current-item.json.agendaItem.origin",
+        "`source` or `inference`",
+        "`agendaItem.kind` is not `hot_spot`",
+        "`agendaItem.placementState: \"filed\"`",
+        "current filed agenda item's `context` and `plane`",
+        "Do not treat `placementState: \"unfiled\"` or",
+        "same-context agenda items",
+        "every staged agenda item still gets its own `ax raven answer` loop"
+      ]
+    },
+    {
+      "description": "Raven skill requires human section reads from card labels and WHATs, split by origin with basis and confidence, without using raw WHERE/HOW body mechanics.",
+      "file": "packages/alexandria-plugin/skills/front-of-house-walk/SKILL.md",
+      "contains": [
+        "card `prefLabel`s",
+        "usable `WHAT` text only",
+        "Do not synthesize from `WHERE`, `HOW`, file paths",
+        "what I think I know (confirm)",
+        "`origin: \"inference\"`",
+        "`basis` and `confidence`",
+        "what I know I don't (gaps)",
+        "`origin: \"source\"`",
+        "no inferred claims",
+        "no sourced gaps were found"
+      ]
+    },
+    {
+      "description": "Raven skill withholds hot spots from comprehension, then offers them in a trailing held-back movement.",
+      "file": "packages/alexandria-plugin/skills/front-of-house-walk/SKILL.md",
+      "contains": [
+        "Do not present any `hot_spot` or `out_of_scope_suspect` item during Section Comprehension",
+        "### Held-Back Problems",
+        "Use this movement only when the staged agenda item has `kind: \"hot_spot\"`",
+        "after the comprehension pass as an optional offering",
+        "now that we've walked the sections",
+        "rule the current problem",
+        "residual accounting"
+      ]
+    },
+    {
+      "description": "Raven skill closes confirmed sections through the shipped confirm-section command without card or keystone body writes.",
+      "file": "packages/alexandria-plugin/skills/front-of-house-walk/SKILL.md",
+      "contains": [
+        "last same-context item in `agenda.json`",
+        "send the answer through",
+        "`ax raven answer --json`",
+        "JSON `eventId` as the answer event id",
+        "`answerEventId`",
+        "ax internal front-of-house confirm-section",
+        "--pref-label <human section label>",
+        "--summary-file",
+        "--answer-event <answer event id>",
+        "library.front_of_house.section_confirmed",
+        "Do not call `confirm-section` before the user answer event exists",
+        "`unknowns: []`",
+        "do not fill card bodies",
+        "rewrite the keystone body"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+Coin is a Component, not a Surface. The Surface is the Tray — the persistent, expandable/contractable visual area for coordinating and managing AI colleagues, present across the whole viewer. Coins are components inside the Tray, each representing one AI colleague and serving as the navigation hub to that colleague's hotplays, playbook, knowledge bank, and agent page.
+
+The Tray is a missing card — it was not found by the scan but belongs in the library. Its intent is a visual area to coordinate and manage AI colleagues. The current coin-based design is what's being tested; the Tray may not always use coins. The Tray deserves its own card as a Surface in the Viewer section. How it's represented (or not) in the current data model needs investigation.

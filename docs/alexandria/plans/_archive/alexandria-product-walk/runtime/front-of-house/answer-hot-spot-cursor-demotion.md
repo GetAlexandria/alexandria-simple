@@ -1,0 +1,1 @@
+Keep as a card for now. The director does not have enough context on this part of the system (Triggers) to rule on it. Triggers domain knowledge lives largely with the cofounder. Leave the Cursor card in place; revisit when the Triggers section gets more attention.

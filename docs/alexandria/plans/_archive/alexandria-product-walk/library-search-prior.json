@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "library-search-prior.v1",
+  "domain": {
+    "actors": [
+      { "value": "director", "confidence": "high" },
+      { "value": "team leader (small startup team or division, 4-16 people)", "confidence": "high" },
+      { "value": "AI colleague (agent)", "confidence": "high" }
+    ],
+    "capability": {
+      "value": "build and run a team of AI employees by combining company context, reliable plays, triggers, and an immutable ledger",
+      "confidence": "high"
+    },
+    "category": {
+      "value": "operating plane / mission control for agentic companies",
+      "confidence": "high"
+    },
+    "vocabulary": [
+      { "value": "play", "confidence": "high" },
+      { "value": "playbook", "confidence": "high" },
+      { "value": "ledger", "confidence": "high" },
+      { "value": "trigger", "confidence": "high" },
+      { "value": "context library", "confidence": "high" },
+      { "value": "living business plan", "confidence": "high" },
+      { "value": "coin", "confidence": "high" },
+      { "value": "agent", "confidence": "high" },
+      { "value": "director", "confidence": "high" },
+      { "value": "visual interface", "confidence": "medium" },
+      { "value": "federated", "confidence": "medium" },
+      { "value": "responsibility (area of responsibility)", "confidence": "medium" }
+    ]
+  },
+  "workThread": {
+    "unit": { "value": "Play Run", "confidence": "low" },
+    "path": [
+      {
+        "activity": { "value": "director assigns work to an AI colleague", "confidence": "high" },
+        "place": { "value": "visual interface / coin", "confidence": "medium" },
+        "advance": { "value": "the agent takes the assignment up independently", "confidence": "medium" }
+      },
+      {
+        "activity": { "value": "a trigger fires from recorded history", "confidence": "high" },
+        "place": { "value": "ledger", "confidence": "high" },
+        "advance": { "value": "a matching event exists in the immutable ledger", "confidence": "medium" }
+      },
+      {
+        "activity": { "value": "the agent runs a play", "confidence": "high" },
+        "place": { "value": "playbook", "confidence": "high" },
+        "advance": { "value": "the play's combination of agentic, software, and human activities completes", "confidence": "medium" }
+      },
+      {
+        "activity": { "value": "what happened is recorded as immutable history", "confidence": "medium" },
+        "place": { "value": "ledger", "confidence": "high" },
+        "advance": { "value": "an event is appended; the ledger remains the source of truth for what has happened", "confidence": "medium" }
+      }
+    ],
+    "stateField": { "value": "status", "confidence": "low" },
+    "places": [
+      { "value": "context library (federated set)", "confidence": "high" },
+      { "value": "playbook", "confidence": "high" },
+      { "value": "ledger", "confidence": "high" },
+      { "value": "visual interface (director's agent-management surface)", "confidence": "high" },
+      { "value": "coin (the agent's front)", "confidence": "high" }
+    ],
+    "shape": {
+      "value": "event-driven loop around an immutable ledger",
+      "confidence": "medium",
+      "basis": "The Work names the immutable ledger as the source of truth for what has happened and the best source for triggers — work fires from recorded events, plays run, and history accrues back into the ledger; it never names ordered pipeline stages."
+    }
+  },
+  "fence": {
+    "outOfScope": [
+      { "value": "an OS for chaotic or midsized organizations", "confidence": "high" },
+      { "value": "family-run businesses or yolo fundraising schemes (audiences lacking unity and synchronization)", "confidence": "high" }
+    ],
+    "external": [
+      { "value": "the team's existing tools and workflows (it is not a boost or upgrade layered onto them)", "confidence": "medium" }
+    ],
+    "lookAlikes": [
+      { "value": "a big pile of skills", "confidence": "high" },
+      { "value": "better prompt engineering", "confidence": "high" },
+      { "value": "a prompt window / chatbot", "confidence": "medium" }
+    ]
+  },
+  "openQuestions": [
+    {
+      "about": "unit",
+      "question": "The Work describes plays being run, things being assigned, and events being recorded — is the unit of work a play run, an assignment, or a ledger event? Which record actually carries the status?"
+    },
+    {
+      "about": "stateField",
+      "question": "Is the lifecycle marker on the unit of work actually named `status` in source, or something else?"
+    },
+    {
+      "about": "path",
+      "question": "Director assignment and ledger-fired triggers both appear to start work — is there one canonical entry point, or two parallel ones?"
+    },
+    {
+      "about": "places",
+      "question": "Is the coin a distinct place or just the rendering of the agent inside the visual interface?"
+    }
+  ]
+}

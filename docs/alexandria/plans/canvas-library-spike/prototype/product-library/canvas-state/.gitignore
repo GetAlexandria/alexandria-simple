@@ -1,0 +1,4 @@
+# Runtime-generated state for the local prototype. Not source of truth.
+# Lab-server.py writes these on every prototype run; tracking them would
+# churn the diff every time someone serves the prototype.
+*.json

@@ -1,0 +1,267 @@
+#!/usr/bin/env bash
+# Prune stale local Fabro run state and stopped Docker sandboxes.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+SERVER_URL="${FABRO_LOCAL_SERVER_URL:-${FABRO_LOCAL_SERVER:-http://127.0.0.1:3000}}"
+RUN_RETENTION="${FABRO_LOCAL_RUN_RETENTION:-14d}"
+DOCKER_RETENTION="${FABRO_LOCAL_DOCKER_RETENTION:-24h}"
+DRY_RUN="${FABRO_LOCAL_PRUNE_DRY_RUN:-0}"
+SKIP_RUN_PRUNE="${FABRO_LOCAL_SKIP_RUN_PRUNE:-0}"
+SKIP_DOCKER_PRUNE="${FABRO_LOCAL_SKIP_DOCKER_PRUNE:-0}"
+
+usage() {
+	cat <<'EOF'
+Usage: ./scripts/fabro-local-prune [options]
+
+Prunes stale local Fabro state without interrupting active work:
+  - Fabro run records older than 14d through `fabro system prune`
+  - stopped Fabro-managed Docker containers older than 24h
+
+Options:
+  --server URL              Fabro server URL (default: http://127.0.0.1:3000)
+  --run-retention DURATION  Retention for Fabro run records (default: 14d)
+  --docker-retention DUR    Retention for stopped Docker sandboxes (default: 24h)
+  --dry-run                 Preview deletions
+  --skip-run-prune          Do not prune Fabro run records
+  --skip-docker-prune       Do not prune Docker containers
+  -h, --help                Show this help
+
+Environment overrides:
+  FABRO_LOCAL_SERVER_URL
+  FABRO_LOCAL_RUN_RETENTION
+  FABRO_LOCAL_DOCKER_RETENTION
+  FABRO_LOCAL_PRUNE_DRY_RUN=1
+  FABRO_LOCAL_SKIP_RUN_PRUNE=1
+  FABRO_LOCAL_SKIP_DOCKER_PRUNE=1
+EOF
+}
+
+log() {
+	printf '[%s] %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$*"
+}
+
+while [ "$#" -gt 0 ]; do
+	case "$1" in
+	--server)
+		SERVER_URL="${2:?--server requires a URL}"
+		shift 2
+		;;
+	--run-retention)
+		RUN_RETENTION="${2:?--run-retention requires a duration}"
+		shift 2
+		;;
+	--docker-retention)
+		DOCKER_RETENTION="${2:?--docker-retention requires a duration}"
+		shift 2
+		;;
+	--dry-run)
+		DRY_RUN=1
+		shift
+		;;
+	--skip-run-prune)
+		SKIP_RUN_PRUNE=1
+		shift
+		;;
+	--skip-docker-prune)
+		SKIP_DOCKER_PRUNE=1
+		shift
+		;;
+	--help | -h)
+		usage
+		exit 0
+		;;
+	*)
+		echo "Unknown option: $1" >&2
+		usage >&2
+		exit 1
+		;;
+	esac
+done
+
+prune_fabro_runs() {
+	if [ "$SKIP_RUN_PRUNE" = "1" ]; then
+		log "Skipping Fabro run prune."
+		return
+	fi
+
+	if ! command -v fabro >/dev/null 2>&1; then
+		log "Fabro CLI not found; skipping Fabro run prune."
+		return
+	fi
+
+	if ! curl -fsS "$SERVER_URL/health" >/dev/null 2>&1; then
+		log "Fabro server is not reachable at $SERVER_URL; skipping Fabro run prune."
+		return
+	fi
+
+	log "Pruning Fabro run records older than $RUN_RETENTION via $SERVER_URL."
+	if [ "$DRY_RUN" = "1" ]; then
+		FABRO_NO_UPGRADE_CHECK=1 fabro system prune \
+			--server "$SERVER_URL" \
+			--older-than "$RUN_RETENTION" \
+			--orphans
+	else
+		FABRO_NO_UPGRADE_CHECK=1 fabro system prune \
+			--server "$SERVER_URL" \
+			--older-than "$RUN_RETENTION" \
+			--orphans \
+			--yes
+	fi
+}
+
+prune_docker_sandboxes() {
+	if [ "$SKIP_DOCKER_PRUNE" = "1" ]; then
+		log "Skipping Docker sandbox prune."
+		return
+	fi
+
+	if ! command -v docker >/dev/null 2>&1; then
+		log "Docker CLI not found; skipping Docker sandbox prune."
+		return
+	fi
+
+	if ! docker info >/dev/null 2>&1; then
+		log "Docker daemon is not reachable; skipping Docker sandbox prune."
+		return
+	fi
+
+	log "Pruning stopped Fabro Docker sandboxes older than $DOCKER_RETENTION."
+	python3 - "$DOCKER_RETENTION" "$DRY_RUN" <<'PY'
+import datetime as dt
+import json
+import subprocess
+import sys
+
+duration = sys.argv[1]
+dry_run = sys.argv[2] == "1"
+
+
+def fail(message: str) -> None:
+    print(message, file=sys.stderr)
+    sys.exit(1)
+
+
+def duration_seconds(value: str) -> int:
+    units = {
+        "s": 1,
+        "m": 60,
+        "h": 60 * 60,
+        "d": 24 * 60 * 60,
+        "w": 7 * 24 * 60 * 60,
+    }
+    for suffix, multiplier in units.items():
+        if value.endswith(suffix):
+            number = value[: -len(suffix)]
+            if number.isdigit():
+                return int(number) * multiplier
+    fail(f"Unsupported duration {value!r}; use s, m, h, d, or w.")
+    raise AssertionError("unreachable")
+
+
+def parse_docker_time(value: str) -> dt.datetime:
+    if value.endswith("Z"):
+        value = value[:-1] + "+00:00"
+    if "." in value:
+        prefix, suffix = value.split(".", 1)
+        tz_index = max(suffix.find("+"), suffix.find("-"))
+        if tz_index == -1:
+            fraction, timezone = suffix, ""
+        else:
+            fraction, timezone = suffix[:tz_index], suffix[tz_index:]
+        value = f"{prefix}.{fraction[:6]}{timezone}"
+    parsed = dt.datetime.fromisoformat(value)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=dt.timezone.utc)
+    return parsed.astimezone(dt.timezone.utc)
+
+
+def docker_json(args: list[str]) -> object:
+    result = subprocess.run(
+        ["docker", *args],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if result.returncode != 0:
+        fail(result.stderr.strip() or f"docker {' '.join(args)} failed")
+    return json.loads(result.stdout)
+
+
+ids_result = subprocess.run(
+    [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "name=fabro-run-",
+        "--filter",
+        "label=sh.fabro.managed=true",
+    ],
+    text=True,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    check=False,
+)
+if ids_result.returncode != 0:
+    fail(ids_result.stderr.strip() or "docker ps failed")
+
+container_ids = [line.strip() for line in ids_result.stdout.splitlines() if line.strip()]
+if not container_ids:
+    print("No Fabro Docker sandboxes found.")
+    sys.exit(0)
+
+containers = docker_json(["inspect", *container_ids])
+cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=duration_seconds(duration))
+candidates: list[tuple[str, str, str, dt.datetime]] = []
+
+for container in containers:
+    labels = container.get("Config", {}).get("Labels") or {}
+    state = container.get("State") or {}
+    name = str(container.get("Name") or "").lstrip("/")
+    created = parse_docker_time(str(container.get("Created")))
+    if labels.get("sh.fabro.managed") != "true":
+        continue
+    if not name.startswith("fabro-run-"):
+        continue
+    if state.get("Running"):
+        continue
+    if created > cutoff:
+        continue
+    candidates.append((str(container.get("Id")), name, str(state.get("Status") or "unknown"), created))
+
+if not candidates:
+    print("No stopped Fabro Docker sandboxes are old enough to prune.")
+    sys.exit(0)
+
+for container_id, name, status, created in candidates:
+    verb = "would remove" if dry_run else "removing"
+    print(f"{verb}: {name} ({container_id[:12]}, {status}, created {created.isoformat()})")
+
+if dry_run:
+    sys.exit(0)
+
+removed = 0
+for container_id, _, _, _ in candidates:
+    result = subprocess.run(
+        ["docker", "rm", container_id],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if result.returncode != 0:
+        fail(result.stderr.strip() or f"docker rm {container_id[:12]} failed")
+    removed += 1
+
+print(f"{removed} Fabro Docker sandbox container(s) removed.")
+PY
+}
+
+cd "$REPO_ROOT"
+prune_fabro_runs
+prune_docker_sandboxes

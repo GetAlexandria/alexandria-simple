@@ -1,0 +1,38 @@
+{
+  "name": "alexandria",
+  "version": "0.20.0",
+  "description": "Local Alexandria collaboration skills for event-log driven human-agent workflows.",
+  "author": {
+    "name": "SocioTechnica",
+    "email": "hello@sociotechnica.org",
+    "url": "https://sociotechnica.org/"
+  },
+  "homepage": "https://github.com/GetAlexandria/alexandria",
+  "repository": "https://github.com/GetAlexandria/alexandria",
+  "license": "MIT",
+  "keywords": [
+    "alexandria",
+    "event-log",
+    "local-collaboration"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Alexandria",
+    "shortDescription": "Use Alexandria local event-log skills.",
+    "longDescription": "Alexandria provides local collaboration skills for interpreting event-log wake payloads, inspecting AX state, and writing validated event-log updates.",
+    "developerName": "SocioTechnica",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/GetAlexandria/alexandria",
+    "privacyPolicyURL": "https://github.com/GetAlexandria/alexandria",
+    "termsOfServiceURL": "https://github.com/GetAlexandria/alexandria",
+    "defaultPrompt": [
+      "Interpret the latest Alexandria event log wake."
+    ],
+    "brandColor": "#2F7A7B",
+    "screenshots": []
+  }
+}

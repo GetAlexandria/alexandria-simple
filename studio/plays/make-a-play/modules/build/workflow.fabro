@@ -1,0 +1,55 @@
+// DERIVED RENDERING — projected from make-a-play brief.md §4.
+digraph MakeAPlayBuild {
+    graph [
+        goal="Carry make-a-play from Gate 1-approved design to a built, run-enabled workflow package.",
+        max_node_visits=12,
+        stall_timeout="2h"
+    ]
+    rankdir=LR
+
+    start [shape=Mdiamond, label="Start"]
+    exit  [shape=Msquare, label="Exit"]
+
+    derive [
+        shape=parallelogram,
+        label="Derive workflow package",
+        script="cd '__AX_PROJECT_ROOT__' && node studio/tools/check-make-a-play-graph.mjs studio/plays/make-a-play",
+        timeout="1m"
+    ]
+
+    lint [
+        shape=parallelogram,
+        label="Lint derived package",
+        script="cd '__AX_PROJECT_ROOT__' && node studio/tools/check-make-a-play-graph.mjs studio/plays/make-a-play",
+        timeout="1m"
+    ]
+
+    author_fixtures [
+        label="Author fixtures and risk map seeds",
+        prompt="@prompts/author_fixtures.md",
+        backend="acp",
+        acp.command=__AX_ACP_COMMAND_JSON__,
+        timeout="20m"
+    ]
+
+    register_for_run [
+        shape=parallelogram,
+        label="Register to run",
+        script="cd '__AX_PROJECT_ROOT__' && studio/tools/bank.sh --modules studio/plays/make-a-play",
+        timeout="5m"
+    ]
+
+    acp_failed [
+        shape=parallelogram,
+        label="Fail the run on ACP failure",
+        script="echo \"ACP run failed; refusing to advance make-a-play build\" >&2; exit 1",
+        timeout="1m"
+    ]
+
+    start -> derive
+    derive -> lint
+    lint -> author_fixtures
+    author_fixtures -> register_for_run
+    author_fixtures -> acp_failed [label="ACP failed", condition="outcome!=succeeded"]
+    register_for_run -> exit
+}

@@ -1,0 +1,11 @@
+{
+  "agent": "raven",
+  "fabroRunId": "01KV875XD1BY4CN1N54EWNZYTT",
+  "ledgerPath": "/Users/danvers/conductor/alexandria-b-testsuite/.var/ax2-workspace/ledger/events.jsonl",
+  "play": "frame-the-problem",
+  "playRunId": "1955c534-df91-485b-8e39-94604a68e313",
+  "status": "succeeded",
+  "workflowGraphPath": "workflows/frame-the-problem/workflow.fabro",
+  "workflowTargetPath": "/Users/danvers/conductor/alexandria-b-testsuite/.var/ax2-workspace/.ax2-runtime/workflows/frame-the-problem/workflow.fabro",
+  "workspacePath": "/Users/danvers/conductor/alexandria-b-testsuite/.var/ax2-workspace"
+}

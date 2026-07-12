@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "play": "frame-the-problem",
+  "updated": "2026-06-23",
+  "sourceFingerprints": {
+    "brief.section4": "c87f8cfd9f449c9b3c82d46a4e09e884946ce87d0221bab57328b8e74b0bc238",
+    "workflow.fabro": "35247e652bbadab3933d0b5e3268b7d8eb1d2364f3c5c7a91a84be0c879ed809",
+    "prompts/pre_fill.md": "2006e27f7ade28e6a6b2a83f0a563f96a251d348db45ff2fa8ca6b675fc43bf3",
+    "prompts/revise.md": "860d4b69cdee453e4b84e1e2756c3267ca3c9937fa38834d9be0300345a2f2d1",
+    "prompt.contract": "20de343f9035e2be4d58c861ffc47141f901d69b14513d425d57dd9c765769f3",
+    "story.md": "08c9580fde320dd169f28893eb1991638432fb3b9abc93684efcf3a1da52b708",
+    "diagram.svg": "9367090bf12399ad950a216d048139eb5a5a61b0b6b23e0dfbd18f54281d26e5",
+    "risk-map.md": "3a0a23c87bb04046ecef020e335721e3bcce68ec35b7452ce703ac2109d236af",
+    "known-fps.md": "48d8880970af16bbfdf4bdd9c5f299e6593c86fdd6a1aa6e164f865cc667ea70",
+    "hardening.md": "5779aaaa60931b0dbddb9156490badc19cdda1e642eb326f7e11874663e49125",
+    "lint.md": "6b3e25de0900ede906829507414fe2179d7814f0e64f6695be0e81bba3e12f7f",
+    "moves.md": "57b0333c68b58ec2505ce4abafcc90c0934b5f6e068c372ac0399f53afd74a6e",
+    "fixtures/": "9c35a0a47556638b0cdbc34684068f19624537642a0e7ea27db8b3a99f6d2179",
+    "dry-runs/": "cdef06a822090850b000f8c6889e3b7286de2a5fb1c09b1fa28f6d8cc1483a0e"
+  },
+  "lastRun": {
+    "changedArtifacts": [],
+    "staleSet": [],
+    "workOrder": [],
+    "bugCards": [],
+    "noOp": true
+  }
+}

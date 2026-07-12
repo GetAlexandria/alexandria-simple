@@ -1,0 +1,71 @@
+// DERIVED RENDERING — projected from make-a-play brief.md §4.
+digraph MakeAPlayProve {
+    graph [
+        goal="Run make-a-play proof, evaluate the auto-advance contract, and route clean cards live or exceptions held.",
+        max_node_visits=12,
+        stall_timeout="2h"
+    ]
+    rankdir=LR
+
+    start [shape=Mdiamond, label="Start"]
+    exit  [shape=Msquare, label="Exit"]
+
+    run_campaign [
+        shape=parallelogram,
+        label="Run campaign",
+        script="cd '__AX_PROJECT_ROOT__' && node studio/tools/check-make-a-play-graph.mjs studio/plays/make-a-play",
+        timeout="1m"
+    ]
+
+    grade [
+        label="Grade independently",
+        prompt="@prompts/grade.md",
+        backend="acp",
+        acp.command=__AX_ACP_COMMAND_JSON__,
+        timeout="20m"
+    ]
+
+    writeback [
+        shape=parallelogram,
+        label="Write back results",
+        script="cd '__AX_PROJECT_ROOT__' && node studio/tools/check-make-a-play-graph.mjs studio/plays/make-a-play",
+        timeout="1m"
+    ]
+
+    advance_contract [
+        shape=parallelogram,
+        label="Advance or hold",
+        script="cd '__AX_PROJECT_ROOT__' && bun packages/ax/src/cli/main.ts run make-a-play:prove --json",
+        timeout="2m"
+    ]
+
+    held_queue [
+        shape=hexagon,
+        label="Held queue — exceptions only"
+    ]
+
+    register_live [
+        shape=parallelogram,
+        label="Register live",
+        script="echo \"make-a-play register_live is handled by the AX auto-advance contract\"",
+        timeout="1m"
+    ]
+
+    acp_failed [
+        shape=parallelogram,
+        label="Fail the run on ACP failure",
+        script="echo \"ACP run failed; refusing to advance make-a-play prove\" >&2; exit 1",
+        timeout="1m"
+    ]
+
+    start -> run_campaign
+    run_campaign -> grade
+    grade -> writeback
+    grade -> acp_failed [label="ACP failed", condition="outcome!=succeeded"]
+    writeback -> advance_contract
+    advance_contract -> register_live [label="all pass"]
+    advance_contract -> held_queue [label="any miss"]
+    held_queue -> register_live [label="[O] Override confirm", freeform=true, fidelity="compact"]
+    held_queue -> exit [label="[H] Hold"]
+    register_live -> exit
+}

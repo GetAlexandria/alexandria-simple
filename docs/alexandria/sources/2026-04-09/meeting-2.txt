@@ -1,0 +1,471 @@
+Grunt work. This is like a work of art. Like we're, we're what we're doing here. Marrying the business model, our own personal goals, and like what we want out of this, with the opportunity that's in front of us, the market that exists today, and that we believe will exist tomorrow, the technology we have, the technology we need to build, like all of that coming into a plan that we can execute all over the next three days. Like this makes me so happy.
+
+Yeah. So this is, this is like, yeah, the level; this is what a well-functioning organization should look like. Yeah. What we're doing here. Yeah. So good. So good. Yeah, I know, we're finally in the cut together, right? Yeah. Years in the making, sort of. I shouldn't say that. We've been in the cut together a couple levels. Absolutely. New cut.
+
+Okay. So I was talking about, now, you know, we're the guys that AI'd the Kentucky Derby, so we know a thing or two about odds. And so, you know, we're predicting, because we're bookies, we're AI bookies, we're predicting that this agent is going to be like 50% reliable next month, and 70% was lucky, based on what we're seeing about your agent.
+
+So there's, there's some interesting directions this goes in and a couple call outs I'd like to make, and then some questions for you on something I genuinely don't understand, but I think you genuinely do. So, and all of this comes down to, we talk about the factory, the software factory, and like, putting that aside, when we print software today, we're printing it with nameless, faceless agents.
+
+But they're in the little hand-rolled factory that I made for me at the beginning of this, I had like, Todd, like, here's Todd, and here's Bob, and here's Sally Peenaboo. And like, here's my team, they're my guys in the same way that I have those people in the library, in the same way that I have those people on our go-to market team in the same way that I have my editorial staff, right?
+
+There is, there is a potential world where a factory is just a series of tools populated by named agents. And it's like, okay, here's, here's Johnny, Johnny B. Goods, like this, this workforce, and, and there's a universe where you're, if we're a staffing agent, where you're buying the Johnny model, you know, we call them Herbie, but we bought a Johnny, like, we went to Alexandria, and we rented a Johnny model.
+
+And you know, here's, here's what they do. And here's why we know they're good. We know they're really, really good at making business software. Look at all the evals, like he's 88% for business software, look at that.
+
+So like, a potential universe is, is that, which then brings me all the way to like, you know what, when we talk about a factory, I've got questions for Jess, because it's not, it's not entirely clear to me where orchestrator ends and factory begins for a factory.
+
+So much of what I think of a factory being is orchestrated. Yeah. And, and so it, it, and me saying, if there's one piece I want to own, it's the factory. And I was like, well, what part of the factory would I want to own? And I was like, Oh, absolutely, the staffing place.
+
+And so staffing, the staffing place, the staff in place of a factory, because ultimately, that's, so we will own that, right? We will own that. That's assuming, assuming that they're pulling their team from a context library, and not doing nameless faceless.
+
+Yeah, they'll, we'll, we'll own the staff. So the, the, the orchestrator and the factory are mostly the same. And I see this is how diff, I guess. Yeah. So they, I guess, one way. So both the orchestrator and the factory are orchestrating workflows.
+
+And a workflow might be as simple as if this thing happens, then this thing should happen. Like just triggers. Yeah, I have a, I have a hard time with calling triggers a factory. Factories are actually feel like stations.
+
+They're, they're workflow graphs. That's what I've come to realize, where you actually have like nodes, and this splits to these two nodes, and this goes here, and then this one goes here, and then this one goes here, and then finally end up there.
+
+Like that, that, that graph, that's what makes this a factory. And the fact that these are different stations that you can, like, independently eval. And so this graph is also a play.
+
+And that's the part that we'll own. And then how it converts into a graph such that some piece of factory software can enforce that the play happens, that is the orchestrator piece that we won't own.
+
+We will not build the software to do that. There's like 15 people working on that right now. And what we, what we think is valuable is what are the actual plays? What is the content of the plays?
+
+Like how does this, this go to that, go to that? How do you enforce it? How do you, like, ensure that it executes reliably? How do you ensure that it's durable?
+
+Like, all the... For lack of a better term, we're the teamwork people, and we do the plays and the people. Like, like going, going back to the problem that we're solving, it's really hard to do AI human teamwork right now.
+
+And we do it, we're the infrastructure for AI human teamwork. Exactly right. And with, and so like our, to some extent, our value in some ways exists in config.
+
+Like we're the, we're, and then we are the, or we are a self-improving set of procedural knowledge that runs on top of execution layers. Like, and so the Alexandria is that procedural knowledge that self-improves through a cross-library data layer.
+
+And that you can be sure that when you grab that, it works well. And you grab it, and you run it on top of your execution layer, or whatever your execution layer is.
+
+And it scales all the way down to, you can run it inside of Cloud Code, just on your local machine. And you can like, Cloud Code can even orchestrate it for you. Poorly, poorly, but it'll do it.
+
+But if you want this thing, if you're serious about this, then you need to install Fabro, and Paperclip, and you're going to set this up with, you know.
+
+I mean, that's where we get into installs, right? Like, yeah, we can actually come and help you do the full install, and we can help you evaluate which of the orchestrators is actually appropriate for you, for your AI team.
+
+We're the AI team. We're the AI team geniuses. That's right. Yeah, and we know how to actually instrument it within your organization.
+
+But it is a full custom install. This scales from you, as an individual user, to a full custom install for your company.
+
+But the important part is that the agents and plays are continually evolving through evals and data about best practices.
+
+So one pattern that I observed, and that I think I'm starting to feel in the factory as well, is that really the only important name agent is the ones that I interact with.
+
+Everything that's like inside, so in the factory, all of my stations, none of the agents that are working at the different stations have names.
+
+But the operator, I've taken to calling the operator, and I talk about him as the operator, and effectively, the operator is the name.
+
+It's the role and the name merged into one, but it is, yeah. And so I keep that, that operator is the layer through which I end up managing the factory the whole time.
+
+So, yeah. Yeah, so I think a couple, going back to your web viewer is showing you nonsense. Mm-hmm. I'm listening.
+
+There's some really interesting things that I'm starting to think about a web viewer showing us that I hadn't really thought about.
+
+One of the big ones being better visualization, and this goes back to the debugger too, better visualizations of the plays and eval coverage of the plays and play coverage of jobs to be done.
+
+Mm-hmm. So there is a more visual, traversable. No, it really, seeing this helps you, as like the core value loop, helps me understand what the web viewer should be.
+
+It's like, it doesn't need to be cards and plans. Like, yeah, you do kind of need a card viewer. Yeah, but you could just use Obsidian for that.
+
+Like we said, totally undifferentiated. What is useful? Like, I want to see my team, and I want to see what the plays are, and I want to see, like, here are the plays beyond agent play, which is like what plays are happening right now.
+
+There's also just, well, the very, very first thing I made. Is what plays are happening right now. Yeah, absolutely.
+
+But even that, there's historical information that I want to see about plays, right? Like, this is the play that's been run consistently, and then here's the grade that this play has gotten as it's been run.
+
+And like, if I want to focus anywhere, it's on this play, because this is the one that's failing. And so, it's actually, this is something, yeah, yeah.
+
+So yeah, we could be running post-action reports on every single run of the play, and having an LLMS judge evaluate the effectiveness, and then that's what needs to get fed up here.
+
+But we could have it be displayed to the user. And then people, and the other thing is like, you write a novel play.
+
+I mean, this is part of what we need to figure out is, okay, like, they make their own play. They make their own agent.
+
+Like, what are we allowed to learn from that? What aren't we allowed to learn? They take our agent, and they modify it.
+
+Exactly. How do people customize? How do the agents learn? How do we enable people to repackage the customizations?
+
+Like, how do we enable people to sell WordPress themes on top of WordPress? That's where things get really interesting.
+
+That's exactly where Paperclip immediately jumped to, which is, I think, super smart. Yeah. So interesting.
+
+Anything else on the board that you wanted to ask about or comment on?
+
+No, I mean, it's interesting. The questions that you wrote, and I don't know if you wrote those before you left.
+
+Yeah, before you left. Well, that's because I wrote them up a week, like, three days ago on my whiteboard, and I copied them to here.
+
+Oh, yeah. So I didn't read those and basically was leading into exactly those questions. They're really important because they also boil down to the S that we are creating needs to have answers to these questions that align with the business model and the S prime and the S double prime of, like, surrounding value that you can expand out to.
+
+It's super duper important. And they're all the way down to, like, the architectural features that we offer. Like, how do we represent the config for the plays?
+
+How do we represent an agent and configuration? How do you know that you have, like, an unedited agent that is, like, the library agent?
+
+How do you clone one? You know what I think is fucking fascinating? Really fascinating for the direction we're going.
+
+That's kind of an eye-opener to me. So... I'm just going to need to talk this one out loud.
+
+Okay. We absolutely have the agents and we absolutely have the plays, and those are a big deal. And it's a big part of our special sauce, for sure.
+
+But without good... Without relevant, up-to-date organizational context, this is fairly tone-deaf.
+
+So the other piece of this that kind of isn't on the board is the context library. The library, yeah.
+
+It is... The first way our agents and plays exist, because the really, really tough thing is... I mean, dude, when I was doing the investment brief, and doing research, the research is like, oh yeah, like...
+
+The product, the knowledge product, graveyard. Like, what do you mean the knowledge product, graveyard?
+
+It's like, since 1980, every five years, a new one comes out, because everyone's stopped using theirs, because no one keeps these up-to-date.
+
+They just die, like... Everyone knows... You know, like, Notion's about to die. Like, Toys is about to die.
+
+Not just because of AI. Just, these always die, because someone's got to keep them up-to-date. No one does.
+
+And then your documentation, for documentation's sake, and it's horrible. So yeah, welcome to the graveyard, friend.
+
+It's that... We're building a context maintenance team as the most important thing to enable teams to do anything else.
+
+And so, that's why partnering with Notion, being acquired by Notion, something.
+
+We're basically saying, we're the team in the plays, on top of where you store your information, and wherever you store your information, we're going to translate it to be AI native, because you didn't make it that way.
+
+We're going to take your piles of documents, turn them into a fucking knowledge graph.
+
+We're going to format the cards a precise way. We're building an agent team to do it, either in real time or daily or something, so that your other agents...
+
+That's what your other agents can do work, and just... That's really important. And so...
+
+Yeah. I don't know. Where is that in our triangle?
+
+Yeah, so... Is that the S1? Is that the S1 to RS?
+
+I don't know. No, so that absolutely is part of the S, so you're right.
+
+Like, our triangle is agents running plays on the context library. That's like the thing that they're running on.
+
+Yeah. That they're running via, and it's the thing that makes the plays special.
+
+It's the thing that makes the agents special.
+
+So no, I totally agree it's not in here.
+
+Yeah, and I wrote up here, like, S is...
+
+Like, our initial thing that we're building is the team that does context maintenance and turns it into plans.
+
+Like, we take your dead documents, we bring them to life and maintain them, and then we turn them into action in your organization.
+
+That's like, we can tell you...
+
+An AI can tell you what needs to be done and how to go do it if you just show them your docs.
+
+And answer their questions.
+
+And answer their questions, exactly.
+
+Which is drunk Uncle Sal.
+
+Yep, and also...
+
+Yeah, exactly. And it will go...
+
+Yeah, so I think that's our S.
+
+And then there's, like, things that you might want to do around that that become the S' and the S''.
+
+So I think we're at a good point with this to where we should start over with a new illustration that is actually the S.
+
+And I think we should build from the smallest possible unit of value.
+
+Like, it's just this one agent doing this one thing.
+
+And then build up to a point where we say, OK, this is it, this is it, this is S. Everything outside of this would be cool, but it's all S'.
+
+And we can add it in if we want.
+
+But, like, building up...
+
+This is top-down, right?
+
+These are the concepts that exist in the market today.
+
+These are where they fit, inside, outside.
+
+Now I think we need to do a bottom-up to build our minimum valuable slice.
+
+And what's so fun, and we can talk with Raven about this, but what's so fun is the minimum valuable slice is the wizard.
+
+And a minimum valuable slice, you have it, and you make the library.
+
+It's already going to be obvious, I think.
+
+And the thing that I want to spell out, though, is I want to spell out how S, and that minimum valuable slice, the library, which gives you the context and the planning function,
+
+how that relates to the CLI, exactly what you need in the web viewer, what is the role of agent play in that world, which exact agents do we need and not need, which plays are most important,
+
+which plays do we have, like, spelling them out, breaking the library experience into these individual plays.
+
+What analytics are we gathering?
+
+How do we report on that?
+
+I want to take all these generic concepts and make them super specific.
+
+And then once we have that level of specificity, even in the TL draw, it's just a conversation with Raven away from hitting print.
+
+And then I want to talk about how we relate to these external things, because I think this is where the partnerships conversation that you've been talking about going has.
+
+Yeah, okay, this is who we are.
+
+Exactly, because we can basically say, from S, we can leverage, we can run this on that, which is outside of our place.
+
+That's cool.
+
+And then we can prioritize those.
+
+I'm like, all right, great.
+
+The first thing we're going to do is we're going to build a Beats extension, and we're going to go to the Beats community and we're going to be like, here you go.
+
+Boom, ready to go.
+
+I mean, one guy that I shared the library with yesterday, he immediately asked, can you make tickets in this random format that I had never heard?
+
+I was like, absolutely we can make it.
+
+Just show me the thing. I will print that tomorrow.
+
+And like, yes.
+
+Here's a ticket writer for you, just for you.
+
+So that kind of...
+
+Yeah, got it.
+
+All those handshakes from our S to their stuff, it's like...
+
+Let's retro the meeting and then talk about lunch.
+
+Yeah.
+
+It was definitely my meeting.
+
+It really was.
+
+That you set up so beautifully for me.
+
+With the investment memo and kind of the work that we've been doing the last several days, got me in the mindset to have this conversation.
+
+Yeah, yeah, yeah.
+
+Work last week, and then actually finishing that memo.
+
+Everything has been pinnacling to this moment.
+
+Like, here we go.
+
+Now we know.
+
+It's like, there's not anything missing.
+
+So many times when we have this conversation, there are big open conversations that we haven't had.
+
+What are our goals and what do we really want?
+
+What is the business models that are possible?
+
+Who are the competitors that are out there?
+
+What are other people doing?
+
+What need can we actually really meet?
+
+Sometimes we can only talk at this level because we can't actually say, this is the one thing we know we can do and we want to do that.
+
+We can't get down to the ground level.
+
+So we had everything, and now it's just like, yeah.
+
+Anyway, that was a little bit of a retro.
+
+Yeah.
+
+Yeah, no, I mean, it's six and seven.
+
+You know, process.
+
+This is just a better prep and collaboration coming in.
+
+Like, we're running a play in orchestration.
+
+Like, everything we've been doing since even before you took those couple days off last week is like,
+
+like the big pre-thing of this is you're being like, I don't know what we do next.
+
+I'm like, dude, I have so much certainty in what we do next.
+
+And then by my saying, I have so much certainty in what we do next, I think, yes, it was just you being like, okay, well then this.
+
+Oh, yes.
+
+And so it's like, yeah, we definitely need a business model.
+
+And then you've seen it in the whole universe.
+
+You were like, not only is this what we do next, one sentence.
+
+Here's the context.
+
+Here's how you could explain it to an outsider what we do next.
+
+Yeah.
+
+More or less.
+
+Like, yeah.
+
+And that's what a modern business plan should be.
+
+And like, that's the one pager we need.
+
+Like, here's what we're doing.
+
+Here's the next five things we're doing.
+
+It's our release plan.
+
+But it's more than a release plan.
+
+It is our business plan.
+
+Yeah.
+
+Right?
+
+So it's like, we need to get your two pager into the Alexandria's Alexandria.
+
+Something like that.
+
+Right?
+
+Well, except that, yes, and for us, it's even more tactical.
+
+It's not the two pager.
+
+It's the, basically, here's our next five phases.
+
+And if we're really cranking, they could happen in five weeks.
+
+All five phases.
+
+We could be all the way down to phase five if things go well and we're really pushing.
+
+But anyway.
+
+Yeah.
+
+From a second perspective, like, we're having the same conversation with no need of a translational layer either way.
+
+And we're finally at a point of mutual familiarity.
+
+And we're going to have a bottom-up conversation that I can contribute to because I've been running all the bottoms to up.
+
+Like, it's not even like I've got to be uncomfortable with that.
+
+It'll be, I'll be excited to share the plays.
+
+And the idea of the mapping and the coveraging and the cell phone towers and load balance and everything else on play and players is a revolutionary concept to me.
+
+I hadn't thought about it, but it is a way to even more system what is already a system.
+
+And I'm, like, thrilled about that.
+
+Like, definitely the seven for me of the coverage map and the play integrator and the play viewer, the web viewer as plays and players,
+
+like, next level.
+
+And, of course, with that level of specificity, it becomes so much easier to build and shape and so much more tangible.
+
+And, like, in some ways, that web is in the back of my head and I don't even think about it.
+
+And then, of course, I can see them, like, given that, who the hell else would ever think that or see that?
+
+My goodness.
+
+Like, we've got to raven that the fuck out of my head.
+
+Just the meta on it is remarkable because we need to just do that for our one library and then you need to think about that for any library and then you need to think about that for people's deploy.
+
+And what I'll say is that speaks to, not, like, in a business funnel, in a business funnel, like, this is really good,
+
+like, we've got to moat.
+
+Can you moat?
+
+We've got to moat.
+
+Can you give us money?
+
+We have to moat.
+
+We need moat money, moat money, moat money.
+
+Like, no, that's a, like, holy goodness gracious.
+
+How would you do this without that?
+
+It's wild.
+
+And then, to top it all off, the idea of Alexandria being the place where all the information is from everywhere, man, that's nasty.
+
+That is a big, nasty brand.
+
+That's like Amazon.
+
+Like, that is a Brass Balls brand that we're just about to earn.
+
+Yeah, yep, yep.
+
+We bring it all in from all over the world.
+
+Danvers the Great.
+
+Her and Alexandria.
+
+So goofy.
+
+So there you go, six and seven.
+
+Yeah, I was going to say, like, six and a half, seven.
+
+Like, the process stuff, like I said, I thought it was, like, great preparation.
+
+The fact that this meeting felt inevitable based on the previous conversations and meetings is, like, such a testament to, like, how we've been working lately.
+
+It's like, the next thing is just obvious.
+
+Here's the next conversation we need to have.
+
+And then, yeah, just the way that the, being able to center the meeting on a visual medium that kind of paints the world into two pieces,
+
+which I only had some of it in my head, and then getting to talk it out together was, like, oh, man, so good.
+
+And the sharper I get on this stuff, the more edge we have as architects of the future, because this stuff is so cutting-edge that people are arguing about it every day and trying to figure it out,
+
+so much value in this.
+
+Yeah, and then outcomes-wise, it becomes really obvious what, I mean, to think that, like, a couple of days ago, I'm looking at all the things we could do and not knowing what to do, and now it's just so clear how we get to the next five phases. So that's a huge outcome.
+
+Yeah, and another big thing was your, like, I think back to me saying, let's be math first, and you being like, dude, that's a million times more complex, and being like, okay, let's think through how to make it not a million times more complex, but hearing the objection, getting to a thing, making a prototype, and being like, how about this? I don't know if it's going to be the same thing for agent play, but you're being like, dude, the whole thing breaks when there's five people. That kind of thing is just gold for me. I'm like, challenge accepted.
+
+But like, you know, whereas math first, I was like 80% sure I could come up with something. Agent play, I was like 35. Like, there's a chance I could come up with something this week to address Jess's concern. Well, I mean, it's actually pretty simple, which is you have to have hosted infra, where the agents are working. That's it. And whether it's the end user gives you access to their hosted infra, or you host it for them, that really is the only way, because you have to be able to see what the harness is sending to the model. You've got to have access to the harness. If you don't have access to the harness, you don't have it.
+
+The trickiest part of this is like, yeah, always going back to what, you know, who's in the best possible place to eat us, obviously the big models, but the big models aren't, no one can run this right now. Another really interesting thing will be, like, if this is just what a model is someday, that's the biggest risk, is that Mythos, it turns out, is actually this. It's actually self-writing, breaking problems into agents, writing plays, and then it has the native inside-the-model analytics on how the plays are being run. It doesn't need any cross-library domain, blah, blah, blah, blah, blah.
+
+It's like, no. It does self-improvement on its agent teams and plays internally. But if we pull this off, we actually are a target for Cloud Divide. We actually are a target for a big model to buy. That's one of the biggest things that's changed, is if we actually did this right, we'd be a legitimate, like, $100 million fast acquisition, not Notion hiring us to be, like, it's on the table. It's on the table. It wasn't on the table. We ruled it. We pushed it off the table. Whew! Yeah, wild. All right, let's eat some lunch. Yeah.
+
+

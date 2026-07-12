@@ -1,0 +1,9 @@
+diff --git a/runtime/self-check-verdict.md b/runtime/self-check-verdict.md
+new file mode 100644
+index 0000000..f2a904a
+--- /dev/null
++++ b/runtime/self-check-verdict.md
+@@ -0,0 +1,3 @@
++released
++
++checked: anti-drift, coverage, distinctness, hunch, plain-reader, word budget — nothing flagged

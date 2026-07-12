@@ -1,0 +1,17 @@
+---
+import { PmsApp } from "../app/PmsApp";
+import "../styles/global.css";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="PMS studio interface" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>PMS Studio</title>
+  </head>
+  <body class="bg-[#241b13]">
+    <PmsApp client:only="react" />
+  </body>
+</html>

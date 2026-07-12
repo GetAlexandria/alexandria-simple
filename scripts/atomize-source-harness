@@ -1,0 +1,182 @@
+#!/usr/bin/env bash
+# Repeatable test harness for the atomize-source play.
+#
+# Runs the play in an ISOLATED scratch copy of the Alexandria workspace —
+# the real library, ledger, and repo are never touched. Renders the play's
+# workflow the way `ax run` would (placeholder substitution), swaps the two
+# not-yet-shipped `ax library ...` command nodes for their executable specs
+# in scripts/atomize-harness-lib/, and runs it through Fabro.
+#
+# Usage:
+#   scripts/atomize-source-harness                 # auto-approve both gates (solo iteration)
+#   scripts/atomize-source-harness --interactive   # answer the gates yourself (director mode)
+#   scripts/atomize-source-harness --dry-run       # simulated LLM backend (graph mechanics only)
+#   scripts/atomize-source-harness --source <project-relative source path>
+#   scripts/atomize-source-harness --scratch <dir> # reuse/inspect a fixed scratch dir
+#
+# When the `ax library validate-delta-manifest` / `ax library check` commands
+# ship, drop the sed swap below and this harness exercises the play verbatim.
+
+set -euo pipefail
+
+REPO="$(git rev-parse --show-toplevel)"
+SOURCE="docs/alexandria/sources/triggers-model-ruling-2026-07-08.md"
+MODE="auto"
+DRY_RUN=""
+SCRATCH=""
+EFFORT="high"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+  --source)
+    SOURCE="$2"
+    shift 2
+    ;;
+  --interactive)
+    MODE="interactive"
+    shift
+    ;;
+  --dry-run)
+    DRY_RUN="--dry-run"
+    shift
+    ;;
+  --scratch)
+    SCRATCH="$2"
+    shift 2
+    ;;
+  --effort)
+    # Codex reasoning effort for all agent moves (minimal|low|medium|high|xhigh).
+    # Default: high (the measured quality/speed sweet spot — see PR #766).
+    EFFORT="$2"
+    shift 2
+    ;;
+  *)
+    echo "Unknown argument: $1" >&2
+    exit 2
+    ;;
+  esac
+done
+
+[[ -f "$REPO/$SOURCE" ]] || {
+  echo "Source not found: $SOURCE" >&2
+  exit 2
+}
+
+if [[ -z "$SCRATCH" ]]; then
+  SCRATCH="$(mktemp -d /tmp/atomize-harness.XXXXXX)"
+fi
+mkdir -p "$SCRATCH"
+echo "Scratch: $SCRATCH"
+
+# --- 1. Isolated project copy: workspace + config + the spec validators ---
+rm -rf "$SCRATCH/project"
+mkdir -p "$SCRATCH/project/scripts"
+cp -R "$REPO/.alexandria" "$SCRATCH/project/.alexandria"
+mkdir -p "$SCRATCH/project/docs"
+cp -R "$REPO/docs/alexandria" "$SCRATCH/project/docs/alexandria"
+cp -R "$REPO/scripts/atomize-harness-lib" "$SCRATCH/project/scripts/atomize-harness-lib"
+[[ -f "$REPO/.tool-versions" ]] && cp "$REPO/.tool-versions" "$SCRATCH/project/.tool-versions"
+# Runtime state (cursors, connections) is per-machine; a scratch project must
+# not inherit or share it.
+rm -rf "$SCRATCH/project/docs/alexandria/.ax-runtime" \
+  "$SCRATCH/project/docs/alexandria/runtime/atomize"
+git -C "$SCRATCH/project" init -q
+git -C "$SCRATCH/project" add -A
+git -C "$SCRATCH/project" -c user.email=harness@local -c user.name=harness commit -qm baseline
+
+# --- 2. Render the play the way `ax run` would ---
+ACP_BIN="$HOME/.alexandria/tools/acp/codex/0.14.0/bin/codex-acp"
+[[ -x "$ACP_BIN" ]] || ACP_BIN="$(find "$HOME/.alexandria/tools/acp/codex" -name codex-acp -type f | sort | tail -1)"
+[[ -n "$ACP_BIN" ]] || {
+  echo "codex-acp adapter not found under ~/.alexandria/tools/acp/codex" >&2
+  exit 1
+}
+
+PLAY_SRC="$REPO/packages/alexandria-plugin/workflows/atomize-source"
+PLAY="$SCRATCH/play"
+rm -rf "$PLAY"
+cp -R "$PLAY_SRC" "$PLAY"
+
+# Placeholder substitution (mirrors ax's substituteWorkflowPlaceholders) in
+# the graph AND every prompt file.
+ACP_CMD="$ACP_BIN"
+[[ -n "$EFFORT" ]] && ACP_CMD="$ACP_BIN -c model_reasoning_effort=$EFFORT"
+for f in "$PLAY/workflow.fabro" "$PLAY"/prompts/*.md; do
+  perl -pi -e "s|__AX_ACP_COMMAND_JSON__|\"$ACP_CMD\"|g; s|__AX_INPUT_SOURCE_PATH__|$SOURCE|g" "$f"
+done
+
+# Harness-only swap: the shipped `ax library ...` deterministic nodes run
+# their executable specs until the real commands land.
+perl -pi -e \
+  's|ax library validate-delta-manifest|bun ../../scripts/atomize-harness-lib/validate-delta-manifest.ts|g; s|ax library check|bun ../../scripts/atomize-harness-lib/library-check.ts|g; s|ax library inventory|bun ../../scripts/atomize-harness-lib/library-inventory.ts|g' \
+  "$PLAY/workflow.fabro"
+
+fabro validate "$PLAY/workflow.fabro"
+
+# --- 3. Run it (cwd = the scratch workspace, like ax run) ---
+# Uses the Alexandria fabro sidecar (the same server `ax run` uses): its
+# local environment executes nodes on this machine in the client cwd.
+export FABRO_HOME="$HOME/.alexandria/fabro"
+FABRO_SERVER_SOCKET="$FABRO_HOME/fabro.sock"
+[[ -S "$FABRO_SERVER_SOCKET" ]] || {
+  echo "Alexandria fabro sidecar is not running (no $FABRO_SERVER_SOCKET). Run 'ax start' first." >&2
+  exit 1
+}
+WORKSPACE="$SCRATCH/project/docs/alexandria"
+RUN_ARGS=(run --no-upgrade-check --environment local --server "$FABRO_SERVER_SOCKET")
+RUN_ARGS+=(--label harness=atomize-source)
+[[ "$MODE" == "auto" ]] && RUN_ARGS+=(--auto-approve)
+[[ -n "$DRY_RUN" ]] && RUN_ARGS+=("$DRY_RUN")
+RUN_ARGS+=("$PLAY/workflow.fabro")
+
+echo "Running: fabro ${RUN_ARGS[*]} (cwd $WORKSPACE)"
+RUN_LOG="$SCRATCH/fabro-run.log"
+set +e
+(cd "$WORKSPACE" && fabro "${RUN_ARGS[@]}") 2>&1 | tee "$RUN_LOG"
+RUN_EXIT=$?
+set -e
+
+# The foreground client can drop at a human gate while the server-side run
+# continues (auto-approve answers gates server-side). Resolve the run id and
+# wait for a terminal state before reporting.
+RUN_ID="$(rg -o '01[A-Z0-9]{24}' "$RUN_LOG" | head -1 || true)"
+if [[ -n "$RUN_ID" ]]; then
+  echo "Waiting for run $RUN_ID to reach a terminal state..."
+  TERMINAL=""
+  for _ in $( # up to 2h
+    seq 1 360
+  ); do
+    TERMINAL="$(fabro events "$RUN_ID" --server "$FABRO_SERVER_SOCKET" 2>/dev/null |
+      rg -o '"event":"run\.(completed|failed)"' | tail -1 || true)"
+    [[ -n "$TERMINAL" ]] && break
+    sleep 20
+  done
+  if [[ "$TERMINAL" == *completed* ]]; then
+    RUN_EXIT=0
+  elif [[ "$TERMINAL" == *failed* ]]; then
+    RUN_EXIT=1
+  else
+    echo "Run did not reach a terminal state within the wait window." >&2
+    RUN_EXIT=124
+  fi
+  echo "Terminal event: ${TERMINAL:-none}"
+fi
+
+# --- 4. Post-run report ---
+echo
+echo "=== Run exit: $RUN_EXIT ==="
+echo "=== Artifacts ==="
+ls -la "$WORKSPACE/runtime/atomize" 2>/dev/null || echo "(no runtime/atomize artifacts)"
+echo
+echo "=== Library diff (scratch) ==="
+git -C "$SCRATCH/project" add -A
+git -C "$SCRATCH/project" diff --cached --stat -- docs/alexandria/library || true
+echo
+echo "=== Ledger tail ==="
+tail -3 "$WORKSPACE/ledger/events.jsonl" 2>/dev/null | cut -c1-200 || true
+echo
+echo "=== Post-hoc library check ==="
+(cd "$WORKSPACE" && bun ../../scripts/atomize-harness-lib/library-check.ts --manifest runtime/atomize/delta-manifest.json) || true
+echo
+echo "Inspect the scratch at: $SCRATCH"
+exit "$RUN_EXIT"

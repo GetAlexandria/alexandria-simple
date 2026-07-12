@@ -1,0 +1,631 @@
+And if I'm looking down, I'm literally, like, punching some things in so that things go to GitHub, that kind of stuff.
+
+Really, given everywhere your mind has been today, I'm hoping this is, like, a helpful, like... No, this looks like it's clarifying things, which is why I'm, like, eagerly looking on.
+
+Like, this doesn't look complicated. These are big boxes with arrows! Big words! I like this! Yeah, yeah.
+
+So it's, like, chapter one, or, you know, in the playbook, is update content. I'm saying, hey, we're, like, I've got to make this little tweak, here's a little tweak memo to how we're marketing, or here's a whole new go-to-market plan that we didn't even have anything before, but it's time to update content.
+
+And so there's, like, plays and agents with jobs for updating content, and that's just, like, a big piece of this. The next big piece of this...
+
+Wait, can you say that last sentence again? There are plays and there are agents with jobs for updating content.
+
+Yeah, so, like, we're going to call a play, and it's like, oh, this play involves Conan and Sam, or Bridget and Raven, but it's sort of like, when I'm going through the playbook, it's like, here's the play, and here's the players.
+
+And so, you know, there's going to be a chapter on updating content. There's going to be another chapter on maintaining your library, keeping it fresh, keeping it healthy.
+
+Again, for the purposes of today, we're like, here's all play. If we can only have one play, it's this play, and it is a good one.
+
+And then it's like, okay, cool, health check, great, nice. So now I'm adding stuff into the library, and then making sure it's not, like, broken and useless.
+
+Like, cool, I've got a really, really neat library full of cards. And if I were a psycho, I could, like, surf through them all as a human.
+
+But the reason we're doing this is to deliver context. And the deliver context part right now is all kinds of messed up.
+
+Because we don't have beads. I think you've made Planner to kind of flank the lack of beads. Nope.
+
+Nope. Planner is a playbook, and it really does have very little to do with beads. It's a playbook to extract from my brain what I want to do, and structure it in such a way that it can break down the work into work orders that can independently be worked on.
+
+When you're making these work orders, do they or you interface with the context library at all? Yeah. Absolutely.
+
+How? Bridget! Okay. Yeah. So we get a...
+
+I was just about to say, like, how does context briefings work? Because I use it in the Planner, and I have no idea how it actually works.
+
+So yeah, like, once, like, basically the process is establish a goal for what the plan, high-level goal. And it doesn't have to be one sentence. It can be, like, usually what I'm finding is that the goal itself ends up being a dialogue.
+
+I kind of want to do this, but I might like this, and I'm not sure about this, yada, yada, yada.
+
+So I ask some clarifying questions. Ask some clarifying questions of Bridget? No, no, no. Of myself.
+
+What are you thinking about that? With Planner? With Planner. This is all in Planner.
+
+It's, like, asking me all these questions. I actually use Raven as my planner. I'm like, hey, Raven, help me be, help me write a plan.
+
+So, again, this could be Bridget. I don't know. No, no, no, no, no, yeah. No, no.
+
+It shouldn't be Bridget. Okay, cool. So I'm like Raven. I'm like, hey, Raven, like, help me write a plan. Right?
+
+And so, yeah, we go back and forth until she's like, I think I understand what you're trying to do. This is good.
+
+And she's like, do you agree on the goal? I'm like, yeah, I agree on the goal. Cool.
+
+So I'm going to go check and see what's going on in the world of the factory. She goes and talks to Bridget.
+
+The factory or the library? Sorry, the library.
+
+I'm going to go, she's like, goes to Bridget, and she's like, give me a context briefing.
+
+This is the part that I have no idea how that happened. I don't know what comes back. It gets saved to the disk.
+
+I could go read the whole thing, but she uses the context briefing skill, and then she comes back to the context briefing skill, and she...
+
+The first step after that is a gap analysis of like, here's what you wanted to achieve. Here's what reality is right now. Here are the gaps.
+
+And actually, it might be outcomes, then gaps. I can't remember what the order is, but there's two different steps.
+
+One is breaking down the goal into different outcomes. Outcomes have must, should, and could, three different tiers of outcomes.
+
+And then there's like, again, a dialogue of like, these are my musts, and these are, no, actually, you have this one as could, it should be should, or this one is a must, it could, I could be doing that.
+
+Let's put it in must, or let's cut it entirely. Let's not talk about that anymore. Too complicated.
+
+And again, since I'm working with Raven, Raven has opinions. Raven's like, you should not be doing that as part of this release.
+
+This should be like a follow-up thing. Like, this should not be one of your outcomes. I'm like, well, I disagree. Go ahead and do it.
+
+And so once we have a set of outcomes, which makes this beautiful little table, then I think it's then it's gap analysis.
+
+Anyway, and then...
+
+The gap analysis is a pretty big deal, because she's saying like, hey, I don't have anything in the context library about this thing you're asking for.
+
+Exactly, yep. And so that leads to the next step, which is decisions.
+
+They're like, hey, in order to fill these gaps, we can make some decisions right now, or we can make them as part of the release by either making technical spikes or design prototypes.
+
+Would you like to make some decisions right now? I'm like, yes, I would.
+
+So I go through, and that's where it gives me those multiple choice things. And I'm like, oh, do I want this? Do I want that? That kind of stuff.
+
+So she's keeping a decision log of all the decisions we make. When we get to the end, she's like, OK, I think that's all you've got.
+
+She will print out a table, decision one through five. Here's what the decisions were.
+
+She writes those to the disk, and then I think, let's see, what's next after that?
+
+Oh, then she gives me a ticket breakdown. She's like, here's the title of all the tickets.
+
+And so then I have an opportunity to re-slice and ask questions. I'm looking at the titles, and I'm going, wait, why is this a ticket?
+
+And she's like, oh, because this is this. I didn't know that. I don't want it to work that way.
+
+Well, it seems like you did with the decision you made. Oh my gosh, go change that decision.
+
+She updates the decision table. She updates the list of tickets.
+
+So we're like, this is a super fluid back-and-forth process where you can move back and forth.
+
+When I get to the list of tickets and I'm, like, good with the list of tickets, she's like, all right, great.
+
+I'm going to write everything else to disk. And so she'll write a plan file, a decision log.
+
+She'll write a library updates log, which actually gets passed to Conan to do a surgery job.
+
+And does that happen automagically here? Automagically. I mean, it's happening consistently.
+
+That's incredible. Yeah. Like, I've had very little deviance from, like, I haven't had to orchestrate this.
+
+Yeah. And then, yeah, and then she writes that.
+
+But it has pretty extensive evals around it. Right.
+
+And so this is the one that I, like, hill climbed for a whole night.
+
+Yeah. Like, used multiple five-hour windows to get this one to where it conforms.
+
+And then, yeah, then she writes all the tickets out. The tickets all get written to disk.
+
+The tickets are a combination of a beady type thing with, like, yaml at the top and some prose.
+
+So I definitely want to move the tickets to be, like, fully beatified.
+
+Yeah. But that's kind of an implementation detail at this point.
+
+Yeah. So, yeah, the planner is, like, extract from your brain and structure this into a plan and give you tools to, like, move the big things around fluidly and quickly so that you're not sitting there, like, retyping everything in a notion doc the way a caveman product manager does this work.
+
+Yeah. I love it. It's super fun. I've used it 15, 20 times now.
+
+There we go. Okay. And I just used it in the last 20 minutes.
+
+And I can use it even in, like, a depleted cognitive state. I can use it at, like, peak cognitive form.
+
+Because you've got, like, a top-shelf colleague. Bingo.
+
+You've got a colleague that knows their shit. And, like, when the plan comes out, I mean, it's great.
+
+Because I've, like, put in all this, like, planning stuff where it builds, like, planning stuff that I think should be in there.
+
+Like, you should build one rail, you know, end-to-end working first. And then build all the other things instead of building the silos and then having to integrate each one of them.
+
+It's, like, all these opinions are baked into the planning process. And it does a pretty good job of obeying.
+
+Because occasionally I'm, like, that wasn't the best. You could have done that a little better.
+
+But ultimately these are, like, top-tier plans. That's what I've told you before.
+
+I'm getting better plans than I ever wrote myself. Yep.
+
+So, yeah. Anyway. That's the planner. Welcome to the planner. It exists.
+
+And I am happy for it. Yeah. Yeah. And, yeah, no.
+
+And it's you added in the last mile thing that you needed to have.
+
+And I didn't even get to tell you about revise plan and complete plan. These are newish, right?
+
+These are new skills. These sound like the podcasts I make for you.
+
+I think we're going back and forth. Yeah. So the revise plan is you can run it at any time.
+
+Ideally it would be orchestrated so that it runs after every ticket completion.
+
+Yeah. Because every time you complete a ticket, you learn something.
+
+Yeah. And it updates the plan downstream.
+
+And so I've had to be the person of, like, oh, we got halfway through the release and we realized, oh, okay.
+
+And so once you run revise plan, it will basically look at all of the things that got done and update the remainder of plan, rewrite the remainder of the tickets, ask you a couple of questions, like, when there's, like, human judgment things.
+
+And then there's complete plan as well, saying, like, this plan is done.
+
+And that will actually validate that all the tickets actually got done against the code base.
+
+And it will, like, let you know that, like, oh, there was some stuff that you seemed to defer.
+
+Do you want to defer it to later? It makes a note on the plan doc that these things were deferred so that the next time you run planner, planners instructed to go read all previous plans, see what plans are in progress so that it's not stepping on plans that are currently in progress, as well as read all the deferred sections of all the previous plans because you might want to group those into the new plan that you're working on.
+
+It's like, hey, there's some related work you didn't do two weeks ago. It seems like it's related to the goal you're talking about.
+
+Do you want to do it? So, anyway, I couldn't be happier with this.
+
+I mean, I actually could be a lot happier. There's lots of ways that you could improve this.
+
+But already, fucking useful.
+
+Look. Oh, my gosh. Yeah. There's no way I could feed the factory without this.
+
+Which is our whole point. The whole point.
+
+Our whole point is that people making the factories are like, okay, well, yeah, this is a product for us.
+
+Tell us what we want and we'll make it. Which is why I was so confident of, like, we need to ship now.
+
+Like, slash library and slash plan, along with the health check and the actual, like, library itself, the context briefing that pulls the stuff out into the plan.
+
+This is already really freaking useful to me.
+
+And I think from what I know of other people, they would also find it really freaking useful.
+
+Yeah. Yeah. And so much of it is getting to the wow, which the wizard needs to be a wow, and then the planner needs to be a wow.
+
+Right. And we need to show our cards earlier. Right?
+
+Like, of, not literal cards, but, like, the, when you'd be like, hey, if you go through this process, at the end, you can, like, get tickets out of this thing.
+
+Here's an example ticket or whatever.
+
+Yeah. So much of the magic isn't in the demo video. So much of the magic is that planning process.
+
+Right? That's just skipped because we're showing the wizard.
+
+Well, it's funny because, like, I, in the original plan for the demo video, because it's this, I mean, that, you know, that's, like, 15 to 20 minutes of back and forth.
+
+Like, that doesn't make for, like, a great demo.
+
+Like, figuring out how to demo this is going to be interesting.
+
+Yeah. Because it is a, you almost want to feel it.
+
+Which is why I've been, like, toying around with, like, maybe a hosted version of the library sooner rather than later would be good so that people can just jump right into the website and be like, oh.
+
+Yeah. So, well, you just did my job before me.
+
+But basically, if one of the things we're doing is updating content and the other thing we're doing is keeping the library healthy,
+
+The only way it's any good is by pulling content out of it, which is going to go to some form of factory, either automated or not automated.
+
+We need to deliver context.
+
+And so there's this context delivery playbook, which, from a guts perspective, the next thing that we would go through is Bridget's job.
+
+So that's the next piece of this that's invisible to you or whatever.
+
+Totally agree.
+
+So the third thing we would do is basically Bridget doing her, how Bridget surfs and how Bridget assembles.
+
+And all of that is going to be stuff where, like, I did my best.
+
+Right. Yeah, that actually might be a place where vector databases or RAG or whatever, and, like, that might be a place where we can use standard methods for measuring effectiveness, like retrieval evals.
+
+There's, like, well understood, there's several years' worth of this material.
+
+We might be able to just put that around it and, like, optimize.
+
+This is one of those areas where we might be able to just hill climb overnight.
+
+Make number go up. Modify and make number go up.
+
+And so the third place we would be playbooking is Bridget.
+
+And then the fourth place we'd be playbooking is Raven slash planner, Raven slash library.
+
+And then the thing that is the thinnest in all of this and, like, just hand-wavy as all hell is the following.
+
+And actually the least hand-wavy part is what you have, which is basically, like, when context gets delivered to the factory, some things actually happen on the factory floor that are learning that actually need to go all the way back to update content.
+
+Yeah, which I have it as revised plan, which is part of it.
+
+But you're right, it's the library itself that learns.
+
+In fact, so my complete plan step takes a look at the library updates document that was printed at the beginning that was supposed to go to, that's supposed to go to Conan.
+
+And it validates the difference between what we at the beginning thought was the change to the library and at the end turned out to be the real changes to the library before handing it off.
+
+And then does the library update.
+
+So we get the library update much later than we should.
+
+We get it at slash complete plan.
+
+It would be nice to get it after every single ticket.
+
+If we want to spend those tokens, yeah, right?
+
+Yeah, absolutely.
+
+So that's that's the really interesting every ticket ships to production.
+
+Then you're if you don't do it, you have a product in production that's out of sync with your library.
+
+Yeah, no.
+
+So there's this there's this learning.
+
+And I mean, I could.
+
+So I could write learning here.
+
+There's all these different places we learn.
+
+And this is the whole the whole universe of the library.
+
+Like there's this one world where it's like you and I are the human in charge of the library.
+
+And we kind of call the shots. We tell them what's what.
+
+But as this gets bigger and more interesting, it's like, well, we just learned in the planning process right before it hit the factory.
+
+It hit the factory and some guys tried to build something and it didn't work.
+
+And then they actually had to go back to Bridget to get different context.
+
+And then it didn't work.
+
+And then it's actually two features instead of one.
+
+And like you could call it learning.
+
+I don't want to use the word update again.
+
+We're just going to call it learning of like, hey, things change.
+
+So at the factory level, the fact like we're delivering the factory level, things change.
+
+Calling it changes.
+
+Calling it changes is bad.
+
+And then as it's getting made in the factory, things change and we learn.
+
+But then things go out into the field of use.
+
+We have like feedback from users and sensors going off and analytics and just all these different and like, you know, agent watching.
+
+There's some agent we have and it's their job to like watch something we think is important.
+
+Yeah. And so the agents making a report like field interviews are coming in.
+
+This and this is really when Solomon's like a big freaking deal.
+
+Absolutely. And can be incredibly helpful in organizations.
+
+Say, guys, guys, all this stuff has come in. Here's your hypothesis.
+
+Here's all the stuff that's the opposite of the hypothesis.
+
+This isn't my call, but like marketing team.
+
+What are we what are we doing?
+
+Yeah. It's like my conversation with Max.
+
+It's the text thread with the guy who's asking questions about the library.
+
+It's like anytime you're talking about the library, you're using the library.
+
+Information is being generated.
+
+Yes. And that information is not necessarily a card.
+
+Nope. In fact, it's important that it not be a card.
+
+However, eventually, all that stuff gets curated, decided, documented and becomes an update.
+
+Yeah. And and so, you know, what's in the library and what's out of the library?
+
+Like, what is the library? What isn't the library?
+
+Is the wizard in the library out of the library?
+
+Like in the world of knowledge graphs, these these false.
+
+It's it's like where does Indiana and Kansas begin?
+
+Like, well, we're drawing the line right here.
+
+But like this is this. This is this.
+
+When you add in delivering and you add in learning.
+
+You've got a powerhouse.
+
+But when you add in delivering, you've got extremely useful.
+
+And what's fascinating?
+
+What we've both experienced is at the product level.
+
+This is extremely useful.
+
+And we have some learning improving to do to say at the factory level, is this extremely useful?
+
+But at the very least, the planner, even if these tickets are no better or well, if these tickets are no better.
+
+That's not even necessarily true.
+
+We need to figure out if atomic documentation really is helping make Raven awesome.
+
+If Bridget is really helping make make Raven awesome or if it doesn't matter too much.
+
+If it doesn't matter too much, then a lot of our tokens are not well spent.
+
+But my guess, which we'll see, it's that it's that whole Marvel Universe thing I wrote.
+
+Do you need a context library for Hearthfire?
+
+Probably not. Would it help? Maybe it certainly would give me a better Raven.
+
+But do I need it when I'm building something that simple?
+
+Do I need this? Probably not.
+
+But if you want to factory life build, I see no way to do it without this.
+
+It just strikes me as impossible.
+
+And if everybody's producing all the same generic software and the only way to win is to be different.
+
+My gut says this is pretty important.
+
+But there's definitely details to get figured out.
+
+But this idea of like, man, this is really complicated.
+
+It's a complex system. Everything links together.
+
+It's hard to understand all the implications.
+
+Sometimes the human mind can't even grok it.
+
+Between Bridget and Raven, I'm pretty sure they can grok it.
+
+Yeah. Exactly.
+
+Like we talked about, as long as it doesn't make the tickets worse.
+
+If it's useful for the humans, yeah, it's costing more tokens.
+
+But the usefulness for the humans alone is pretty valuable.
+
+And given how much of this is document.
+
+So obviously, NIT is software.
+
+But boy, could Sam be software if he needed him to be.
+
+There's all different ways to be more token efficient with all our make documents and break things down.
+
+There's all sorts of parsers and editors and all stuff that I don't understand.
+
+But before Agentix, there was lots of document editing software.
+
+Absolutely. And figuring out how to software the software parts.
+
+And in fact, Bridget is probably the most obvious candidate for being software.
+
+Bridget right now is Agentix Search because that's what I can do.
+
+Which we know from a lot of other people using Agentix Search in a lot of places, not bad.
+
+Not bad. It does a pretty good job.
+
+And that's why we did it.
+
+It was like, hey, Agentix Search might actually be the best way to do a knowledge graph like this.
+
+And so it's like, well, that might be the best way to do it.
+
+Let's just do that.
+
+Yeah, it is slow.
+
+If you just go through the planning process, you're like, all right, I'm going to go get a cup of coffee while it's consulting with the library because it's going to be minutes.
+
+Yeah, it is going to be minutes.
+
+And what Bridget is built for, get it right, not be efficient.
+
+So from a controlled variable perspective, Bridget looks further and deeper than she probably needs to.
+
+There's probably much more efficient splash and search we could be doing.
+
+Again, that is probably the thing that is the easiest to eval in our entire system.
+
+We'll figure that out.
+
+I'm not worried about that one.
+
+The one thing that I'm not doing right now that I'd love to do is my factory workers never consult the library, at least not intentionally.
+
+That seems like such a miss.
+
+They have the context briefing included in their card.
+
+The ticket itself, part of the ticket writing is take the part of the context briefing that's useful for this ticket and excerpt it.
+
+Just so you know, the way Bridget was built, Bridget's design is someone, I think probably an agent, says, hey, I'm trying to do this task.
+
+And Bridget's like, oh, like bullet briefing.
+
+So I tried that, and it was just wicked slow and too much context.
+
+It was like, I can't do 19 context briefings.
+
+One context briefing takes like three to five minutes and like 15,000 tokens.
+
+We're talking like just the 19. And I don't even know what a bead is, but like the agent to agent software to Bridget thing is like, could use some work. Just because we keep talking about beads. I do not think that word means what you think it does.
+
+Yeah. So you get a markdown. I'm writing a ticket. Acceptance criteria. Bullet point. This is markdown. Beads is the exact same information. But in JSON format. And the cool thing is. Why is that cool? Because you can validate this. You can come in and say, like, are there any acceptance criteria with code? And with this, you could do that, but then you're like doing string matching and like it's not very reliable. Or you could have an agent do it, which is super inefficient.
+
+You actually want to be able to say, my tickets or my cards in the library obey a strict format that is like type checked and can be checked with software and can be validated instantly. Like no token spent. And so that's like a big part of it. And that's most of beads right there. Most of it is like, let's keep our information in a structured format that software can read instead of making it so that humans.
+
+This is made for humans to read and write. This is made for software to read and write. And since software is the thing that's building software, why would you use a human lossy format like this? That doesn't make any sense. So, yeah, that's beads. So, like, beads is actually pretty close to what I think it means.
+
+How Bridget talks with a builder right now is like a fucking mess. And this is the tip of the iceberg. Yes, absolutely. And so us, we've never, I mean, there's so many different places we haven't connected at, but that we're now getting the shared language and conceptual models and everything to connect at.
+
+Like I should say, beads is also one other thing that we wouldn't need in the library, which beads is an issue tracker as well. So you have, like, a status field here that says, you know, doing or whatever. And you can have, like, you know, all these other fields that you would normally have in an issue tracker.
+
+And you've got this entire JSON blob with this structured information. This is normally stored in GitHub issues. And then with GitHub issues, you have to access this via, like, API, right? It's not, now, if you don't, if you take GitHub issues and the API out, you can just be like, no, we're just going to store it on disk. Like, it's just local.
+
+Like, you don't have to go off and find out. It's like the fact that we have our markdown files on disk instead of in Notion. Where every single time, imagine if Bridget had to go look things up in Notion every single time instead of, like, markdown files. You'd think it's slow now. Holy crap.
+
+And then all the network traffic and all the other stuff, like, oh, my gosh. So, yeah, having it on disk makes a huge difference here. And so it takes the issue tracker and brings it in local. And then the final thing that it does is it takes all that JSON and it puts it into a database that you can query.
+
+So now querying your issue tracker is as fast as a local database query, which I can tell you is wicked fast. And then this particular database is really special in that it can be checked into version control cleanly. So instead of having to, like, most databases, you can't check your Postgres database into version control.
+
+That just doesn't work. And so you have to independently version your, like, code from your data. And this database actually goes alongside your code, which has some really weird and interesting properties. Like, I can just use GitHub to version control my entire issue tracker. What?
+
+So, yeah, there's some other, like, magic to it. But at its core, it's saying treat structured data as structured data, especially when you have agents talking to each other, and especially when you're validating that that structured data has certain characteristics. Don't do that with plain text.
+
+And so I think we're on the same page. When you say the beatification of the library, what I hear you saying is our cards should actually be structured and not just marked down. And I agree with that. I've been pushing more and more of my markdown into YAML, which is basically a poor man's beats.
+
+Yeah. And I've noticed you've been doing the same. Yeah, no, no. There's a YAMLification of the library, which I was thinking might be one of our runs of just, like, hey, how do we just make sure everything gets YAMLed?
+
+And you might even remember when I was first diving into this being like, Jess, I've got a YAML on my front matter. I don't know what the fuck that is. That's happening now. Just so you know, we've got to YAML all the front matter. All YAMLed.
+
+So. Ooh, perfect example. The release doc. And Devin caught this. That's really interesting. The release doc failed to include the required YAML front matter. So Bridget, when writing, missed a step.
+
+And so perfect example of something we could eval. Or it could freaking do software. Right? Like there should be a NIT check for releases such that when Bridget writes, NIT checks it, it gets linted, and Bridget gets immediate feedback of like, hey, you forgot the YAML front matter. Oh, sorry.
+
+And that's the very idea of having an agentic operator that has a deterministic workflow of like, no, no, no, when you do this, you're going to do it the way that we say. Like, in fact, you can't even like commit. Like it will fail the commit because there's software that says this is how this works, and you left this out.
+
+And I think it's going to make our agents so much better. Beatifying the library, YAMLifying the library. Every time Sam writes, Sam will get immediate feedback of like, you left the thing out. You did it wrong. You did it wrong. You did it wrong. And then can correct it without it ever surfacing to like, it won't even need to be in the play, so to speak.
+
+It will just be part of the library doing its thing. Will be cleaning itself, like preserving its structure. And so, yeah. And so to wrap all this up, like, what? This is horrible language to use. But like here's the miracle of the library is that each agent initially maybe was a completely different agent than they were.
+
+Like, nothing's orchestrated. Like, when I run plays, it's only executed properly half the time. The search is known budget agentic search. The cards are wrong. And yet, I've yet to get a context gap. Or what are they called? The gap analysis?
+
+I've yet to have a gap analysis conversation that didn't blow my mind. And after running Conan a couple times, I've yet to look at the library and feel like it was broken. And like, that is actually what this really boils down to.
+
+Is because even if you have to do it a couple times and do it manually, Conan makes sure that the library doesn't suck. And because what is now Bridget just does really good work. I think in part because as screwed up as the cards are, the logic of the way a library.
+
+We're not even talking about this, but the way the library logics out your product makes it so traversable. Just the breakdown of being like, here's your principles, here's your strategy, here's how it's laid out.
+
+Like, this just forgetting all of everything that's getting lost in translation and mis-executed. At its heart, and we haven't even talked about it today. You have this just really better thought out, better organized product that's just easier to work with.
+
+And so I think just that, with it not being fucked up, leads to a really good product team. A really good product team. And my assumption is, as we software, which could be yammering the front matter, it could be software knit.
+
+The compounding value, everything you hit, every single one of these awful things. Before Thanksgiving, without you, I started this. So it's been half a year now of this fucking thing.
+
+But it's going to be so much better. Factorying the library, softwareing the library. Each one of the things we talked about, just organizing the prompts better, modernizing the prompts. Some of these prompts, Sam's prompts, half a year old.
+
+They predate Opus 4.6, they predate Codex 5.3. These are previous generation prompts. I've never gone back to Sam, there's been too much to do. And no software, so I'm doing it all. Oh no.
+
+Factory to the rescue. We are printing the library right now. So anyway, that's the conceptual, in terms of like... That's what I put up in the corner. Remember when I put principles, and you were like, yeah, kind of rules.
+
+What I was referring to is what you were just describing. The way that the library is structured. There are principles there. That is part of the inside of the library. And it's hard for people to see, and hard for people to understand why that matters.
+
+But I think it really does. Yeah, so that's the update. That's the playbook. We don't really, like, we beyond haven't earned Learn. And there's a lot of people actually working on Learn.
+
+Your contracting opportunity is squarely in that Learn space. Like, how do I use agents to do customer interviews? How do I use agents to do what my analytics are doing, but I don't know how to read correctly?
+
+I haven't configured properly. I read this incredible newsletter of a go-to-market guy interviewing a hardcore internet marketer. Being like, yeah, a lot of leads that get scored to Google ads were coming anyway.
+
+There's this, like, technically it's attributed, but when you turn it all off, you actually figure out that, like, half of that you were going to get anyway. And so, really, you're paying twice as much for real Google leads as you think you are.
+
+Because they're catching all the ones that you would have gotten anyway. I'm saying anyway too many times. But, like, people that really, really know their shit in the way that I used to know online analytics in 2001, 25 years ago, I, like, really knew analytics.
+
+Like, I had to instrument a website with email analytics because they couldn't afford website analytics, and I figured it out. I, like, and then the happy accident was I was like, hey, guys, you know what this means?
+
+You know what this means? We can track our web people through our email and vice versa. Cross-channel. Cross-channeled insights. Amazing. Like, 25 years before it became even a thing.
+
+That shit broke like, nope. I mean, it was so bad. And I would be like, okay, advertisers, here's the report. And they're like, where's your, like, net analytics report?
+
+And I'd be like, yeah, we don't have net analytics. This is, like, this is our thing. They're like, but do you have, like, the tracking pixel on both sides of the click? I'm like, just got on this side of the click.
+
+We're like, how do we know that this is accurate? I'm like, this is what I have. So, that is what you get. Again, you know what a whack job I am now. Imagine it like, you know, 22.
+
+I'm talking to this, like, highly compensated VP whose IPO is depending on this working. This piece of shit startup that's giving me all bad tools. But anyway, like, I guess my point is just, we are, in terms of how you learn, that is not our business.
+
+You talk about outsourcing a factory, sensors, analytics, instrumentation, all that shit. We are someone else. You tell me. Or, hey, company, how are you doing it? We'll plug in.
+
+But it is, like, without that learning loop, that learning loop and then that learning loop. Bringing in level 7 information, level 6 information, level 5 information.
+
+The library is organized enough to keep the peanut butter separate from the jelly, to structure all around. Like, the whole levels of system, like, adjacency, it can handle. Make useful.
+
+This could turn in the same way that we're getting awesome product help at, like, the output level. A CEO, if you're feeding level 8, 7, and 6, the CEO's Jarvis is going to be a fucking monster.
+
+He's going to be having the experience with Jarvis that we're having with Raven of, like, this guy gets global financial markets. Like, I need to understand global financial markets for my business and this guy's a genius.
+
+And he knows my sector. Like, wow. Look at that. Or you don't. Or you don't. And it doesn't matter that much unless it does. That closed learning loop is where it becomes a smart factory.
+
+And even if you just close it at the factory floor, that's the other thing, Jess. If you just close it at the factory floor in field of use, I think you've got half the game right there.
+
+Just those two things. And that's a given if your factory is a software factory. Not a given for a lot of other things. Not a given if you're making a zine.
+
+Did you say zine? I did say zine. I haven't heard that word in so long. Surprise. Yeah, no, I think we're at this really interesting spot where we have something that's already compelling and useful.
+
+And we have so many ways that we could make it better. And we have a plan as of today of where we're going to start on improving it. And a few more weeks of unlimited tokens to do so.
+
+I just put it on my calendar. April 26th. Yeah. April 26th. It's the day we have to start paying for tokens again. Burn, baby, burn. I mean, it was already the most important time and just got so much more most important.
+
+Yeah. So good. All right. So let's see. I'm waiting on Devin reviews right now to. Yeah, no, I have to wait on it before I start. May.
+
+Take this stuff and wait for that. But, yeah, there's like factories sitting there waiting. The tickets are waiting. I can, like, push the button as soon as Devin gives me that.
+
+And then we can do it from there or something. Come on, Devin. I'm can't wait to replace you with something better, Devin. Is the way that Devin is affording us just using Devin for free all the time, just burning through venture?
+
+Yeah, straight up. It's a loss leader for their main product, which is like an automated software engineer. So every time it publishes a review, it's like, you want to fix on our platform and we can charge you for that.
+
+So, yeah, total loss leader. We'll just review all your PRs for you and tell you all the things we could fix. And maybe you'll press the button to, like, fix it.
+
+I've seen that button. I'm just like, just don't press that button and we're good. We don't have to pay anything. Quad, fix this. Exactly. Check Bridget. Yeah. Check, check.
+
+And they're they're like way behind other people in the code review space. So they're probably not getting that much traffic to it relative to other people. Which I guess is good news for us.
+
+Bingo. Oh, man. We can head to your house or whatever. Yeah, no, let's, let's, let's game plan for it for a beat. So.
+
+

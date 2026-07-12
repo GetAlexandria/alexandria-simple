@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "stepPlays": [
+    {
+      "id": "ground",
+      "label": "Ground",
+      "version": "1",
+      "nodeIds": ["ground"]
+    },
+    {
+      "id": "brief",
+      "label": "Brief",
+      "version": "1",
+      "nodeIds": ["draft_brief"]
+    },
+    {
+      "id": "harden",
+      "label": "Harden",
+      "version": "1",
+      "nodeIds": ["harden"]
+    },
+    {
+      "id": "derive",
+      "label": "Derive",
+      "version": "1",
+      "nodeIds": ["derive", "lint"]
+    },
+    {
+      "id": "test",
+      "label": "Test",
+      "version": "1",
+      "nodeIds": ["author_fixtures"]
+    },
+    {
+      "id": "run",
+      "label": "Run",
+      "version": "1",
+      "nodeIds": ["run_campaign", "grade", "writeback", "advance_contract"]
+    }
+  ],
+  "mechanicalNodes": [
+    {
+      "id": "register_for_run",
+      "afterStep": "test"
+    },
+    {
+      "id": "register_live",
+      "afterStep": "run"
+    }
+  ],
+  "reviewLevels": [
+    {
+      "id": "low",
+      "label": "Low Review",
+      "compositionId": "make-a-play:review:low",
+      "version": "1",
+      "gatesAfter": ["harden", "run"]
+    },
+    {
+      "id": "medium",
+      "label": "Medium Review",
+      "compositionId": "make-a-play:review:medium",
+      "version": "1",
+      "gatesAfter": ["harden", "derive", "run"]
+    },
+    {
+      "id": "high",
+      "label": "High Review",
+      "compositionId": "make-a-play:review:high",
+      "version": "1",
+      "gatesAfter": ["ground", "brief", "harden", "derive", "test", "run"]
+    }
+  ]
+}

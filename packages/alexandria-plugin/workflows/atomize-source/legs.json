@@ -1,0 +1,97 @@
+{
+  "playId": "atomize-source",
+  "legs": [
+    {
+      "nodeId": "inventory",
+      "label": "Compute the library inventory",
+      "description": "Deterministic pre-computation: every card path, altLabels, and the backlink map, in one pass.",
+      "lead": "The machine hands the surveyor the graph so the surveyor spends its time on judgment.",
+      "typicalSeconds": 5,
+      "kind": "command"
+    },
+    {
+      "nodeId": "survey",
+      "label": "Survey the Source into a delta manifest",
+      "description": "Read the ruled Source, trace its blast radius through the library graph, and write the ordered change plan.",
+      "lead": "Backstage maps every change the Source earns — and nothing it doesn't.",
+      "beats": [
+        "Reads the Source in full and extracts every instruction the library must absorb, quoting the lines that earn each change.",
+        "Finds every named card and greps the whole library for inbound ripples — a rename that misses one link breaks the graph.",
+        "Orders the changes so content always has a home, and routes judgment calls to the director instead of guessing."
+      ],
+      "typicalSeconds": 300,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "validate_manifest",
+      "label": "Validate the manifest",
+      "description": "Deterministic check: manifest shape, change kinds, and card paths against the library on disk.",
+      "lead": "The machine rejects a malformed plan before the director ever sees it.",
+      "typicalSeconds": 10,
+      "kind": "command"
+    },
+    {
+      "nodeId": "manifest_gate",
+      "label": "Rule on the delta manifest",
+      "description": "The director reads the plan in product language and approves it, or says what to change.",
+      "lead": "The director rules on the plan, not the diff.",
+      "beats": [
+        "Raven puts the delta plan and its open questions in front of the director.",
+        "He approves, or reacts — rulings on open questions, cuts, additions.",
+        "Approval releases the builder; any reaction loops back to a revise pass."
+      ],
+      "typicalSeconds": 240,
+      "kind": "human"
+    },
+    {
+      "nodeId": "revise_manifest",
+      "label": "Fold the director's ruling into the manifest",
+      "description": "Rewrite the manifest whole to fold in the director's gate reaction; his words win and are recorded as evidence.",
+      "lead": "Backstage folds the ruling in and the validator runs again.",
+      "typicalSeconds": 180,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "execute",
+      "label": "Execute the manifest against the library",
+      "description": "Apply the approved changes in order — create before retire, every inbound link updated, ledger events through ax.",
+      "lead": "The builder applies the plan exactly; nothing is deleted before its replacement exists.",
+      "beats": [
+        "Applies each change in manifest order — renames refit prose, absorbs move content before deleting donors.",
+        "Updates every inbound link by searching the library, not by trusting the plan.",
+        "Writes an execution report where every change id is accounted for — done or deviation, never silence."
+      ],
+      "typicalSeconds": 600,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "check",
+      "label": "Deterministic library checks",
+      "description": "Deterministic check: the catalog loads clean, no dangling links, and the manifest's changes are actually on disk.",
+      "lead": "Findings from a failed check route straight back to the builder.",
+      "typicalSeconds": 15,
+      "kind": "command"
+    },
+    {
+      "nodeId": "teach_back",
+      "label": "Teach back the changed library",
+      "description": "Fresh-eyes restatement of what each changed card now means, audited against the Source for holes.",
+      "lead": "The catch for the card that reads well but means something subtly different.",
+      "beats": [
+        "Re-reads every changed card from disk and states its meaning in its own words — not the manifest's.",
+        "Audits the Source's demands against what landed; names any hole plainly.",
+        "Surfaces every deviation and noticed-but-untouched item for the director to triage."
+      ],
+      "typicalSeconds": 180,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "final_gate",
+      "label": "Confirm the teach-back",
+      "description": "The director confirms the cards mean what he meant, or sends a correction back to the builder.",
+      "lead": "The director's confirmation is what closes the Source.",
+      "typicalSeconds": 180,
+      "kind": "human"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Alexandria"
+  short_description: "Use Alexandria agent identities for product-context workflows"
+  default_prompt: "Use Alexandria agents, skills, and Fabro workflows to turn product context into durable outputs."

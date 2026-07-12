@@ -1,0 +1,22 @@
+{
+  "caseId": "atomic-card-planning/shelf-constrained-triage",
+  "description": "Planning prompt constrains triage to confirmed stubs and lexicon names, and routes missing structure to gap_report.",
+  "checks": [
+    {
+      "description": "Triage prompt requires confirmed stubs, lexicon prefLabel names, and gap reports.",
+      "file": "packages/alexandria-plugin/workflows/atomic-card-planning/prompts/triage.md",
+      "contains": [
+        "must resolve to an existing confirmed stub",
+        "lexicon `prefLabel`",
+        "becomes `gap_report`",
+        "do not create a shelf",
+        "schemaVersion: \"atomic-card-build-plan.v1\""
+      ],
+      "notContains": [
+        "categoryId",
+        "10-category",
+        "hardcoded category"
+      ]
+    }
+  ]
+}

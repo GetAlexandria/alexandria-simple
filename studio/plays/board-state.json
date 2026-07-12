@@ -1,0 +1,611 @@
+{
+  "comment": "Board card state — the single source of truth for production progress (stage + priority order; top of list = next up). Six stages: backlog → sourced → designed → built → proven → live. A play card advances a stage only on a Director confirm. The top-level `ready` list flags slugs whose work is done and awaiting the Director's confirm (separate from stage). `graduated` holds play slugs explicitly moved out of active stages; `graduatedAt` stores their date-only graduation dates. `cards` holds Testing/Improvement/Bug work orders with their own open/in-progress/done/wont-do status, independent of play stage; terminal work carries terminalAt and may carry archived and pinned, with archive membership derived by readers. Agents edit this file directly; the Board page persists here.",
+  "updated": "2026-06-25",
+  "ready": [
+    "back-of-house-walk"
+  ],
+  "stages": {
+    "backlog": [
+      "write-the-one-pager",
+      "scope-an-mvp",
+      "architecture-aware-build-plan",
+      "feasibility-check",
+      "survey-the-existing-system",
+      "capture-technical-constraints",
+      "run-internal-feature-discovery",
+      "write-acceptance-criteria",
+      "build-atomic-card"
+    ],
+    "built": [
+      "front-of-house-walk",
+      "empty-library-confirm",
+      "make-a-play"
+    ],
+    "designed": [
+      "back-of-house-walk"
+    ],
+    "live": [
+      "frame-the-problem"
+    ],
+    "proven": [],
+    "sourced": []
+  },
+  "graduated": [],
+  "graduatedAt": {},
+  "cards": [
+    {
+      "checklist": [
+        {
+          "done": false,
+          "text": "Define the proof spec before the Built confirm."
+        },
+        {
+          "done": false,
+          "text": "Run the golden path and at least one failure path."
+        },
+        {
+          "done": false,
+          "text": "Record the read-out before the Proven confirm."
+        }
+      ],
+      "created": "2026-06-23",
+      "detail": "Priority-ordered checklist to raise this play past its first smoke.",
+      "division": "Product",
+      "function": "Library Operations",
+      "id": "wo-back-of-house-walk-testing",
+      "play": "back-of-house-walk",
+      "priority": 15,
+      "source": "seed:issue-338-testing-card",
+      "status": "open",
+      "title": "Testing campaign",
+      "type": "testing"
+    },
+    {
+      "checklist": [
+        {
+          "done": false,
+          "text": "Launch the small EL2 fixture detached and confirm it reaches awaiting input without a blocking prompt."
+        },
+        {
+          "done": false,
+          "text": "Drive one Stage-2 question and one Hot Spot through Raven and confirm user answer events plus validated bundle patches."
+        },
+        {
+          "done": false,
+          "text": "Leave one agenda item unanswered and confirm it lands in RESIDUAL-GAPS.md with no card mutation."
+        }
+      ],
+      "created": "2026-06-24",
+      "detail": "Prove the async Raven walk, director-answer Ledger events, bundle write-back, and residual-gap accounting before promotion.",
+      "division": "Product",
+      "function": "Library Operations",
+      "id": "wo-front-of-house-walk-testing",
+      "play": "front-of-house-walk",
+      "priority": 15,
+      "source": "seed:issue-348-testing-card",
+      "status": "open",
+      "title": "Testing campaign",
+      "type": "testing"
+    },
+    {
+      "checklist": [
+        {
+          "done": false,
+          "text": "Open a post-EL3 bundle in the Empty Library View and confirm bodies are absent."
+        },
+        {
+          "done": false,
+          "text": "Confirm the bundle and observe exactly one library.confirmed event in the Ledger."
+        },
+        {
+          "done": false,
+          "text": "Reject a bundle with a structure edit list and confirm no approval event is appended."
+        },
+        {
+          "done": false,
+          "text": "Verify unconfirmed, non-user, and stale-version bundles read as not approved."
+        }
+      ],
+      "created": "2026-06-24",
+      "detail": "Prove the director catalog gate, user-authored ledger approval, rejection loopback, and stale-version negatives before promotion.",
+      "division": "Product",
+      "function": "Library Operations",
+      "id": "wo-empty-library-confirm-testing",
+      "play": "empty-library-confirm",
+      "priority": 15,
+      "source": "seed:issue-349-testing-card",
+      "status": "open",
+      "title": "Testing campaign",
+      "type": "testing"
+    },
+    {
+      "checklist": [
+        {
+          "done": false,
+          "text": "Define the proof spec before the Built confirm."
+        },
+        {
+          "done": false,
+          "text": "Run the golden path and at least one failure path."
+        },
+        {
+          "done": false,
+          "text": "Record the read-out before the Proven confirm."
+        }
+      ],
+      "created": "2026-06-23",
+      "detail": "Priority-ordered checklist to raise this play past its first smoke.",
+      "division": "Product",
+      "function": "Definition",
+      "id": "wo-write-the-one-pager-testing",
+      "play": "write-the-one-pager",
+      "priority": 15,
+      "source": "seed:issue-338-testing-card",
+      "status": "open",
+      "title": "Testing campaign",
+      "type": "testing"
+    },
+    {
+      "checklist": [
+        {
+          "done": false,
+          "text": "Define the proof spec before the Built confirm."
+        },
+        {
+          "done": false,
+          "text": "Run the golden path and at least one failure path."
+        },
+        {
+          "done": false,
+          "text": "Record the read-out before the Proven confirm."
+        }
+      ],
+      "created": "2026-06-23",
+      "detail": "Priority-ordered checklist to raise this play past its first smoke.",
+      "division": "Product",
+      "function": "Definition",
+      "id": "wo-scope-an-mvp-testing",
+      "play": "scope-an-mvp",
+      "priority": 15,
+      "source": "seed:issue-338-testing-card",
+      "status": "open",
+      "title": "Testing campaign",
+      "type": "testing"
+    },
+    {
+      "checklist": [
+        {
+          "done": false,
+          "text": "Define the proof spec before the Built confirm."
+        },
+        {
+          "done": false,
+          "text": "Run the golden path and at least one failure path."
+        },
+        {
+          "done": false,
+          "text": "Record the read-out before the Proven confirm."
+        }
+      ],
+      "created": "2026-06-23",
+      "detail": "Priority-ordered checklist to raise this play past its first smoke.",
+      "division": "Product",
+      "function": "Delivery",
+      "id": "wo-architecture-aware-build-plan-testing",
+      "play": "architecture-aware-build-plan",
+      "priority": 15,
+      "source": "seed:issue-338-testing-card",
+      "status": "open",
+      "title": "Testing campaign",
+      "type": "testing"
+    },
+    {
+      "checklist": [
+        {
+          "done": false,
+          "text": "Define the proof spec before the Built confirm."
+        },
+        {
+          "done": false,
+          "text": "Run the golden path and at least one failure path."
+        },
+        {
+          "done": false,
+          "text": "Record the read-out before the Proven confirm."
+        }
+      ],
+      "created": "2026-06-23",
+      "detail": "Priority-ordered checklist to raise this play past its first smoke.",
+      "division": "Product",
+      "function": "Insight",
+      "id": "wo-feasibility-check-testing",
+      "play": "feasibility-check",
+      "priority": 15,
+      "source": "seed:issue-338-testing-card",
+      "status": "open",
+      "title": "Testing campaign",
+      "type": "testing"
+    },
+    {
+      "checklist": [
+        {
+          "done": false,
+          "text": "Define the proof spec before the Built confirm."
+        },
+        {
+          "done": false,
+          "text": "Run the golden path and at least one failure path."
+        },
+        {
+          "done": false,
+          "text": "Record the read-out before the Proven confirm."
+        }
+      ],
+      "created": "2026-06-23",
+      "detail": "Priority-ordered checklist to raise this play past its first smoke.",
+      "division": "Product",
+      "function": "Definition",
+      "id": "wo-survey-the-existing-system-testing",
+      "play": "survey-the-existing-system",
+      "priority": 15,
+      "source": "seed:issue-338-testing-card",
+      "status": "open",
+      "title": "Testing campaign",
+      "type": "testing"
+    },
+    {
+      "checklist": [
+        {
+          "done": false,
+          "text": "Define the proof spec before the Built confirm."
+        },
+        {
+          "done": false,
+          "text": "Run the golden path and at least one failure path."
+        },
+        {
+          "done": false,
+          "text": "Record the read-out before the Proven confirm."
+        }
+      ],
+      "created": "2026-06-23",
+      "detail": "Priority-ordered checklist to raise this play past its first smoke.",
+      "division": "Product",
+      "function": "Insight",
+      "id": "wo-capture-technical-constraints-testing",
+      "play": "capture-technical-constraints",
+      "priority": 15,
+      "source": "seed:issue-338-testing-card",
+      "status": "open",
+      "title": "Testing campaign",
+      "type": "testing"
+    },
+    {
+      "checklist": [
+        {
+          "done": false,
+          "text": "Define the proof spec before the Built confirm."
+        },
+        {
+          "done": false,
+          "text": "Run the golden path and at least one failure path."
+        },
+        {
+          "done": false,
+          "text": "Record the read-out before the Proven confirm."
+        }
+      ],
+      "created": "2026-06-23",
+      "detail": "Priority-ordered checklist to raise this play past its first smoke.",
+      "division": "Product",
+      "function": "Insight",
+      "id": "wo-run-internal-feature-discovery-testing",
+      "play": "run-internal-feature-discovery",
+      "priority": 15,
+      "source": "seed:issue-338-testing-card",
+      "status": "open",
+      "title": "Testing campaign",
+      "type": "testing"
+    },
+    {
+      "checklist": [
+        {
+          "done": false,
+          "text": "Define the proof spec before the Built confirm."
+        },
+        {
+          "done": false,
+          "text": "Run the golden path and at least one failure path."
+        },
+        {
+          "done": false,
+          "text": "Record the read-out before the Proven confirm."
+        }
+      ],
+      "created": "2026-06-23",
+      "detail": "Priority-ordered checklist to raise this play past its first smoke.",
+      "division": "Product",
+      "function": "Definition",
+      "id": "wo-write-acceptance-criteria-testing",
+      "play": "write-acceptance-criteria",
+      "priority": 15,
+      "source": "seed:issue-338-testing-card",
+      "status": "open",
+      "title": "Testing campaign",
+      "type": "testing"
+    },
+    {
+      "checklist": [
+        {
+          "done": false,
+          "text": "Define the proof spec before the Built confirm."
+        },
+        {
+          "done": false,
+          "text": "Run the golden path and at least one failure path."
+        },
+        {
+          "done": false,
+          "text": "Record the read-out before the Proven confirm."
+        }
+      ],
+      "created": "2026-06-23",
+      "detail": "Priority-ordered checklist to raise this play past its first smoke.",
+      "division": "Product",
+      "function": "Library Operations",
+      "id": "wo-build-atomic-card-testing",
+      "play": "build-atomic-card",
+      "priority": 15,
+      "source": "seed:issue-338-testing-card",
+      "status": "open",
+      "title": "Testing campaign",
+      "type": "testing"
+    },
+    {
+      "checklist": [
+        {
+          "done": false,
+          "text": "Run a graded campaign beyond the 2026-06-18 N=1 smoke."
+        },
+        {
+          "done": false,
+          "text": "Exercise the interactive review/revise loop."
+        },
+        {
+          "done": false,
+          "text": "Record IN-1/IN-2 invariance results and residuals."
+        }
+      ],
+      "created": "2026-06-23",
+      "detail": "Priority-ordered checklist to raise this play past its first smoke.",
+      "division": "Product",
+      "function": "Insight",
+      "id": "wo-frame-the-problem-testing",
+      "play": "frame-the-problem",
+      "priority": 15,
+      "source": "seed:issue-338-testing-card",
+      "status": "open",
+      "title": "Testing campaign",
+      "type": "testing"
+    },
+    {
+      "checklist": [
+        {
+          "done": false,
+          "text": "Run ax run make-a-play:prove against frame-the-problem."
+        },
+        {
+          "done": false,
+          "text": "Confirm the auto-advance contract routes the N=1 smoke exemplar to held."
+        },
+        {
+          "done": false,
+          "text": "Confirm built-by appears only as a Ledger provenance fact."
+        }
+      ],
+      "created": "2026-06-23",
+      "detail": "Replay the frame-the-problem exemplar and keep the held queue honest before promoting make-a-play live.",
+      "division": "PlaymakerStudio",
+      "function": "Production",
+      "id": "wo-make-a-play-testing",
+      "play": "make-a-play",
+      "priority": 15,
+      "source": "seed:issue-341-testing-card",
+      "status": "open",
+      "title": "Prove the self-hosting contract",
+      "type": "testing"
+    },
+    {
+      "created": "2026-06-23",
+      "detail": "Replace the grader-seam wc with a one-line wc software node plus a trim switchback. Queued as the play's first post-registration amendment (Gate-1 D1).",
+      "division": "Product",
+      "function": "Insight",
+      "id": "wo-frame-the-problem-improvement-word-count-software-node",
+      "play": "frame-the-problem",
+      "priority": 20,
+      "source": "migrated:studio/plays/frame-the-problem/improvements.md#backlog",
+      "status": "open",
+      "title": "Word-count software node",
+      "type": "improvement"
+    },
+    {
+      "created": "2026-06-23",
+      "detail": "[decision] The refusal path exits before the checkers run, so gating them changes semantics. Test empirically on the factory, then gate only if safe (PROJECTION section 11).",
+      "division": "Product",
+      "function": "Insight",
+      "id": "wo-frame-the-problem-improvement-goal-gate-attributes",
+      "play": "frame-the-problem",
+      "priority": 21,
+      "source": "migrated:studio/plays/frame-the-problem/improvements.md#backlog",
+      "status": "open",
+      "title": "Goal-gate attributes on ground and self_check",
+      "type": "improvement"
+    },
+    {
+      "created": "2026-06-23",
+      "detail": "The hunch-vs-disputed-edge rule and commitment-grading still slip on noisy inputs. Add hard-case fixtures until the gallery fix is trusted, not just observed.",
+      "division": "Product",
+      "function": "Insight",
+      "id": "wo-frame-the-problem-improvement-raise-eval-n-hard-case-rules",
+      "play": "frame-the-problem",
+      "priority": 22,
+      "source": "migrated:studio/plays/frame-the-problem/improvements.md#backlog",
+      "status": "open",
+      "title": "Raise eval N on the hard-case rules",
+      "type": "improvement"
+    },
+    {
+      "created": "2026-06-23",
+      "detail": "Promote relate to a composite (Map the Problem Space) via Play recursion when the multi-step method earns it.",
+      "division": "Product",
+      "function": "Insight",
+      "id": "wo-frame-the-problem-improvement-relate-sub-play",
+      "play": "frame-the-problem",
+      "priority": 23,
+      "source": "migrated:studio/plays/frame-the-problem/improvements.md#backlog",
+      "status": "open",
+      "title": "relate as a candidate sub-play",
+      "type": "improvement"
+    },
+    {
+      "created": "2026-06-23",
+      "detail": "Turned a rule that failed 100% as prose into a closed check. Shipped 2026-06-11.",
+      "division": "Product",
+      "function": "Insight",
+      "id": "wo-frame-the-problem-improvement-mechanical-sizing-lexicon-scan",
+      "play": "frame-the-problem",
+      "priority": 80,
+      "source": "migrated:studio/plays/frame-the-problem/improvements.md#shipped",
+      "status": "done",
+      "terminalAt": "2026-06-11",
+      "title": "Mechanical sizing-lexicon scan in ground",
+      "type": "improvement"
+    },
+    {
+      "created": "2026-06-23",
+      "detail": "Done-right vs wrong pairs, re-skinned to a neutral domain so a prompt never carries a fixture's answer. Shipped 2026-06-11.",
+      "division": "Product",
+      "function": "Insight",
+      "id": "wo-frame-the-problem-improvement-example-gallery-prompts",
+      "play": "frame-the-problem",
+      "priority": 81,
+      "source": "migrated:studio/plays/frame-the-problem/improvements.md#shipped",
+      "status": "done",
+      "terminalAt": "2026-06-11",
+      "title": "Example gallery in the prompts",
+      "type": "improvement"
+    },
+    {
+      "created": "2026-06-23",
+      "detail": "The comprehension gate runs as its own node rather than a post-hoc check (Gate-1 D3).",
+      "division": "Product",
+      "function": "Insight",
+      "id": "wo-frame-the-problem-improvement-cold-reader-projected-in-run",
+      "play": "frame-the-problem",
+      "priority": 82,
+      "source": "migrated:studio/plays/frame-the-problem/improvements.md#shipped",
+      "status": "done",
+      "terminalAt": "2026-06-11",
+      "title": "Cold-reader projected in-run",
+      "type": "improvement"
+    },
+    {
+      "created": "2026-06-25",
+      "detail": "DONE 2026-06-25. Danvers+Claude is the PLAY executor (not the Fabro factory). Config flipped to provider=claude; ax doctor reports Provider: claude + claude-acp OK. Smoke proven end-to-end: ran source-assessment under Claude (--wait) -> status=succeeded, run 01KVZSX6QEYQEA8PVBH1Z7P55F; runtime resolved acp.command to .../claude/latest/bin/claude-code-acp and Claude wrote orchestration/fabro-smoke.md with the expected heading. The pipe is proven.",
+      "division": "Product",
+      "function": "Operations",
+      "id": "wo-phase3-1-prove-claude-play-runner",
+      "priority": 1,
+      "source": "phase-3-build-plan",
+      "status": "done",
+      "terminalAt": "2026-06-25",
+      "title": "Phase 3 · Prove the pipe: Claude runs plays",
+      "type": "improvement"
+    },
+    {
+      "created": "2026-06-25",
+      "detail": "The first real node-maker, and your opening real build. Integrate + skin the Vocabulary prototype into the viewer so it emits named cards on shelves, bound to one lexicon and the canonical Brick-0 (#328) frontmatter schema. Seed from the Studio FoH/BoH read you already have (docs/.../rebuilding-the-library/test-scan-03-studio) — do NOT wait on the Codebase Scanner. Parallel-safe; its schema dependency is already ruled. STEPS: (1) fix the vocabulary->lexicon rename so the explorer build reads the real data; (2) reconcile the 9-field frontmatter to the canonical Brick-0 schema; (3) build the missing elicitation form and skin it into the viewer; (4) produce a first batch of named Studio cards on shelves from the existing read.",
+      "division": "Product",
+      "function": "Library Operations",
+      "id": "wo-phase3-2-name-the-things",
+      "priority": 2,
+      "source": "phase-3-build-plan",
+      "status": "in-progress",
+      "title": "Phase 3 · Name the Things (Vocabulary)",
+      "type": "improvement"
+    },
+    {
+      "created": "2026-06-25",
+      "detail": "Raise Skeleton + Surface to peer Vocabulary: emit library-form structural edges (the containment tree + the one core path) as [[wikilinks]] bound to the lexicon. Sufficiency bar: spine complete, periphery deferred. Blocked by Name the Things (edges reference named nouns). STEPS: (1) retarget Skeleton output from prose to library-form nodes+edges bound to the lexicon; (2) emit the containment tree + the one core path as wikilinks; (3) stop at spine-complete, defer periphery.",
+      "division": "Product",
+      "function": "Library Operations",
+      "id": "wo-phase3-3-lay-the-shelves",
+      "priority": 3,
+      "source": "phase-3-build-plan",
+      "status": "open",
+      "title": "Phase 3 · Lay the Shelves (Skeleton + Surface)",
+      "type": "improvement"
+    },
+    {
+      "created": "2026-06-25",
+      "detail": "Stitch Back-of-House -> Front-of-House -> Confirm Gate -> Empty Library View into ONE end-to-end loop on the Studio target, now fed by the real node/edge tooling instead of a hand-stubbed bundle. The Director's 'yes, these are my words; yes, this is where things live' gate. The per-play testing campaigns for these three plays already exist as separate cards — this is the stitch goal. Blocked by Name the Things + Lay the Shelves. STEPS: (1) feed the empty-library loop from Vocabulary + Skeleton output, not a hand-stubbed bundle; (2) run BoH -> FoH -> Confirm end to end on the Studio; (3) land a library.confirmed Ledger event for the Studio bundle.",
+      "division": "Product",
+      "function": "Library Operations",
+      "id": "wo-phase3-4-confirm-empty-library",
+      "priority": 4,
+      "source": "phase-3-build-plan",
+      "status": "open",
+      "title": "Phase 3 · Confirm the Empty Library (end-to-end)",
+      "type": "improvement"
+    },
+    {
+      "created": "2026-06-25",
+      "detail": "Change the atomizer's input from 'a doc' to 'the confirmed shelves + lexicon': triage slots concepts onto confirmed shelves in confirmed words; a concept with no shelf becomes a gap report, never an invented category. The self-hosting flip — author THROUGH make-a-play only if it's Proven, else hand-author and bank the re-make (escape hatch). Blocked by Confirm the Empty Library. STEPS: (1) re-point input to confirmed stubs + lexicon prefLabel, no-shelf -> gap report; (2) migrate ax2->ax and re-prove on the conan/sam/bridget/solomon evals; (3) if make-a-play is Proven author through it, else hand-author and bank the re-make.",
+      "division": "Product",
+      "function": "Library Operations",
+      "id": "wo-phase3-5-repoint-atomizer",
+      "play": "build-atomic-card",
+      "priority": 5,
+      "source": "phase-3-build-plan",
+      "status": "open",
+      "title": "Phase 3 · Re-point the Atomizer (#350)",
+      "type": "improvement"
+    },
+    {
+      "created": "2026-06-25",
+      "detail": "Run the whole pipeline on Playmaker Studio itself -> the Studio's own product library. The output is a real artifact, not a test fixture. That fact is the proof. Blocked by Confirm + Re-point. STEPS: (1) run the full pipeline end-to-end on the Studio target; (2) produce the Studio's own product library as a real artifact.",
+      "division": "Product",
+      "function": "Library Operations",
+      "id": "wo-phase3-6-fill-studio-shelves",
+      "priority": 6,
+      "source": "phase-3-build-plan",
+      "status": "open",
+      "title": "Phase 3 · Fill the Studio's Shelves (the dogfood)",
+      "type": "improvement"
+    },
+    {
+      "created": "2026-06-25",
+      "detail": "The Director walks the produced library + the build experience. Findings become the Phase-3 fix-list, dispatched through the same machine as Phases 1-2. This is where 'tune the card-making process' actually happens before pointing the pipeline at Alexandria (Phase 4). Blocked by Fill the Studio's Shelves. STEPS: (1) walk the produced Studio library and the build experience; (2) turn findings into the Phase-3 fix-list and dispatch them.",
+      "division": "Product",
+      "function": "Library Operations",
+      "id": "wo-phase3-7-walk-studio-library",
+      "priority": 7,
+      "source": "phase-3-build-plan",
+      "status": "open",
+      "title": "Phase 3 · Walk the Studio's Library (tune the process)",
+      "type": "improvement"
+    },
+    {
+      "created": "2026-06-25",
+      "detail": "Deliberately deferred so the opening sprint stays narrow. None of these block the library chain — improve, don't churn. PARKED: (1) Prove the Play-Maker (make-a-play Built->Proven) — already tracked by its own testing card, only needed when the atomizer self-host is actually wanted; (2) Read It From the Code (the Codebase Scanner) — defer, the existing Studio read is your source for now; (3) FoH/BoH walks rebuilt as plays via make-a-play — later, they work hand-built and you only re-make to improve.",
+      "division": "Product",
+      "function": "Library Operations",
+      "id": "wo-phase3-9-parked",
+      "priority": 9,
+      "source": "phase-3-build-plan",
+      "status": "open",
+      "title": "Phase 3 · (Parked) Not in the opening sprint",
+      "type": "improvement"
+    }
+  ]
+}

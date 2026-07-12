@@ -1,0 +1,26 @@
+{
+  "playId": "atomic-card-creation",
+  "legs": [
+    {
+      "nodeId": "validate_plan",
+      "label": "Validate plan",
+      "description": "AX validates the EL5 build-plan schema, confirmed stubs, source hashes, and lexicon matches.",
+      "typicalSeconds": 10,
+      "kind": "command"
+    },
+    {
+      "nodeId": "execute_plan",
+      "label": "Execute plan",
+      "description": "AX launches one build-atomic-card child run per write_new contract; the child workflow owns draft, validation, grading, revision, publish, and ledger events.",
+      "typicalSeconds": 300,
+      "kind": "command"
+    },
+    {
+      "nodeId": "verify_plan",
+      "label": "Verify plan",
+      "description": "AX renders the final coverage audit after publish.",
+      "typicalSeconds": 10,
+      "kind": "command"
+    }
+  ]
+}

@@ -1,0 +1,237 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      evals_status:
+        description: "Human-evaluated release note about eval coverage (not auto-run here)"
+        required: false
+        default: "Feature evals already covered before release; no auto-run in release workflow."
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  sync-public-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out alexandria-internal
+        uses: actions/checkout@v5
+
+      - name: Check out public repo
+        uses: actions/checkout@v5
+        with:
+          repository: GetAlexandria/alexandria
+          token: ${{ secrets.GETALEXANDRIA_PUBLIC_REPO_PUSH_TOKEN }}
+          path: public-repo
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Note eval status
+        run: |
+          echo "Release eval status:"
+          echo "${{ github.event.inputs.evals_status || 'Release triggered from tag push; evals intentionally not auto-run here.' }}"
+
+      - name: Sync public repo payload
+        env:
+          ALEXANDRIA_PUBLIC_REPO_DIR: ${{ github.workspace }}/public-repo
+        run: bun packages/plugin-runtime/src/sync-public-repo.ts
+
+      - name: Commit public repo changes
+        working-directory: public-repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          if git diff --cached --quiet; then
+            echo "No public repo changes to push."
+            exit 0
+          fi
+          git commit -m "Sync public payload for release"
+          git push origin HEAD:main
+
+  build-release-assets:
+    needs: sync-public-repo
+    strategy:
+      matrix:
+        runner:
+          - ubuntu-latest
+          - macos-14
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Check out alexandria-internal
+        uses: actions/checkout@v5
+
+      - name: Check out public repo
+        uses: actions/checkout@v5
+        with:
+          repository: GetAlexandria/alexandria
+          token: ${{ secrets.GETALEXANDRIA_PUBLIC_REPO_PUSH_TOKEN }}
+          path: public-repo
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build bundled Fabro sidecar
+        run: cargo build --release --manifest-path repos/fabro/Cargo.toml -p fabro-cli
+
+      - name: Build release assets
+        env:
+          ALEXANDRIA_PUBLIC_REPO_DIR: ${{ github.workspace }}/public-repo
+          ALEXANDRIA_RELEASE_OUTPUT_DIR: ${{ github.workspace }}/release-artifacts
+          ALEXANDRIA_RELEASE_TARGET: alexandria
+          ALEXANDRIA_FABRO_BIN: ${{ github.workspace }}/repos/fabro/target/release/fabro
+        run: bun packages/deploy/src/build-release-assets.ts
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets-${{ matrix.runner }}
+          path: release-artifacts
+          if-no-files-found: error
+
+  publish-site:
+    needs: build-release-assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out alexandria-internal
+        uses: actions/checkout@v5
+
+      - name: Check out site repo
+        uses: actions/checkout@v5
+        with:
+          repository: GetAlexandria/alexandria-site
+          token: ${{ secrets.ALEXANDRIA_SITE_PUSH_TOKEN }}
+          path: alexandria-site
+
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded-assets
+
+      - name: Consolidate release artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .release-artifacts/downloads
+          root_latest="$(find downloaded-assets -type f -path '*/downloads/latest-version.txt' ! -path '*/downloads/alexandria/*' | head -n 1)"
+          cp "$root_latest" .release-artifacts/downloads/latest-version.txt
+          install_source="$(find downloaded-assets -type f -name 'install.sh' | head -n 1)"
+          cp "$install_source" .release-artifacts/install.sh
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Update site release surfaces
+        env:
+          ALEXANDRIA_RELEASE_OUTPUT_DIR: ${{ github.workspace }}/.release-artifacts
+          ALEXANDRIA_SITE_REPO_DIR: ${{ github.workspace }}/alexandria-site
+          ALEXANDRIA_RELEASE_PR_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}
+          ALEXANDRIA_RELEASE_TARGET: alexandria
+        run: bun packages/deploy/src/update-site-release.ts
+
+      - name: Commit site release changes
+        working-directory: alexandria-site
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/install.sh public/downloads src/data/version.json src/content/changelog
+          if git diff --cached --quiet; then
+            echo "No site changes to push."
+            exit 0
+          fi
+          git commit -m "Publish Alexandria release ${GITHUB_REF_NAME#v}"
+          git push origin HEAD:main
+
+  publish-release-downloads:
+    needs: build-release-assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out alexandria-internal
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded-assets
+
+      - name: Consolidate download artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .release-artifacts/downloads
+          find downloaded-assets -type f -name '*.tar.gz' -exec cp {} .release-artifacts/downloads/ \;
+          root_latest="$(find downloaded-assets -type f -path '*/downloads/latest-version.txt' ! -path '*/downloads/alexandria/*' | head -n 1)"
+          cp "$root_latest" .release-artifacts/downloads/latest-version.txt
+
+      - name: Install Wrangler
+        run: npm install --global wrangler@4
+
+      - name: Publish download artifacts to R2
+        env:
+          ALEXANDRIA_RELEASE_OUTPUT_DIR: ${{ github.workspace }}/.release-artifacts
+          ALEXANDRIA_R2_ACCOUNT_ID: ${{ secrets.ALEXANDRIA_R2_ACCOUNT_ID }}
+          ALEXANDRIA_R2_BUCKET: ${{ secrets.ALEXANDRIA_R2_BUCKET }}
+          ALEXANDRIA_RELEASE_TARGET: alexandria
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: bun packages/deploy/src/publish-release-downloads.ts
+
+  create-github-release:
+    needs:
+      - build-release-assets
+      - publish-site
+      - publish-release-downloads
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded-assets
+
+      - name: Consolidate GitHub release files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-files
+          find downloaded-assets -type f \( -name '*.tar.gz' -o -name 'install.sh' \) -exec cp {} release-files/ \;
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-files/*

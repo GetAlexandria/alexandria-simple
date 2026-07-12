@@ -1,0 +1,5 @@
+I’ll read the current draft and any prior relate/bounce artifacts first, then rewrite only the relate output the move asks for.The bounce note targets `frame`, not `relate`, so I’m not changing the bounced quote here. The prior relate output is close, but I’m tightening the relationship test so the relate section avoids sequencing language and stays inside the disputed-edge rule.I’ve written the relate artifact and am doing one pass over the final file for the required sections and any stray wording in the relationship line.Updated [runtime/related-brief.md](/workspace/alexandria-internal/runtime/related-brief.md).
+
+The relationship stays `disputed`: Maya bundles the two entries through “the extension,” while DEV separates them as capture vs search. Candidate edges remain inside the dispute, and `Hunch` remains `none earned`.
+
+I left the bounced quote unchanged because `runtime/bounce-note.md` targets `frame`, not `relate`.

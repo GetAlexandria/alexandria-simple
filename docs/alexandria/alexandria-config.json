@@ -1,0 +1,356 @@
+{
+  "version": "1.0",
+  "generated": "2026-03-23T12:00:00Z",
+  "inputs": {
+    "mode": "factory",
+    "novelty": "high",
+    "complexity": "high"
+  },
+  "pool_size": 22,
+  "distribution": {
+    "foundation": 5,
+    "core": 15,
+    "amplifier": 2,
+    "deprioritized": 0
+  },
+  "areas": [
+    {
+      "id": "1.1",
+      "name": "Product Vision",
+      "domain": "Vision & Strategy",
+      "tier": "foundation"
+    },
+    {
+      "id": "1.2",
+      "name": "Product Strategy",
+      "domain": "Vision & Strategy",
+      "tier": "foundation"
+    },
+    {
+      "id": "1.3",
+      "name": "User Personas / JTBD",
+      "domain": "Vision & Strategy",
+      "tier": "core"
+    },
+    {
+      "id": "1.4",
+      "name": "Competitive Analysis",
+      "domain": "Vision & Strategy",
+      "tier": "amplifier"
+    },
+    {
+      "id": "1.5",
+      "name": "Market Requirements",
+      "domain": "Vision & Strategy",
+      "tier": "amplifier"
+    },
+    {
+      "id": "2.1",
+      "name": "Information Architecture",
+      "domain": "Architecture & Nouns",
+      "tier": "core"
+    },
+    {
+      "id": "2.2",
+      "name": "Noun Vocabulary",
+      "domain": "Architecture & Nouns",
+      "tier": "foundation"
+    },
+    {
+      "id": "2.3",
+      "name": "Product Entities",
+      "domain": "Architecture & Nouns",
+      "tier": "core"
+    },
+    {
+      "id": "2.4",
+      "name": "System Design",
+      "domain": "Architecture & Nouns",
+      "tier": "core"
+    },
+    {
+      "id": "2.5",
+      "name": "Full GDD / PRD",
+      "domain": "Architecture & Nouns",
+      "tier": "core"
+    },
+    {
+      "id": "3.1",
+      "name": "User Journey Maps",
+      "domain": "Experience & Feel",
+      "tier": "core"
+    },
+    {
+      "id": "3.2",
+      "name": "Emotional / Aesthetic Goals",
+      "domain": "Experience & Feel",
+      "tier": "foundation"
+    },
+    {
+      "id": "3.3",
+      "name": "Engagement Loops",
+      "domain": "Experience & Feel",
+      "tier": "core"
+    },
+    {
+      "id": "3.4",
+      "name": "Progression / Mastery",
+      "domain": "Experience & Feel",
+      "tier": "core"
+    },
+    {
+      "id": "3.5",
+      "name": "Anti-Patterns",
+      "domain": "Experience & Feel",
+      "tier": "foundation"
+    },
+    {
+      "id": "4.1",
+      "name": "Design System",
+      "domain": "Visual & Interaction",
+      "tier": "core"
+    },
+    {
+      "id": "4.2",
+      "name": "Interaction Patterns",
+      "domain": "Visual & Interaction",
+      "tier": "core"
+    },
+    {
+      "id": "4.3",
+      "name": "Prototypes / Mockups",
+      "domain": "Visual & Interaction",
+      "tier": "core"
+    },
+    {
+      "id": "4.4",
+      "name": "Accessibility Standards",
+      "domain": "Visual & Interaction",
+      "tier": "core"
+    },
+    {
+      "id": "5.1",
+      "name": "Key Decisions Log",
+      "domain": "Decision History",
+      "tier": "core"
+    },
+    {
+      "id": "5.2+5.4",
+      "name": "Institutional Memory",
+      "domain": "Decision History",
+      "tier": "core"
+    },
+    {
+      "id": "5.3",
+      "name": "Roadmap",
+      "domain": "Decision History",
+      "tier": "core"
+    }
+  ],
+  "intake": {
+    "existing_knowledge": [
+      {
+        "area_id": "1.1",
+        "status": "present",
+        "freshness": "fresh",
+        "notes": "system-story.md covers why context libraries exist and scope boundary"
+      },
+      {
+        "area_id": "1.2",
+        "status": "present",
+        "freshness": "fresh",
+        "notes": "principles.md captures bets and trade-offs; system-story.md has scope boundary"
+      },
+      {
+        "area_id": "1.3",
+        "status": "present",
+        "freshness": "fresh",
+        "notes": "user-personas.md covers Solo Builder, Team Lead, Plugin Contributor, Enterprise Adopter with JTBD"
+      },
+      {
+        "area_id": "1.4",
+        "status": "absent",
+        "freshness": "unknown",
+        "notes": "No competitive analysis. Alternatives include plain docs, wikis, ADRs, gstack-style skills"
+      },
+      {
+        "area_id": "1.5",
+        "status": "absent",
+        "freshness": "unknown",
+        "notes": "No user research or usage data yet. Pre-launch."
+      },
+      {
+        "area_id": "2.1",
+        "status": "present",
+        "freshness": "fresh",
+        "notes": "Type taxonomy, folder structure, navigation in system-story.md and reference.md"
+      },
+      {
+        "area_id": "2.2",
+        "status": "present",
+        "freshness": "fresh",
+        "notes": "Card, wikilink, dimension, zone, room, assembly, briefing, retrieval profile — all defined"
+      },
+      {
+        "area_id": "2.3",
+        "status": "present",
+        "freshness": "fresh",
+        "notes": "Cards, types, dimensions, grades, plays, agents all documented in design docs"
+      },
+      {
+        "area_id": "2.4",
+        "status": "present",
+        "freshness": "fresh",
+        "notes": "Wizard engine, grading rubric, retrieval profiles, traversal, gap analysis in skill files"
+      },
+      {
+        "area_id": "2.5",
+        "status": "present",
+        "freshness": "fresh",
+        "notes": "system-story.md is the GDD; playbook.md extends it"
+      },
+      {
+        "area_id": "3.1",
+        "status": "present",
+        "freshness": "fresh",
+        "notes": "playbook.md is the lifecycle journey from genesis through maintenance, evolution, and meta operations."
+      },
+      {
+        "area_id": "3.2",
+        "status": "present",
+        "freshness": "fresh",
+        "notes": "aesthetic-goals.md covers five adjective pairs with design implications for agents and user experience"
+      },
+      {
+        "area_id": "3.3",
+        "status": "partial",
+        "freshness": "fresh",
+        "notes": "Maintenance cycle and assembly cycle are loops but not framed as engagement loops explicitly"
+      },
+      {
+        "area_id": "3.4",
+        "status": "partial",
+        "freshness": "stale",
+        "notes": "Implicit in lifecycle stages but not documented as a progression system. No day-1 vs month-6 framing."
+      },
+      {
+        "area_id": "3.5",
+        "status": "present",
+        "freshness": "fresh",
+        "notes": "principles.md what-breaks sections. Conan agent definition has guardrails."
+      },
+      {
+        "area_id": "4.1",
+        "status": "present",
+        "freshness": "fresh",
+        "notes": "Card format, five dimensions, naming conventions, folder structure, output formats in reference.md"
+      },
+      {
+        "area_id": "4.2",
+        "status": "present",
+        "freshness": "fresh",
+        "notes": "org-chart.md handoff patterns, playbook.md agent interactions, completion statuses"
+      },
+      {
+        "area_id": "4.3",
+        "status": "partial",
+        "freshness": "fresh",
+        "notes": "Templates exist in templates/. No visual mockups (markdown product). Templates ARE the prototypes."
+      },
+      {
+        "area_id": "4.4",
+        "status": "present",
+        "freshness": "fresh",
+        "notes": "usability-standards.md covers discoverability, navigability, onboarding, output readability standards"
+      },
+      {
+        "area_id": "5.1",
+        "status": "present",
+        "freshness": "fresh",
+        "notes": "Five decisions-*.md source files cover knowledge representation, team architecture, wizard design, quality/grading, service/tooling"
+      },
+      {
+        "area_id": "5.2+5.4",
+        "status": "present",
+        "freshness": "fresh",
+        "notes": "institutional-memory.md captures LifeBuild lessons, operational patterns, and early-adopter insights"
+      },
+      {
+        "area_id": "5.3",
+        "status": "partial",
+        "freshness": "fresh",
+        "notes": "beadification-plan.md and alexandria.md cover some planned work. No comprehensive roadmap."
+      }
+    ]
+  },
+  "gap_analysis": {
+    "gaps": [
+      {
+        "area_id": "1.4",
+        "name": "Competitive Analysis",
+        "recommended_tier": "amplifier",
+        "current_status": "absent",
+        "current_freshness": "unknown",
+        "priority_score": 0.5,
+        "action": "create"
+      },
+      {
+        "area_id": "1.5",
+        "name": "Market Requirements",
+        "recommended_tier": "amplifier",
+        "current_status": "absent",
+        "current_freshness": "unknown",
+        "priority_score": 0.5,
+        "action": "create"
+      },
+      {
+        "area_id": "3.3",
+        "name": "Engagement Loops",
+        "recommended_tier": "core",
+        "current_status": "partial",
+        "current_freshness": "fresh",
+        "priority_score": 0.45,
+        "action": "update"
+      },
+      {
+        "area_id": "3.4",
+        "name": "Progression / Mastery",
+        "recommended_tier": "core",
+        "current_status": "partial",
+        "current_freshness": "stale",
+        "priority_score": 0.45,
+        "action": "update"
+      },
+      {
+        "area_id": "4.3",
+        "name": "Prototypes / Mockups",
+        "recommended_tier": "core",
+        "current_status": "partial",
+        "current_freshness": "fresh",
+        "priority_score": 0.45,
+        "action": "update"
+      },
+      {
+        "area_id": "5.3",
+        "name": "Roadmap",
+        "recommended_tier": "core",
+        "current_status": "partial",
+        "current_freshness": "fresh",
+        "priority_score": 0.45,
+        "action": "update"
+      }
+    ],
+    "sequence": ["1.4", "1.5", "3.3", "3.4", "4.3", "5.3"],
+    "summary": {
+      "total_areas": 22,
+      "gaps_to_fill": 6,
+      "areas_to_refresh": 0,
+      "areas_complete": 16
+    }
+  },
+  "implementation_planning": {
+    "ticket_format": "standard",
+    "custom_template": null,
+    "output_dir": "docs/alexandria/implementation-plans"
+  }
+}

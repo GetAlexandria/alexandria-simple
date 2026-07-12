@@ -1,0 +1,8 @@
+{
+  "output": "WORDCOUNT_OK: 64 words (ceiling 75)\n",
+  "exit_code": 0,
+  "duration_ms": 127,
+  "termination": "exited",
+  "output_bytes": 36,
+  "live_streaming": true
+}

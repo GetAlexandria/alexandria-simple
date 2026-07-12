@@ -1,0 +1,10 @@
+{
+  "agendaItemId": "hot-spot-five-agents-claim",
+  "agendaItemKind": "hot_spot",
+  "answerEventId": "7b648eb5-750c-4a65-a224-e5b585934b8f",
+  "answerText": "Five is the current intent — up to 5 direct reports for a director, each with a coin. Eventually Alexandria will support hundreds of AI colleagues, but the current model is 5 coined slots.\n\n- Raven: the one somewhat built-out example.\n- Damien: has a coin and a few off-playbook skills with stories captured in the playbook, but not truly built out.\n- William: planned as the interface for Playmaker Studio. Not built yet.\n- Two remaining slots: unnamed, unbuilt.\n\nWilliam should be carded as a planned agent. The marketing is not stale — five is the current design intent for direct reports. The distinction between \"coined\" (has a slot) and \"built\" (has real plays and capabilities) is worth noting.\n",
+  "fabroRunId": "01KWHFN1SA5R413ASARCRN79VW",
+  "playRunId": "949f76ce-f518-4ba6-bd58-a85f6c45c9ff",
+  "questionId": "01KWHQY2P3RZA1CRZ6PX79W8GM",
+  "schemaVersion": 1
+}

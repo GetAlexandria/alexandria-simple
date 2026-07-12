@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "bundles": [
+    {
+      "id": "alexandria-product",
+      "label": "Alexandria Product",
+      "libraryRoot": "docs/alexandria/library"
+    }
+  ]
+}

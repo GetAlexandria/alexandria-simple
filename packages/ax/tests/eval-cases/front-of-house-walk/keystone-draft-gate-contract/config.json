@@ -1,0 +1,56 @@
+{
+  "caseId": "front-of-house-walk/keystone-draft-gate-contract",
+  "description": "Front-of-House routes frame mappings through one proposed index-card approval gate before agenda cascade.",
+  "checks": [
+    {
+      "description": "Workflow resolves proposed-card gates before ordinary patch planning and routes every gate outcome.",
+      "file": "packages/alexandria-plugin/workflows/front-of-house-walk/workflow.fabro",
+      "contains": [
+        "resolve_keystone_gate",
+        "ax internal front-of-house resolve-keystone-gate",
+        "NOT_KEYSTONE_GATE",
+        "KEYSTONE_APPROVED",
+        "KEYSTONE_CORRECTION_REQUESTED",
+        "KEYSTONE_REJECTED_RESIDUAL",
+        "KEYSTONE_DRAFT_STAGED",
+        "revise_keystone_mapping"
+      ]
+    },
+    {
+      "description": "Raven skill presents the proposed index card as one approve-or-correct artifact with exact answer tokens.",
+      "file": "packages/alexandria-plugin/skills/front-of-house-walk/SKILL.md",
+      "contains": [
+        "### Proposed Index Card",
+        "`current-item.json.agendaItem.id` is `proposed-index-card-approval`",
+        "Present one thing: the proposed index card",
+        "Ask exactly one approve-or-correct question",
+        "APPROVE_KEYSTONE_DRAFT",
+        "CORRECT_KEYSTONE_DRAFT",
+        "AX will either apply the deferred agenda cascade",
+        "one mapping revision pass"
+      ]
+    },
+    {
+      "description": "Planner prompts keep keystoneDraft AX-owned and correction bounded to one mapping revision.",
+      "file": "packages/alexandria-plugin/workflows/front-of-house-walk/prompts/plan_bundle_patch.md",
+      "contains": [
+        "Do not include `keystoneDraft`",
+        "AX renders, validates, logs, and stages the proposed index card",
+        "AX owns the proposed index-card `keystoneDraft`"
+      ]
+    },
+    {
+      "description": "Dedicated correction prompt revises containerMapping only and cites the correction answer event.",
+      "file": "packages/alexandria-plugin/workflows/front-of-house-walk/prompts/revise_keystone_mapping.md",
+      "contains": [
+        "keystone-gate.json",
+        "keystone-gate-correction.json",
+        "`correctionAnswerEventId`",
+        "Stay at container altitude",
+        "Keep `cardUpdates` as an empty array",
+        "Do not include `keystoneDraft`",
+        "This is the only mapping revision pass"
+      ]
+    }
+  ]
+}

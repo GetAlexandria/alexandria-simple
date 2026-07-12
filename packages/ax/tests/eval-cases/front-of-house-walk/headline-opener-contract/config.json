@@ -1,0 +1,96 @@
+{
+  "caseId": "front-of-house-walk/headline-opener-contract",
+  "description": "Front-of-House skill opens the walk with a plain-language product map and exactly one big-picture question.",
+  "checks": [
+    {
+      "description": "Raven skill records the turn and applies global one-decision director-facing turn discipline.",
+      "file": "packages/alexandria-plugin/skills/front-of-house-walk/SKILL.md",
+      "contains": [
+        "ax internal front-of-house record-turn",
+        "library.front_of_house.turn_recorded",
+        "actor.kind = agent",
+        "### Director-Facing Turn Discipline",
+        "Every turn Raven says to the director has one decision",
+        "make that question ask for one ruling",
+        "The first director-facing turn is always the plain product map",
+        "any reconciliation of machine-made inconsistencies",
+        "Director-facing turns must use the product's own names and ordinary language",
+        "Do not say internal runtime words to the director",
+        "`keystone`",
+        "`container`",
+        "`thread`",
+        "`agenda item`",
+        "`drift`",
+        "`EL2`",
+        "`EL3`",
+        "`bundle`",
+        "frontmatter/runtime field names"
+      ]
+    },
+    {
+      "description": "Raven skill gates the opener on the frame-origin wake and builds only the plain product map from product names and WHAT text.",
+      "file": "packages/alexandria-plugin/skills/front-of-house-walk/SKILL.md",
+      "contains": [
+        "current-item.json",
+        "### Headline Opener",
+        "origin: \"frame\"",
+        "for-raven.md",
+        "current-item.md",
+        "concerned card files",
+        "## Product Containers",
+        "The opener is the plain product map and nothing else",
+        "one-breath story",
+        "card `prefLabel`s",
+        "usable `WHAT` text",
+        "one plain one-line gloss",
+        "End with exactly one closing question",
+        "Does that feel right as the big picture",
+        "The opener must not include machine-inconsistency reconciliation",
+        "search-frame confirmation",
+        "a section read",
+        "held-back problem material",
+        "EL5 owns bodies"
+      ],
+      "notContains": [
+        "The opener includes the search-frame confirmation.",
+        "Fold the staged frame-origin item into this same turn as the search-frame confirmation.",
+        "Ask for one answer that confirms, merges, or renames the canonical container set and confirms or corrects the search frame."
+      ]
+    },
+    {
+      "description": "Raven skill makes negative cases explicit for map-plus-section, map-plus-reconciliation, and two-question turns.",
+      "file": "packages/alexandria-plugin/skills/front-of-house-walk/SKILL.md",
+      "contains": [
+        "Negative cases:",
+        "A turn that combines the opening map with a section question violates this",
+        "A turn that combines the opening map with machine-inconsistency or",
+        "search-frame reconciliation violates this skill",
+        "A director-facing turn that ends with two questions violates this skill"
+      ]
+    },
+    {
+      "description": "Patch-planning prompt routes frame-origin product-map rulings through containerMapping while preserving the card-membership ban.",
+      "file": "packages/alexandria-plugin/workflows/front-of-house-walk/prompts/plan_bundle_patch.md",
+      "contains": [
+        "`containerMapping`",
+        "`keep`, `rename`, `merge`,",
+        "AX enumerates cards from the bundle filesystem",
+        "Do not enumerate affected cards",
+        "emit `hold`",
+        "never changes card `status`",
+        "Do not fill or rewrite card bodies",
+        "patch-<agendaItemId>"
+      ]
+    },
+    {
+      "description": "Patch replan prompt uses AX's exact rejection diagnostic and preserves the same agenda item.",
+      "file": "packages/alexandria-plugin/workflows/front-of-house-walk/prompts/replan_bundle_patch.md",
+      "contains": [
+        "patch-rejection.json",
+        "exact validation error",
+        "same current `agendaItemId`",
+        "patch-<agendaItemId>"
+      ]
+    }
+  ]
+}

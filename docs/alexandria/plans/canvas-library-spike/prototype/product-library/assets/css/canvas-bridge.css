@@ -1,0 +1,338 @@
+  #live-pip {
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-left: 0.5em;
+    font: 500 12px/1 var(--font-px);
+    padding: 0.35em;
+    /* Wordless dot. No text means no layout shift on state changes. */
+    background: rgba(20, 14, 8, 0.55);
+    border: 1px solid rgba(212, 160, 82, 0.18);
+    border-radius: 999px;
+    user-select: none;
+  }
+  /* Status is carried by the dot color alone. Hover the dot for the label. */
+  #live-pip.connecting { color: var(--accent-dim); }
+  #live-pip.connected  { color: var(--accent); }
+  #live-pip.offline    { color: var(--danger); }
+  #live-pip::before { display: inline-block; }
+  #live-pip.connecting::before { content: '○'; }
+  #live-pip.connected::before  { content: '●'; }
+  #live-pip.offline::before    { content: '○'; }
+
+  /* ── Shared affordances inside Today's Frame ─────────────────────────────
+     All step bodies render on the slate Today's Frame plate; mirror the
+     rail's slate-with-amber-etch language (.phase-step / .ps-num) instead
+     of inventing a separate parchment-card vocabulary.
+     ────────────────────────────────────────────────────────────────────── */
+  .tfs-card {
+    background: rgba(20, 14, 8, 0.55);
+    border: 1px solid rgba(212, 160, 82, 0.18);
+    border-radius: 6px;
+    padding: 0.8em 1em;
+    color: var(--fg);
+  }
+  .tfs-label {
+    font: 500 11px/1 var(--font-px);
+    letter-spacing: 0.06em;
+    color: var(--accent-dim);
+    margin-bottom: 0.5em;
+  }
+  /* Primary CTA — amber pip on slate, mirrors .phase-step.active .ps-num. */
+  .tfs-btn-primary {
+    padding: 0.55em 1.1em;
+    font: 600 12px/1 var(--font-px);
+    letter-spacing: 0.04em;
+    background: var(--accent);
+    color: #1a1a1a;
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .tfs-btn-primary:hover { background: var(--accent-glow); }
+  .tfs-btn-primary:active { transform: scale(0.97); }
+  /* Ghost variant — review action, doesn't advance. */
+  .tfs-btn-ghost {
+    padding: 0.55em 1.1em;
+    font: 500 12px/1 var(--font-px);
+    letter-spacing: 0.04em;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent-dim);
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .tfs-btn-ghost:hover { background: rgba(212, 160, 82, 0.08); }
+  /* Quiet variant — keep / replace / delete on the logo panel. */
+  .tfs-btn-quiet {
+    padding: 0.4em 0.8em;
+    font: 500 12px/1 var(--font-px);
+    background: transparent;
+    color: var(--fg);
+    border: 1px solid rgba(212, 160, 82, 0.25);
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .tfs-btn-quiet:hover { border-color: var(--accent); color: var(--accent); }
+  .tfs-btn-quiet.danger { color: var(--danger); border-color: rgba(139, 58, 58, 0.45); }
+  .tfs-btn-quiet.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* Step-1.1 welcome surface */
+  .tfs-1-1 .welcome-prose { font: 400 15px/1.55 var(--font-display), serif; color: var(--fg); }
+  .tfs-1-1 .welcome-prose p { margin: 0 0 0.65em; }
+  /* Hints that live inside the welcome prose: amber etched note, no caps,
+     no chat-narration. */
+  .tfs-1-1 .welcome-cta {
+    font: 500 12px/1.5 var(--font-px);
+    color: var(--accent-dim);
+    margin-top: 0.5em;
+    padding: 0.45em 0.8em;
+    background: rgba(184, 139, 58, 0.08);
+    border-left: 2px solid var(--accent-dim);
+    border-radius: 0 3px 3px 0;
+  }
+  /* Post-drop control panel — Keep / Replace / Delete / Save */
+  .tfs-1-1 .logo-panel {
+    margin-top: 0.6em;
+    padding: 0.8em 1em;
+    background: rgba(20, 14, 8, 0.55);
+    border: 1px solid rgba(212, 160, 82, 0.18);
+    border-radius: 6px;
+    color: var(--fg);
+  }
+  .tfs-1-1 .logo-panel .panel-label {
+    font: 500 11px/1 var(--font-px);
+    letter-spacing: 0.04em;
+    color: var(--accent-dim);
+    margin-bottom: 0.5em;
+  }
+  .tfs-1-1 .logo-panel .panel-row { display: flex; align-items: center; gap: 0.7em; flex-wrap: wrap; }
+  .tfs-1-1 .logo-panel .panel-row img {
+    width: 40px; height: 40px; object-fit: contain;
+    background: rgba(40, 28, 12, 0.85);
+    border: 1px solid rgba(212, 160, 82, 0.25);
+    border-radius: 4px; padding: 3px;
+  }
+  .tfs-1-1 .logo-panel .panel-row .panel-note {
+    color: var(--fg-dim);
+    font: 400 12px/1.4 var(--font-px);
+  }
+  .tfs-1-1 .logo-panel .panel-row .panel-actions { display: flex; gap: 0.4em; margin-left: auto; }
+
+  /* Drop-zone affordance on the Band-1 Source Materials tile
+     (data-area="library", the microscope tile in position 1). The logo
+     drop lands here so the logo enters as a piece of source material,
+     matching the new tile semantics. Two layers: ::after is the dashed
+     amber border + pulsing scrim spanning the whole tile; ::before is a
+     small slate pip carrying the legible amber text. */
+  .area[data-area="library"] { position: relative; }
+  .area[data-area="library"].drop-target::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: rgba(212, 160, 82, 0.12);
+    border: 2px dashed var(--accent-dim);
+    border-radius: 4px;
+    z-index: 10;
+    pointer-events: none;
+    animation: drop-pulse 1.4s ease-in-out infinite;
+  }
+  /* The pip text lives in a real DOM child (.drop-pip), not a pseudo —
+     ::before is already owned by .area-visual[data-tile-art-frame="raw"]
+     for the socket/shadow flange effect, and any attempt to override its
+     size loses to the existing min(100cqh, …) height calc. The pip child
+     is created lazily by the canvas script and toggled via .drop-target. */
+  .area[data-area="library"] > .drop-pip {
+    display: none;
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 12;
+    padding: 0.5em 1em;
+    background: rgba(20, 14, 8, 0.85);
+    border: 1px solid var(--accent-dim);
+    border-radius: 999px;
+    font: 500 11px/1 var(--font-px);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .area[data-area="library"].drop-target > .drop-pip { display: inline-block; }
+  .area[data-area="library"].drag-over > .drop-pip {
+    border-color: var(--accent);
+    background: rgba(20, 14, 8, 0.92);
+  }
+  @keyframes drop-pulse {
+    0%, 100% { background: rgba(212, 160, 82, 0.12); }
+    50%      { background: rgba(212, 160, 82, 0.22); }
+  }
+  .area[data-area="library"].drag-over::after {
+    background: rgba(212, 160, 82, 0.28);
+    border-color: var(--accent);
+  }
+  /* While the dropzone is active, suppress the tile's normal hover label
+     ("Source Materials") so it doesn't stack under the drop pip. Returns
+     to normal hover behavior once the drop completes. */
+  .area[data-area="library"].drop-target .area-label,
+  .area[data-area="library"].drop-target:hover .area-label {
+    opacity: 0;
+  }
+  /* Logo preview — full-screen modal between drop and confirm. Slate plate,
+     no white card. */
+  #logo-preview-modal {
+    position: fixed; inset: 0;
+    display: none;
+    align-items: center; justify-content: center;
+    background: rgba(15, 10, 6, 0.7);
+    z-index: 10000;
+  }
+  #logo-preview-modal.shown { display: flex; }
+  #logo-preview-modal .modal-inner {
+    background: rgba(40, 28, 12, 0.95);
+    border: 1px solid rgba(212, 160, 82, 0.35);
+    border-radius: 6px;
+    padding: 1.2em 1.4em;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    max-width: 480px; width: 88vw;
+    display: flex; flex-direction: column; align-items: center;
+    color: var(--fg);
+  }
+  #logo-preview-modal .modal-label {
+    font: 500 11px/1 var(--font-px);
+    letter-spacing: 0.06em;
+    color: var(--accent-dim);
+    margin-bottom: 0.7em;
+  }
+  #logo-preview-modal .modal-img {
+    width: 100%;
+    max-height: 280px;
+    background: rgba(20, 14, 8, 0.55);
+    border: 1px solid rgba(212, 160, 82, 0.18);
+    border-radius: 4px;
+    padding: 1em;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 0.4em;
+  }
+  #logo-preview-modal .modal-img img {
+    max-width: 100%; max-height: 240px;
+    object-fit: contain;
+  }
+  #logo-preview-modal .modal-filename {
+    font: 400 11px/1.2 var(--font-px);
+    color: var(--fg-dim);
+    margin-bottom: 0.9em;
+  }
+  #logo-preview-modal .modal-actions {
+    display: flex; gap: 0.6em;
+  }
+
+  /* Header logo — the post-confirm home: brand mark next to the H1 */
+  #lab-floor h1, .lab-floor h1 { /* in case both are used */ }
+  .header-logo-slot {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    margin-right: 0.6em;
+    height: 1.1em;
+    opacity: 0;
+    transform: translateY(-8px) scale(0.85);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .header-logo-slot.shown { opacity: 1; transform: translateY(0) scale(1); }
+  .header-logo-slot img {
+    height: 1.4em; max-height: 38px; width: auto; object-fit: contain;
+    border-radius: 3px;
+  }
+  .header-logo-slot.just-landed { animation: header-logo-pop 1.4s ease-out 1; }
+  @keyframes header-logo-pop {
+    0%   { filter: brightness(1.6) drop-shadow(0 0 10px rgba(212, 160, 82, 0.9)); transform: translateY(0) scale(1.08); }
+    100% { filter: brightness(1) drop-shadow(0 0 0 transparent); transform: translateY(0) scale(1); }
+  }
+
+  /* Step-1.2 — product orientation. Renders on the slate Today's Frame
+     plate, so prose is warm cream and the recap "card" is a darker slate
+     panel with an amber etched edge, not a parchment block. */
+  .tfs-1-2 { font: 14px/1.5 var(--font-px); color: var(--fg); }
+  .tfs-1-2 .draft-recap {
+    background: rgba(20, 14, 8, 0.55);
+    border: 1px solid rgba(212, 160, 82, 0.18);
+    border-left: 3px solid var(--accent-dim);
+    padding: 0.7em 1em;
+    border-radius: 0 4px 4px 0;
+    margin-bottom: 0.6em;
+  }
+  .tfs-1-2 .draft-recap .label {
+    font: 500 10px/1 var(--font-px);
+    letter-spacing: 0.08em;
+    color: var(--accent-dim);
+    margin-bottom: 0.4em;
+  }
+  .tfs-1-2 .draft-recap .body {
+    font: 400 14px/1.55 var(--font-display), serif;
+    color: var(--fg);
+    outline: none;
+    padding: 0.2em;
+    border-radius: 3px;
+    transition: background 0.15s, box-shadow 0.15s;
+  }
+  .tfs-1-2 .draft-recap .body:hover {
+    background: rgba(212, 160, 82, 0.04);
+  }
+  .tfs-1-2 .draft-recap .body:focus {
+    background: rgba(212, 160, 82, 0.08);
+    box-shadow: 0 0 0 2px rgba(212, 160, 82, 0.35);
+  }
+  .tfs-1-2 .draft-recap .edit-hint {
+    font: 400 11px/1.4 var(--font-px);
+    color: var(--fg-dim);
+    font-style: italic;
+    margin-top: 0.5em;
+  }
+  .tfs-1-2 .placeholder { color: var(--fg-dim); font-style: italic; font-size: 13px; padding: 0.4em 0; }
+  .tfs-1-2 .continue-row, .tfs-1-3 .continue-row {
+    margin-top: 0.8em; padding-top: 0.6em;
+    border-top: 1px dashed rgba(212, 160, 82, 0.18);
+    display: flex; gap: 0.5em; justify-content: flex-end;
+  }
+
+  /* Wells (Step 1.3) — slate background, amber etched controls. The 5/10
+     badge mirrors the rail's .ps-num pip language. */
+  .tfs-1-3 { font: 14px/1.5 var(--font-px); color: var(--fg); }
+  .tfs-1-3 .wells { margin-top: 0.4em; }
+  .tfs-1-3 .well-row {
+    display: grid;
+    grid-template-columns: 130px 1fr 56px;
+    gap: 0.7em;
+    align-items: center;
+    padding: 0.3em 0;
+    font-size: 13px;
+  }
+  .tfs-1-3 .well-row .well-name { color: var(--fg); font-weight: 500; }
+  .tfs-1-3 .well-row.skip .well-name { color: var(--accent-dim); opacity: 0.6; text-decoration: line-through; }
+  /* Amber pip on slate, same shape as .phase-step .ps-num. */
+  .tfs-1-3 .well-row .well-val {
+    font: 600 11px/1 var(--font-px);
+    letter-spacing: 0.04em;
+    text-align: center;
+    color: #1a1a1a;
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    padding: 0.35em 0;
+  }
+  .tfs-1-3 .well-row.skip .well-val {
+    background: transparent;
+    color: var(--accent-dim);
+    border-color: rgba(212, 160, 82, 0.35);
+  }
+  .tfs-1-3 .well-row input[type=range] {
+    width: 100%; cursor: pointer; accent-color: var(--accent);
+  }
+  .tfs-1-3 .wells-legend {
+    font: 400 11px/1.4 var(--font-px);
+    color: var(--fg-dim);
+    font-style: italic;
+    margin-top: 0.5em;
+    padding-top: 0.5em;
+    border-top: 1px dashed rgba(212, 160, 82, 0.18);
+  }
+  .tfs-1-3 .placeholder { color: var(--fg-dim); font-style: italic; font-size: 13px; padding: 0.4em 0; }

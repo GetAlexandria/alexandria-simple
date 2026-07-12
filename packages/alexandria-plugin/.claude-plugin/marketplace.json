@@ -1,0 +1,17 @@
+{
+  "name": "alexandria-local",
+  "metadata": {
+    "description": "Local Alexandria plugin development marketplace"
+  },
+  "owner": {
+    "name": "Alexandria"
+  },
+  "plugins": [
+    {
+      "name": "alexandria",
+      "description": "A knowledge graph for your product. AI agents that build and maintain living documentation so your codebase stays aligned with your vision.",
+      "source": "./",
+      "category": "development"
+    }
+  ]
+}

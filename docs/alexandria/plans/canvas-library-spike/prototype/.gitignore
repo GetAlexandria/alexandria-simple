@@ -1,0 +1,15 @@
+# canvas-server runtime state — written/rewritten on every demo session.
+# State *config* (like the schema) lives in scripts/canvas-server.ts; the
+# director's per-session data (logo, recap, wells, vision answers, the
+# event log the watcher reads) is ephemeral demo state, not source.
+# Leading slash anchors this pattern to *this* .gitignore's directory —
+# without it, the same name elsewhere in the tree (the workspace-root
+# methodology-log.jsonl, for instance) gets silently ignored too.
+/docs/alexandria/.canvas-state/
+
+# Repo root .gitignore excludes `.claude/` globally; un-ignore the
+# project-level Stop-hook config we need committed so /canvasdemo
+# wakes Raven on canvas saves. Per-user permission cache stays out.
+!.claude/
+!.claude/settings.json
+.claude/settings.local.json

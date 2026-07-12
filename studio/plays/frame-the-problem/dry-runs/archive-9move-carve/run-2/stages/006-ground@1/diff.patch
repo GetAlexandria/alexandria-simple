@@ -1,0 +1,167 @@
+diff --git a/runtime/annotated-brief.md b/runtime/annotated-brief.md
+new file mode 100644
+index 0000000..7fbfec4
+--- /dev/null
++++ b/runtime/annotated-brief.md
+@@ -0,0 +1,161 @@
++framed with: surface map provided · users provided · prior brief not provided
++checked: quotes, citations, header, fields, lexicon, hunch — nothing flagged
++
++# Draft Problem Brief
++
++## I find source material while researching, then lose it before conversion
++
++**progress sought:** Get source material into the library from the moment it is encountered, instead of depending on memory during a later conversion session.
++
++**who:** Crew member, specifically Maya. The users context names Maya as a crew member: "Internal team-side user (researchers, curators — Maya is one)." It also says crew members gather and stage source material "often across many browser tabs and documents over days."
++
++**circumstance:** While Maya is doing research across many tabs, before a later Source Conversion session. The surface map says Source Conversion intake accepts uploads and pasted links/text "in a desktop session," and its known seam says, "Capture happens only inside a desktop intake session; nothing exists for capture at the moment of encounter (reading, browsing, meetings)."
++
++**evidence:**
++
++- `specific-past`
++
++```text
++Every time I'm doing research I end up with like forty
++tabs, and by the time I sit down to do a conversion session I can't remember
++which tab had the thing.
++```
++
++- `specific-past`
++
++```text
++So stuff just never makes it in.
++```
++
++- `opinion` (high conviction)
++
++```text
++Half my best source
++material dies in tabs.
++```
++
++- `specific-past`
++
++```text
++That's real, I've watched you do it.
++```
++
++- `opinion` (Maya's problem frame, high conviction)
++
++```text
++The point is capture-in-the-moment instead
++of capture-from-memory.
++```
++
++**what it's not:** Not the browser extension or companion clipping surface. Those are Maya's proposed solutions:
++
++- `opinion` (solution pitch, high conviction)
++
++```text
++Okay, before we lose it — I really think we need a browser extension.
++```
++
++- `hypothetical-future` (proposed solution behavior)
++
++```text
++Like a little companion that sits next to whatever doc you're reading and lets
++you clip things straight into the library.
++```
++
++**where it lands:** Source Conversion intake, especially the known seam between "capture at the moment of encounter" and the current desktop intake session.
++
++**checks:** pass
++
++## I don't know what's already in the library, so I re-add things
++
++**progress sought:** Keep the library's banked truth from accumulating repeated material while directors run conversions and bank cards.
++
++**who:** Director, reported by Maya rather than directly voiced by a director in this transcript. The users context says a Director "Runs source conversions, approves drafts, banks cards; owns the library's truth."
++
++**circumstance:** When directors are adding material and cannot tell what is already banked. The surface map says Search & duplicate awareness is "minimal today" with "no global search" and no signal outside the Library view for material that is already banked. Its known seam says duplicate detection runs "only at atomize time, not at intake" and is "area-local."
++
++**evidence:**
++
++- `specific-past` (reported director statements)
++
++```text
++directors keep telling us they don't know what's already in
++the library
++```
++
++- `specific-past` (reported repeated action)
++
++```text
++so they re-add things.
++```
++
++- `hypothetical-future` (proposed solution behavior)
++
++```text
++The extension could show you, right there,
++"this is already banked."
++```
++
++- `opinion` (DEV's distinction, high conviction)
++
++```text
++That's a different thing though. That's search.
++```
++
++**what it's not:** Not another reason to build the browser extension. The problem is duplicate awareness at the moment material is being added, and the transcript does not support Maya's broader extent claim that "every director" has it.
++
++**where it lands:** Search & duplicate awareness, with Source Conversion intake and atomize implicated by the surface map's duplicate-detection seam.
++
++**checks:** pass
++
++## Unclear / not a separate framed problem
++
++- `opinion` (DEV reaction to the proposed extension)
++
++```text
++A whole extension? That's a big surface.
++```
++
++This challenges the implementation idea, but it does not name a user, progress sought, or circumstance.
++
++- `opinion` (solution conflation, high conviction)
++
++```text
++It's all the same thing, it's the extension!
++```
++
++This explains why two problems arrived bundled, but it is not a third problem.
++
++- `opinion` (extent claim, high conviction)
++
++```text
++Anyway, every director has
++this problem, literally all of them, I'd bet anything.
++```
++
++Keep the director duplicate-awareness problem, but do not carry the "every director" claim; the transcript gives no director-by-director evidence.
++
++- `hypothetical-future` (solution request)
++
++```text
++Can we get it on the
++roadmap? Even a tiny version?
++```
++
++This asks for the solution, not a problem frame.
++
++- `hypothetical-future` (possible implementation shape)
++
++```text
++What would the tiny version even be — clip-to-inbox, no preview?
++```
++
++This names a possible implementation shape, not a problem frame.
++
++## Relationships
++
++- `disputed` — `I find source material while researching, then lose it before conversion` <-> `I don't know what's already in the library, so I re-add things`: MAYA vs DEV over whether capture loss and duplicate awareness belong in an extension pitch or are sibling problems. MAYA's candidate edge: `subset-of` the extension pitch, from "It's all the same thing, it's the extension!" DEV's candidate edge: `sibling`, from "That's a different thing though. That's search." Test: trace tab-loss incidents and re-add incidents to the missing capability named in the incident: capture-in-the-moment, search/duplicate awareness, or both; collect from conversion-session notes, library-add logs, and director/crew reports.
++
++## Hunch
++
++none earned

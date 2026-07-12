@@ -1,0 +1,57 @@
+{
+  "playId": "make-a-play:design",
+  "legs": [
+    {
+      "nodeId": "ground",
+      "label": "Ground",
+      "description": "Reconcile the recovered brief with Studio canon and the org model.",
+      "lead": "William grounds the meta-play before any derivation.",
+      "beats": [
+        "Reads the recovered brief and Studio production canon.",
+        "Confirms PlaymakerStudio / Production filing and the frame-the-problem exemplar.",
+        "Writes the grounding packet for Gate 1."
+      ],
+      "typicalSeconds": 120,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "draft_brief",
+      "label": "Draft",
+      "description": "Refresh the brief and §4 graph for Gate 1 review.",
+      "lead": "The draft becomes the design instrument, not a workflow package.",
+      "beats": [
+        "Keeps every §4 node tagged with exactly one closed-set doer tag.",
+        "Removes stale Product or frame-the-problem-next framing.",
+        "Leaves derivation locked until Gate 1."
+      ],
+      "typicalSeconds": 120,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "harden",
+      "label": "Harden",
+      "description": "Attack the brief and graph shape before the human gate.",
+      "lead": "Fresh eyes find misplaced gates and dishonest automation.",
+      "beats": [
+        "Checks bounces and module boundaries.",
+        "Flags any command that should be judgment, or judgment that should be command.",
+        "Writes the hardening read-out."
+      ],
+      "typicalSeconds": 120,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "gate_design",
+      "label": "Gate 1",
+      "description": "The Director confirms the design and graph shape.",
+      "lead": "The only human touch before Build.",
+      "beats": [
+        "Confirms PlaymakerStudio / Production filing.",
+        "Rules the doer tags and graph shape.",
+        "Approval unlocks Build."
+      ],
+      "typicalSeconds": 180,
+      "kind": "human"
+    }
+  ]
+}

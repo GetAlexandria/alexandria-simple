@@ -1,0 +1,10 @@
+{
+  "agendaItemId": "hot-spot-play-altitude",
+  "agendaItemKind": "hot_spot",
+  "answerEventId": "4796302c-8f95-4a67-a589-10ddd466514a",
+  "answerText": "A Play is a definition that lives in the playbook. It is assigned to an agent and gets called by the director or by a trigger. A play includes moves — and sometimes other plays, making it a compound. Moves can be made by agents, software, or humans. The play's production lifecycle (authoring, testing, promotion) happens in Playmaker Studio, not in the shipped product. In the shipped product, a play is a bounded definition that play runs are scoped to — confirmed as context altitude.\n",
+  "fabroRunId": "01KWHFN1SA5R413ASARCRN79VW",
+  "playRunId": "949f76ce-f518-4ba6-bd58-a85f6c45c9ff",
+  "questionId": "01KWHPHAG292MSB8JCVVB9YP8A",
+  "schemaVersion": 1
+}

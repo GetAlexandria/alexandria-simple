@@ -1,0 +1,180 @@
+digraph FrontOfHouseWalk {
+        graph [
+        goal="Walk an EL2 draft library bundle with the director through Raven, bank director answers as Ledger events, apply only section/shape-level bundle corrections, and carry unanswered items to RESIDUAL-GAPS.md.",
+        max_node_visits=140,
+        stall_timeout="2h",
+        default_fidelity="truncate"
+    ]
+    rankdir=LR
+
+    start [shape=Mdiamond, label="Start"]
+    exit  [shape=Msquare, label="Exit"]
+
+    prepare_agenda [
+        shape=parallelogram,
+        label="Prepare the Stage-2 agenda",
+        script="cd '__AX_PROJECT_ROOT__' && ax internal front-of-house prepare-agenda --bundle '__AX_INPUT_BUNDLE__' --play-run-id '__AX_PLAY_RUN_ID__'",
+        timeout="1m"
+    ]
+
+    stage_next [
+        shape=parallelogram,
+        label="Stage the next unresolved agenda item",
+        script="cd '__AX_PROJECT_ROOT__' && ax internal front-of-house stage-next --bundle '__AX_INPUT_BUNDLE__'",
+        timeout="1m"
+    ]
+
+    director_review [
+        shape=hexagon,
+        label="Answer the current Front-of-House agenda item through Raven"
+    ]
+
+    resolve_keystone_gate [
+        shape=parallelogram,
+        label="Resolve proposed index-card gate if staged",
+        script="cd '__AX_PROJECT_ROOT__' && ax internal front-of-house resolve-keystone-gate --bundle '__AX_INPUT_BUNDLE__'",
+        timeout="1m"
+    ]
+
+    plan_bundle_patch [
+        label="Plan the director-backed bundle patch",
+        prompt="@prompts/plan_bundle_patch.md",
+        backend="acp",
+        acp.command=__AX_ACP_COMMAND_JSON__,
+        timeout="20m"
+    ]
+
+    apply_bundle_patch [
+        shape=parallelogram,
+        label="Validate or reject the bundle patch",
+        script="cd '__AX_PROJECT_ROOT__' && ax internal front-of-house apply-patch-step --bundle '__AX_INPUT_BUNDLE__' --draft-log='__AX_INPUT_DRAFTLOG__'",
+        timeout="1m"
+    ]
+
+    replan_bundle_patch [
+        label="Replan the rejected bundle patch once",
+        prompt="@prompts/replan_bundle_patch.md",
+        backend="acp",
+        acp.command=__AX_ACP_COMMAND_JSON__,
+        timeout="20m"
+    ]
+
+    apply_replanned_bundle_patch [
+        shape=parallelogram,
+        label="Validate or reject the replanned bundle patch",
+        script="cd '__AX_PROJECT_ROOT__' && ax internal front-of-house apply-patch-step --bundle '__AX_INPUT_BUNDLE__' --draft-log='__AX_INPUT_DRAFTLOG__'",
+        timeout="1m"
+    ]
+
+    revise_keystone_mapping [
+        label="Revise the frame mapping for the proposed index card once",
+        prompt="@prompts/revise_keystone_mapping.md",
+        backend="acp",
+        acp.command=__AX_ACP_COMMAND_JSON__,
+        timeout="20m"
+    ]
+
+    apply_revised_keystone_mapping [
+        shape=parallelogram,
+        label="Validate or reject the revised frame mapping",
+        script="cd '__AX_PROJECT_ROOT__' && ax internal front-of-house apply-patch-step --bundle '__AX_INPUT_BUNDLE__' --draft-log='__AX_INPUT_DRAFTLOG__'",
+        timeout="1m"
+    ]
+
+    record_patch_rejection_residual [
+        shape=parallelogram,
+        label="Record rejected patch as residual",
+        script="cd '__AX_PROJECT_ROOT__' && ax internal front-of-house record-patch-rejection --bundle '__AX_INPUT_BUNDLE__'",
+        timeout="1m"
+    ]
+
+    prepare_agenda_triage [
+        shape=parallelogram,
+        label="Prepare ruling-aware agenda triage",
+        script="cd '__AX_PROJECT_ROOT__' && ax internal front-of-house prepare-triage --bundle '__AX_INPUT_BUNDLE__'",
+        timeout="1m"
+    ]
+
+    plan_agenda_triage [
+        label="Classify remaining agenda against banked rulings",
+        prompt="@prompts/triage_agenda.md",
+        backend="acp",
+        acp.command=__AX_ACP_COMMAND_JSON__,
+        timeout="10m"
+    ]
+
+    apply_agenda_triage [
+        shape=parallelogram,
+        label="Apply ruling-aware agenda triage",
+        script="cd '__AX_PROJECT_ROOT__' && ax internal front-of-house apply-triage --bundle '__AX_INPUT_BUNDLE__'",
+        timeout="1m"
+    ]
+
+    finalize_accounting [
+        shape=parallelogram,
+        label="Finalize residual-gap accounting",
+        script="cd '__AX_PROJECT_ROOT__' && ax internal front-of-house finalize --bundle '__AX_INPUT_BUNDLE__'",
+        timeout="1m"
+    ]
+
+    acp_failed [
+        shape=parallelogram,
+        label="Fail the run on ACP failure",
+        script="echo \"Front-of-house walk failed; refusing to silently fill or skip agenda items\" >&2; exit 1",
+        timeout="1m"
+    ]
+
+    foh_internal_failed [
+        shape=parallelogram,
+        label="Fail the run on Front-of-House internal failure",
+        script="echo \"Front-of-house walk failed on deterministic AX support\" >&2; exit 1",
+        timeout="1m"
+    ]
+
+    start -> prepare_agenda
+    prepare_agenda -> stage_next
+    stage_next -> director_review [label="NEXT_ITEM", condition="command.output contains \"NEXT_ITEM\""]
+    stage_next -> director_review [label="KEYSTONE_DRAFT_STAGED", condition="command.output contains \"KEYSTONE_DRAFT_STAGED\""]
+    stage_next -> finalize_accounting [label="AGENDA_DONE", condition="command.output contains \"AGENDA_DONE\""]
+    stage_next -> foh_internal_failed [label="unexpected output"]
+    director_review -> resolve_keystone_gate [label="[A] Answered", freeform=true, fidelity="compact"]
+    resolve_keystone_gate -> plan_bundle_patch [label="NOT_KEYSTONE_GATE", condition="command.output contains \"NOT_KEYSTONE_GATE\""]
+    resolve_keystone_gate -> prepare_agenda_triage [label="KEYSTONE_APPROVED", condition="command.output contains \"KEYSTONE_APPROVED\""]
+    resolve_keystone_gate -> revise_keystone_mapping [label="KEYSTONE_CORRECTION_REQUESTED", condition="command.output contains \"KEYSTONE_CORRECTION_REQUESTED\""]
+    resolve_keystone_gate -> prepare_agenda_triage [label="KEYSTONE_REJECTED_RESIDUAL", condition="command.output contains \"KEYSTONE_REJECTED_RESIDUAL\""]
+    resolve_keystone_gate -> foh_internal_failed [label="gate resolver failed", condition="outcome!=succeeded"]
+    resolve_keystone_gate -> foh_internal_failed [label="unexpected output"]
+    plan_bundle_patch -> apply_bundle_patch
+    plan_bundle_patch -> acp_failed [label="ACP failed", condition="outcome!=succeeded"]
+    apply_bundle_patch -> director_review [label="KEYSTONE_DRAFT_STAGED", condition="command.output contains \"KEYSTONE_DRAFT_STAGED\""]
+    apply_bundle_patch -> prepare_agenda_triage [label="PATCH_APPLIED", condition="command.output contains \"PATCH_APPLIED\""]
+    apply_bundle_patch -> replan_bundle_patch [label="PATCH_REJECTED", condition="command.output contains \"PATCH_REJECTED\""]
+    apply_bundle_patch -> foh_internal_failed [label="patch step failed", condition="outcome!=succeeded"]
+    apply_bundle_patch -> foh_internal_failed [label="unexpected output"]
+    replan_bundle_patch -> apply_replanned_bundle_patch
+    replan_bundle_patch -> acp_failed [label="ACP failed", condition="outcome!=succeeded"]
+    apply_replanned_bundle_patch -> director_review [label="KEYSTONE_DRAFT_STAGED", condition="command.output contains \"KEYSTONE_DRAFT_STAGED\""]
+    apply_replanned_bundle_patch -> prepare_agenda_triage [label="PATCH_APPLIED", condition="command.output contains \"PATCH_APPLIED\""]
+    apply_replanned_bundle_patch -> record_patch_rejection_residual [label="PATCH_REJECTED", condition="command.output contains \"PATCH_REJECTED\""]
+    apply_replanned_bundle_patch -> foh_internal_failed [label="patch step failed", condition="outcome!=succeeded"]
+    apply_replanned_bundle_patch -> foh_internal_failed [label="unexpected output"]
+    revise_keystone_mapping -> apply_revised_keystone_mapping
+    revise_keystone_mapping -> acp_failed [label="ACP failed", condition="outcome!=succeeded"]
+    apply_revised_keystone_mapping -> director_review [label="KEYSTONE_DRAFT_STAGED", condition="command.output contains \"KEYSTONE_DRAFT_STAGED\""]
+    apply_revised_keystone_mapping -> record_patch_rejection_residual [label="PATCH_REJECTED", condition="command.output contains \"PATCH_REJECTED\""]
+    apply_revised_keystone_mapping -> foh_internal_failed [label="patch step failed", condition="outcome!=succeeded"]
+    apply_revised_keystone_mapping -> foh_internal_failed [label="unexpected output"]
+    record_patch_rejection_residual -> prepare_agenda_triage
+    record_patch_rejection_residual -> foh_internal_failed [label="record residual failed", condition="outcome!=succeeded"]
+    prepare_agenda_triage -> plan_agenda_triage [label="TRIAGE_READY", condition="command.output contains \"TRIAGE_READY\""]
+    prepare_agenda_triage -> stage_next [label="TRIAGE_SKIPPED", condition="command.output contains \"TRIAGE_SKIPPED\""]
+    prepare_agenda_triage -> foh_internal_failed [label="triage prepare failed", condition="outcome!=succeeded"]
+    prepare_agenda_triage -> foh_internal_failed [label="unexpected output"]
+    plan_agenda_triage -> apply_agenda_triage
+    plan_agenda_triage -> acp_failed [label="ACP failed", condition="outcome!=succeeded"]
+    apply_agenda_triage -> stage_next [label="TRIAGE_APPLIED", condition="command.output contains \"TRIAGE_APPLIED\""]
+    apply_agenda_triage -> stage_next [label="TRIAGE_SKIPPED", condition="command.output contains \"TRIAGE_SKIPPED\""]
+    apply_agenda_triage -> foh_internal_failed [label="triage apply failed", condition="outcome!=succeeded"]
+    apply_agenda_triage -> foh_internal_failed [label="unexpected output"]
+    finalize_accounting -> exit
+}

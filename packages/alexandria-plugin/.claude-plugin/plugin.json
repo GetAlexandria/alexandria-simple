@@ -1,0 +1,17 @@
+{
+  "name": "alexandria",
+  "version": "0.20.0",
+  "description": "A knowledge graph and playbook for your product. AI colleagues — grounded in your team's recorded knowledge, not a prompt window — keep your codebase aligned with product intent.",
+  "author": {
+    "name": "SocioTechnica",
+    "url": "https://sociotechnica.org"
+  },
+  "repository": "https://github.com/GetAlexandria/alexandria",
+  "license": "MIT",
+  "keywords": [
+    "alexandria",
+    "knowledge-graph",
+    "product-knowledge",
+    "playbook"
+  ]
+}

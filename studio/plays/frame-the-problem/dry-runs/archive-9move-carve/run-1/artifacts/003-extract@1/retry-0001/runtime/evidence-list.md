@@ -1,0 +1,146 @@
+# Evidence List
+
+Boundary: Maya's browser-extension pitch through "capture-in-the-moment instead of capture-from-memory."
+
+## 1
+
+Speaker: MAYA
+Mark: pain
+
+```text
+Okay, before we lose it — I really think we need a browser extension.
+```
+
+## 2
+
+Speaker: MAYA
+Mark: unclear
+
+```text
+Like a little companion that sits next to whatever doc you're reading and lets
+you clip things straight into the library.
+```
+
+## 3
+
+Speaker: DEV
+Mark: pain
+
+```text
+A whole extension? That's a big surface.
+```
+
+## 4
+
+Speaker: MAYA
+Mark: pain
+
+```text
+Every time I'm doing research I end up with like forty
+tabs, and by the time I sit down to do a conversion session I can't remember
+which tab had the thing.
+```
+
+## 5
+
+Speaker: MAYA
+Mark: pain
+
+```text
+So stuff just never makes it in.
+```
+
+## 6
+
+Speaker: MAYA
+Mark: pain
+
+```text
+Half my best source material dies in tabs.
+```
+
+## 7
+
+Speaker: DEV
+Mark: unclear
+
+```text
+That's real, I've watched you do it.
+```
+
+## 8
+
+Speaker: MAYA
+Mark: pain
+
+```text
+And also — directors keep telling us they don't know what's already in
+the library, so they re-add things.
+```
+
+## 9
+
+Speaker: MAYA
+Mark: unclear
+
+```text
+The extension could show you, right there,
+"this is already banked."
+```
+
+## 10
+
+Speaker: DEV
+Mark: disagreement (DEV vs MAYA)
+
+```text
+That's a different thing though. That's search.
+```
+
+## 11
+
+Speaker: MAYA
+Mark: disagreement (MAYA vs DEV)
+
+```text
+It's all the same thing, it's the extension!
+```
+
+## 12
+
+Speaker: MAYA
+Mark: evidence-free claim
+
+```text
+Anyway, every director has
+this problem, literally all of them, I'd bet anything.
+```
+
+## 13
+
+Speaker: MAYA
+Mark: unclear
+
+```text
+Can we get it on the
+roadmap? Even a tiny version?
+```
+
+## 14
+
+Speaker: JULES
+Mark: unclear
+
+```text
+What would the tiny version even be — clip-to-inbox, no preview?
+```
+
+## 15
+
+Speaker: MAYA
+Mark: pain
+
+```text
+The point is capture-in-the-moment instead
+of capture-from-memory.
+```

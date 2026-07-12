@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raven — Character Sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Palette ── */
+:root {
+  --fg:           #e8e0d4;
+  --fg-dim:       #7a6e5e;
+  --fg-faint:     #4a4038;
+  --accent:       #d4a052;
+  --accent-dim:   #b8863a;
+  --accent-glow:  #e8b86d;
+  --teal:         #4fb8a8;
+  --teal-soft:    #7ad4c4;
+  --await:        #e8a64f;
+  --gold:         #f0c060;
+  --panel-bg:     rgba(18, 14, 10, 0.72);
+  --panel-bd:     rgba(212, 160, 82, 0.18);
+  --card-bg:      rgba(28, 20, 12, 0.80);
+  --font-ui:      'Inter', system-ui, sans-serif;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+}
+
+/* ── Background — warm dark parchment + vignette ── */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+body {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--fg);
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.72) 100%),
+    radial-gradient(ellipse at 25% 30%, hsla(28,30%,60%,0.22) 0%, transparent 60%),
+    radial-gradient(ellipse at 75% 75%, hsla(20,20%,30%,0.22) 0%, transparent 60%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.18  0 0 0 0 0.15  0 0 0 0 0.10  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.95'/></svg>"),
+    hsl(28, 14%, 22%);
+  background-size: cover, cover, cover, 320px 320px, auto;
+  background-blend-mode: normal, soft-light, soft-light, multiply, normal;
+  background-attachment: fixed;
+}
+
+/* ── Outer wrap — centres the sheet ── */
+.sheet-wrap {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+/* ── Sheet container ── */
+.sheet {
+  width: 100%;
+  max-width: 1100px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: rgba(14, 10, 6, 0.68);
+  border: 1px solid rgba(212, 160, 82, 0.22);
+  border-radius: 6px;
+  box-shadow:
+    inset 2px 2px 0 rgba(255,230,180,0.04),
+    inset -2px -2px 0 rgba(0,0,0,0.45),
+    0 8px 32px rgba(0,0,0,0.65);
+  overflow: hidden;
+  /* viewing-future filter applied by class below */
+  transition: filter 0.3s ease;
+}
+.sheet.viewing-future {
+  filter: saturate(0.82) brightness(0.96);
+}
+.sheet.viewing-far-future {
+  filter: saturate(0.70) brightness(0.93);
+}
+
+/* ══════════════════════════════════════════════════════
+   § 1  HEADER STRIP
+══════════════════════════════════════════════════════ */
+.header-strip {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 13px 28px;
+  background: rgba(0,0,0,0.28);
+  border-bottom: 1px solid rgba(212, 160, 82, 0.18);
+}
+
+/* Coin portrait */
+.coin-portrait {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: radial-gradient(circle at 38% 36%, #2a1e10 0%, #0e0906 80%);
+  box-shadow:
+    inset 2px 2px 4px rgba(255,220,130,0.12),
+    inset -2px -2px 5px rgba(0,0,0,0.70),
+    inset 0 0 0 1px rgba(60,36,14,0.60),
+    0 0 12px rgba(212,160,82,0.25),
+    0 4px 12px rgba(0,0,0,0.60);
+}
+.coin-portrait::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-dim);
+  box-shadow: 0 0 6px rgba(212,160,82,0.35);
+}
+.coin-portrait img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Raven title stack */
+.header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.header-name {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--accent-glow);
+  line-height: 1;
+  text-shadow: 0 0 16px rgba(232,184,109,0.35);
+}
+.header-rank {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--accent-dim);
+  line-height: 1;
+}
+.header-tag {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--fg-dim);
+  font-style: italic;
+  line-height: 1.4;
+  max-width: 700px;
+  margin-top: 2px;
+}
+
+/* ══════════════════════════════════════════════════════
+   § 2  CAREER ARC STRIP
+══════════════════════════════════════════════════════ */
+.career-strip {
+  padding: 11px 28px 9px;
+  border-bottom: 1px solid rgba(212,160,82,0.10);
+  background: rgba(0,0,0,0.12);
+}
+
+.arc-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Connector lines — behind nodes */
+.arc-line {
+  height: 2px;
+  flex: 1;
+  max-width: 120px;
+}
+.arc-line.filled {
+  background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+  box-shadow: 0 0 4px rgba(212,160,82,0.35);
+}
+.arc-line.dashed {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--fg-faint) 0px, var(--fg-faint) 6px,
+    transparent 6px, transparent 12px
+  );
+}
+
+/* Nodes */
+.arc-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  cursor: pointer;
+  padding: 2px 10px;
+  border-radius: 4px;
+  transition: background 0.15s;
+  position: relative;
+}
+.arc-node:hover {
+  background: rgba(212,160,82,0.06);
+}
+
+.arc-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  position: relative;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+/* "you are here" marker — always on Coordinator regardless of active view */
+.arc-node[data-tier="1"] .arc-dot::before {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 5px rgba(212,160,82,0.8);
+}
+
+/* Active (currently-viewed) tier gets the brass glow */
+.arc-node.active .arc-dot {
+  background: var(--accent);
+  box-shadow: 0 0 10px rgba(212,160,82,0.75), 0 0 0 3px rgba(212,160,82,0.20);
+}
+.arc-node.active .arc-dot::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent-glow);
+  animation: pulse-ring 2.4s ease-in-out infinite;
+}
+@keyframes pulse-ring {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%       { opacity: 0.1; transform: scale(1.35); }
+}
+
+/* Non-active tiers */
+.arc-node:not(.active)[data-tier="2"] .arc-dot {
+  background: transparent;
+  border: 1.5px solid var(--fg-dim);
+}
+.arc-node:not(.active)[data-tier="3"] .arc-dot {
+  background: transparent;
+  border: 1.5px solid var(--fg-faint);
+}
+/* If tier 1 is not active but is the real current tier */
+.arc-node[data-tier="1"]:not(.active) .arc-dot {
+  background: rgba(212,160,82,0.3);
+  border: 1.5px solid var(--accent-dim);
+}
+
+.arc-label {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-align: center;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.arc-node.active .arc-label { color: var(--accent-glow); }
+.arc-node:not(.active)[data-tier="1"] .arc-label { color: var(--accent-dim); }
+.arc-node:not(.active)[data-tier="2"] .arc-label { color: var(--fg-dim); }
+.arc-node:not(.active)[data-tier="3"] .arc-label { color: var(--fg-faint); }
+
+.arc-sublabel {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-align: center;
+  transition: color 0.2s;
+  /* leave space for the you-are-here dot */
+  margin-top: 6px;
+}
+.arc-node.active[data-tier="1"] .arc-sublabel { color: var(--accent-dim); }
+.arc-node:not(.active)[data-tier="1"] .arc-sublabel { color: var(--accent-dim); opacity: 0.8; }
+.arc-node[data-tier="2"] .arc-sublabel { color: var(--fg-faint); }
+.arc-node[data-tier="3"] .arc-sublabel { color: var(--fg-faint); opacity: 0.55; }
+
+/* ── Future preview badge (appears below arc when viewing tier 2 or 3) ── */
+.future-badge {
+  display: none;
+  margin: 6px auto 0;
+  width: fit-content;
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--await);
+  border: 1px solid rgba(232,166,79,0.30);
+  border-radius: 2px;
+  padding: 2px 8px;
+  background: rgba(232,166,79,0.06);
+}
+.career-strip.show-future-badge .future-badge {
+  display: block;
+}
+
+/* ══════════════════════════════════════════════════════
+   § 3  MAIN GRID — two equal columns
+══════════════════════════════════════════════════════ */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  flex: 1;
+}
+
+/* ── Shared column styles ── */
+.knowledge-col,
+.plays-col {
+  padding: 14px 22px 14px 22px;
+}
+.knowledge-col {
+  border-right: 1px solid rgba(212,160,82,0.10);
+  padding-left: 28px;
+}
+.plays-col {
+  padding-right: 28px;
+}
+
+.col-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.col-title {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-dim);
+}
+
+.col-link {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  color: var(--fg-faint);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  transition: color 0.15s;
+  cursor: pointer;
+}
+.col-link:hover { color: var(--accent-dim); }
+
+.plays-count-badge {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  color: var(--accent-glow);
+  font-weight: 600;
+}
+
+/* ── Foundation rows ── */
+.foundation-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  cursor: pointer;
+  transition: background 0.12s;
+  border-radius: 2px;
+}
+.foundation-row:last-child { border-bottom: none; }
+.foundation-row:hover {
+  background: rgba(255,255,255,0.025);
+}
+
+.foundation-name {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--fg);
+  width: 120px;
+  flex-shrink: 0;
+}
+
+/* Segmented progress bar */
+.progress-bar {
+  display: flex;
+  gap: 3px;
+  flex: 1;
+  max-width: 160px;
+}
+.seg {
+  height: 9px;
+  flex: 1;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.06);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(0,0,0,0.35);
+}
+.seg.filled {
+  background: linear-gradient(180deg, var(--teal-soft) 0%, var(--teal) 100%);
+  box-shadow: 0 0 5px rgba(79,184,168,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.seg.await {
+  background: linear-gradient(180deg, var(--await) 0%, #c07830 100%);
+  box-shadow: 0 0 5px rgba(232,166,79,0.5), inset 0 1px 0 rgba(255,255,255,0.10);
+  animation: await-pulse 1.8s ease-in-out infinite;
+}
+@keyframes await-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+.seg.banked {
+  background: linear-gradient(180deg, var(--gold) 0%, var(--accent) 100%);
+  box-shadow: 0 0 6px rgba(240,192,96,0.5), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.seg.locked {
+  background: rgba(255,255,255,0.03);
+  opacity: 0.4;
+}
+
+.foundation-stage {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  color: var(--fg-dim);
+  width: 140px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.stage-check  { color: var(--gold); font-size: 11px; }
+.stage-await  { color: var(--await); font-size: 10px; font-weight: 500; }
+.stage-banked { color: var(--gold); }
+.stage-lock   { color: var(--fg-faint); opacity: 0.6; }
+
+/* Sub-plane block (Manager / Senior PM extra planes) */
+.sub-plane-block {
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px dashed rgba(212,160,82,0.12);
+}
+.sub-plane-title {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  margin-bottom: 5px;
+  opacity: 0.75;
+}
+
+/* ── Plays column rows ── */
+.play-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 4px 2px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  position: relative;
+  border-radius: 2px;
+  transition: background 0.12s;
+}
+.play-row:last-child { border-bottom: none; }
+.play-row:hover {
+  background: rgba(255,255,255,0.025);
+}
+
+.play-row-name {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg);
+  flex: 1;
+  line-height: 1.3;
+}
+.play-row.locked .play-row-name {
+  color: var(--fg-dim);
+  opacity: 0.75;
+}
+.play-row.locked {
+  cursor: help;
+}
+
+.play-lock-icon {
+  font-size: 11px;
+  color: var(--fg-faint);
+  opacity: 0.6;
+  flex-shrink: 0;
+  width: 18px;
+  text-align: center;
+}
+
+/* ▷ call button — visible on hover of earned rows */
+.play-call-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 2px;
+  background: rgba(212,160,82,0.12);
+  border: 1px solid rgba(212,160,82,0.25);
+  color: var(--accent-dim);
+  font-size: 9px;
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  /* triangle via CSS to keep it crisp */
+  position: relative;
+}
+.play-call-btn::after {
+  content: '';
+  display: block;
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 6px solid currentColor;
+  margin-left: 1px;
+}
+.play-row:hover .play-call-btn {
+  opacity: 1;
+}
+.play-call-btn:hover {
+  background: rgba(212,160,82,0.28) !important;
+  color: var(--accent-glow) !important;
+}
+
+/* viewing-future: suppress call buttons */
+.sheet.viewing-future .play-call-btn,
+.sheet.viewing-far-future .play-call-btn {
+  display: none;
+}
+
+/* plays extra note (Manager tier-2 note) */
+.plays-extra-note {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  color: var(--await);
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+  display: none;
+}
+
+/* ══════════════════════════════════════════════════════
+   § 5  FOOTER ACTION ROW
+══════════════════════════════════════════════════════ */
+.footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 8px 28px 10px;
+  border-top: 1px solid rgba(212,160,82,0.08);
+}
+
+.ghost-btn {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--fg-dim);
+  background: transparent;
+  border: 1px solid rgba(212,160,82,0.20);
+  border-radius: 3px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  box-shadow: inset 0 1px 0 rgba(255,230,160,0.04);
+}
+.ghost-btn:hover {
+  color: var(--accent-glow);
+  border-color: rgba(212,160,82,0.45);
+  background: rgba(212,160,82,0.06);
+}
+.ghost-btn:active {
+  background: rgba(212,160,82,0.10);
+}
+
+/* ── Content fade transition ── */
+.content-fadeable {
+  transition: opacity 0.2s ease;
+}
+.content-fadeable.fading {
+  opacity: 0;
+}
+</style>
+</head>
+<body>
+
+<div class="sheet-wrap">
+  <div class="sheet" id="sheet">
+
+    <!-- ═══ § 1  HEADER ═══ -->
+    <div class="header-strip">
+      <div class="coin-portrait">
+        <img src="raven-assets/raven-lit.png" alt="Raven" />
+      </div>
+      <div class="header-text">
+        <div class="header-name">RAVEN</div>
+        <div class="header-rank" id="header-rank">Raven Coordinator (Level 1)</div>
+        <div class="header-tag" id="header-tag">Strategic thought partner. Can talk about what you're building and why — but not how it fits together or how it's used yet.</div>
+      </div>
+    </div>
+
+    <!-- ═══ § 2  CAREER ARC ═══ -->
+    <div class="career-strip" id="career-strip">
+      <div class="arc-track">
+        <div class="arc-node active" data-tier="1" onclick="switchTier(1)">
+          <div class="arc-dot"></div>
+          <div class="arc-label">Coordinator</div>
+          <div class="arc-sublabel">you are here</div>
+        </div>
+        <div class="arc-line filled"></div>
+        <div class="arc-node" data-tier="2" onclick="switchTier(2)">
+          <div class="arc-dot"></div>
+          <div class="arc-label">Manager</div>
+          <div class="arc-sublabel">next tier</div>
+        </div>
+        <div class="arc-line dashed"></div>
+        <div class="arc-node" data-tier="3" onclick="switchTier(3)">
+          <div class="arc-dot"></div>
+          <div class="arc-label">Senior PM</div>
+          <div class="arc-sublabel">future</div>
+        </div>
+      </div>
+      <div class="future-badge" id="future-badge">VIEWING COORDINATOR PREVIEW</div>
+    </div>
+
+    <!-- ═══ § 3  MAIN GRID ═══ -->
+    <div class="main-grid content-fadeable" id="main-grid">
+
+      <!-- Left: Knowledge -->
+      <div class="knowledge-col">
+        <div class="col-header">
+          <div class="col-title">Knowledge</div>
+          <span class="col-link" onclick="console.info('TODO: open full knowledge map')">→ full map</span>
+        </div>
+        <div id="knowledge-rows"><!-- rendered by JS --></div>
+      </div>
+
+      <!-- Right: Plays -->
+      <div class="plays-col">
+        <div class="col-header">
+          <div class="col-title">Plays &nbsp;<span class="plays-count-badge" id="plays-count">2 / 8</span> earned</div>
+          <span class="col-link" onclick="console.info('TODO: open Raven\'s playbook')">→ full playbook</span>
+        </div>
+        <div id="plays-rows"><!-- rendered by JS --></div>
+        <div class="plays-extra-note" id="plays-extra-note"></div>
+      </div>
+
+    </div><!-- /main-grid -->
+
+    <!-- ═══ § 4  FOOTER ═══ -->
+    <div class="footer-row">
+      <button class="ghost-btn" onclick="console.info('TODO: open knowledge map')">View knowledge map →</button>
+      <button class="ghost-btn" onclick="console.info('TODO: open Raven\'s playbook')">Open Raven's playbook →</button>
+    </div>
+
+  </div><!-- /sheet -->
+</div><!-- /sheet-wrap -->
+
+<script>
+/* ════════════════════════════════════════════════════
+   TIER DATA
+════════════════════════════════════════════════════ */
+const TIERS = {
+  1: {
+    rank: 'Raven Coordinator (Level 1)',
+    descriptor: "Strategic thought partner. Can talk about what you're building and why — but not how it fits together or how it's used yet.",
+    foundations: [
+      { name: 'Vision',         prog: [1,1,1,0],  stage: 'Discussed',   mod: '' },
+      { name: 'Bets',           prog: [1,1,0,0],  stage: 'Read',        mod: '' },
+      { name: 'Guardrails',     prog: [1,0,0,0],  stage: 'Shared',      mod: '' },
+      { name: 'Vocabulary',     prog: [1,'a',0,0],stage: 'Shared',      mod: 'await' },
+      { name: 'User Research',  prog: [2,2,2,2],  stage: 'Banked',      mod: 'banked' },
+    ],
+    subPlanes: [],
+    plays: [
+      { name: 'What They Need Mirror',  earned: true  },
+      { name: 'Audience Sharpener',     earned: true  },
+      { name: 'Argue Against Your Bet', earned: false, unlockNote: 'Unlocks at: Manager' },
+      { name: 'Surface Tour',           earned: false, unlockNote: 'Unlocks at: Manager' },
+      { name: 'Load-Bearing Audit',     earned: false, unlockNote: 'Unlocks at: Manager' },
+      { name: 'Vocab Triage',           earned: false, unlockNote: 'Unlocks at: Manager' },
+      { name: 'What We Refuse to Be',   earned: false, unlockNote: 'Unlocks at: Manager' },
+      { name: 'PRD Critique',           earned: false, unlockNote: 'Unlocks at: Manager' },
+    ],
+    playsCount: '2 / 8',
+    playsNote: '',
+    futureBadge: '',
+    viewingFuture: false,
+  },
+  2: {
+    rank: 'Manager Raven — Preview (Level 2)',
+    descriptor: "Can plan technical sprints. Knows what you're building, how it fits together, and how the architecture supports the bet.",
+    foundations: [
+      { name: 'Vision',         prog: [2,2,2,2], stage: 'Banked', mod: 'banked' },
+      { name: 'Bets',           prog: [2,2,2,2], stage: 'Banked', mod: 'banked' },
+      { name: 'Guardrails',     prog: [2,2,2,2], stage: 'Banked', mod: 'banked' },
+      { name: 'Vocabulary',     prog: [2,2,2,2], stage: 'Banked', mod: 'banked' },
+      { name: 'User Research',  prog: [2,2,2,2], stage: 'Banked', mod: 'banked' },
+    ],
+    subPlanes: [
+      {
+        label: 'PRODUCT PLANE (Manager unlocks)',
+        rows: [
+          { name: 'Skeleton',      prog: [1,1,1,0], stage: 'Discussed', mod: '' },
+          { name: 'Experience',    prog: [1,1,0,0], stage: 'Read',      mod: '' },
+          { name: 'Surface',       prog: [1,0,0,0], stage: 'Shared',    mod: '' },
+          { name: 'Forward Plan',  prog: [3,3,3,3], stage: 'locked',    mod: 'lock' },
+        ],
+      },
+    ],
+    plays: [
+      { name: 'What They Need Mirror',  earned: true },
+      { name: 'Audience Sharpener',     earned: true },
+      { name: 'Argue Against Your Bet', earned: true },
+      { name: 'Surface Tour',           earned: true },
+      { name: 'Load-Bearing Audit',     earned: true },
+      { name: 'Vocab Triage',           earned: true },
+      { name: 'What We Refuse to Be',   earned: true },
+      { name: 'PRD Critique',           earned: true },
+    ],
+    playsCount: '8 / 8',
+    playsNote: '+ tier 2 plays unlocked',
+    futureBadge: 'VIEWING MANAGER PREVIEW · not yet unlocked',
+    viewingFuture: true,
+    farFuture: false,
+  },
+  3: {
+    rank: 'Senior PM Raven — Preview (Level 3)',
+    descriptor: "Manages the night shift. Has evidence to ground product decisions in. Can run the strategy-learning loop autonomously.",
+    foundations: [
+      { name: 'Vision',         prog: [2,2,2,2], stage: 'Banked', mod: 'banked' },
+      { name: 'Bets',           prog: [2,2,2,2], stage: 'Banked', mod: 'banked' },
+      { name: 'Guardrails',     prog: [2,2,2,2], stage: 'Banked', mod: 'banked' },
+      { name: 'Vocabulary',     prog: [2,2,2,2], stage: 'Banked', mod: 'banked' },
+      { name: 'User Research',  prog: [2,2,2,2], stage: 'Banked', mod: 'banked' },
+    ],
+    subPlanes: [
+      {
+        label: 'PRODUCT PLANE',
+        rows: [
+          { name: 'Skeleton',      prog: [2,2,2,2], stage: 'Banked', mod: 'banked' },
+          { name: 'Experience',    prog: [2,2,2,2], stage: 'Banked', mod: 'banked' },
+          { name: 'Surface',       prog: [2,2,2,2], stage: 'Banked', mod: 'banked' },
+          { name: 'Forward Plan',  prog: [2,2,2,2], stage: 'Banked', mod: 'banked' },
+        ],
+      },
+      {
+        label: 'LEARNING PLANE (Senior PM unlocks)',
+        rows: [
+          { name: 'User Research',     prog: [2,2,2,2], stage: 'Banked',    mod: 'banked' },
+          { name: 'Competitive Intel', prog: [1,1,1,0], stage: 'Discussed', mod: '' },
+          { name: 'Decision Trail',    prog: [1,1,0,0], stage: 'Read',      mod: '' },
+          { name: 'Product Evidence',  prog: [1,0,0,0], stage: 'Shared',    mod: '' },
+        ],
+      },
+    ],
+    plays: [
+      { name: 'What They Need Mirror',    earned: true },
+      { name: 'Audience Sharpener',       earned: true },
+      { name: 'Argue Against Your Bet',   earned: true },
+      { name: 'Surface Tour',             earned: true },
+      { name: 'Load-Bearing Audit',       earned: true },
+      { name: 'Vocab Triage',             earned: true },
+      { name: 'What We Refuse to Be',     earned: true },
+      { name: 'PRD Critique',             earned: true },
+      { name: 'Adversarial Pre-Mortem',   earned: true },
+      { name: 'Churn Diagnosis',          earned: true },
+      { name: 'Bet-Disqualification Sweep', earned: true },
+      { name: 'Night-Shift Brief',        earned: true },
+    ],
+    playsCount: '12 / 12 (all unlocked)',
+    playsNote: '',
+    futureBadge: 'VIEWING SENIOR PM PREVIEW · 2 tiers away',
+    viewingFuture: true,
+    farFuture: true,
+  },
+};
+
+/* ════════════════════════════════════════════════════
+   RENDER HELPERS
+════════════════════════════════════════════════════ */
+function buildSegments(prog) {
+  return prog.map(v => {
+    if (v === 2)  return '<div class="seg banked"></div>';
+    if (v === 1)  return '<div class="seg filled"></div>';
+    if (v === 'a')return '<div class="seg await"></div>';
+    if (v === 3)  return '<div class="seg locked"></div>';
+    return '<div class="seg"></div>';
+  }).join('');
+}
+
+function buildStageLabel(row) {
+  if (row.mod === 'banked') {
+    return `<span class="stage-banked"><span class="stage-check">✦</span>&nbsp;Banked</span>`;
+  }
+  if (row.mod === 'await') {
+    return `${row.stage}&nbsp;<span class="stage-await">· awaiting you ⚠</span>`;
+  }
+  if (row.mod === 'lock') {
+    return `<span class="stage-lock">🔒 locked</span>`;
+  }
+  return row.stage;
+}
+
+function buildFoundationRows(rows, isFuture) {
+  return rows.map(row => {
+    const clickAttr = isFuture
+      ? ''
+      : `onclick="console.info('drill into ${row.name}')"`;
+    return `
+      <div class="foundation-row" ${clickAttr} ${isFuture ? '' : 'title="Click to drill in"'}>
+        <div class="foundation-name">${row.name}</div>
+        <div class="progress-bar">${buildSegments(row.prog)}</div>
+        <div class="foundation-stage">${buildStageLabel(row)}</div>
+      </div>`;
+  }).join('');
+}
+
+function buildSubPlanes(planes, isFuture) {
+  return planes.map(plane => `
+    <div class="sub-plane-block">
+      <div class="sub-plane-title">${plane.label}</div>
+      ${buildFoundationRows(plane.rows, isFuture)}
+    </div>`).join('');
+}
+
+function buildPlayRows(plays, isFuture) {
+  return plays.map(play => {
+    if (!play.earned) {
+      return `
+        <div class="play-row locked" title="${play.unlockNote || ''}">
+          <div class="play-row-name">${play.name}</div>
+          <div class="play-lock-icon">🔒</div>
+        </div>`;
+    }
+    const callBtn = isFuture
+      ? ''
+      : `<button class="play-call-btn" onclick="event.stopPropagation(); console.info('call play: ${play.name}')" title="Call this play"></button>`;
+    return `
+      <div class="play-row earned" onclick="console.info('call play: ${play.name}')">
+        <div class="play-row-name">${play.name}</div>
+        ${callBtn}
+      </div>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════════════
+   TIER SWITCHER
+════════════════════════════════════════════════════ */
+let activeTier = 1;
+
+function switchTier(tier) {
+  if (tier === activeTier) return;
+
+  const grid = document.getElementById('main-grid');
+  const sheet = document.getElementById('sheet');
+
+  // Fade out
+  grid.classList.add('fading');
+
+  setTimeout(() => {
+    activeTier = tier;
+    renderTier(tier);
+    // Fade in
+    grid.classList.remove('fading');
+
+    // Update sheet desaturation class
+    sheet.classList.remove('viewing-future', 'viewing-far-future');
+    const data = TIERS[tier];
+    if (data.farFuture) {
+      sheet.classList.add('viewing-far-future');
+    } else if (data.viewingFuture) {
+      sheet.classList.add('viewing-future');
+    }
+
+    // Update arc nodes
+    document.querySelectorAll('.arc-node').forEach(node => {
+      node.classList.toggle('active', parseInt(node.dataset.tier) === tier);
+    });
+
+    // Update career strip future badge
+    const strip = document.getElementById('career-strip');
+    const badge = document.getElementById('future-badge');
+    if (data.futureBadge) {
+      badge.textContent = data.futureBadge;
+      strip.classList.add('show-future-badge');
+    } else {
+      strip.classList.remove('show-future-badge');
+    }
+  }, 200);
+}
+
+function renderTier(tier) {
+  const data = TIERS[tier];
+  const isFuture = data.viewingFuture;
+
+  // Header
+  document.getElementById('header-rank').textContent = data.rank;
+  document.getElementById('header-tag').textContent = data.descriptor;
+
+  // Knowledge column
+  document.getElementById('knowledge-rows').innerHTML =
+    buildFoundationRows(data.foundations, isFuture) +
+    buildSubPlanes(data.subPlanes, isFuture);
+
+  // Plays column
+  document.getElementById('plays-rows').innerHTML =
+    buildPlayRows(data.plays, isFuture);
+
+  // Plays count
+  document.getElementById('plays-count').textContent = data.playsCount;
+
+  // Plays extra note
+  const noteEl = document.getElementById('plays-extra-note');
+  if (data.playsNote) {
+    noteEl.textContent = data.playsNote;
+    noteEl.style.display = 'block';
+  } else {
+    noteEl.style.display = 'none';
+  }
+}
+
+/* ── Initial render ── */
+renderTier(1);
+</script>
+</body>
+</html>

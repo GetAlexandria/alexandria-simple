@@ -1,0 +1,40 @@
+#!/bin/bash
+# Run Bun from host-side Fabro hooks without relying on the server process PATH.
+
+set -euo pipefail
+
+if [ "$#" -lt 1 ]; then
+	echo "Usage: scripts/fabro-host-bun <bun-args...>" >&2
+	exit 64
+fi
+
+default_path="$HOME/.bun/bin:$HOME/.asdf/shims:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+if [ -n "${PATH:-}" ]; then
+	export PATH="$default_path:$PATH"
+else
+	export PATH="$default_path"
+fi
+
+hook_env_file="${FABRO_HOST_HOOK_ENV_FILE:-$HOME/.fabro/alexandria-local/hook.env}"
+if [ -f "$hook_env_file" ]; then
+	# Fabro command hooks may run with a minimal environment, so load local hook secrets
+	# from a file written by the LaunchAgent wrapper and export them to Bun.
+	set -a
+	# shellcheck disable=SC1090
+	source "$hook_env_file"
+	set +a
+fi
+
+if [ -n "${FABRO_HOST_BUN:-}" ]; then
+	exec "$FABRO_HOST_BUN" "$@"
+fi
+
+if ! bun_path="$(command -v bun 2>/dev/null)"; then
+	cat >&2 <<'EOF'
+Bun is required for Fabro host hooks but was not found.
+Install Bun or set FABRO_HOST_BUN to an absolute Bun executable path.
+EOF
+	exit 127
+fi
+
+exec "$bun_path" "$@"

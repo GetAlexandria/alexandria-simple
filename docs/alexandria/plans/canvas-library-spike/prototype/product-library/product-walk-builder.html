@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Walk Builder — Product Plane (mock v3)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/product-walk-builder.css">
+</head>
+<body>
+<div class="pw-wrap">
+
+  <!-- ============================================== -->
+  <!-- HEADER -->
+  <!-- ============================================== -->
+  <header class="pw-header">
+    <div class="pw-title-block">
+      <span class="pw-eyebrow">Product plane · Knowledge bank</span>
+      <h1 class="pw-title">Product Walk</h1>
+      <p class="pw-subtitle">Walk Raven through your product and a day in your operator's life. She drafts a single source-of-truth document. You read, redline, and approve. The Walk's done when you say so.</p>
+    </div>
+    <div class="pw-header-meta">
+      <div class="pw-product-pill">
+        <span class="pw-pill-label">Walking</span>
+        <span class="pw-pill-value">Atlas Studio</span>
+      </div>
+      <div class="pw-approval-pill is-review">
+        <span class="pw-approval-dot"></span>
+        <span class="pw-approval-text">In review · 2 redlines pending</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================== -->
+  <!-- PHASE TABS -->
+  <!-- ============================================== -->
+  <nav class="pw-phases" aria-label="Walk phases">
+    <button type="button" class="pw-phase is-done">
+      <span class="pw-phase-num">1</span>
+      <span class="pw-phase-body">
+        <span class="pw-phase-name">The Tour</span>
+        <span class="pw-phase-sub">what the product is</span>
+      </span>
+      <span class="pw-phase-status">complete</span>
+    </button>
+    <button type="button" class="pw-phase is-done">
+      <span class="pw-phase-num">2</span>
+      <span class="pw-phase-body">
+        <span class="pw-phase-name">Day in the life</span>
+        <span class="pw-phase-sub">what the operator does</span>
+      </span>
+      <span class="pw-phase-status">complete</span>
+    </button>
+    <button type="button" class="pw-phase is-done">
+      <span class="pw-phase-num">3</span>
+      <span class="pw-phase-body">
+        <span class="pw-phase-name">Loose ends</span>
+        <span class="pw-phase-sub">final questions</span>
+      </span>
+      <span class="pw-phase-status">5 / 5 answered</span>
+    </button>
+    <button type="button" class="pw-phase is-active">
+      <span class="pw-phase-num">4</span>
+      <span class="pw-phase-body">
+        <span class="pw-phase-name">Review &amp; Approve</span>
+        <span class="pw-phase-sub">director shapes &amp; signs off</span>
+      </span>
+      <span class="pw-phase-status is-current">you are here</span>
+    </button>
+  </nav>
+
+  <main class="pw-main">
+
+    <!-- ============================================== -->
+    <!-- LEFT: SYNTHESIS DOC -->
+    <!-- ============================================== -->
+    <section class="pw-doc">
+
+      <div class="pw-doc-head">
+        <span class="pw-doc-eyebrow">Raven's draft synthesis</span>
+        <h2 class="pw-doc-title">Atlas Studio — Product Walk</h2>
+        <p class="pw-doc-meta">Drafted from Tour + Day-in-life + Loose ends · Read cold, redline freely, approve when ready</p>
+      </div>
+
+      <!-- §1 -->
+      <article class="pw-section">
+        <h3 class="pw-section-h">1 · What Atlas Studio is</h3>
+        <p>Atlas Studio is a workspace product for small operating teams. The shipped entry today is <code>/atlas</code> — it opens the project workspace, initializes if needed, or returns the operator to their existing configuration. The product is built on three coordinated surfaces: a <strong>Workspace</strong> where items are created and worked, a <strong>Detail view</strong> for zooming into a single item, and an <strong>Activity feed</strong> that mirrors recent changes. Sharing controls branch off the Detail view; Settings is the admin surface.</p>
+        <p>Behind the scenes: a notification fan-out service runs on-event, and a search index refresh runs nightly. Neither is operator-facing.</p>
+      </article>
+
+      <!-- §2 with redline -->
+      <article class="pw-section has-redline">
+        <h3 class="pw-section-h">2 · The operator's day <span class="pw-redline-anchor" aria-label="redline open">●</span></h3>
+        <p>An operator typically opens the Workspace first, scans their item list, and starts working what's most active. <em class="pw-inline-redline">Mid-morning is when collaborators tend to come in</em> — sharing flows and activity feed activity spike. Mid-afternoon is the focus stretch; evening cleanup lands the operator on Settings or the Activity feed for a quick scan.</p>
+        <p>Three sources of work move through the day: <strong>scheduled</strong> (nightly index refresh), <strong>reactive</strong> (notifications fan out when items change), and <strong>ad hoc</strong> (operator creates, edits, shares).</p>
+      </article>
+
+      <!-- §3 with second redline -->
+      <article class="pw-section has-redline">
+        <h3 class="pw-section-h">3 · Forward plan <span class="pw-redline-anchor" aria-label="redline open">●</span></h3>
+        <p>Near-term, multi-user editing on inline fields is the next planned capability (Q3). Workspace search across projects is on the considered list. <em class="pw-inline-redline">Mobile is not on the roadmap.</em></p>
+      </article>
+
+      <!-- §4 -->
+      <article class="pw-section">
+        <h3 class="pw-section-h">4 · Loose-end answers</h3>
+        <ul class="pw-answers">
+          <li><strong>Queue items?</strong> No queue today. Operator-driven; reactive notifications only.</li>
+          <li><strong>Splash analysis?</strong> Not built. Atomic linkage of references hasn't been a priority.</li>
+          <li><strong>Bench / agents?</strong> Single-operator product; no agent roster.</li>
+          <li><strong>Settings gate semantics?</strong> Standard admin — no approval gate.</li>
+          <li><strong>Name "feed" vs "stream"?</strong> Feed wins. Vocabulary decision.</li>
+        </ul>
+      </article>
+
+      <!-- §5 -->
+      <article class="pw-section">
+        <h3 class="pw-section-h">5 · Open questions Raven has</h3>
+        <ul class="pw-questions">
+          <li>Is "item" the right shared noun, or are there distinct kinds?</li>
+          <li>How does Sharing relate to Workspace permissions?</li>
+        </ul>
+        <p class="pw-question-note">These bank with the artifact. The director can choose to address them in downstream bars or leave them open.</p>
+      </article>
+
+    </section>
+
+    <!-- ============================================== -->
+    <!-- RIGHT: REDLINE LOG + PARKING + SYNOPSIS + APPROVE -->
+    <!-- ============================================== -->
+    <aside class="pw-side">
+
+      <!-- Redlines -->
+      <section class="pw-redlines">
+        <div class="pw-side-head">
+          <span class="pw-side-eyebrow">Redlines</span>
+          <span class="pw-side-count">2 open · 3 applied</span>
+        </div>
+
+        <div class="pw-redline is-open">
+          <div class="pw-redline-loc">§2 · "Mid-morning is when collaborators tend to come in"</div>
+          <div class="pw-redline-director">
+            <span class="pw-redline-author">Director</span>
+            <span class="pw-redline-text">Wrong — early afternoon, not mid-morning. East-coast team kicks in then.</span>
+          </div>
+          <div class="pw-redline-raven">
+            <span class="pw-redline-author">Raven</span>
+            <span class="pw-redline-text">Read back: collaborator spike is early afternoon (east-coast onboarding). Updating §2. No downstream implications I see — flag if I'm missing one.</span>
+          </div>
+          <div class="pw-redline-actions">
+            <button type="button" class="pw-redline-btn">Apply &amp; resolve</button>
+            <button type="button" class="pw-redline-btn pw-redline-btn-ghost">Discuss further</button>
+          </div>
+        </div>
+
+        <div class="pw-redline is-open">
+          <div class="pw-redline-loc">§3 · "Mobile is not on the roadmap"</div>
+          <div class="pw-redline-director">
+            <span class="pw-redline-author">Director</span>
+            <span class="pw-redline-text">Park this in Future — "considered but refused for near future." Don't bury it in roadmap denial.</span>
+          </div>
+          <div class="pw-redline-raven">
+            <span class="pw-redline-author">Raven</span>
+            <span class="pw-redline-text">Read back: mobile moves from refused-statement to parking-lot future tagged "considered · refused near future." Will route to Forward Plan as a deferred item, not a roadmap negation. Right?</span>
+          </div>
+          <div class="pw-redline-actions">
+            <button type="button" class="pw-redline-btn">Apply &amp; resolve</button>
+            <button type="button" class="pw-redline-btn pw-redline-btn-ghost">Discuss further</button>
+          </div>
+        </div>
+
+        <details class="pw-redline-history">
+          <summary>Applied redlines (3)</summary>
+          <div class="pw-redline-past">§1 · entry command was wrong → corrected to <code>/atlas</code></div>
+          <div class="pw-redline-past">§1 · "kanban" → "item list" (vocab)</div>
+          <div class="pw-redline-past">§2 · "agents do work" cut — single-operator product</div>
+        </details>
+      </section>
+
+      <!-- Parking lot -->
+      <section class="pw-parking">
+        <div class="pw-side-head">
+          <span class="pw-side-eyebrow">Parking lot</span>
+          <span class="pw-side-count">routes at approval</span>
+        </div>
+        <div class="pw-parking-bin pw-parking-past">
+          <div class="pw-parking-head"><span class="pw-parking-label">Past</span><span class="pw-parking-count">1</span></div>
+          <ul class="pw-parking-list">
+            <li>
+              <div class="pw-parking-note">"We used to have a kanban board; ripped it out."</div>
+              <div class="pw-parking-tag">decision · → past-notes.md</div>
+            </li>
+          </ul>
+        </div>
+        <div class="pw-parking-bin pw-parking-future">
+          <div class="pw-parking-head"><span class="pw-parking-label">Future</span><span class="pw-parking-count">3</span></div>
+          <ul class="pw-parking-list">
+            <li>
+              <div class="pw-parking-note">"Multi-user editing on inline fields — Q3."</div>
+              <div class="pw-parking-tag">planned · → Forward Plan</div>
+            </li>
+            <li>
+              <div class="pw-parking-note">"Workspace search across projects."</div>
+              <div class="pw-parking-tag">considered · → Forward Plan</div>
+            </li>
+            <li>
+              <div class="pw-parking-note">"Mobile."</div>
+              <div class="pw-parking-tag">refused · → Forward Plan</div>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Synopsis -->
+      <section class="pw-synopsis">
+        <div class="pw-side-head">
+          <span class="pw-side-eyebrow">Raven's working understanding</span>
+          <span class="pw-side-count">final draft</span>
+        </div>
+        <p>Atlas Studio is a workspace product for small operators. Five named surfaces; one operator role; reactive notification model. No agentic team layer (single-operator). The day shape is item-driven and operator-paced, with a collaborator spike <em>(now early afternoon per redline)</em> and a focus stretch before evening cleanup.</p>
+      </section>
+
+    </aside>
+
+  </main>
+
+  <!-- ============================================== -->
+  <!-- APPROVAL FOOTER -->
+  <!-- ============================================== -->
+  <footer class="pw-footer">
+    <div class="pw-approval-block">
+      <div class="pw-approval-status">
+        <span class="pw-approval-label">Status</span>
+        <span class="pw-approval-value">Draft → <strong>In review</strong> → Approved</span>
+      </div>
+      <div class="pw-approval-note">
+        Approving will route parking-lot items to Forward Plan + past-notes, prefill Vocabulary / Skeleton / Surface / Experience / Forward Plan drafts from this synthesis, timestamp the approval, and unlock the Product-plane bars in the Knowledge Bank. <em>You can still revise after approval; it just becomes the load-bearing draft until then.</em>
+      </div>
+    </div>
+    <div class="pw-approval-actions">
+      <button type="button" class="pw-approval-btn pw-approval-btn-ghost">Save draft &amp; return later</button>
+      <button type="button" class="pw-approval-btn pw-approval-btn-primary" disabled>Approve Walk</button>
+      <div class="pw-approval-gate">2 redlines pending · resolve to approve</div>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>

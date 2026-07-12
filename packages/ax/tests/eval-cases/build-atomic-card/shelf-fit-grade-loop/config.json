@@ -1,0 +1,38 @@
+{
+  "caseId": "build-atomic-card/shelf-fit-grade-loop",
+  "description": "Build workflow preserves draft -> validate -> grade -> revise/bail/publish routing with shelf-fit grading.",
+  "checks": [
+    {
+      "description": "Workflow publishes only after GRADE_PASS and otherwise revises, bails, or exhausts.",
+      "file": "packages/alexandria-plugin/workflows/build-atomic-card/workflow.fabro",
+      "contains": [
+        "draft_or_repair -> validate_candidate",
+        "validate_candidate -> grade_candidate",
+        "grade_candidate -> route_grade",
+        "route_grade -> publish_card [label=\"GRADE_PASS\"",
+        "route_grade -> consume_revision [label=\"GRADE_REVISE\"",
+        "route_grade -> bail_out [label=\"GRADE_BAIL\"",
+        "consume_revision -> draft_or_repair",
+        "consume_revision -> exhausted",
+        "ax cards publish --plan"
+      ],
+      "notContains": [
+        "ax cards execute-plan"
+      ]
+    },
+    {
+      "description": "Grader prompt requires shelf-fit failure for missing shelf or off-lexicon names.",
+      "file": "packages/alexandria-plugin/workflows/build-atomic-card/prompts/grade.md",
+      "contains": [
+        "Grade the candidate against the EL5 contract",
+        "\"shelfFit\": { \"status\": \"pass\" }",
+        "shelfFit.status` must be `fail`",
+        "needs a missing shelf",
+        "uses an off-lexicon name",
+        "GRADE_PASS",
+        "GRADE_REVISE",
+        "GRADE_BAIL"
+      ]
+    }
+  ]
+}

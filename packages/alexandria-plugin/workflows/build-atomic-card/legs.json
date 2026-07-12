@@ -1,0 +1,61 @@
+{
+  "playId": "build-atomic-card",
+  "legs": [
+    {
+      "nodeId": "validate_contract",
+      "label": "Validate contract",
+      "description": "AX verifies the contract resolves to one confirmed stub and one lexicon prefLabel.",
+      "typicalSeconds": 5,
+      "kind": "command"
+    },
+    {
+      "nodeId": "draft_or_repair",
+      "label": "Draft or repair",
+      "description": "Raven drafts only the WHAT, WHY, WHERE, HOW, and WHEN body sections from cited source ranges.",
+      "typicalSeconds": 300,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "validate_candidate",
+      "label": "Validate candidate",
+      "description": "AX rejects missing sections and forbidden provenance/category frontmatter.",
+      "typicalSeconds": 5,
+      "kind": "command"
+    },
+    {
+      "nodeId": "grade_candidate",
+      "label": "Grade candidate",
+      "description": "Raven grades source support, confirmed-shelf fit, and lexicon-constrained naming before publish.",
+      "typicalSeconds": 180,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "route_grade",
+      "label": "Route grade",
+      "description": "AX validates the grade report and emits GRADE_PASS, GRADE_REVISE, or GRADE_BAIL.",
+      "typicalSeconds": 5,
+      "kind": "command"
+    },
+    {
+      "nodeId": "consume_revision",
+      "label": "Consume revision budget",
+      "description": "AX routes repair attempts until the revision budget is exhausted.",
+      "typicalSeconds": 5,
+      "kind": "command"
+    },
+    {
+      "nodeId": "publish_card",
+      "label": "Publish card",
+      "description": "AX appends to the confirmed stub and appends atomic_card.created with the agent actor.",
+      "typicalSeconds": 10,
+      "kind": "command"
+    },
+    {
+      "nodeId": "emit_child_result",
+      "label": "Emit child result",
+      "description": "AX reports the contract projection back to the parent plan.",
+      "typicalSeconds": 5,
+      "kind": "command"
+    }
+  ]
+}

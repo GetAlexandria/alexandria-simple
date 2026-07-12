@@ -1,0 +1,17 @@
+{
+  "playId": "source-assessment",
+  "legs": [
+    {
+      "nodeId": "assess",
+      "label": "Assess source material",
+      "description": "Run the Fabro smoke workflow and write the source assessment status report.",
+      "lead": "A reader checks the submitted source end to end and reports whether it can carry a play.",
+      "beats": [
+        "Runs the Fabro smoke workflow against the source to confirm it is reachable and well-formed.",
+        "Writes the source assessment status report so the next play knows what it is standing on."
+      ],
+      "typicalSeconds": 60,
+      "kind": "agent"
+    }
+  ]
+}

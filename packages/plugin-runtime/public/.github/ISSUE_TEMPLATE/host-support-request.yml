@@ -1,0 +1,20 @@
+name: Host Support Request
+description: Request support for a host or environment.
+title: "[Host Support]: "
+labels:
+  - host-support
+body:
+  - type: input
+    id: host
+    attributes:
+      label: Host or environment
+      placeholder: Cursor / OpenCode / CI runner / etc.
+    validations:
+      required: true
+  - type: textarea
+    id: need
+    attributes:
+      label: What you need
+      description: Describe the host gap or missing support clearly.
+    validations:
+      required: true

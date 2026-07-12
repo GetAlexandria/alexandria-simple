@@ -1,0 +1,9 @@
+{
+  "name": "@alexandria/plugin-runtime",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync-public-repo": "bun packages/plugin-runtime/src/sync-public-repo.ts"
+  }
+}

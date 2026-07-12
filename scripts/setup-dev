@@ -1,0 +1,285 @@
+#!/usr/bin/env bash
+# Alexandria — Contributor Setup Script
+#
+# Wraps the product setup flow, then registers repo-maintainer skills
+# into Claude's user-level skill surface and Codex's project-level skill surface
+# for local development on this repo.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+CLAUDE_SKILLS_DIR="$HOME/.claude/skills"
+CODEX_SKILLS_DIR="${CODEX_SKILLS_DIR:-$REPO_ROOT/.agents/skills}"
+CODEX_GLOBAL_SKILLS_DIR="${CODEX_GLOBAL_SKILLS_DIR:-$HOME/.codex/skills}"
+PRIMARY_SKILL_NAMESPACE="alexandria-dev"
+LEGACY_SKILL_NAMESPACE="context-library-dev"
+UNINSTALL=false
+SHOW_HELP=false
+FORCE_SKILL_LINKS=false
+PLUGIN_MODE="prod"
+SETUP_ARGS=()
+SETUP_ARG_COUNT=0
+
+info() { echo "  → $1"; }
+success() { echo "  ✓ $1"; }
+warn() { echo "  ⚠ $1"; }
+
+add_setup_arg() {
+	SETUP_ARGS+=("$1")
+	SETUP_ARG_COUNT=$((SETUP_ARG_COUNT + 1))
+}
+
+run_setup() {
+	if [ "$SETUP_ARG_COUNT" -eq 0 ]; then
+		"$REPO_ROOT/setup"
+	else
+		"$REPO_ROOT/setup" "${SETUP_ARGS[@]}"
+	fi
+}
+
+# User-global surfaces (~/.claude/skills) are managed only from the primary
+# checkout. A linked worktree (Conductor workspace, Codex/automation worktree)
+# repointing global symlinks at itself hijacks them for the whole machine and
+# leaves them dangling when the worktree is deleted. Worktrees still get
+# project-local skills via $CODEX_SKILLS_DIR.
+is_linked_worktree() {
+	local git_dir git_common_dir
+
+	git_dir="$(git -C "$REPO_ROOT" rev-parse --path-format=absolute --git-dir 2>/dev/null)" || return 1
+	git_common_dir="$(git -C "$REPO_ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || return 1
+	[ "$git_dir" != "$git_common_dir" ]
+}
+
+for_each_contributor_skill_dir() {
+	local skill_dir
+
+	if [ -d "$REPO_ROOT/skills" ]; then
+		for skill_dir in "$REPO_ROOT"/skills/*/ "$REPO_ROOT"/skills/*/*/; do
+			if [ -d "$skill_dir" ] && [ -f "$skill_dir/SKILL.md" ]; then
+				printf '%s\n' "$skill_dir"
+			fi
+		done
+	fi
+}
+
+for_each_skill_command_name() {
+	local skill_dir="$1"
+	local skill_name
+	skill_name=$(basename "$skill_dir")
+	printf '%s-%s\n' "$PRIMARY_SKILL_NAMESPACE" "$skill_name"
+	printf '%s-%s\n' "$LEGACY_SKILL_NAMESPACE" "$skill_name"
+}
+
+for_each_managed_skill_link() {
+	local skills_dir="$1"
+	local skill_link
+
+	for skill_link in \
+		"$skills_dir"/"$PRIMARY_SKILL_NAMESPACE"-* \
+		"$skills_dir"/"$LEGACY_SKILL_NAMESPACE"-*; do
+		[ -L "$skill_link" ] || continue
+		printf '%s\n' "$skill_link"
+	done
+}
+
+skill_link_points_into_repo() {
+	local skill_link="$1"
+
+	if [ ! -L "$skill_link" ]; then
+		return 1
+	fi
+
+	local current
+	current=$(readlink "$skill_link")
+
+	case "$current" in
+	"$REPO_ROOT"/skills/* | "$REPO_ROOT"/skills/*/)
+		return 0
+		;;
+	esac
+
+	return 1
+}
+
+skill_link_points_here() {
+	local skill_link="$1"
+	local skill_dir="$2"
+
+	if [ ! -L "$skill_link" ]; then
+		return 1
+	fi
+
+	local current
+	current=$(readlink "$skill_link")
+	[ "$current" = "$skill_dir" ] || [ "$current" = "${skill_dir%/}" ]
+}
+
+skill_name_is_expected() {
+	local expected_name="$1"
+	local skill_dir skill_name
+
+	while IFS= read -r skill_dir; do
+		while IFS= read -r skill_name; do
+			if [ "$skill_name" = "$expected_name" ]; then
+				return 0
+			fi
+		done < <(for_each_skill_command_name "$skill_dir")
+	done < <(for_each_contributor_skill_dir)
+
+	return 1
+}
+
+cleanup_stale_skill_links() {
+	local skills_dir="$1"
+	local skill_link skill_name
+
+	while IFS= read -r skill_link; do
+		if ! skill_link_points_into_repo "$skill_link"; then
+			continue
+		fi
+
+		skill_name=$(basename "$skill_link")
+		if skill_name_is_expected "$skill_name"; then
+			continue
+		fi
+
+		rm "$skill_link"
+		success "Removed stale contributor skill symlink: $skill_link"
+	done < <(for_each_managed_skill_link "$skills_dir")
+}
+
+cleanup_owned_skill_links() {
+	local skills_dir="$1"
+	local skill_link
+
+	while IFS= read -r skill_link; do
+		if ! skill_link_points_into_repo "$skill_link"; then
+			warn "Skipped non-owned contributor symlink: $skill_link"
+			continue
+		fi
+
+		rm "$skill_link"
+		success "Removed contributor skill symlink: $skill_link"
+	done < <(for_each_managed_skill_link "$skills_dir")
+}
+
+cleanup_global_codex_skill_links() {
+	if [ "$CODEX_SKILLS_DIR" = "$CODEX_GLOBAL_SKILLS_DIR" ]; then
+		return 0
+	fi
+
+	if [ ! -d "$CODEX_GLOBAL_SKILLS_DIR" ]; then
+		return 0
+	fi
+
+	local skill_target
+
+	while IFS= read -r skill_target; do
+		rm "$skill_target"
+		success "Removed global Codex contributor skill symlink: $skill_target"
+	done < <(for_each_managed_skill_link "$CODEX_GLOBAL_SKILLS_DIR")
+}
+
+manage_skill_dir() {
+	local action="$1"
+	local skills_dir="$2"
+	local skill_dir skill_name skill_target
+
+	mkdir -p "$skills_dir"
+
+	case "$action" in
+	install)
+		cleanup_stale_skill_links "$skills_dir"
+		;;
+	uninstall)
+		cleanup_owned_skill_links "$skills_dir"
+		return 0
+		;;
+	esac
+
+	while IFS= read -r skill_dir; do
+		while IFS= read -r skill_name; do
+			skill_target="$skills_dir/$skill_name"
+
+			case "$action" in
+			install)
+				if skill_link_points_here "$skill_target" "$skill_dir"; then
+					:
+				elif [ "$FORCE_SKILL_LINKS" = true ] && [ -L "$skill_target" ]; then
+					rm "$skill_target"
+					ln -s "$skill_dir" "$skill_target"
+					success "Updated contributor skill symlink: $skill_target"
+				elif [ -L "$skill_target" ] || [ -e "$skill_target" ]; then
+					warn "Skipped conflicting contributor skill path: $skill_target"
+				else
+					ln -s "$skill_dir" "$skill_target"
+				fi
+				;;
+			*)
+				echo "unknown action: $action" >&2
+				exit 1
+				;;
+			esac
+		done < <(for_each_skill_command_name "$skill_dir")
+	done < <(for_each_contributor_skill_dir)
+}
+
+for arg in "$@"; do
+	case "$arg" in
+	--uninstall)
+		UNINSTALL=true
+		add_setup_arg "$arg"
+		;;
+	--help | -h)
+		SHOW_HELP=true
+		add_setup_arg "$arg"
+		;;
+	--force-skill-links)
+		FORCE_SKILL_LINKS=true
+		;;
+	--plugin=*)
+		PLUGIN_MODE="${arg#--plugin=}"
+		;;
+	*)
+		add_setup_arg "$arg"
+		;;
+	esac
+done
+
+if [ "$SHOW_HELP" = true ]; then
+	exec "$REPO_ROOT/setup" "${SETUP_ARGS[@]}"
+fi
+
+if [ "$UNINSTALL" = false ]; then
+	if ! "$SCRIPT_DIR/ensure-shell-tools" --check --quiet; then
+		info "Installing shell tooling required for contributor checks"
+		"$SCRIPT_DIR/ensure-shell-tools" --install
+	fi
+fi
+
+run_setup
+
+if [ "$UNINSTALL" = true ]; then
+	if is_linked_worktree; then
+		info "Linked worktree: leaving user-global Claude skills untouched"
+	else
+		manage_skill_dir uninstall "$CLAUDE_SKILLS_DIR"
+	fi
+	manage_skill_dir uninstall "$CODEX_SKILLS_DIR"
+	cleanup_global_codex_skill_links
+	"$SCRIPT_DIR/setup-host-plugins" --uninstall
+	exit 0
+fi
+
+if is_linked_worktree; then
+	info "Linked worktree: leaving user-global Claude skills untouched"
+else
+	manage_skill_dir install "$CLAUDE_SKILLS_DIR"
+	success "Contributor skills symlinked to: $CLAUDE_SKILLS_DIR"
+fi
+manage_skill_dir install "$CODEX_SKILLS_DIR"
+cleanup_global_codex_skill_links
+"$SCRIPT_DIR/setup-host-plugins" --mode "$PLUGIN_MODE"
+info "Contributor workflows are enabled for this repo checkout"
+success "Contributor skills symlinked to: $CODEX_SKILLS_DIR"

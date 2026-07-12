@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Prepare a Fabro sandbox or local checkout for Alexandria workflow execution.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+QUIET=false
+
+info() {
+	if [ "$QUIET" = false ]; then
+		echo "  → $1"
+	fi
+}
+
+success() {
+	if [ "$QUIET" = false ]; then
+		echo "  ✓ $1"
+	fi
+}
+
+usage() {
+	cat <<'EOF'
+Usage: ./scripts/fabro-setup-env [--quiet]
+
+Prepares a Fabro execution environment for this repository.
+
+The script is intentionally provider-neutral: it can run in Daytona, Docker, or
+a local checkout as long as Node/npm are available.
+
+Options:
+  --quiet    Suppress non-error output
+  --help     Show this help
+EOF
+}
+
+for arg in "$@"; do
+	case "$arg" in
+	--quiet)
+		QUIET=true
+		;;
+	--help | -h)
+		usage
+		exit 0
+		;;
+	*)
+		echo "Unknown option: $arg" >&2
+		usage >&2
+		exit 1
+		;;
+	esac
+done
+
+cd "$REPO_ROOT"
+
+if ! command -v node >/dev/null 2>&1; then
+	echo "node is required for Fabro environment setup" >&2
+	exit 127
+fi
+
+if ! command -v npm >/dev/null 2>&1; then
+	echo "npm is required for Fabro environment setup" >&2
+	exit 127
+fi
+
+package_manager="$(node -e "console.log(require('./package.json').packageManager || '')")"
+case "$package_manager" in
+pnpm@*)
+	pnpm_version="${package_manager#pnpm@}"
+	;;
+*)
+	echo "Unsupported packageManager in package.json: ${package_manager:-<missing>}" >&2
+	exit 1
+	;;
+esac
+
+current_pnpm=""
+if command -v pnpm >/dev/null 2>&1; then
+	current_pnpm="$(pnpm --version 2>/dev/null || true)"
+fi
+
+if [ "$current_pnpm" != "$pnpm_version" ]; then
+	info "Installing pnpm@$pnpm_version"
+	npm install -g "pnpm@$pnpm_version"
+fi
+
+info "Using pnpm $(pnpm --version)"
+info "Installing workspace dependencies"
+CI=1 HUSKY=0 pnpm install --frozen-lockfile
+
+success "Fabro environment is ready"

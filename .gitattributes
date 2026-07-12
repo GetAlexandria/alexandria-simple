@@ -1,0 +1,6 @@
+# Vendored reference repositories keep their upstream formatting.
+repos/effect/** -whitespace linguist-vendored
+
+# The Ledger is append-only shared history: concurrent branches both append,
+# so merge by union (order is not authoritative; idempotency keys dedupe).
+docs/alexandria/ledger/events.jsonl merge=union

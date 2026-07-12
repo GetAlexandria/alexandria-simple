@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alexandria Library Update — April 10, 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0f0f0f;
+    --fg: #e8e4df;
+    --accent: #c9a84c;
+    --accent-dim: #8a7335;
+    --muted: #7a756d;
+    --card-bg: #1a1917;
+    --card-border: #2a2825;
+    --green: #6aab73;
+    --blue: #6a9aab;
+    --orange: #ab8a6a;
+    --red: #ab6a6a;
+    --purple: #8a6aab;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  .deck {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+  }
+
+  .slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    padding: 6vh 10vw;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  .slide.active {
+    display: flex;
+    opacity: 1;
+  }
+
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+  }
+
+  h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.8rem, 3.5vw, 3rem);
+    font-weight: 600;
+    color: var(--accent);
+    line-height: 1.2;
+    margin-bottom: 1.2rem;
+  }
+
+  h3 {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 0.8rem;
+  }
+
+  p, li {
+    font-size: clamp(1rem, 1.8vw, 1.35rem);
+    line-height: 1.65;
+    color: var(--fg);
+  }
+
+  .subtitle {
+    font-size: clamp(1.1rem, 2vw, 1.6rem);
+    color: var(--muted);
+    font-weight: 300;
+    margin-bottom: 2rem;
+  }
+
+  ul { list-style: none; margin: 0.5rem 0; }
+  ul li {
+    padding: 0.4rem 0 0.4rem 1.5rem;
+    position: relative;
+  }
+  ul li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.85rem;
+    width: 8px;
+    height: 8px;
+    border: 1.5px solid var(--accent);
+    border-radius: 50%;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 1rem;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 1.5rem;
+  }
+
+  .card h4 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.6rem;
+  }
+
+  .card p, .card li {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  .card.highlight {
+    border-color: var(--accent-dim);
+    background: linear-gradient(135deg, var(--card-bg), #1f1d18);
+  }
+
+  .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    margin-right: 0.4rem;
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .tag.settled { background: #1a2e1a; color: var(--green); border: 1px solid #2a4a2a; }
+  .tag.open { background: #2e2a1a; color: var(--orange); border: 1px solid #4a3a2a; }
+  .tag.new { background: #1a1a2e; color: var(--blue); border: 1px solid #2a2a4a; }
+  .tag.updated { background: #2e1a2e; color: var(--purple); border: 1px solid #4a2a4a; }
+  .tag.company { background: #2e1a1a; color: var(--red); border: 1px solid #4a2a2a; }
+
+  .inside-outside {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 1rem;
+  }
+
+  .inside-outside .column h4 {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .inside-outside .column.in h4 {
+    color: var(--green);
+    border-bottom: 2px solid #2a4a2a;
+  }
+
+  .inside-outside .column.out h4 {
+    color: var(--muted);
+    border-bottom: 2px solid var(--card-border);
+  }
+
+  .inside-outside li {
+    font-size: 1rem;
+    padding: 0.3rem 0;
+  }
+
+  .inside-outside .column.out li { color: var(--muted); }
+
+  .trifecta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+  }
+
+  .trifecta .piece {
+    background: var(--card-bg);
+    border: 2px solid var(--accent-dim);
+    border-radius: 12px;
+    padding: 1.5rem 2.5rem;
+    text-align: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .trifecta .plus {
+    font-size: 1.5rem;
+    color: var(--muted);
+  }
+
+  .trifecta .implied {
+    border-style: dashed;
+    opacity: 0.7;
+  }
+
+  .layer-diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 1.5rem auto;
+    max-width: 600px;
+  }
+
+  .layer {
+    padding: 1.2rem 2rem;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+
+  .layer .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.3rem;
+    display: block;
+  }
+
+  .layer.agentic-top {
+    background: linear-gradient(135deg, #1a2a1a, #1a251a);
+    border: 1px solid #2a4a2a;
+    color: var(--green);
+  }
+
+  .layer.deterministic {
+    background: linear-gradient(135deg, #1a1a2e, #1a1a25);
+    border: 1px solid #2a2a4a;
+    color: var(--blue);
+  }
+
+  .layer.agentic-bottom {
+    background: linear-gradient(135deg, #1a2a1a, #1a251a);
+    border: 1px solid #2a4a2a;
+    color: var(--green);
+  }
+
+  .layer .agents {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.3rem;
+  }
+
+  .nav {
+    position: fixed;
+    bottom: 2rem;
+    right: 3rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    z-index: 100;
+  }
+
+  .nav button {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    color: var(--muted);
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+  }
+
+  .nav button:hover {
+    border-color: var(--accent-dim);
+    color: var(--fg);
+  }
+
+  .progress {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: var(--accent);
+    transition: width 0.4s ease;
+    z-index: 100;
+  }
+
+  .counter {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .divider {
+    width: 60px;
+    height: 2px;
+    background: var(--accent-dim);
+    margin: 1.5rem 0;
+  }
+
+  .quote {
+    border-left: 3px solid var(--accent-dim);
+    padding: 0.8rem 1.5rem;
+    margin: 1rem 0;
+    font-style: italic;
+    color: var(--muted);
+    font-size: 1.1rem;
+  }
+
+  .stats {
+    display: flex;
+    gap: 3rem;
+    margin: 1.5rem 0;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat .number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .stat .label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 0.3rem;
+  }
+
+  .timeline {
+    position: relative;
+    padding-left: 2rem;
+    margin: 1rem 0;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--card-border);
+  }
+
+  .timeline .event {
+    position: relative;
+    padding: 0.8rem 0 0.8rem 1.5rem;
+  }
+
+  .timeline .event::before {
+    content: '';
+    position: absolute;
+    left: -2rem;
+    top: 1.1rem;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background: var(--bg);
+    transform: translateX(-4px);
+  }
+
+  .timeline .event .time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent-dim);
+  }
+
+  @media (max-width: 768px) {
+    .slide { padding: 4vh 6vw; }
+    .grid-2, .grid-3, .inside-outside { grid-template-columns: 1fr; }
+    .trifecta { flex-direction: column; }
+    .stats { flex-wrap: wrap; gap: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- SLIDE 1: Title -->
+  <div class="slide active" data-slide="0">
+    <h3>Alexandria Library Update</h3>
+    <h1>Strategy Session<br>Synthesis</h1>
+    <div class="divider"></div>
+    <p class="subtitle">April 9-10, 2026 &mdash; Chapel Hill Sessions</p>
+    <p style="color: var(--muted); font-size: 0.95rem; margin-top: 1rem;">
+      Jess + Danvers &bull; 8 meetings &bull; 6 whiteboards &bull; 12 claims extracted &bull; 10 settled
+    </p>
+    <div class="stats" style="margin-top: 2.5rem;">
+      <div class="stat"><div class="number">3</div><div class="label">Cards Created</div></div>
+      <div class="stat"><div class="number">8</div><div class="label">Cards Updated</div></div>
+      <div class="stat"><div class="number">2</div><div class="label">Open Questions</div></div>
+      <div class="stat"><div class="number">5</div><div class="label">Company Library</div></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: What Happened -->
+  <div class="slide" data-slide="1">
+    <h3>Context</h3>
+    <h2>What Happened</h2>
+    <div class="divider"></div>
+    <div class="grid-2">
+      <div>
+        <p>Two days of intensive strategy sessions in Chapel Hill produced the clearest picture yet of <strong>what Alexandria is</strong> and <strong>what it isn't</strong>.</p>
+        <div class="timeline" style="margin-top: 1.5rem;">
+          <div class="event">
+            <div class="time">Apr 9 AM</div>
+            <p>Inside/outside whiteboarding &mdash; product boundary defined</p>
+          </div>
+          <div class="event">
+            <div class="time">Apr 9 PM</div>
+            <p>Bottom-up play mapping &mdash; health check, update content, deliver context</p>
+          </div>
+          <div class="event">
+            <div class="time">Apr 9 Eve</div>
+            <p>Planner deep-dive &mdash; Raven + Bridget integration understood</p>
+          </div>
+          <div class="event">
+            <div class="time">Apr 10 AM</div>
+            <p>Orchestration reversal &mdash; "we must own orchestration"</p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card highlight">
+          <h4>The Big Shift</h4>
+          <p>The library previously documented <em>how</em> Alexandria works (agents, plays, systems, quality machinery). These sessions defined <em>what Alexandria is as a business</em> and drew the product boundary for the first time.</p>
+        </div>
+        <div class="card" style="margin-top: 1rem;">
+          <h4>Pipeline Used</h4>
+          <p>Solomon triaged all raw signal &rarr; extracted 12 claims &rarr; Jess classified each &rarr; Sam built/updated cards from settled claims. First real end-to-end run of the intake pipeline.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: The Core Trifecta -->
+  <div class="slide" data-slide="2">
+    <h3>Decision</h3>
+    <h2>The Core Trifecta</h2>
+    <div class="divider"></div>
+    <p style="margin-bottom: 1rem;">Alexandria's core product is three things, with a fourth implied:</p>
+    <div class="trifecta">
+      <div class="piece">Agents</div>
+      <div class="plus">+</div>
+      <div class="piece">Plays</div>
+      <div class="plus">+</div>
+      <div class="piece">Context Library</div>
+      <div class="plus" style="opacity: 0.5;">+</div>
+      <div class="piece implied">Orchestration</div>
+    </div>
+    <div class="quote">
+      "Without relevant, up-to-date organizational context, this is fairly tone-deaf."
+      <br><span style="font-style: normal; font-size: 0.85rem;">&mdash; Danvers, Apr 9</span>
+    </div>
+    <p style="color: var(--muted); font-size: 0.95rem; margin-top: 1rem;">
+      The context library is what makes the agents and plays <em>valuable</em>. Orchestration is what makes the plays <em>run</em>.
+      Everything else (CLI, web viewer, agent play, settings) is a multiplier &mdash; not core.
+    </p>
+  </div>
+
+  <!-- SLIDE 4: Orchestration Decision -->
+  <div class="slide" data-slide="3">
+    <h3>Decision &mdash; Reversal</h3>
+    <h2>We Own Orchestration</h2>
+    <div class="divider"></div>
+    <div class="grid-2">
+      <div>
+        <div class="card" style="border-color: var(--red); opacity: 0.6;">
+          <h4 style="color: var(--red);">Day 1 Position (Superseded)</h4>
+          <p>"The orchestrator is outside... we're delegating the solution to this one platform or these three platforms."</p>
+        </div>
+        <div style="text-align: center; padding: 0.5rem; font-size: 1.5rem; color: var(--muted);">&darr;</div>
+        <div class="card highlight">
+          <h4>Day 2 Position (Settled)</h4>
+          <p>"If the plays are the secret sauce, how the plays are orchestrated is part of the secret sauce. We have to run the plays."</p>
+        </div>
+      </div>
+      <div>
+        <h4 style="color: var(--fg); font-size: 1rem; margin-bottom: 0.8rem;">The nuance:</h4>
+        <ul>
+          <li><strong>Bundle</strong> an open-source orchestration framework &mdash; don't build one</li>
+          <li>Individual agents + skills can still run on <strong>external harnesses</strong> (Claude Code, OpenClaw)</li>
+          <li><strong>Plays</strong> specifically require orchestration and run inside the library</li>
+          <li>The execution infrastructure (durability, cost control, restarts) comes from the bundled framework</li>
+        </ul>
+        <p style="color: var(--muted); font-size: 0.85rem; margin-top: 1rem;">
+          <span class="tag new">new card</span> Artifact &mdash; Decision: Orchestration Ownership
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: Architecture Pattern -->
+  <div class="slide" data-slide="4">
+    <h3>Principle</h3>
+    <h2>The Sandwich</h2>
+    <p class="subtitle">Agentic &rarr; Deterministic &rarr; Agentic</p>
+    <div class="divider"></div>
+    <div class="grid-2">
+      <div>
+        <div class="layer-diagram">
+          <div class="layer agentic-top">
+            <span class="label">Agentic &mdash; Outer</span>
+            Interface &amp; orchestration across the whole workflow
+            <div class="agents">Raven</div>
+          </div>
+          <div class="layer deterministic">
+            <span class="label">Deterministic &mdash; Middle</span>
+            Workflow on rails &mdash; constrains what agents can do
+            <div class="agents">Plays, Skills, Software gates</div>
+          </div>
+          <div class="layer agentic-bottom">
+            <span class="label">Agentic &mdash; Inner</span>
+            Individual tasks within workflow structure
+            <div class="agents">Sam, Conan, Nit, Solomon, Bridget</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="quote">
+          "This is the pattern I've seen in all the agentic systems we've built."
+          <br><span style="font-style: normal; font-size: 0.85rem;">&mdash; Jess, Apr 9</span>
+        </div>
+        <ul style="margin-top: 1rem;">
+          <li>Settled as a <strong>principle</strong>, not a hard requirement</li>
+          <li>The outer agentic layer can work <em>around</em> things the workflow can't handle</li>
+          <li>The deterministic middle can wrap both deterministic and non-deterministic stations</li>
+          <li>This is what makes Raven magical &mdash; constrained by the workflow but not trapped by it</li>
+        </ul>
+        <p style="color: var(--muted); font-size: 0.85rem; margin-top: 1rem;">
+          <span class="tag new">new card</span> Principle &mdash; Agentic-Deterministic-Agentic Pattern
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: Inside / Outside -->
+  <div class="slide" data-slide="5">
+    <h3>Open Question</h3>
+    <h2>The S Boundary</h2>
+    <p class="subtitle">What is inside vs. outside the minimum valuable product?</p>
+    <div class="divider"></div>
+    <div class="inside-outside">
+      <div class="column in">
+        <h4>Inside S</h4>
+        <ul>
+          <li>Agents (the team)</li>
+          <li>Plays (procedural knowledge)</li>
+          <li>Context Library (knowledge graph)</li>
+          <li>Orchestration (bundled framework)</li>
+          <li>CLI (developer tools)</li>
+          <li>Web Viewer (cards, plans, plays, team)</li>
+          <li>Agent Play (analytics, premium)</li>
+          <li>Settings (token modes, schedules)</li>
+          <li>Rules (franchise rules)</li>
+          <li>Cross-library data layer</li>
+          <li>Hosting (agents, skills, CLI)</li>
+        </ul>
+      </div>
+      <div class="column out">
+        <h4>Outside S</h4>
+        <ul>
+          <li>Model (Opus, Sonnet, etc.)</li>
+          <li>Sources (Notion, Slack, GitHub...)</li>
+          <li>Orchestrator engine (LangGraph, etc.)</li>
+          <li>Knowledge data layer (storage)</li>
+          <li>Version control (Git)</li>
+          <li>Harness (Claude Code, Codex, Pi)</li>
+          <li>Container / Sandbox</li>
+          <li>Factory (production facilities)</li>
+        </ul>
+        <div class="card" style="margin-top: 1rem;">
+          <p style="font-size: 0.85rem;">
+            <span class="tag open">open question</span>
+            The precise boundary of S is not yet settled. Both co-founders agree on the general shape but the bottom-up exercise to draw the definitive line hasn't been completed.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: Multi-Model + Storage -->
+  <div class="slide" data-slide="6">
+    <h3>Decisions</h3>
+    <h2>Platform Strategy</h2>
+    <div class="divider"></div>
+    <div class="grid-2">
+      <div class="card highlight">
+        <h4>Multi-Model Architecture</h4>
+        <span class="tag settled">settled</span>
+        <p style="margin-top: 0.8rem;">Alexandria must be <strong>multi-model</strong>. Cannot be all-in on any single provider.</p>
+        <ul style="margin-top: 0.8rem;">
+          <li>Can have Anthropic-specific features (Claude plugin, agent SDK)</li>
+          <li>Can have provider-specific optimizations</li>
+          <li>Must not require exclusivity to any model</li>
+        </ul>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0.8rem;">
+          Supersedes Jess's earlier reflection suggesting "go all-in Anthropic." On further consideration: multi-model is the correct strategic position.
+        </p>
+      </div>
+      <div class="card highlight">
+        <h4>Storage Is an Implementation Detail</h4>
+        <span class="tag settled">settled</span>
+        <p style="margin-top: 0.8rem;">The knowledge data layer is the <strong>most commoditizable</strong> component. We don't sell on storage.</p>
+        <ul style="margin-top: 0.8rem;">
+          <li>Beadification is wise &amp; practical engineering</li>
+          <li>Storage layer must be <strong>abstracted and swappable</strong></li>
+          <li>Like which database a SaaS app uses &mdash; matters for performance, not for the pitch</li>
+          <li>We own retrieval logic and card schema, not storage</li>
+        </ul>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0.8rem;">
+          Beadification roadmap updated. Decision 22 (Beads) reframed.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: Federation -->
+  <div class="slide" data-slide="7">
+    <h3>Direction</h3>
+    <h2>Federation</h2>
+    <p class="subtitle">A company is a group of federated libraries</p>
+    <div class="divider"></div>
+    <div class="grid-2">
+      <div>
+        <ul>
+          <li><strong>Cross-library data layer</strong> is a core inside component &mdash; settled as architectural direction</li>
+          <li>Implementation is <strong>deferred</strong> &mdash; don't need to build this yet</li>
+          <li>Every library is a <strong>franchise</strong>. When we learn something, every franchise gets better.</li>
+          <li>A company = product library + company library + potentially more</li>
+          <li>Danvers is currently building the <strong>Alexandria Company library</strong> as a separate, linked library</li>
+        </ul>
+        <div class="quote" style="margin-top: 1.5rem;">
+          "We don't need to build this yet, but need to know that federated is where we're going."
+          <br><span style="font-style: normal; font-size: 0.85rem;">&mdash; Jess, classification</span>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h4>S/S'/S'' Staged Expansion</h4>
+          <span class="tag settled">settled (architecture)</span>
+          <p style="margin-top: 0.5rem;"><strong>S</strong> &mdash; agents + plays + context library + orchestration. The tight core.</p>
+          <p><strong>S'</strong> &mdash; orchestration integration, hosted viewer, agent play</p>
+          <p><strong>S''</strong> &mdash; full hosted app, cross-model, SOC 2, enterprise, talent marketplace</p>
+          <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0.8rem;">
+            "Architect S such that we could do S' and S''. Build for acquisition by pointing to S'/S'' and saying: the bigger value is here."
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: Agent Maturity -->
+  <div class="slide" data-slide="8">
+    <h3>Assessments</h3>
+    <h2>Agent &amp; Play Maturity</h2>
+    <div class="divider"></div>
+    <div class="grid-2">
+      <div class="card highlight">
+        <h4>Health Check = Most Important Play</h4>
+        <span class="tag settled">settled</span>
+        <p style="margin-top: 0.8rem;">
+          Danvers: <em>"If I could only have one thing, it's this."</em>
+        </p>
+        <p style="margin-top: 0.5rem;">
+          The grade &rarr; diagnose &rarr; recommend &rarr; fix loop is the trunk of the tree. Every other play either feeds into it or depends on it. In the franchise model, health check is what guarantees quality across all libraries.
+        </p>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0.8rem;">
+          <span class="tag updated">updated</span> Capability &mdash; Health Check
+        </p>
+      </div>
+      <div class="card">
+        <h4>Solomon: Robust but Untested</h4>
+        <span class="tag settled">settled</span>
+        <p style="margin-top: 0.8rem;">
+          Solomon has detailed skill files, tension detection (T1-T7), evidence protocol, claim extraction, signal queue schema, and source material templates.
+        </p>
+        <p style="margin-top: 0.5rem;">
+          But this triage session (today!) was his <strong>first real end-to-end run</strong>. Implementation is comprehensive; real-world effectiveness was previously unvalidated.
+        </p>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0.8rem;">
+          <span class="tag updated">updated</span> Agent &mdash; Solomon the Sorter
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: Company Library Filter -->
+  <div class="slide" data-slide="9">
+    <h3>Filtered Out</h3>
+    <h2>Company Library Claims</h2>
+    <p class="subtitle">These belong in Danvers' company library, not this product library</p>
+    <div class="divider"></div>
+    <div class="grid-3">
+      <div class="card">
+        <span class="tag company">company</span>
+        <h4>Franchise Business Model</h4>
+        <p>"Every library is a franchise. We sell the franchise, not just the theme."</p>
+      </div>
+      <div class="card">
+        <span class="tag company">company</span>
+        <h4>AI Staffing Agency</h4>
+        <p>"Agent employees run on Alexandria are better, cheaper, faster."</p>
+      </div>
+      <div class="card">
+        <span class="tag company">company</span>
+        <h4>Build-for-Acquisition</h4>
+        <p>"If we actually did this right, we'd be a legitimate $100M fast acquisition."</p>
+      </div>
+      <div class="card">
+        <span class="tag company">company</span>
+        <h4>Competitive Positioning</h4>
+        <p>"We're not Paperclip. We're the plays, not the machine that runs the plays."</p>
+      </div>
+      <div class="card">
+        <span class="tag company">company</span>
+        <h4>Grecofuturism Brand</h4>
+        <p>"Afrofuturism, but for Ancient Greece. AI optimist heritage brand."</p>
+      </div>
+    </div>
+    <p style="color: var(--muted); font-size: 0.9rem; margin-top: 1.5rem;">
+      These will land in the Alexandria Company library that Danvers is building. Product-architectural implications (e.g., the competitive boundary with orchestrators) have been captured in product library cards.
+    </p>
+  </div>
+
+  <!-- SLIDE 11: Open Questions -->
+  <div class="slide" data-slide="10">
+    <h3>Parked</h3>
+    <h2>Open Questions</h2>
+    <p class="subtitle">In the signal queue, awaiting resolution</p>
+    <div class="divider"></div>
+    <div class="grid-2">
+      <div class="card" style="border-color: var(--orange);">
+        <span class="tag open">open question</span>
+        <h4>S Boundary Definition</h4>
+        <p>The inside/outside categories are identified but the <strong>precise boundary</strong> of S is not drawn. Both co-founders want to complete the bottom-up exercise: start from the smallest unit of value and build up.</p>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0.8rem;">
+          Revisit by: 2026-04-24
+        </p>
+      </div>
+      <div class="card" style="border-color: var(--orange);">
+        <span class="tag open">open question</span>
+        <h4>Four Playbook Categories</h4>
+        <p>Are <strong>Update Content, Maintain, Deliver Context, Learn</strong> the right decomposition? Are they mutually exclusive? Does "rules" overlap with "plays"? Jess said: "I don't know enough to settle this &mdash; need to unpack."</p>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0.8rem;">
+          Revisit by: 2026-05-10
+        </p>
+      </div>
+    </div>
+    <p style="color: var(--muted); font-size: 0.9rem; margin-top: 1.5rem;">
+      Plus 5 previously parked items still in the signal queue: species list, factory agent naming, factory agent card type, inherit-with-interpretation mechanics, Option C confirmation.
+    </p>
+  </div>
+
+  <!-- SLIDE 12: Library Changes Summary -->
+  <div class="slide" data-slide="11">
+    <h3>Summary</h3>
+    <h2>What Changed in the Library</h2>
+    <div class="divider"></div>
+    <div class="grid-3">
+      <div>
+        <h4 style="color: var(--blue); font-family: 'Inter'; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Created</h4>
+        <div class="card" style="margin-bottom: 0.8rem;">
+          <span class="tag new">new</span>
+          <p style="font-size: 0.9rem;">Principle &mdash; Agentic-Deterministic-Agentic Pattern</p>
+        </div>
+        <div class="card" style="margin-bottom: 0.8rem;">
+          <span class="tag new">new</span>
+          <p style="font-size: 0.9rem;">Decision &mdash; Orchestration Ownership</p>
+        </div>
+        <div class="card">
+          <span class="tag new">new</span>
+          <p style="font-size: 0.9rem;">Decision &mdash; Multi-Model Architecture</p>
+        </div>
+      </div>
+      <div>
+        <h4 style="color: var(--purple); font-family: 'Inter'; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Updated</h4>
+        <div style="font-size: 0.9rem; color: var(--muted);">
+          <p style="padding: 0.3rem 0;">Agent &mdash; Solomon the Sorter</p>
+          <p style="padding: 0.3rem 0;">Capability &mdash; Health Check</p>
+          <p style="padding: 0.3rem 0;">Artifact &mdash; Play Definition</p>
+          <p style="padding: 0.3rem 0;">Artifact &mdash; Play Pattern</p>
+          <p style="padding: 0.3rem 0;">Decision 9 &mdash; Plays as Team Coordination</p>
+          <p style="padding: 0.3rem 0;">Decision 22 &mdash; Beads</p>
+          <p style="padding: 0.3rem 0;">Roadmap &mdash; Beadification</p>
+          <p style="padding: 0.3rem 0;">System &mdash; Knowledge Graph</p>
+          <p style="padding: 0.3rem 0;">Artifact &mdash; Product Roadmap</p>
+        </div>
+      </div>
+      <div>
+        <h4 style="color: var(--orange); font-family: 'Inter'; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Parked</h4>
+        <div style="font-size: 0.9rem; color: var(--muted);">
+          <p style="padding: 0.3rem 0;">S Boundary Definition</p>
+          <p style="padding: 0.3rem 0;">Four Playbook Categories</p>
+        </div>
+        <h4 style="color: var(--red); font-family: 'Inter'; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem; margin-top: 1.5rem;">Routed to Company Library</h4>
+        <div style="font-size: 0.9rem; color: var(--muted);">
+          <p style="padding: 0.3rem 0;">Franchise business model</p>
+          <p style="padding: 0.3rem 0;">AI staffing agency identity</p>
+          <p style="padding: 0.3rem 0;">Acquisition strategy</p>
+          <p style="padding: 0.3rem 0;">Competitive positioning</p>
+          <p style="padding: 0.3rem 0;">Grecofuturism brand</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 13: What's Next -->
+  <div class="slide" data-slide="12">
+    <h3>Next Steps</h3>
+    <h2>What's Next</h2>
+    <div class="divider"></div>
+    <div class="grid-2">
+      <div>
+        <ul>
+          <li><strong>Settle the S boundary</strong> &mdash; bottom-up exercise to draw the definitive product line</li>
+          <li><strong>Architecture diagram</strong> &mdash; TLDraw map of S with specific agents, plays, systems, and their relationships</li>
+          <li><strong>Ruthless prune</strong> &mdash; every file in the repo justifies its existence or gets cut</li>
+          <li><strong>Implementation plan</strong> &mdash; the 10 things that make S solid, parallelized across the factory</li>
+          <li><strong>Unpack playbook categories</strong> &mdash; is 4-category model the right decomposition?</li>
+        </ul>
+      </div>
+      <div>
+        <div class="card highlight">
+          <h4>The Goal</h4>
+          <p>A tight S that we are making <strong>very, very good</strong>. Not S' or S''. Just S.</p>
+          <p style="margin-top: 0.8rem;">Then: 10 people making libraries. That's the stage we're at.</p>
+        </div>
+        <div class="card" style="margin-top: 1rem;">
+          <h4>Milestone: Solomon's First Run</h4>
+          <p>Today was Solomon's first real end-to-end triage. He processed 12 claims, detected an internal conflict (orchestration reversal), and routed everything cleanly. The pipeline works.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="nav">
+  <button onclick="prev()">&larr; Prev</button>
+  <span class="counter"><span id="current">1</span> / <span id="total">13</span></span>
+  <button onclick="next()">Next &rarr;</button>
+</div>
+
+<div class="progress" id="progress"></div>
+
+<script>
+  let current = 0;
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  document.getElementById('total').textContent = total;
+
+  function show(n) {
+    slides.forEach(s => s.classList.remove('active'));
+    current = Math.max(0, Math.min(n, total - 1));
+    slides[current].classList.add('active');
+    document.getElementById('current').textContent = current + 1;
+    document.getElementById('progress').style.width = ((current + 1) / total * 100) + '%';
+  }
+
+  function next() { show(current + 1); }
+  function prev() { show(current - 1); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') { e.preventDefault(); next(); }
+    if (e.key === 'ArrowLeft' || e.key === 'Backspace') { e.preventDefault(); prev(); }
+    if (e.key === 'Home') { e.preventDefault(); show(0); }
+    if (e.key === 'End') { e.preventDefault(); show(total - 1); }
+  });
+
+  // Touch support
+  let touchStartX = 0;
+  document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', (e) => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) { diff > 0 ? next() : prev(); }
+  });
+</script>
+
+</body>
+</html>

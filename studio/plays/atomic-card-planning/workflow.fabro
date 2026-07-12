@@ -1,0 +1,55 @@
+digraph AtomicCardPlanning {
+    graph [
+        goal="Plan EL5 atomic-card production from an EL4-confirmed library, Vocabulary lexicon, and EL1 source-of-truth manifest without inventing shelves or names.",
+        max_node_visits=40,
+        stall_timeout="2h",
+        default_fidelity="truncate"
+    ]
+    rankdir=LR
+
+    start [shape=Mdiamond, label="Start"]
+    exit  [shape=Msquare, label="Exit"]
+
+    validate_inputs [
+        shape=parallelogram,
+        label="Validate confirmed library, lexicon, and source manifest",
+        script="cd '__AX_PROJECT_ROOT__' && ax cards validate-inventory --confirmed-library '__AX_INPUT_CONFIRMED_LIBRARY__' --lexicon '__AX_INPUT_VOCABULARY_LEXICON__' --json && ax cards verify-source --manifest '__AX_INPUT_SOURCE_OF_TRUTH_DOCS__' --json",
+        timeout="2m"
+    ]
+
+    triage [
+        label="Draft the shelf-constrained EL5 build plan",
+        prompt="@prompts/triage.md",
+        backend="acp",
+        acp.command=__AX_ACP_COMMAND_JSON__,
+        timeout="30m"
+    ]
+
+    validate_plan [
+        shape=parallelogram,
+        label="Validate the EL5 build plan contract",
+        script="cd '__AX_PROJECT_ROOT__' && ax cards validate-plan --plan '__AX_INPUT_PLAN_PATH__' --lexicon '__AX_INPUT_VOCABULARY_LEXICON__' --json",
+        timeout="2m"
+    ]
+
+    audit [
+        shape=parallelogram,
+        label="Render the coverage audit",
+        script="cd '__AX_PROJECT_ROOT__' && ax cards coverage-audit --plan '__AX_INPUT_PLAN_PATH__' --lexicon '__AX_INPUT_VOCABULARY_LEXICON__' --json",
+        timeout="1m"
+    ]
+
+    acp_failed [
+        shape=parallelogram,
+        label="Fail on ACP failure before validating the plan",
+        script="echo \"atomic-card-planning: triage ACP step failed; refusing to validate an unplanned build\" >&2; exit 1",
+        timeout="1m"
+    ]
+
+    start -> validate_inputs
+    validate_inputs -> triage
+    triage -> validate_plan
+    triage -> acp_failed [label="ACP failed", condition="outcome!=succeeded"]
+    validate_plan -> audit
+    audit -> exit
+}

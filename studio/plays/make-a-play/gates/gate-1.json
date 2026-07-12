@@ -1,0 +1,32 @@
+{
+  "gate": "gate-1",
+  "play": "make-a-play",
+  "decision": "approved",
+  "decidedAt": "2026-06-23",
+  "decidedBy": "director",
+  "basis": "Issue #341 approved plan and recovered brief reconciliation",
+  "approvedDoerTags": {
+    "ground": "judgment",
+    "draft_brief": "judgment",
+    "harden": "judgment",
+    "gate_design": "human-gate",
+    "derive": "command",
+    "lint": "command",
+    "author_fixtures": "judgment",
+    "register_for_run": "command",
+    "run_campaign": "command",
+    "grade": "judgment",
+    "writeback": "command",
+    "advance_contract": "contract",
+    "held_queue": "human-gate",
+    "register_live": "command"
+  },
+  "decisions": {
+    "filing": "PlaymakerStudio / Production",
+    "face": "William, derived from PlaymakerStudio",
+    "productGoldenPath": "excluded",
+    "boardBands": "Preserve six stages and render them under Design / Build / Prove",
+    "builtBy": "Ledger provenance fact only, never a play filing field"
+  },
+  "notes": "Gate 1 approves the recovered §4 move graph after reconciling it to the Company -> Division -> Function org model and the canonical frame-the-problem exemplar."
+}

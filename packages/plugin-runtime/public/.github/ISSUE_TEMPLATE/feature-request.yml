@@ -1,0 +1,20 @@
+name: Feature Request
+description: Request a new Alexandria capability.
+title: "[Feature]: "
+labels:
+  - feature
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or job to be done
+      description: What are you trying to do with Alexandria?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Requested capability
+      description: Describe the feature you want.
+    validations:
+      required: true

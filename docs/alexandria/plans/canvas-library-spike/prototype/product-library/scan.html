@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>What is your product about? — Canvas</title>
+  <style>
+    :root {
+      --bg: #faf8f4;
+      --bg-deep: #f4f0e6;
+      --ink: #2a2722;
+      --muted: #6b665d;
+      --line: #d9d4ca;
+      --accent: #b88b3a;
+      --ok: #2e7d32;
+      --noun: #1f4f8a;
+      --noun-fill: #8a7560;
+    }
+    * { box-sizing: border-box; }
+    body { font: 14px/1.55 system-ui, -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--ink); }
+    header { padding: 1.2em 1.5em; display: flex; justify-content: space-between; align-items: baseline; }
+    header h1 { margin: 0; font: 500 22px/1 'Cormorant Garamond', serif; color: var(--ink); }
+    .live-pip { font-size: 11px; color: var(--muted); }
+    .live-pip.connected { color: var(--ok); }
+    .live-pip.connected::before { content: '● '; }
+    .live-pip.connecting::before { content: '○ '; }
+    .live-pip.offline { color: #b00020; }
+    .live-pip.offline::before { content: '○ '; }
+
+    /* Recap — "What you told me" — lands when Raven pushes it from CC */
+    .recap {
+      max-width: 720px;
+      margin: 0 auto 1.3em;
+      padding: 0.85em 1.1em;
+      background: var(--bg-deep);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 3px 3px 0;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    .recap.shown { opacity: 1; transform: translateY(0); }
+    .recap.just-landed { animation: recap-land 1.6s ease-out 1; }
+    @keyframes recap-land {
+      0%   { background: rgba(184,139,58,0.25); }
+      100% { background: var(--bg-deep); }
+    }
+    .recap .label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.35em;
+    }
+    .recap .body { font: 400 14px/1.55 'Cormorant Garamond', serif; color: var(--ink); font-style: italic; }
+    main {
+      padding: 0 1.5em 2em;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .story p {
+      font: 400 17px/1.7 'Cormorant Garamond', serif;
+      margin: 0 0 1em;
+      color: var(--ink);
+    }
+    .story p:last-child { margin-bottom: 0; }
+    .legend-tiny {
+      margin-top: 2em;
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      border-top: 1px dashed var(--line);
+      padding-top: 1em;
+    }
+    .legend-tiny .swatch { font-weight: 600; }
+    .legend-tiny .swatch.real { color: var(--noun); border-bottom: 2px solid var(--noun); }
+    .legend-tiny .swatch.fill { color: var(--noun-fill); font-style: italic; border-bottom: 1px dotted var(--noun-fill); }
+
+    /* Noun tokens */
+    .noun {
+      color: var(--noun);
+      font-weight: 600;
+      border-bottom: 2px solid var(--noun);
+      padding: 0 1px;
+      cursor: pointer;
+      transition: background 0.1s ease, box-shadow 0.2s ease;
+    }
+    .noun:hover { background: rgba(31,79,138,0.08); }
+    .noun.fill {
+      color: var(--noun-fill);
+      font-style: italic;
+      font-weight: 400;
+      border-bottom: 1px dotted var(--noun-fill);
+    }
+    .noun.fill:hover { background: rgba(138,117,96,0.08); }
+    .noun.has-proposal {
+      box-shadow: 0 0 0 2px #fdc36a inset, 0 0 8px rgba(253,195,106,0.4);
+      padding: 0 4px;
+      border-radius: 2px;
+      animation: nudge 1.6s ease-in-out infinite;
+    }
+    .noun.has-proposal::after {
+      content: '✦';
+      color: var(--accent);
+      font-size: 11px;
+      margin-left: 2px;
+      vertical-align: super;
+    }
+    @keyframes nudge {
+      0%, 100% { box-shadow: 0 0 0 2px #fdc36a inset, 0 0 8px rgba(253,195,106,0.4); }
+      50%      { box-shadow: 0 0 0 2px #fdc36a inset, 0 0 14px rgba(253,195,106,0.7); }
+    }
+    /* Subtle highlight pulse when a noun changes from server-side push */
+    .noun.just-updated {
+      animation: pulse 1.2s ease-out 1;
+    }
+    @keyframes pulse {
+      0%   { background: rgba(46,125,50,0.25); }
+      100% { background: transparent; }
+    }
+
+    /* Popup */
+    .pop {
+      position: absolute;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      padding: 0.7em 0.9em;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+      max-width: 340px;
+      z-index: 100;
+      font: 13px/1.5 system-ui, sans-serif;
+    }
+    .pop .pop-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.35em; }
+    .pop .pop-noun { font-weight: 600; color: var(--noun); margin-bottom: 0.5em; }
+    .pop .pop-noun.fill { color: var(--noun-fill); font-style: italic; font-weight: 500; }
+    .pop .pop-sources { margin-bottom: 0.5em; }
+    .pop .pop-source-chip { display: inline-block; font-size: 11px; padding: 0.15em 0.55em; border-radius: 2px; margin-right: 0.3em; background: #e8eef5; color: #2c4f7d; }
+    .pop .pop-source-chip.raven { background: #f0e6d4; color: #8a5a14; }
+    .pop .pop-alts button { display: block; width: 100%; text-align: left; margin-bottom: 0.25em; background: #fff; color: var(--ink); border: 1px solid var(--line); padding: 0.35em 0.6em; font-size: 12px; cursor: pointer; }
+    .pop .pop-alts button:hover { background: var(--bg-deep); border-color: var(--accent); color: var(--accent); }
+    .pop .pop-edit { display: flex; gap: 0.4em; margin-top: 0.5em; }
+    .pop .pop-edit input { flex: 1; padding: 0.3em 0.5em; border: 1px solid var(--line); border-radius: 2px; font-size: 12px; }
+    .pop .pop-edit button { padding: 0.35em 0.8em; border: 1px solid var(--ink); background: var(--ink); color: #fff; border-radius: 2px; cursor: pointer; font-size: 12px; }
+    .pop button.small { padding: 0.35em 0.8em; font-size: 12px; cursor: pointer; }
+    .pop button.secondary { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+
+    /* Toast for when something changes from the server */
+    #toast {
+      position: fixed;
+      bottom: 1.5em;
+      right: 1.5em;
+      background: var(--ink);
+      color: #fff;
+      padding: 0.65em 1em;
+      border-radius: 4px;
+      font-size: 12px;
+      max-width: 320px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      pointer-events: none;
+    }
+    #toast.shown { opacity: 0.95; transform: translateY(0); }
+
+    /* Debug — collapsed by default, low priority */
+    details.debug { border: 1px dashed var(--line); border-radius: 3px; padding: 0.4em 0.7em; margin-top: 2em; background: var(--bg-deep); }
+    details.debug > summary { cursor: pointer; color: var(--muted); font-size: 11px; }
+    details.debug pre { font-size: 10px; max-height: 220px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 id="product-title">What is your product about?</h1>
+    <span id="live-pip" class="live-pip connecting">connecting…</span>
+  </header>
+
+  <main>
+    <div id="recap" class="recap">
+      <div class="label">What you told me</div>
+      <div class="body" id="recap-body"></div>
+    </div>
+
+    <div id="story" class="story"></div>
+
+    <div class="legend-tiny">
+      <span class="swatch real">like this</span> — a real noun from your words, docs, or product.
+      <span class="swatch fill">like this</span> — an industry placeholder. Click any noun.
+    </div>
+
+    <details class="debug">
+      <summary>▸ debug</summary>
+      <pre id="debug-state">no state yet</pre>
+    </details>
+  </main>
+
+  <div id="toast"></div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const STEP = 'codebase-scan';
+
+    let activePop = null;
+    let lastState = null;
+    let prevOverrides = {}; // for animating changed nouns
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    async function postJson(url, body) {
+      const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+      return r.json();
+    }
+
+    function setLive(state) {
+      const pip = $('live-pip');
+      pip.className = 'live-pip ' + state;
+      pip.textContent = state === 'connected' ? 'live' : state === 'connecting' ? 'connecting…' : 'offline';
+    }
+
+    let toastTimer = null;
+    function toast(msg) {
+      const t = $('toast');
+      t.textContent = msg;
+      t.classList.add('shown');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('shown'), 4000);
+    }
+
+    function sourceChip(s) {
+      const label = ({ director: 'You said it', docs: 'In your docs', product: 'In your product', raven: 'Raven proposed it' })[s] || s;
+      const cls = s === 'raven' ? ' raven' : '';
+      return `<span class="pop-source-chip${cls}">${escapeHtml(label)}</span>`;
+    }
+
+    function closePop() { if (activePop) { activePop.remove(); activePop = null; } }
+    document.addEventListener('click', e => {
+      if (activePop && !activePop.contains(e.target) && !e.target.classList.contains('noun')) closePop();
+    });
+
+    function openEditPop(target, noun) {
+      closePop();
+      const isFill = !noun.sources || noun.sources.length === 0;
+      const pop = document.createElement('div');
+      pop.className = 'pop';
+      const sourcesHtml = isFill
+        ? '<div class="pop-label">Industry-standard placeholder</div><div class="pop-sources" style="font-size:12px;color:var(--muted);">Not from your words, docs, or code — pick a closer fit or write your own.</div>'
+        : `<div class="pop-label">Where this came from</div><div class="pop-sources">${noun.sources.map(sourceChip).join(' ')}</div>`;
+      const altsHtml = (noun.alternatives && noun.alternatives.length)
+        ? `<div class="pop-label">Alternatives</div><div class="pop-alts">${noun.alternatives.map(a => `<button data-alt="${escapeHtml(a)}">${escapeHtml(a)}</button>`).join('')}</div>`
+        : '';
+      pop.innerHTML = `
+        <div class="pop-noun${isFill ? ' fill' : ''}">${escapeHtml(noun.text)}</div>
+        ${sourcesHtml}
+        ${altsHtml}
+        <div class="pop-edit">
+          <input type="text" placeholder="Or type your own…" value="${escapeHtml(noun.text)}" />
+          <button>Apply</button>
+        </div>
+      `;
+      const r = target.getBoundingClientRect();
+      pop.style.left = (window.scrollX + r.left) + 'px';
+      pop.style.top  = (window.scrollY + r.bottom + 6) + 'px';
+      document.body.appendChild(pop);
+      activePop = pop;
+      const persist = async (newText) => {
+        if (!noun.id) { closePop(); return; }
+        await postJson('/api/canvas/edit-noun/' + STEP, { nounId: noun.id, newText });
+        closePop();
+      };
+      pop.querySelectorAll('.pop-alts button').forEach(btn => btn.addEventListener('click', () => persist(btn.getAttribute('data-alt'))));
+      const applyBtn = pop.querySelector('.pop-edit button');
+      const input = pop.querySelector('.pop-edit input');
+      applyBtn.addEventListener('click', () => { const v = input.value.trim(); if (v) persist(v); });
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); applyBtn.click(); }});
+      input.focus(); input.select();
+    }
+
+    function openProposalPop(proposal) {
+      closePop();
+      const pop = document.createElement('div');
+      pop.className = 'pop';
+      pop.style.maxWidth = '380px';
+      const who = proposal.proposedBy === 'raven' ? 'Raven proposes' : 'Proposal';
+      pop.innerHTML = `
+        <div class="pop-label">${escapeHtml(who)}</div>
+        <div style="margin-bottom:0.6em;">
+          <span class="noun" style="cursor:default;">${escapeHtml(proposal.currentText)}</span>
+          <span style="color:var(--muted);"> → </span>
+          <span class="noun" style="cursor:default;">${escapeHtml(proposal.proposedText)}</span>
+        </div>
+        ${proposal.reason ? `<div class="pop-label">Reason</div><div style="margin-bottom:0.6em;font-size:13px;">${escapeHtml(proposal.reason)}</div>` : ''}
+        <div style="display:flex;gap:0.5em;">
+          <button class="small" data-act="accept">✓ Accept</button>
+          <button class="small secondary" data-act="reject">✕ Reject</button>
+        </div>
+      `;
+      pop.style.left = (window.scrollX + (window.innerWidth/2) - 190) + 'px';
+      pop.style.top  = (window.scrollY + 100) + 'px';
+      document.body.appendChild(pop);
+      activePop = pop;
+      pop.querySelector('[data-act="accept"]').addEventListener('click', async () => {
+        await postJson('/api/canvas/accept/' + STEP, { proposalId: proposal.id });
+        closePop();
+      });
+      pop.querySelector('[data-act="reject"]').addEventListener('click', async () => {
+        await postJson('/api/canvas/reject/' + STEP, { proposalId: proposal.id });
+        closePop();
+      });
+    }
+
+    function renderStoryParagraph(tokens, overrides, proposalsByNounId, changedNounIds) {
+      const span = document.createElement('span');
+      for (const t of tokens) {
+        if (t.kind === 'text') {
+          span.appendChild(document.createTextNode(t.v));
+        } else if (t.kind === 'noun') {
+          const id = t.id;
+          const ov = overrides && id ? overrides[id] : null;
+          const effectiveText = ov ? ov.text : t.noun.text;
+          const effectiveSources = ov ? ov.sources : (t.noun.sources || []);
+          const fill = !effectiveSources || effectiveSources.length === 0;
+          const hasProposal = !!(id && proposalsByNounId && proposalsByNounId[id]);
+          const justUpdated = changedNounIds && changedNounIds.has(id);
+          const n = document.createElement('span');
+          n.className = 'noun' + (fill ? ' fill' : '') + (hasProposal ? ' has-proposal' : '') + (justUpdated ? ' just-updated' : '');
+          n.textContent = effectiveText;
+          n.dataset.nounId = id || '';
+          n.dataset.sources = effectiveSources.join(',');
+          n.dataset.alts = JSON.stringify(t.noun.alternatives || []);
+          n.addEventListener('click', e => {
+            e.stopPropagation();
+            if (hasProposal) openProposalPop(proposalsByNounId[id]);
+            else openEditPop(n, { id, text: n.textContent, sources: effectiveSources, alternatives: t.noun.alternatives || [] });
+          });
+          span.appendChild(n);
+        }
+      }
+      return span;
+    }
+
+    function diffOverrides(prev, next) {
+      const changed = new Set();
+      for (const id of new Set([...Object.keys(prev||{}), ...Object.keys(next||{})])) {
+        if (JSON.stringify(prev?.[id]) !== JSON.stringify(next?.[id])) changed.add(id);
+      }
+      return changed;
+    }
+
+    function renderCanvas(state) {
+      if (!state || !state.available) return;
+      const overrides = state.overrides || {};
+      const proposals = state.proposals || [];
+      const proposalsByNounId = {};
+      for (const p of proposals) {
+        if (p.status === 'pending' && p.kind === 'noun-change') proposalsByNounId[p.nounId] = p;
+      }
+
+      // Compute which noun IDs just changed (for the pulse animation)
+      const changed = diffOverrides(prevOverrides, overrides);
+      prevOverrides = overrides;
+
+      // Detect new proposals from Raven for toast
+      if (lastState) {
+        const prevPropIds = new Set((lastState.proposals || []).map(p => p.id));
+        const newProps = (proposals || []).filter(p => !prevPropIds.has(p.id));
+        for (const p of newProps) {
+          if (p.proposedBy === 'raven') toast(`Raven proposes: ${p.currentText} → ${p.proposedText}`);
+        }
+        // Detect newly applied overrides from raven (accept)
+        for (const id of changed) {
+          const ov = overrides[id];
+          if (ov && ov.sources.includes('raven')) {
+            const last = ov.history?.[ov.history.length - 1];
+            if (last && last.by === 'raven') toast(`Applied: ${last.from} → ${last.to}`);
+          }
+        }
+      }
+
+      if (state.product_name) $('product-title').textContent = `What is ${state.product_name} about?`;
+
+      // Recap — appear when present; pulse if it changed since last state.
+      const recapEl = $('recap');
+      const newRecapTs = state.recap?.ts || '';
+      const prevRecapTs = lastState?.recap?.ts || '';
+      const recapChanged = newRecapTs && newRecapTs !== prevRecapTs;
+      if (state.what_you_told_me) {
+        $('recap-body').textContent = state.what_you_told_me;
+        recapEl.classList.add('shown');
+        if (recapChanged && lastState) {
+          recapEl.classList.remove('just-landed');
+          void recapEl.offsetWidth;
+          recapEl.classList.add('just-landed');
+          if (state.recap?.by === 'raven' || state.recap?.by === 'director') {
+            toast(`"What you told me" updated`);
+          }
+        }
+      } else {
+        recapEl.classList.remove('shown');
+      }
+
+      const storyEl = $('story');
+      storyEl.innerHTML = '';
+      for (const tokens of (state.story.paragraphs || [])) {
+        const p = document.createElement('p');
+        p.appendChild(renderStoryParagraph(tokens, overrides, proposalsByNounId, changed));
+        storyEl.appendChild(p);
+      }
+
+      $('debug-state').textContent = JSON.stringify({ overrides, proposals }, null, 2);
+      lastState = state;
+    }
+
+    // ── EventSource: live canvas updates ─────────────────────────────
+    let evtSource = null;
+    let reconnectAttempts = 0;
+    function connectStream() {
+      setLive('connecting');
+      evtSource = new EventSource('/api/canvas-stream/' + STEP);
+      evtSource.onopen = () => { setLive('connected'); reconnectAttempts = 0; };
+      evtSource.onmessage = (e) => {
+        try { renderCanvas(JSON.parse(e.data)); } catch (_) {}
+      };
+      evtSource.onerror = () => {
+        setLive('offline');
+        evtSource.close();
+        const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempts++), 10_000);
+        setTimeout(connectStream, delay);
+      };
+    }
+
+    connectStream();
+  </script>
+</body>
+</html>

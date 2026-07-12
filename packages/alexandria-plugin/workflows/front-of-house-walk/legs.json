@@ -1,0 +1,207 @@
+{
+  "playId": "front-of-house-walk",
+  "legs": [
+    {
+      "nodeId": "prepare_agenda",
+      "label": "Prepare the Stage-2 agenda",
+      "description": "Project the EL2 threads into a stable agenda for Raven.",
+      "lead": "AX projects Ledger thread events into the agenda the walk will exhaust.",
+      "beats": [
+        "Reads library.thread_opened events from the project Ledger, scoped to the bundle.",
+        "Writes runtime/front-of-house/agenda.json with stable item ids.",
+        "Stages the first item for Raven without asking the director at launch."
+      ],
+      "typicalSeconds": 5,
+      "kind": "command"
+    },
+    {
+      "nodeId": "stage_next",
+      "label": "Stage the next unresolved agenda item",
+      "description": "Pick the next agenda item not yet answered or residualed and write it for Raven.",
+      "lead": "AX walks the agenda in order, skipping items already answered or carried as residual.",
+      "beats": [
+        "Reads the agenda and this run's answer and residual Ledger events.",
+        "If a proposed index-card gate is pending, re-stages that gate before ordinary agenda selection.",
+        "Writes the next unresolved item to current-item.json, current-item.md, and for-raven.md.",
+        "Reports AGENDA_DONE once every item is answered or residualed."
+      ],
+      "typicalSeconds": 5,
+      "kind": "command"
+    },
+    {
+      "nodeId": "director_review",
+      "label": "Review the current Front-of-House turn through Raven",
+      "description": "On the first frame-origin wake, Raven opens with the banked product-map frame gate; on a proposed-card wake, Raven asks for approve-or-correct; later wakes mediate one agenda item.",
+      "lead": "The run waits; Raven turns the staged artifact into a director-facing comprehension check.",
+      "beats": [
+        "Raven banks the staged turn as an agent Ledger event before speaking.",
+        "For the frame-origin first wake, Raven presents the plain product map first, then carries any story/container reconciliations as separate rulings.",
+        "For a proposed index-card wake, Raven presents only the AX-rendered card and asks the director to approve it or give one correction.",
+        "For later wakes, Raven mediates the current item and evidence refs at section/shape altitude.",
+        "The director's agreed answer returns through ax raven answer and is banked as actor.kind=user."
+      ],
+      "typicalSeconds": 300,
+      "kind": "human"
+    },
+    {
+      "nodeId": "resolve_keystone_gate",
+      "label": "Resolve proposed index-card gate if staged",
+      "description": "Classify the director's proposed-card answer before ordinary patch planning.",
+      "lead": "AX keeps the proposed-card gate separate from agenda items and routes approval, correction, or residual.",
+      "beats": [
+        "Returns NOT_KEYSTONE_GATE for ordinary agenda answers.",
+        "On approval, applies the deferred agenda projection from the stored frame mapping.",
+        "On first correction, writes the correction artifact for the one mapping revision pass.",
+        "On second rejection, records the proposed-card gate as a residual and lets the walk continue."
+      ],
+      "typicalSeconds": 5,
+      "kind": "command"
+    },
+    {
+      "nodeId": "plan_bundle_patch",
+      "label": "Plan the director-backed bundle patch",
+      "description": "Convert the director answer into a narrow patch file that AX can validate.",
+      "lead": "The agent drafts structure changes only; AX owns the actual write.",
+      "beats": [
+        "Reads the answer receipt and current agenda item.",
+        "Drafts a patch that cites the user answer event id.",
+        "For frame mappings, writes containerMapping only; AX renders the proposed index card.",
+        "Limits edits to names, context, plane, status, and relationships."
+      ],
+      "typicalSeconds": 90,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "apply_bundle_patch",
+      "label": "Validate or reject the bundle patch",
+      "description": "Classify the planned patch as applied or rejected, appending accepted patches to the draft log when one is bound.",
+      "lead": "AX enforces provenance and the Small-floor frontmatter boundary, then emits a routing marker.",
+      "beats": [
+        "Rejects patches without a matching actor.kind=user answer event.",
+        "Preserves card bodies and required Small-floor fields.",
+        "For frame mappings, appends the derived card fan-out and proposed index card to the draft log, then stages the proposed-card gate.",
+        "Appends accepted patches to the draft log when bound, otherwise mutates bundle cards.",
+        "Appends a bundle_patch_applied event for accepted patches or writes a patch-rejection diagnostic."
+      ],
+      "typicalSeconds": 5,
+      "kind": "command"
+    },
+    {
+      "nodeId": "replan_bundle_patch",
+      "label": "Replan the rejected bundle patch once",
+      "description": "Give the agent one repair turn with AX's exact validation error.",
+      "lead": "The agent corrects the patch, not the director answer.",
+      "beats": [
+        "Reads runtime/front-of-house/patch-rejection.json.",
+        "Uses the exact validation error as the repair target.",
+        "Writes a replacement patch for the same agenda item and answer event."
+      ],
+      "typicalSeconds": 90,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "apply_replanned_bundle_patch",
+      "label": "Validate or reject the replanned bundle patch",
+      "description": "Append or apply the repaired patch, or classify the second rejection.",
+      "lead": "A second patch rejection no longer strands the rest of the agenda.",
+      "beats": [
+        "Appends valid repaired patches to the draft log when bound, otherwise applies them to bundle cards.",
+        "Writes a fresh patch-rejection diagnostic for invalid repaired patches.",
+        "Routes second rejection to residual accounting instead of another replan."
+      ],
+      "typicalSeconds": 5,
+      "kind": "command"
+    },
+    {
+      "nodeId": "revise_keystone_mapping",
+      "label": "Revise the frame mapping for the proposed index card once",
+      "description": "Give the planner one correction pass after the director rejects the proposed index card.",
+      "lead": "The planner revises the mapping, not the index-card body.",
+      "beats": [
+        "Reads the pending gate, proposed draft, original mapping, and correction answer.",
+        "Writes one replacement containerMapping patch using the correction answer event.",
+        "Does not author keystoneDraft or enumerate whole-container card membership."
+      ],
+      "typicalSeconds": 90,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "apply_revised_keystone_mapping",
+      "label": "Validate or reject the revised frame mapping",
+      "description": "Validate the one revised mapping and either re-stage the proposed card or residual the failed correction.",
+      "lead": "AX renders the second proposed card deterministically and prevents an unbounded correction loop.",
+      "beats": [
+        "Renders and validates a new proposed index card from the revised mapping.",
+        "Routes a valid revision back to the director as attempt 2.",
+        "Routes an invalid revision to residual accounting instead of another planner loop."
+      ],
+      "typicalSeconds": 5,
+      "kind": "command"
+    },
+    {
+      "nodeId": "record_patch_rejection_residual",
+      "label": "Record rejected patch as residual",
+      "description": "Carry an item whose patch failed twice into the existing residual-gap path.",
+      "lead": "The walk keeps moving while preserving the failed validation reason.",
+      "beats": [
+        "Reads the current item and patch-rejection diagnostic.",
+        "Appends library.front_of_house.residual_gap_recorded with a patch rejected reason.",
+        "Allows stage-next to continue to later agenda items."
+      ],
+      "typicalSeconds": 5,
+      "kind": "command"
+    },
+    {
+      "nodeId": "prepare_agenda_triage",
+      "label": "Prepare ruling-aware agenda triage",
+      "description": "Build the closed triage input from remaining agenda items and banked rulings.",
+      "lead": "AX decides whether there is enough settled material to ask an ACP pass for agenda triage.",
+      "beats": [
+        "Reads agenda.json plus the Ledger events for this run.",
+        "Skips triage when there are no banked rulings or no eligible candidate items.",
+        "Writes runtime/front-of-house/triage-input.json and emits TRIAGE_READY when judgment is useful."
+      ],
+      "typicalSeconds": 5,
+      "kind": "command"
+    },
+    {
+      "nodeId": "plan_agenda_triage",
+      "label": "Classify remaining agenda against banked rulings",
+      "description": "Conservatively classify not-yet-staged agenda items as unaffected, answered, or reframed.",
+      "lead": "The ACP pass generalizes from director rulings without editing durable project state.",
+      "beats": [
+        "Reads only the prepared triage input.",
+        "Cites ruling event ids for every answered or reframed decision.",
+        "Writes only runtime/front-of-house/triage.json."
+      ],
+      "typicalSeconds": 45,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "apply_agenda_triage",
+      "label": "Apply ruling-aware agenda triage",
+      "description": "Validate triage output, append process-authored settlements, and preserve reframed originals.",
+      "lead": "AX keeps machine-made triage distinct, audited, and reopenable.",
+      "beats": [
+        "Rejects invalid or incomplete ACP output as TRIAGE_SKIPPED without mutation.",
+        "Records answered items through residual_gap_recorded with the settled-by-triage reason prefix.",
+        "Rewrites only runtime agenda text for reframed items while preserving original wording."
+      ],
+      "typicalSeconds": 5,
+      "kind": "command"
+    },
+    {
+      "nodeId": "finalize_accounting",
+      "label": "Finalize residual-gap accounting",
+      "description": "Write RESIDUAL-GAPS.md for every agenda item not answered or explicitly residualed.",
+      "lead": "Nothing disappears: every unanswered item is carried forward.",
+      "beats": [
+        "Compares the full agenda with answer and residual Ledger events.",
+        "Appends residual_gap_recorded events for unanswered items.",
+        "Writes RESIDUAL-GAPS.md."
+      ],
+      "typicalSeconds": 5,
+      "kind": "command"
+    }
+  ]
+}

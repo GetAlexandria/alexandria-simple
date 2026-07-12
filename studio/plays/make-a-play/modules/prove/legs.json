@@ -1,0 +1,83 @@
+{
+  "playId": "make-a-play:prove",
+  "legs": [
+    {
+      "nodeId": "run_campaign",
+      "label": "Run",
+      "description": "Replay fixtures, starting with the frame-the-problem exemplar.",
+      "lead": "The proof starts from the worked trace.",
+      "beats": [
+        "Runs or inspects the campaign records.",
+        "Keeps the exemplar grounded in real trace files.",
+        "Hands records to an independent grader."
+      ],
+      "typicalSeconds": 60,
+      "kind": "command"
+    },
+    {
+      "nodeId": "grade",
+      "label": "Grade",
+      "description": "Grade independently from the author.",
+      "lead": "Condition five must be true in fact.",
+      "beats": [
+        "Records grader identity and run id.",
+        "Classifies failures or stops on new classes.",
+        "Does not self-grade authoring work."
+      ],
+      "typicalSeconds": 180,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "writeback",
+      "label": "Write-back",
+      "description": "Write results back to the risk map and run records.",
+      "lead": "No hand transcription at the proof seam.",
+      "beats": [
+        "Updates measured result fields through deterministic tooling.",
+        "Preserves failure classifications.",
+        "Prepares the contract input."
+      ],
+      "typicalSeconds": 60,
+      "kind": "command"
+    },
+    {
+      "nodeId": "advance_contract",
+      "label": "Advance/Hold",
+      "description": "Evaluate the five TESTING.md auto-advance conditions.",
+      "lead": "The contract routes clean cards live and exceptions held.",
+      "beats": [
+        "Checks tier-bar and proof-spec.",
+        "Checks unclassified failure, regression, and independent grade.",
+        "Names every failing condition."
+      ],
+      "typicalSeconds": 30,
+      "kind": "command"
+    },
+    {
+      "nodeId": "held_queue",
+      "label": "Held queue",
+      "description": "Human review for exceptions only.",
+      "lead": "The second human touch is held-card review.",
+      "beats": [
+        "Shows only held cards.",
+        "Names the failing condition.",
+        "Routes amendments back to authoring."
+      ],
+      "typicalSeconds": 180,
+      "kind": "human"
+    },
+    {
+      "nodeId": "register_live",
+      "label": "Register-live",
+      "description": "Register a proven play live and record built-by provenance on the Ledger.",
+      "lead": "Built-by is history, not filing.",
+      "beats": [
+        "Registers the package live.",
+        "Appends one provenance Ledger fact.",
+        "Leaves catalog filing unchanged."
+      ],
+      "typicalSeconds": 60,
+      "kind": "command"
+    }
+  ]
+}

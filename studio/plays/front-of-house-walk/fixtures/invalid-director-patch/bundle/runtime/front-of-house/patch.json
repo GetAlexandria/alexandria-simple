@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "patchId": "stage2-q1-invalid",
+  "agendaItemId": "stage2:q1",
+  "answerEventId": "00000000-0000-4000-8000-000000000299",
+  "resolution": "resolved",
+  "cardUpdates": [
+    {
+      "cardPath": "product/agents/Agent - Raven.md",
+      "set": {
+        "prefLabel": "Raven",
+        "context": "Product Management",
+        "plane": "Product"
+      }
+    }
+  ]
+}

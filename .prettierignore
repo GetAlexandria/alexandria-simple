@@ -1,0 +1,8 @@
+**/*.md
+**/*.html
+bin/**
+scripts/**
+setup
+
+# Studio dry-run dumps: verbatim machine-exported records
+studio/plays/*/dry-runs/**

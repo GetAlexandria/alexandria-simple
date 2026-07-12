@@ -1,0 +1,10 @@
+{
+  "agendaItemId": "frame-search-space",
+  "agendaItemKind": "stage2_question",
+  "answerEventId": "32f5fe6b-76be-4817-aadd-e84a8d2a2b26",
+  "answerText": "The search frame needs reshaping. The confirmed product map has five top-level regions, not eight:\n\n**Heart of the product (two innovations):**\n- Library — company knowledge made atomic and accessible to agents.\n- Playbook — work processes made atomic and accessible to agents.\n\n**Three enabling systems at the same level:**\n- Viewer (was \"Product Shell\") — makes the system real and usable to a human director.\n- Ledger — coordination and QA; the record of what has happened.\n- Triggers (was \"Session Wake\") — activates and coordinates colleagues within the organization.\n\n**Removed from the product map:**\n- Vision Onboarding — not a product region; it is one play among what will be thousands. It is built out because it tested play capabilities.\n- Knowledge Production — prototyping work in progress, not a shipped product region yet. The current exercise (this library build) is the first real knowledge-production work.\n\n**To sort out separately:**\n- Canvas — the director is unclear what the scan pulled. At least two meanings exist: the main viewer as an interactive canvas, and a very recent QA canvas concept. Needs its own conversation.\n\n**Naming correction:**\n- \"Session Wake\" is renamed to \"Triggers\" as the product name for the system that fires plays or moves within plays.\n",
+  "fabroRunId": "01KWHFN1SA5R413ASARCRN79VW",
+  "playRunId": "949f76ce-f518-4ba6-bd58-a85f6c45c9ff",
+  "questionId": "01KWHFN24DYF7CRM94XQR5ZYHZ",
+  "schemaVersion": 1
+}

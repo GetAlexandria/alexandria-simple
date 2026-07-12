@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+# Run deterministic validation for packages changed by a Fabro workflow run.
+
+set -euo pipefail
+
+BASE_REF="${FABRO_VALIDATE_BASE_REF:-main}"
+
+changed_files() {
+	{
+		git diff --name-only "$BASE_REF"...HEAD 2>/dev/null || true
+		git diff --name-only 2>/dev/null || true
+		git diff --cached --name-only 2>/dev/null || true
+		git ls-files --others --exclude-standard 2>/dev/null || true
+	} | sort -u
+}
+
+has_changes_under() {
+	local prefix="$1"
+
+	grep -q "^${prefix}" "$changed_file_list"
+}
+
+has_markdown_changes() {
+	grep -Eq '\.md$' "$changed_file_list"
+}
+
+run_step() {
+	printf '\n==> %s\n' "$1"
+	shift
+	"$@"
+}
+
+run_studio_plugin_conformance_gate() {
+	run_step "Validate Studio/plugin conformance gate" bun test \
+		packages/pms/viewer/src/components/studio/bankConformance.test.ts \
+		packages/pms/viewer/src/components/studio/riskMapConformance.test.ts \
+		packages/pms/viewer/src/components/studio/placeholderConformance.test.ts
+}
+
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+	echo "Not inside a git worktree." >&2
+	exit 1
+fi
+
+changed_file_list="$(mktemp)"
+trap 'rm -f "$changed_file_list"' EXIT
+changed_files >"$changed_file_list"
+
+if [ ! -s "$changed_file_list" ]; then
+	echo "No changed files detected; skipping package validation."
+	exit 0
+fi
+
+echo "Changed files considered for validation:"
+sed 's/^/ - /' "$changed_file_list"
+
+ran_validation=false
+
+if has_changes_under "packages/ax/"; then
+	ran_validation=true
+	run_step "Validate @alexandria/ax lint" pnpm --filter @alexandria/ax run lint
+	run_step "Validate @alexandria/ax typecheck" pnpm --filter @alexandria/ax run typecheck
+	run_step "Validate @alexandria/ax tests" pnpm --filter @alexandria/ax run test
+fi
+
+if has_changes_under "packages/viewer/"; then
+	ran_validation=true
+	run_step "Validate @alexandria/viewer format" pnpm --filter @alexandria/viewer run format:check
+	run_step "Validate @alexandria/viewer check" pnpm --filter @alexandria/viewer run check
+	run_step "Validate @alexandria/viewer build" pnpm --filter @alexandria/viewer run build
+	run_step "Validate @alexandria/viewer unit tests" pnpm --filter @alexandria/viewer run test
+	run_step "Validate @alexandria/viewer browser tests" pnpm --filter @alexandria/viewer run test:e2e
+fi
+
+if has_changes_under "packages/alexandria-plugin/"; then
+	ran_validation=true
+	run_step "Validate Alexandria plugin" ./scripts/fabro-validate-plugin-if-changed
+fi
+
+if has_changes_under "packages/factory/"; then
+	ran_validation=true
+	run_step "Validate @alexandria/factory format" pnpm --filter @alexandria/factory run format:check
+	run_step "Validate @alexandria/factory lint" pnpm --filter @alexandria/factory run lint
+	run_step "Validate @alexandria/factory typecheck" pnpm --filter @alexandria/factory run typecheck
+	run_step "Validate @alexandria/factory tests" pnpm --filter @alexandria/factory run test
+fi
+
+# docs/alexandria/library holds Alexandria's live product library, validated by
+# the same studio data checks (library migration, Slice 2).
+if has_changes_under "studio/" || has_changes_under "docs/alexandria/library/"; then
+	ran_validation=true
+	run_step "Validate Studio data checks" sh studio/tools/check.sh
+	run_step "Validate Product card stories" pnpm run lint:library-stories
+fi
+
+# The conformance tests moved to packages/pms/viewer in the Studio boundary
+# migration (Slice 2), so the Alexandria viewer's unit-test run no longer
+# covers them — the gate must run unconditionally for plugin/studio changes.
+if has_changes_under "packages/alexandria-plugin/" || has_changes_under "studio/"; then
+	ran_validation=true
+	run_studio_plugin_conformance_gate
+fi
+
+if has_markdown_changes; then
+	ran_validation=true
+	run_step "Validate Markdown" pnpm run lint:markdown
+fi
+
+if [ "$ran_validation" = false ]; then
+	echo "No package-specific validators matched changed files; relying on review and verification stages."
+fi

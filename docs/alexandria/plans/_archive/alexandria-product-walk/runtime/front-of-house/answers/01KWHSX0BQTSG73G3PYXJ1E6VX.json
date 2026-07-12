@@ -1,0 +1,10 @@
+{
+  "agendaItemId": "hot-spot-coin-type",
+  "agendaItemKind": "hot_spot",
+  "answerEventId": "597274a8-ad99-486b-8cb3-d1a14d0c5ccd",
+  "answerText": "Coin is a Component, not a Surface. The Surface is the Tray — the persistent, expandable/contractable visual area for coordinating and managing AI colleagues, present across the whole viewer. Coins are components inside the Tray, each representing one AI colleague and serving as the navigation hub to that colleague's hotplays, playbook, knowledge bank, and agent page.\n\nThe Tray is a missing card — it was not found by the scan but belongs in the library. Its intent is a visual area to coordinate and manage AI colleagues. The current coin-based design is what's being tested; the Tray may not always use coins. The Tray deserves its own card as a Surface in the Viewer section. How it's represented (or not) in the current data model needs investigation.\n",
+  "fabroRunId": "01KWHFN1SA5R413ASARCRN79VW",
+  "playRunId": "949f76ce-f518-4ba6-bd58-a85f6c45c9ff",
+  "questionId": "01KWHSX0BQTSG73G3PYXJ1E6VX",
+  "schemaVersion": 1
+}

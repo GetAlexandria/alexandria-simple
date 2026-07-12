@@ -1,0 +1,32 @@
+{
+  "caseId": "build-atomic-card/draft-against-confirmed-stub",
+  "description": "Draft prompt writes only body sections against a confirmed stub and lexicon name.",
+  "checks": [
+    {
+      "description": "Drafter keeps card identity fixed and writes the five required sections.",
+      "file": "packages/alexandria-plugin/workflows/build-atomic-card/prompts/draft_or_repair.md",
+      "contains": [
+        "The confirmed stub named by the contract",
+        "Optional section summary prior: `__AX_INPUT_SECTION_SUMMARY__`",
+        "Treat it as a prior, not an override",
+        "only factual authority",
+        "If that path is empty, no section summary input exists; use the source-only",
+        "frame `WHAT` from the human summary",
+        "Render `WHY` as",
+        "Render `WHERE` in",
+        "product terms, not raw source paths",
+        "Keep `HOW` free of internal slugs",
+        "Do not write frontmatter provenance.",
+        "Do not write `categoryId`.",
+        "confirmed stub and lexicon `prefLabel`",
+        "`## WHAT`",
+        "`## WHY`",
+        "`## WHERE`",
+        "`## HOW`",
+        "`## WHEN`",
+        "do not invent a card"
+      ],
+      "notContains": ["if the library is empty", "links are impossible", "proposed_by"]
+    }
+  ]
+}

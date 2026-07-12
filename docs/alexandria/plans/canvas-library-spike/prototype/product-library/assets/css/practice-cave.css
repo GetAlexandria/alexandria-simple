@@ -1,0 +1,203 @@
+  /* ── Practice cave intro panel ── */
+  .practice-cave {
+    font: 14px/1.55 var(--font-px);
+    color: var(--fg);
+    max-width: 660px;
+  }
+  .practice-cave-intro {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-style: italic;
+    color: var(--fg);
+    line-height: 1.55;
+    margin-bottom: 1em;
+  }
+  .practice-cave-squad-note {
+    padding: 0.65em 1em 0.65em 1.1em;
+    border-left: 3px solid var(--accent-dim);
+    background: rgba(212,160,82,0.07);
+    border-radius: 0 4px 4px 0;
+    font-family: var(--font-display);
+    font-size: 15px;
+    color: var(--accent-glow);
+    margin-bottom: 1.2em;
+    letter-spacing: 0.02em;
+  }
+  .practice-cave-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .cave-task {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    background: rgba(20,14,8,0.55);
+    border: 1px solid rgba(212,160,82,0.18);
+    border-radius: 5px;
+    transition: border-color 0.22s, box-shadow 0.22s;
+  }
+  .cave-task.done {
+    border-color: rgba(94,140,74,0.55);
+    box-shadow: 0 0 10px rgba(94,140,74,0.14);
+  }
+  .cave-task-check {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid rgba(212,160,82,0.40);
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: rgba(94,140,74,0.90);
+    background: transparent;
+    transition: background 0.22s, border-color 0.22s;
+  }
+  .cave-task.done .cave-task-check {
+    background: rgba(94,140,74,0.22);
+    border-color: rgba(94,140,74,0.70);
+  }
+  .cave-task-body { flex: 1; }
+  .cave-task-label {
+    font: 600 13px/1.2 var(--font-px);
+    color: var(--fg);
+    margin-bottom: 3px;
+  }
+  .cave-task.done .cave-task-label { color: rgba(94,140,74,0.90); }
+  .cave-task-hint {
+    font: 400 12px/1.4 var(--font-px);
+    color: var(--fg-dim);
+  }
+  /* The sentence redline field */
+  .cave-sentence {
+    display: block;
+    width: 100%;
+    margin-top: 7px;
+    padding: 0.4em 0.6em;
+    background: rgba(30,20,10,0.65);
+    border: 1px solid rgba(212,160,82,0.28);
+    border-radius: 4px;
+    color: var(--fg);
+    font: 400 14px/1.5 var(--font-display), serif;
+    resize: none;
+    min-height: 2.6em;
+    outline: none;
+    transition: border-color 0.18s, box-shadow 0.18s;
+  }
+  .cave-sentence:focus {
+    border-color: rgba(212,160,82,0.60);
+    box-shadow: 0 0 0 2px rgba(212,160,82,0.18);
+  }
+  .cave-sentence-note {
+    font: 400 11px/1.4 var(--font-px);
+    color: var(--fg-dim);
+    font-style: italic;
+    margin-top: 3px;
+  }
+
+  /* ── Practice cave progress rail ── */
+  .practice-rail {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    height: 24px;
+    max-width: 360px;
+    margin: 0 auto 18px;
+  }
+  .practice-rail-dot {
+    position: relative;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(212,160,82,0.18);
+    border: 1.5px solid rgba(212,160,82,0.38);
+    flex-shrink: 0;
+    transition: background 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
+    /* Label below dot on hover */
+    cursor: default;
+  }
+  .practice-rail-dot::after {
+    content: attr(data-step);
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-display);
+    font-size: 9px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: rgba(180,150,100,0.50);
+    white-space: nowrap;
+    pointer-events: none;
+    transition: color 0.22s;
+  }
+  .practice-rail-dot.done {
+    background: rgba(212,160,82,0.70);
+    border-color: rgba(212,160,82,0.90);
+    box-shadow: 0 0 6px rgba(212,160,82,0.40);
+  }
+  .practice-rail-dot.done::after {
+    color: rgba(212,160,82,0.85);
+  }
+  .practice-rail-line {
+    flex: 1;
+    height: 1.5px;
+    background: rgba(212,160,82,0.20);
+    min-width: 60px;
+    max-width: 120px;
+    transition: background 0.28s ease;
+  }
+  /* All done: whole rail glows briefly */
+  .practice-rail.all-done .practice-rail-dot {
+    box-shadow: 0 0 10px rgba(212,160,82,0.70);
+    animation: railGlow 1.2s ease-out forwards;
+  }
+  .practice-rail.all-done .practice-rail-line {
+    background: rgba(212,160,82,0.55);
+  }
+  @keyframes railGlow {
+    0%   { box-shadow: 0 0 14px rgba(212,160,82,0.90); }
+    100% { box-shadow: 0 0 6px rgba(212,160,82,0.40); }
+  }
+
+  /* ── Microscope lock overlay ── */
+  .microscope-lock-overlay {
+    position: absolute; inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10,8,4,0.72);
+    border-radius: 4px;
+    z-index: 20;
+    text-align: center;
+    padding: 18px;
+    pointer-events: none;   /* lock overlay — no interaction */
+    transition: opacity 0.45s ease;
+  }
+  .microscope-lock-overlay.lifted {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .microscope-lock-icon {
+    font-size: 24px;
+    color: rgba(212,160,82,0.55);
+    margin-bottom: 8px;
+    line-height: 1;
+  }
+  .microscope-lock-label {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-style: italic;
+    color: rgba(180,150,100,0.75);
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+    max-width: 200px;
+  }
+  /* The "Source Materials" tile gets position:relative for the overlay anchor */
+  #band-source-materials { position: relative; }

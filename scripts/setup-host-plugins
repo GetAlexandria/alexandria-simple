@@ -1,0 +1,198 @@
+#!/usr/bin/env bash
+# Alexandria — host plugin wiring for in-repo development (Claude Code + Codex)
+#
+# Ensures the Alexandria running *in this repo* is the latest prod-deployed
+# release, scoped to this repo. The product installer is the mechanism that
+# keeps the plugin payload and the ax/fabro binaries version-matched — wiring
+# the plugin alone decouples the pair and breaks the plugin's tooling against
+# a stale ax. Rationale and history:
+# docs/alexandria/plans/_archive/in-repo-plugin-loading/plan.md
+#
+# Usage:
+#   ./scripts/setup-host-plugins [--mode prod|local]
+#   ./scripts/setup-host-plugins --uninstall
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PAYLOAD_DIR="$REPO_ROOT/.claude/plugins/alexandria"
+PLUGIN_SOURCE_ROOT="$REPO_ROOT/packages/alexandria-plugin"
+INSTALLER_URL="${ALEXANDRIA_INSTALLER_URL:-https://getalexandria.ai/install.sh}"
+PLUGIN="alexandria@alexandria"
+MARKETPLACE="alexandria"
+
+MODE="prod"
+UNINSTALL=false
+
+info() { echo "  → $1"; }
+success() { echo "  ✓ $1"; }
+warn() { echo "  ⚠ $1"; }
+
+usage() {
+	cat <<'EOF'
+Usage: ./scripts/setup-host-plugins [--mode prod|local] [--uninstall]
+
+Wires the Alexandria plugin into this repo's Claude Code and Codex sessions.
+
+Options:
+  --mode prod   Install/update the latest prod-deployed Alexandria via the
+                product installer (default). Version-matched plugin + ax +
+                fabro, payload project-local, registered with Claude Code at
+                project scope and with Codex.
+  --mode local  Use the live plugin source via `claude --plugin-dir`.
+                For working on the plugin itself. Claude only.
+  --uninstall   Remove the Alexandria plugin wiring for this repo.
+  --help        Show this help.
+EOF
+}
+
+while [ "$#" -gt 0 ]; do
+	case "$1" in
+	--mode)
+		shift
+		MODE="${1:-}"
+		;;
+	--uninstall)
+		UNINSTALL=true
+		;;
+	--help | -h)
+		usage
+		exit 0
+		;;
+	*)
+		echo "Unknown option: $1" >&2
+		usage >&2
+		exit 1
+		;;
+	esac
+	shift
+done
+
+if [ "$UNINSTALL" = false ] && [ "$MODE" != "prod" ] && [ "$MODE" != "local" ]; then
+	echo "Unknown mode: $MODE (expected prod or local)" >&2
+	exit 1
+fi
+
+have_claude() { command -v claude >/dev/null 2>&1; }
+have_codex() { command -v codex >/dev/null 2>&1; }
+have_ax() { command -v ax >/dev/null 2>&1; }
+
+# Transitional: drop the pre-rename `getalexandria` directory-marketplace
+# wiring left by pre-0.15 installs, so the installer's `alexandria`
+# marketplace cannot collide with it. Idempotent no-op on clean machines.
+# Remove once the fleet has run this once (target: late 2026).
+clean_legacy_wiring() {
+	have_claude || return 0
+	claude plugin uninstall "alexandria@getalexandria" --scope project >/dev/null 2>&1 || true
+	claude plugin marketplace remove "getalexandria" --scope project >/dev/null 2>&1 || true
+}
+
+# Register the repo-local payload with Codex, mirroring ax's own
+# ensure-on-launch step (packages/ax/src/domain/codex-plugin.ts). Codex's
+# plugin registry is machine-global config, so this is best-effort and
+# fail-soft: ax re-runs the same registration whenever it launches the Codex
+# app server.
+wire_codex_prod() {
+	if ! have_codex; then
+		info "codex CLI not found — skipping Codex plugin registration."
+		return 0
+	fi
+	if [ ! -d "$PAYLOAD_DIR" ]; then
+		warn "No plugin payload at $PAYLOAD_DIR — skipping Codex registration."
+		return 0
+	fi
+
+	# Tolerate an `alexandria` marketplace already registered from this or
+	# another checkout; the plugin can still install from it.
+	codex plugin marketplace add "$PAYLOAD_DIR" >/dev/null 2>&1 || true
+	if codex plugin add "$PLUGIN" >/dev/null 2>&1; then
+		success "Codex plugin registered: $PLUGIN"
+	else
+		warn "Codex plugin registration failed — ax retries it on 'ax codex' / 'ax start'."
+	fi
+}
+
+# Remove the Codex registration only when it points at this repo's payload;
+# another checkout may legitimately own the `alexandria` marketplace name.
+unwire_codex() {
+	have_codex || return 0
+
+	if codex plugin marketplace list 2>/dev/null | grep -qF "$PAYLOAD_DIR"; then
+		codex plugin remove "$PLUGIN" >/dev/null 2>&1 || true
+		codex plugin marketplace remove "$MARKETPLACE" >/dev/null 2>&1 || true
+		success "Removed Codex plugin registration"
+	fi
+}
+
+# True when `ax upgrade --dry-run` reports the repo-local install is already
+# at the latest release. `ax upgrade` never short-circuits on its own — it
+# re-downloads all three artifacts every run — so this guard keeps repeat
+# setups (fresh-worktree provisioning, Codex environments) off the network.
+already_at_latest() {
+	local plan current target
+
+	plan="$(ax upgrade --dry-run 2>/dev/null)" || return 1
+	current="$(printf '%s\n' "$plan" | awk '$1 == "Current:" { print $2 }')"
+	target="$(printf '%s\n' "$plan" | awk '$1 == "Target:" { print $2 }')"
+	[ -n "$current" ] && [ "$current" = "$target" ]
+}
+
+wire_prod() {
+	clean_legacy_wiring
+
+	cd "$REPO_ROOT" # project-local detection in install.sh / ax keys off cwd
+
+	if have_ax; then
+		if already_at_latest; then
+			success "Alexandria already at the latest prod release"
+		elif ax upgrade; then
+			success "Alexandria upgraded to the latest prod release (plugin + ax + fabro)"
+		else
+			warn "ax upgrade failed — falling back to the full installer"
+			curl -fsSL "$INSTALLER_URL" | bash -s -- --yes
+		fi
+	else
+		info "ax not found — running the Alexandria installer..."
+		curl -fsSL "$INSTALLER_URL" | bash -s -- --yes
+	fi
+
+	wire_codex_prod
+
+	info "Run /reload-plugins (or restart Claude) to load it into a running session."
+}
+
+wire_local() {
+	if have_claude; then
+		claude plugin uninstall "$PLUGIN" --scope project >/dev/null 2>&1 || true
+	fi
+	success "Cleared repo-scoped prod install for local plugin development"
+	info "Launch with live source:"
+	info "  claude --plugin-dir $PLUGIN_SOURCE_ROOT"
+	info "Then /reload-plugins to pick up source edits."
+	info "Return to prod with: ./scripts/setup-host-plugins --mode prod"
+}
+
+do_uninstall() {
+	clean_legacy_wiring
+	unwire_codex
+	if have_claude; then
+		claude plugin uninstall "$PLUGIN" --scope project >/dev/null 2>&1 || true
+		claude plugin marketplace remove "$MARKETPLACE" --scope project >/dev/null 2>&1 || true
+	fi
+	if [ -e "$PAYLOAD_DIR" ] || [ -L "$PAYLOAD_DIR" ]; then
+		rm -rf "$PAYLOAD_DIR"
+		success "Removed plugin payload: $PAYLOAD_DIR"
+	fi
+	success "Removed Alexandria plugin wiring from this repo"
+}
+
+if [ "$UNINSTALL" = true ]; then
+	do_uninstall
+	exit 0
+fi
+
+case "$MODE" in
+prod) wire_prod ;;
+local) wire_local ;;
+esac

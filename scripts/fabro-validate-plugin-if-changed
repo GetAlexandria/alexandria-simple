@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+# Validate the Alexandria plugin only when the workflow changed it.
+
+set -euo pipefail
+
+PLUGIN_DIR="packages/alexandria-plugin"
+
+has_plugin_changes() {
+	local base_ref
+	local changed
+
+	if [ -n "$(git status --short -- "$PLUGIN_DIR")" ]; then
+		return 0
+	fi
+
+	base_ref="${FABRO_VALIDATE_BASE_REF:-main}"
+	changed="$(git diff --name-only "$base_ref"...HEAD -- "$PLUGIN_DIR" 2>/dev/null || true)"
+	[ -n "$changed" ]
+}
+
+run_fallback_validation() {
+	if ! command -v node >/dev/null 2>&1; then
+		echo "Claude Code CLI is not installed and Node.js is unavailable; cannot validate plugin." >&2
+		exit 1
+	fi
+
+	echo "Claude Code CLI not found; running fallback Alexandria plugin checks." >&2
+	echo "Install Claude Code to run: claude plugin validate ./packages/alexandria-plugin" >&2
+
+	PLUGIN_DIR="$PLUGIN_DIR" node <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+
+const pluginDir = process.env.PLUGIN_DIR;
+const failures = [];
+
+function readJson(relativePath) {
+	const fullPath = path.join(pluginDir, relativePath);
+
+	try {
+		return JSON.parse(fs.readFileSync(fullPath, "utf8"));
+	} catch (error) {
+		failures.push(`${relativePath}: ${error.message}`);
+		return undefined;
+	}
+}
+
+function requireString(value, field, relativePath) {
+	if (typeof value?.[field] !== "string" || value[field].trim() === "") {
+		failures.push(`${relativePath}: missing non-empty string field "${field}"`);
+	}
+}
+
+function requireFile(relativePath) {
+	if (!fs.existsSync(path.join(pluginDir, relativePath))) {
+		failures.push(`${relativePath}: file not found`);
+	}
+}
+
+const manifestPath = ".claude-plugin/plugin.json";
+const manifest = readJson(manifestPath);
+if (manifest) {
+	requireString(manifest, "name", manifestPath);
+	requireString(manifest, "version", manifestPath);
+	requireString(manifest, "description", manifestPath);
+}
+
+const monitorsPath = "monitors/monitors.json";
+const monitors = readJson(monitorsPath);
+if (monitors) {
+	if (!Array.isArray(monitors)) {
+		failures.push(`${monitorsPath}: expected an array`);
+	} else {
+		for (const [index, monitor] of monitors.entries()) {
+			const label = `${monitorsPath}[${index}]`;
+			requireString(monitor, "name", label);
+			requireString(monitor, "command", label);
+			requireString(monitor, "description", label);
+
+			if (typeof monitor?.command === "string" && monitor.command.includes("ax host claude monitor")) {
+				failures.push(`${label}: monitor command still uses removed ax host route`);
+			}
+		}
+	}
+}
+
+requireFile("skills/ax-start/SKILL.md");
+requireFile("agents/openai.yaml");
+requireFile("workflows/source-assessment/workflow.fabro");
+
+if (failures.length > 0) {
+	console.error("Fallback Alexandria plugin checks failed:");
+	for (const failure of failures) {
+		console.error(` - ${failure}`);
+	}
+	process.exit(1);
+}
+
+console.log("Fallback Alexandria plugin checks passed.");
+NODE
+}
+
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+	echo "Not inside a git worktree." >&2
+	exit 1
+fi
+
+if [ ! -d "$PLUGIN_DIR" ]; then
+	echo "Plugin directory not found: $PLUGIN_DIR" >&2
+	exit 1
+fi
+
+if ! has_plugin_changes; then
+	echo "No Alexandria plugin changes detected; skipping plugin validation."
+	exit 0
+fi
+
+if ! command -v claude >/dev/null 2>&1; then
+	run_fallback_validation
+	exit 0
+fi
+
+pnpm --filter @alexandria/plugin run validate

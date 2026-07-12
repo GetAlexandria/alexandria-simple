@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "library-threads.v1",
+  "threads": [
+    {
+      "id": "thread:studio-board-stage-status-polysemy",
+      "family": "hot_spot",
+      "kind": "polysemy",
+      "concerns": [
+        {
+          "type": "card",
+          "cardId": "Value - Stage"
+        },
+        {
+          "type": "card",
+          "cardId": "Value - Status"
+        }
+      ],
+      "confidence": "high",
+      "severity": "medium",
+      "status": "open",
+      "reason": "Stage and status are parallel production vocabularies that need one settled explanation."
+    }
+  ]
+}

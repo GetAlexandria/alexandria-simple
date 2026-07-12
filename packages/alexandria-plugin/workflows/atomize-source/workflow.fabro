@@ -1,0 +1,120 @@
+// AUTHORED DIRECTLY (director ruling 2026-07-09: written in the playbook,
+// not derived from a studio brief). Play: atomize-source — integrate one
+// ruled Source document into the live library as a verified delta.
+digraph AtomizeSource {
+    graph [
+        goal="Integrate the ruled Source document at __AX_INPUT_SOURCE_PATH__ into the live library: survey it into a delta manifest, get the director's approval, execute the changes with create-before-retire discipline, pass the deterministic checks, and close with a teach-back the director confirms.",
+        max_node_visits=12,
+        stall_timeout="2h",
+        default_fidelity="compact"
+    ]
+    rankdir=LR
+
+    start [shape=Mdiamond, label="Start"]
+    exit  [shape=Msquare, label="Exit"]
+
+    // Deterministic pre-computation: the whole library topology (card index,
+    // altLabels, backlink map) in one pass, so the survey agent spends its
+    // calls on judgment instead of ls/grep discovery.
+    inventory [
+        shape=parallelogram,
+        label="Compute the library inventory",
+        script="ax library inventory --out runtime/atomize/library-inventory.json",
+        timeout="5m"
+    ]
+
+    survey [
+        label="Survey the Source into a delta manifest",
+        prompt="@prompts/survey.md",
+        backend="acp",
+        acp.command=__AX_ACP_COMMAND_JSON__,
+        timeout="30m"
+    ]
+
+    validate_manifest [
+        shape=parallelogram,
+        label="Validate the manifest",
+        script="ax library validate-delta-manifest runtime/atomize/delta-manifest.json --json >&2 && cat runtime/atomize/for-the-director.md",
+        goal_gate=true,
+        timeout="5m"
+    ]
+
+    manifest_gate [
+        shape=hexagon,
+        label="Rule on the delta manifest — approve, or say what to change"
+    ]
+
+    revise_manifest [
+        label="Fold the director's ruling into the manifest",
+        prompt="@prompts/revise_manifest.md",
+        backend="acp",
+        acp.command=__AX_ACP_COMMAND_JSON__,
+        timeout="20m"
+    ]
+
+    execute [
+        label="Execute the manifest against the library",
+        prompt="@prompts/execute.md",
+        backend="acp",
+        acp.command=__AX_ACP_COMMAND_JSON__,
+        max_visits=4,
+        timeout="45m"
+    ]
+
+    check [
+        shape=parallelogram,
+        label="Deterministic library checks",
+        script="ax library check --manifest runtime/atomize/delta-manifest.json --json",
+        goal_gate=true,
+        timeout="10m"
+    ]
+
+    teach_back [
+        label="Teach back the changed library",
+        prompt="@prompts/teach_back.md",
+        backend="acp",
+        acp.command=__AX_ACP_COMMAND_JSON__,
+        timeout="15m"
+    ]
+
+    final_gate [
+        shape=hexagon,
+        label="Confirm the teach-back — approve, or say what to change"
+    ]
+
+    acp_failed [
+        shape=parallelogram,
+        label="Fail the run on ACP failure",
+        script="echo \"ACP run failed; refusing to advance the play\" >&2; exit 1",
+        timeout="1m"
+    ]
+
+    start -> inventory
+    inventory -> survey
+    survey -> validate_manifest
+    survey -> acp_failed [label="ACP failed", condition="outcome!=succeeded"]
+
+    // A malformed manifest never reaches the director: validator findings
+    // route to revise_manifest with the failure output in context.
+    validate_manifest -> manifest_gate  [label="Manifest valid", condition="outcome=succeeded"]
+    validate_manifest -> revise_manifest [label="Fix validation findings"]
+
+    manifest_gate -> execute          [label="[A] Approve the manifest", weight=10]
+    manifest_gate -> revise_manifest  [label="[R] Revise", freeform=true, fidelity="compact"]
+
+    revise_manifest -> validate_manifest
+    revise_manifest -> acp_failed [label="ACP failed", condition="outcome!=succeeded"]
+
+    execute -> check
+    execute -> acp_failed [label="ACP failed", condition="outcome!=succeeded"]
+
+    // Check failures carry the findings back into execute's context.
+    check -> teach_back [label="Checks pass", condition="outcome=succeeded"]
+    check -> execute    [label="Fix findings"]
+
+    teach_back -> final_gate
+    teach_back -> acp_failed [label="ACP failed", condition="outcome!=succeeded"]
+
+    final_gate -> exit    [label="[A] Approve — the Source is integrated", weight=10]
+    final_gate -> execute [label="[C] Change the cards", freeform=true, fidelity="compact"]
+}

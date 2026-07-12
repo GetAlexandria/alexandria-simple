@@ -1,0 +1,4 @@
+interface:
+  display_name: "Demo Path"
+  short_description: "Map story beats to product proof"
+  default_prompt: "Use $demo-path to turn the story spine into exact product steps, data needs, risks, and fallbacks."

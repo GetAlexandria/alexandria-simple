@@ -1,0 +1,468 @@
+#!/usr/bin/env bash
+# Alexandria — Setup Script
+#
+# Installs Alexandria for your AI coding assistant.
+#
+# Usage:
+#   ./setup                  # Auto-detect host (defaults to Claude Code)
+#   ./setup --host claude    # Explicit Claude Code setup
+#   ./setup --uninstall      # Remove symlinks and state
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VERSION=$({ tr -d '[:space:]' <"$SCRIPT_DIR/VERSION"; } 2>/dev/null || echo "unknown")
+PLUGIN_SOURCE_ROOT="$SCRIPT_DIR/packages/alexandria-plugin"
+
+# Defaults
+HOST="claude"
+UNINSTALL=false
+
+# Host-specific paths
+CLAUDE_PLUGIN_DIR="$HOME/.claude/plugins"
+CLAUDE_SKILLS_DIR="$HOME/.claude/skills"
+
+BUILD_TARGETS=(
+	"required:ax:packages/ax/src/cli/main.ts"
+)
+
+BUILD_STAGING_DIR=""
+
+resolve_state_dir() {
+	if [ -n "${CLAUDE_PLUGIN_DATA:-}" ]; then
+		printf '%s\n' "$CLAUDE_PLUGIN_DATA"
+	elif [ -n "${ALEXANDRIA_STATE_DIR:-}" ]; then
+		printf '%s\n' "$ALEXANDRIA_STATE_DIR"
+	else
+		printf '%s\n' "$HOME/.alexandria"
+	fi
+}
+
+resolve_ax_install_dir() {
+	if [ -n "${CLAUDE_PLUGIN_DATA:-}" ]; then
+		printf '%s\n' "$CLAUDE_PLUGIN_DATA/bin"
+	else
+		printf '%s\n' "$STATE_DIR/bin"
+	fi
+}
+
+resolve_bun_cmd() {
+	if [ -n "${ALEXANDRIA_BUN_BIN:-}" ] && [ -x "${ALEXANDRIA_BUN_BIN:-}" ]; then
+		printf '%s\n' "$ALEXANDRIA_BUN_BIN"
+	elif command -v bun >/dev/null 2>&1; then
+		command -v bun
+	else
+		printf '%s\n' "bun"
+	fi
+}
+
+resolve_pnpm_cmd() {
+	if command -v pnpm >/dev/null 2>&1; then
+		command -v pnpm
+	elif command -v corepack >/dev/null 2>&1; then
+		printf '%s\n' "$(command -v corepack) pnpm"
+	else
+		printf '%s\n' "pnpm"
+	fi
+}
+
+# State directory
+STATE_DIR="$(resolve_state_dir)"
+AX_INSTALL_DIR="$(resolve_ax_install_dir)"
+BUN_CMD="$(resolve_bun_cmd)"
+PNPM_CMD="$(resolve_pnpm_cmd)"
+
+# ─────────────────────────────────────────────
+# Argument parsing
+# ─────────────────────────────────────────────
+
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+	--host)
+		if [ $# -lt 2 ]; then
+			echo "Error: --host requires a value (claude, codex, cursor, auto)"
+			exit 1
+		fi
+		HOST="$2"
+		shift 2
+		;;
+	--host=*)
+		HOST="${1#*=}"
+		shift
+		;;
+	--uninstall)
+		UNINSTALL=true
+		shift
+		;;
+	--no-symlinks)
+		# Deprecated no-op: global symlinks are never created anymore. Still
+		# accepted because older remote installers pass it.
+		shift
+		;;
+	--help | -h)
+		echo "Alexandria Setup v${VERSION}"
+		echo ""
+		echo "Usage: ./setup [OPTIONS]"
+		echo ""
+		echo "Options:"
+		echo "  --host HOST      Target host: claude (default)"
+		echo "  --uninstall      Remove symlinks and state directory"
+		echo "  --no-symlinks    Deprecated no-op (global symlinks are never created)"
+		echo "  --help           Show this help"
+		exit 0
+		;;
+	*)
+		echo "Unknown option: $1"
+		echo "Run ./setup --help for usage"
+		exit 1
+		;;
+	esac
+done
+
+# ─────────────────────────────────────────────
+# Helpers
+# ─────────────────────────────────────────────
+
+info() { echo "  → $1"; }
+success() { echo "  ✓ $1"; }
+warn() { echo "  ⚠ $1"; }
+error() { echo "  ✗ $1" >&2; }
+
+for_each_managed_product_skill_link() {
+	local skill_link
+
+	if [ ! -d "$CLAUDE_SKILLS_DIR" ]; then
+		return
+	fi
+
+	for skill_link in "$CLAUDE_SKILLS_DIR"/*; do
+		[ -L "$skill_link" ] || continue
+		printf '%s\n' "$skill_link"
+	done
+}
+
+product_skill_link_points_into_repo() {
+	local skill_link="$1"
+
+	if [ ! -L "$skill_link" ]; then
+		return 1
+	fi
+
+	local current
+	current=$(readlink "$skill_link")
+
+	case "$current" in
+	"$PLUGIN_SOURCE_ROOT"/skills/* | "$PLUGIN_SOURCE_ROOT"/skills/*/)
+		return 0
+		;;
+	esac
+
+	return 1
+}
+
+cleanup_owned_product_skill_links() {
+	local skill_link
+
+	while IFS= read -r skill_link; do
+		if ! product_skill_link_points_into_repo "$skill_link"; then
+			continue
+		fi
+
+		rm "$skill_link"
+		success "Removed stale product skill symlink: $skill_link"
+	done < <(for_each_managed_product_skill_link)
+}
+
+cleanup() {
+	if [ -n "$BUILD_STAGING_DIR" ] && [ -d "$BUILD_STAGING_DIR" ]; then
+		rm -rf "$BUILD_STAGING_DIR"
+	fi
+}
+
+trap cleanup EXIT
+
+ensure_bun() {
+	local bun_version
+	if ! bun_version="$("$BUN_CMD" --version 2>/dev/null)"; then
+		error "Bun is required to build Alexandria binaries."
+		error "Install Bun from https://bun.sh and re-run ./setup."
+		exit 1
+	fi
+
+	success "Bun found: $bun_version"
+}
+
+ensure_pnpm() {
+	local pnpm_version
+	if ! pnpm_version=$(run_pnpm_cmd --version 2>/dev/null); then
+		error "pnpm is required to install Alexandria workspace dependencies."
+		error "Install pnpm (or enable it through corepack) and re-run ./setup."
+		exit 1
+	fi
+
+	success "pnpm found: $pnpm_version"
+}
+
+run_pnpm_cmd() {
+	local -a command_parts
+	read -r -a command_parts <<<"$PNPM_CMD"
+	"${command_parts[@]}" "$@"
+}
+
+run_pnpm_install() {
+	info "Installing workspace dependencies with pnpm..."
+	(
+		cd "$SCRIPT_DIR"
+		CI=true run_pnpm_cmd install --frozen-lockfile --ignore-scripts
+	)
+	success "Workspace dependencies installed"
+}
+
+resolve_ax_build_version() {
+	local package_json="$SCRIPT_DIR/packages/ax/package.json"
+	local package_version
+
+	if [ -f "$package_json" ]; then
+		if package_version=$("$BUN_CMD" -e 'const pkg = await Bun.file(process.argv[1]).json(); const version = pkg.version; if (typeof version === "string" && version.length > 0) console.log(version);' "$package_json" 2>/dev/null); then
+			if [ -n "$package_version" ]; then
+				printf '%s\n' "$package_version"
+				return
+			fi
+		fi
+	fi
+
+	printf '%s\n' "$VERSION"
+}
+
+resolve_ax_build_git_sha() {
+	local git_sha
+
+	if git_sha=$(git -C "$SCRIPT_DIR" rev-parse --short=7 HEAD 2>/dev/null); then
+		if [ -n "$git_sha" ]; then
+			printf '%s\n' "$git_sha"
+			return
+		fi
+	fi
+
+	printf '%s\n' "unknown"
+}
+
+resolve_ax_build_date() {
+	date -u +%F
+}
+
+build_compiled_tools() {
+	info "Building Alexandria CLI binaries..."
+
+	local install_parent
+	install_parent="$(dirname "$AX_INSTALL_DIR")"
+	mkdir -p "$install_parent"
+	BUILD_STAGING_DIR="$(mktemp -d "$install_parent/.ax-bin.tmp.XXXXXX")"
+
+	local target requirement output_name source_file
+	local -a built_outputs=()
+	for target in "${BUILD_TARGETS[@]}"; do
+		IFS=: read -r requirement output_name source_file <<<"$target"
+
+		if [ -z "$requirement" ] || [ -z "$output_name" ] || [ -z "$source_file" ]; then
+			error "Invalid build target: $target"
+			exit 1
+		fi
+
+		if [ ! -f "$SCRIPT_DIR/$source_file" ]; then
+			if [ "$requirement" = "required" ]; then
+				error "Required CLI source missing: $source_file"
+				exit 1
+			fi
+
+			info "Skipping optional $output_name; source not found: $source_file"
+			continue
+		fi
+
+		info "Compiling $output_name"
+		if [ "$output_name" = "ax" ]; then
+			local ax_build_version ax_build_git_sha ax_build_date
+			ax_build_version="$(resolve_ax_build_version)"
+			ax_build_git_sha="$(resolve_ax_build_git_sha)"
+			ax_build_date="$(resolve_ax_build_date)"
+			(
+				cd "$SCRIPT_DIR"
+				AX_BUILD_VERSION="$ax_build_version" \
+					AX_BUILD_GIT_SHA="$ax_build_git_sha" \
+					AX_BUILD_DATE="$ax_build_date" \
+					"$BUN_CMD" build --compile "--env=AX_BUILD_*" --outfile "$BUILD_STAGING_DIR/$output_name" "$source_file"
+			)
+		else
+			(
+				cd "$SCRIPT_DIR"
+				"$BUN_CMD" build --compile --outfile "$BUILD_STAGING_DIR/$output_name" "$source_file"
+			)
+		fi
+		built_outputs+=("$output_name")
+	done
+
+	if [ "${#built_outputs[@]}" -eq 0 ]; then
+		error "No CLI binaries were built"
+		exit 1
+	fi
+
+	rm -rf "$AX_INSTALL_DIR"
+	mv "$BUILD_STAGING_DIR" "$AX_INSTALL_DIR"
+	BUILD_STAGING_DIR=""
+
+	for output_name in "${built_outputs[@]}"; do
+		success "$output_name installed to: $AX_INSTALL_DIR/$output_name"
+	done
+}
+
+# ─────────────────────────────────────────────
+# Uninstall
+# ─────────────────────────────────────────────
+
+if [ "$UNINSTALL" = true ]; then
+	echo "Alexandria — Uninstall"
+	echo ""
+
+	# Remove Claude plugin symlinks
+	local_link="$CLAUDE_PLUGIN_DIR/alexandria"
+	if [ -L "$local_link" ]; then
+		rm "$local_link"
+		success "Removed plugin symlink: $local_link"
+	elif [ -e "$local_link" ]; then
+		warn "Plugin path exists but is not a symlink: $local_link"
+		warn "Remove manually if desired"
+	fi
+
+	# Remove Alexandria-owned product skill symlinks from older installs.
+	cleanup_owned_product_skill_links
+
+	# Remove state directory
+	if [ -n "${CLAUDE_PLUGIN_DATA:-}" ]; then
+		if [ -f "$STATE_DIR/update-cache.json" ]; then
+			rm -f "$STATE_DIR/update-cache.json"
+			success "Removed state cache file: $STATE_DIR/update-cache.json"
+		else
+			info "No state cache file found"
+		fi
+
+		if [ -d "$AX_INSTALL_DIR" ]; then
+			rm -rf "$AX_INSTALL_DIR"
+			success "Removed ax install directory: $AX_INSTALL_DIR"
+		else
+			info "No ax install directory found"
+		fi
+	elif [ -n "${ALEXANDRIA_STATE_DIR:-}" ]; then
+		if [ -d "$STATE_DIR" ]; then
+			rm -rf "$STATE_DIR"
+			success "Removed state directory: $STATE_DIR"
+		else
+			info "No state directory found"
+		fi
+	else
+		if [ -d "$HOME/.alexandria" ]; then
+			rm -rf "$HOME/.alexandria"
+			success "Removed state directory: $HOME/.alexandria"
+		fi
+	fi
+
+	echo ""
+	echo "Uninstall complete."
+	exit 0
+fi
+
+# ─────────────────────────────────────────────
+# Install
+# ─────────────────────────────────────────────
+
+echo "Alexandria — Setup v${VERSION}"
+echo ""
+
+# Validate prerequisites
+if ! command -v git &>/dev/null; then
+	error "git is required but not found"
+	exit 1
+fi
+
+# ─────────────────────────────────────────────
+# Host: Claude Code
+# ─────────────────────────────────────────────
+
+setup_claude() {
+	info "Setting up for Claude Code..."
+
+	# The plugin is always the prod payload, installed project-local and
+	# registered at project scope (scripts/setup-host-plugins). A user-global
+	# ~/.claude/plugins/alexandria symlink is never created: it made every
+	# checkout that ran setup hijack the plugin for the whole machine, and it
+	# dangled when that checkout went away. Local plugin source stays opt-in
+	# via `claude --plugin-dir` (see README "Local checkout").
+	local legacy_link="$CLAUDE_PLUGIN_DIR/alexandria"
+	if [ -L "$legacy_link" ]; then
+		rm "$legacy_link"
+		success "Removed legacy global plugin symlink: $legacy_link"
+	elif [ -e "$legacy_link" ]; then
+		warn "Global plugin path exists but is not a symlink: $legacy_link"
+		warn "Alexandria no longer uses it; remove manually if unwanted."
+	fi
+
+	# Older installs created direct product skill links that duplicate plugin discovery.
+	cleanup_owned_product_skill_links
+
+}
+
+resolve_host() {
+	case "$HOST" in
+	claude) ;;
+	auto)
+		if command -v claude &>/dev/null; then
+			HOST="claude"
+		else
+			error "Could not auto-detect host. Use --host to specify."
+			exit 1
+		fi
+		;;
+	*)
+		error "Unknown host: $HOST"
+		echo "Supported hosts: claude, auto"
+		exit 1
+		;;
+	esac
+}
+
+# ─────────────────────────────────────────────
+# Dispatch
+# ─────────────────────────────────────────────
+
+resolve_host
+ensure_pnpm
+ensure_bun
+run_pnpm_install
+build_compiled_tools
+
+# Create state directory after build succeeds
+mkdir -p "$STATE_DIR"
+success "State directory: $STATE_DIR"
+
+case "$HOST" in
+claude)
+	setup_claude
+	;;
+*)
+	error "Resolved host has no setup implementation: $HOST"
+	exit 1
+	;;
+esac
+
+# ─────────────────────────────────────────────
+# Done
+# ─────────────────────────────────────────────
+
+echo ""
+echo "Setup complete! (v${VERSION})"
+echo ""
+echo "Next steps:"
+echo "  1. Open Claude Code in your project"
+echo "  2. Run the ax-start skill to connect Raven"
+echo "  3. Use ax for product CLI workflows (for example: ax --help)"
+echo ""
+echo "For more: https://github.com/GetAlexandria/alexandria"

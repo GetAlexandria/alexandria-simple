@@ -1,0 +1,30 @@
+{
+  "caseId": "atomic-card-creation/child-build-loop",
+  "description": "Creation workflow runs build-atomic-card child plays rather than publishing prepared candidates directly.",
+  "checks": [
+    {
+      "description": "Creation workflow invokes execute-plan as a child build runner.",
+      "file": "packages/alexandria-plugin/workflows/atomic-card-creation/workflow.fabro",
+      "contains": [
+        "Run build-atomic-card for every write_new contract",
+        "ax cards execute-plan",
+        "ax cards verify-plan"
+      ],
+      "notContains": [
+        "Publish candidates for every write_new contract",
+        "publishes prepared candidates"
+      ]
+    },
+    {
+      "description": "Creation leg docs assign publish and grading to build-atomic-card.",
+      "file": "packages/alexandria-plugin/workflows/atomic-card-creation/legs.json",
+      "contains": [
+        "launches one build-atomic-card child run per write_new contract",
+        "draft, validation, grading, revision, publish, and ledger events"
+      ],
+      "notContains": [
+        "publishes prepared candidates"
+      ]
+    }
+  ]
+}

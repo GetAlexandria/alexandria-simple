@@ -1,0 +1,6 @@
+{
+  "script": "n=$(wc -w < runtime/spoken-paragraph.md | tr -d ' '); if [ \"$n\" -le 75 ]; then echo \"WORDCOUNT_OK: $n words (ceiling 75)\"; else echo \"WORDCOUNT_OVER: $n words, $((n-75)) over (ceiling 75) - cut a thought, not compress one\"; fi",
+  "command": "exec 2>&1\nn=$(wc -w < runtime/spoken-paragraph.md | tr -d ' '); if [ \"$n\" -le 75 ]; then echo \"WORDCOUNT_OK: $n words (ceiling 75)\"; else echo \"WORDCOUNT_OVER: $n words, $((n-75)) over (ceiling 75) - cut a thought, not compress one\"; fi",
+  "language": "shell",
+  "timeout_ms": 300000
+}

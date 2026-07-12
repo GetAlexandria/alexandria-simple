@@ -1,0 +1,57 @@
+{
+  "playId": "make-a-play:build",
+  "legs": [
+    {
+      "nodeId": "derive",
+      "label": "Derive",
+      "description": "Project the approved §4 graph into module workflow packages.",
+      "lead": "The approved graph becomes runnable packages.",
+      "beats": [
+        "Checks Gate 1 and doer tags.",
+        "Copies module workflow packages into the plugin payload.",
+        "Keeps derivation mechanical."
+      ],
+      "typicalSeconds": 60,
+      "kind": "command"
+    },
+    {
+      "nodeId": "lint",
+      "label": "Lint",
+      "description": "Run deterministic conformance checks.",
+      "lead": "Closed-rule failures bounce inside Build.",
+      "beats": [
+        "Checks §4 doer tags.",
+        "Checks no built-by filing field.",
+        "Checks Studio filing and board visibility."
+      ],
+      "typicalSeconds": 60,
+      "kind": "command"
+    },
+    {
+      "nodeId": "author_fixtures",
+      "label": "Fixtures",
+      "description": "Author proof fixtures for the meta-play.",
+      "lead": "Fixture authorship stays judgment, never grading.",
+      "beats": [
+        "Anchors the golden regression on frame-the-problem.",
+        "Adds held and bounce cases.",
+        "Keeps TESTING.md doctrine unchanged."
+      ],
+      "typicalSeconds": 180,
+      "kind": "agent"
+    },
+    {
+      "nodeId": "register_for_run",
+      "label": "Register-to-run",
+      "description": "Bank the module packages so AX can run them.",
+      "lead": "The package becomes run-enabled but not proven live.",
+      "beats": [
+        "Banks the three module workflow packages.",
+        "Validates the plugin copy.",
+        "Leaves live registration to Prove."
+      ],
+      "typicalSeconds": 60,
+      "kind": "command"
+    }
+  ]
+}

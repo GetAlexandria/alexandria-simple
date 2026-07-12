@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Canvas Spike — Plumbing Test</title>
+  <style>
+    body { font: 14px/1.5 system-ui, sans-serif; max-width: 720px; margin: 2em auto; padding: 0 1em; color: #222; }
+    h1 { font-size: 18px; margin: 0 0 0.4em; }
+    .row { margin: 1em 0; display: flex; gap: 0.5em; align-items: center; }
+    button { padding: 0.5em 1em; cursor: pointer; }
+    pre { background: #f5f5f5; padding: 1em; border-radius: 4px; overflow: auto; max-height: 240px; }
+    .toast { background: #fff8c5; border: 1px solid #d4a72c; padding: 0.6em 0.8em; border-radius: 4px; display: none; }
+    .toast.shown { display: block; }
+    .muted { color: #666; font-size: 12px; }
+    label { display: block; margin-bottom: 0.3em; }
+    input[type=text] { padding: 0.3em 0.5em; width: 240px; }
+  </style>
+</head>
+<body>
+  <h1>Canvas Spike — Plumbing Test</h1>
+  <p class="muted">Exercises the canvas → intent → Raven → output loop. Workstream 1 only.</p>
+
+  <div class="row">
+    <label>Step <input type="text" id="step" value="codebase-scan" /></label>
+    <label>Action <input type="text" id="action" value="echo" /></label>
+  </div>
+  <div class="row">
+    <button id="send">Send intent</button>
+    <button id="refresh">Refresh outputs</button>
+    <button id="info">Server info</button>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <h2 style="font-size:14px;margin-top:1.5em;">Last response</h2>
+  <pre id="last">—</pre>
+
+  <h2 style="font-size:14px;">Outputs for current step</h2>
+  <pre id="outputs">—</pre>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const show = (id, data) => { $(id).textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2); };
+    const toast = (msg) => {
+      const el = $('toast');
+      el.textContent = msg;
+      el.classList.add('shown');
+      setTimeout(() => el.classList.remove('shown'), 6000);
+    };
+
+    async function postJson(url, body) {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      return res.json();
+    }
+    async function getJson(url) {
+      const res = await fetch(url);
+      return res.json();
+    }
+
+    $('send').addEventListener('click', async () => {
+      const step = $('step').value.trim();
+      const action = $('action').value.trim();
+      const data = await postJson('/api/intent', { step, action, params: { source: 'spike-test' } });
+      show('last', data);
+      toast('→ Raven ready: say `go` in Claude Code.');
+    });
+
+    $('refresh').addEventListener('click', async () => {
+      const step = $('step').value.trim();
+      const data = await getJson('/api/outputs/' + encodeURIComponent(step));
+      show('outputs', data);
+    });
+
+    $('info').addEventListener('click', async () => {
+      const data = await getJson('/api/server-info');
+      show('last', data);
+    });
+  </script>
+</body>
+</html>

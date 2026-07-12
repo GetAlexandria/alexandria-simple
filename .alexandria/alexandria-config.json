@@ -1,0 +1,13 @@
+{
+  "orchestration": {
+    "acp": {
+      "provider": "codex"
+    }
+  },
+  "library": {
+    "root": "docs/alexandria/library"
+  },
+  "schemaVersion": 1,
+  "sourcesPath": ".alexandria/sources.jsonl",
+  "workspace": "docs/alexandria"
+}

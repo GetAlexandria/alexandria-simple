@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "library-search-prior.v1",
+  "domain": {
+    "actors": [{ "value": "director", "confidence": "high" }],
+    "capability": { "value": "turn a play idea into a proven workflow", "confidence": "medium" },
+    "category": { "value": "play production studio", "confidence": "medium" },
+    "vocabulary": [{ "value": "play", "confidence": "high" }]
+  },
+  "workThread": {
+    "unit": { "value": "Play", "confidence": "high" },
+    "path": [
+      {
+        "activity": { "value": "brief", "confidence": "high" },
+        "place": { "value": "studio", "confidence": "medium" },
+        "advance": { "value": "human gate approval", "confidence": "medium" }
+      }
+    ],
+    "stateField": { "value": "status", "confidence": "low" },
+    "places": [{ "value": "board", "confidence": "medium" }],
+    "shape": { "value": "pipeline", "confidence": "high" }
+  },
+  "fence": {
+    "outOfScope": [{ "value": "generic project management tracker", "confidence": "high" }],
+    "external": [],
+    "lookAlikes": []
+  },
+  "openQuestions": [
+    {
+      "about": "stateField",
+      "question": "Is the lifecycle marker actually named status in source?"
+    }
+  ]
+}

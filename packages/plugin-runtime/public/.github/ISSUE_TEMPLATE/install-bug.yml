@@ -1,0 +1,41 @@
+name: Install Bug
+description: Report a failure installing Alexandria or ax.
+title: "[Install Bug]: "
+labels:
+  - install
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Alexandria version
+      description: The version you tried to install.
+      placeholder: 0.9.0
+    validations:
+      required: true
+  - type: dropdown
+    id: host
+    attributes:
+      label: Host
+      options:
+        - Claude Code
+        - Codex
+        - OpenCode
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: install-command
+    attributes:
+      label: Install command
+      description: The exact command you ran.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: failure
+    attributes:
+      label: Failure output
+      description: Paste the relevant stderr/stdout.
+      render: text
+    validations:
+      required: true

@@ -1,0 +1,107 @@
+digraph BuildAtomicCard {
+    graph [
+        goal="Build one EL5 atomic card from a write_new contract and append it to the confirmed stub.",
+        max_node_visits=60,
+        stall_timeout="2h",
+        default_fidelity="truncate"
+    ]
+    rankdir=LR
+
+    start [shape=Mdiamond, label="Start"]
+    exit  [shape=Msquare, label="Exit"]
+
+    validate_contract [
+        shape=parallelogram,
+        label="Validate contract",
+        script="cd '__AX_PROJECT_ROOT__' && ax cards validate-contract --contract '__AX_INPUT_CONTRACT_PATH__' --json",
+        timeout="1m"
+    ]
+
+    draft_or_repair [
+        label="Draft or repair the candidate card body",
+        prompt="@prompts/draft_or_repair.md",
+        backend="acp",
+        acp.command=__AX_ACP_COMMAND_JSON__,
+        timeout="30m"
+    ]
+
+    validate_candidate [
+        shape=parallelogram,
+        label="Validate candidate structure",
+        script="cd '__AX_PROJECT_ROOT__' && ax cards validate-candidate --contract '__AX_INPUT_CONTRACT_PATH__' --candidate '__AX_INPUT_CANDIDATE_PATH__' --json",
+        timeout="1m"
+    ]
+
+    grade_candidate [
+        label="Grade candidate shelf fit and source support",
+        prompt="@prompts/grade.md",
+        backend="acp",
+        acp.command=__AX_ACP_COMMAND_JSON__,
+        timeout="20m"
+    ]
+
+    route_grade [
+        shape=parallelogram,
+        label="Route grade result",
+        script="cd '__AX_PROJECT_ROOT__' && ax cards grade-candidate --contract '__AX_INPUT_CONTRACT_PATH__' --grade '__AX_INPUT_GRADE_PATH__' --json",
+        timeout="1m"
+    ]
+
+    consume_revision [
+        shape=parallelogram,
+        label="Consume revision budget",
+        script="cd '__AX_PROJECT_ROOT__' && ax cards consume-attempt --contract '__AX_INPUT_CONTRACT_PATH__' --max '__AX_INPUT_MAX_REVISION_TURNS__' --status revision --json",
+        timeout="1m"
+    ]
+
+    publish_card [
+        shape=parallelogram,
+        label="Append to confirmed stub and ledger",
+        script="cd '__AX_PROJECT_ROOT__' && ax cards publish --plan '__AX_INPUT_PLAN_PATH__' --contract '__AX_INPUT_CONTRACT_ID__' --candidate '__AX_INPUT_CANDIDATE_PATH__' --actor '__AX_INPUT_ACTOR__' --lexicon '__AX_INPUT_VOCABULARY_LEXICON__' --json",
+        timeout="2m"
+    ]
+
+    emit_child_result [
+        shape=parallelogram,
+        label="Emit child result projection",
+        script="cd '__AX_PROJECT_ROOT__' && ax cards child-result --plan '__AX_INPUT_PLAN_PATH__' --contract '__AX_INPUT_CONTRACT_ID__' --json",
+        timeout="1m"
+    ]
+
+    bail_out [
+        shape=parallelogram,
+        label="Bail out of unsafe card",
+        script="echo \"GRADE_BAIL: grader could not produce a source-backed confirmed-shelf card\" >&2; exit 1",
+        timeout="1m"
+    ]
+
+    exhausted [
+        shape=parallelogram,
+        label="Revision budget exhausted",
+        script="echo \"ATTEMPTS_EXHAUSTED: build-atomic-card exhausted revision attempts before publish\" >&2; exit 1",
+        timeout="1m"
+    ]
+
+    acp_failed [
+        shape=parallelogram,
+        label="Fail on ACP or grade routing failure",
+        script="echo \"build-atomic-card failed before publish; refusing to append to the confirmed stub\" >&2; exit 1",
+        timeout="1m"
+    ]
+
+    start -> validate_contract
+    validate_contract -> draft_or_repair
+    draft_or_repair -> validate_candidate
+    draft_or_repair -> acp_failed [label="ACP failed", condition="outcome!=succeeded"]
+    validate_candidate -> grade_candidate
+    grade_candidate -> route_grade
+    grade_candidate -> acp_failed [label="ACP failed", condition="outcome!=succeeded"]
+    route_grade -> publish_card [label="GRADE_PASS", condition="command.output contains \"GRADE_PASS\""]
+    route_grade -> consume_revision [label="GRADE_REVISE", condition="command.output contains \"GRADE_REVISE\""]
+    route_grade -> bail_out [label="GRADE_BAIL", condition="command.output contains \"GRADE_BAIL\""]
+    route_grade -> acp_failed [label="unexpected grade output"]
+    consume_revision -> draft_or_repair [label="revise", condition="command.output contains \"ATTEMPTS_REMAIN\""]
+    consume_revision -> exhausted [label="exhausted", condition="command.output contains \"ATTEMPTS_EXHAUSTED\""]
+    publish_card -> emit_child_result
+    emit_child_result -> exit
+}
