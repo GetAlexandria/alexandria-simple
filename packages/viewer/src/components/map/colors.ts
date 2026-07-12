@@ -7,6 +7,14 @@
 
 import type { HexCellVisualState } from "./HexCell";
 
+/** Converts a 6-digit hex color into an rgba() string with the given alpha. */
+function withAlpha(hex: string, alpha: number): string {
+  const red = parseInt(hex.slice(1, 3), 16);
+  const green = parseInt(hex.slice(3, 5), 16);
+  const blue = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+}
+
 /** Scene chrome: canvas clear color and light tints. */
 export const MAP_SCENE_COLORS = {
   /** Warm parchment field behind everything (Canvas clear color). */
@@ -76,12 +84,12 @@ export const OWNER_VIEW_COLORS = {
   work: { project: "#a86f32", system: "#5f7d64" },
   /** Floating landmark label chips (DOM, via drei Html). */
   label: {
-    background: "rgba(255, 248, 236, 0.92)",
+    background: withAlpha(MAP_FALLBACK_COLORS.panel, 0.92),
     border: MAP_FALLBACK_COLORS.border,
     heading: MAP_FALLBACK_COLORS.heading,
     subtext: MAP_FALLBACK_COLORS.subtext,
     /** Muted variant for the vacant-plot and locked-seat chips. */
-    mutedBackground: "rgba(239, 226, 205, 0.78)",
+    mutedBackground: withAlpha(MAP_SCENE_COLORS.background, 0.78),
     mutedText: "#6c6152",
   },
 } as const;

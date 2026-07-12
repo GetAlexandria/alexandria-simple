@@ -10,6 +10,7 @@
 import { useLoader } from "@react-three/fiber";
 import { useEffect } from "react";
 import { DoubleSide, SRGBColorSpace, TextureLoader } from "three";
+import { LANDMARK_SPRITE_COLORS } from "./colors";
 import { hexToWorld, type HexCoord } from "./hex";
 
 // Billboard tilt matching CameraRig's CAMERA_ELEVATION_DEGREES (31°) so
@@ -32,7 +33,7 @@ export function LandmarkSprite({
   textureUrl,
   width,
   height,
-  tint = "#ffffff",
+  tint = LANDMARK_SPRITE_COLORS.colleague.tint,
   opacity = 0.95,
   elevation = 0.58,
   zOffset = 0.45,
@@ -41,8 +42,13 @@ export function LandmarkSprite({
   const [x, z] = hexToWorld(coord, 1);
 
   useEffect(() => {
-    texture.colorSpace = SRGBColorSpace;
-    texture.needsUpdate = true;
+    // useLoader caches textures by URL, so the same instance is shared
+    // across sprite mounts; only touch it (and trigger a GPU re-upload)
+    // the first time, not on every mount or view toggle.
+    if (texture.colorSpace !== SRGBColorSpace) {
+      texture.colorSpace = SRGBColorSpace;
+      texture.needsUpdate = true;
+    }
   }, [texture]);
 
   return (

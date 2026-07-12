@@ -5,7 +5,7 @@
 // working underneath.
 
 import { Html } from "@react-three/drei";
-import { Suspense, type CSSProperties, type ReactNode } from "react";
+import { Component, Suspense, type CSSProperties, type ReactNode } from "react";
 import { OWNER_VIEW_COLORS } from "./colors";
 import { FixedBuilding } from "./FixedBuilding";
 import { hexToWorld, type HexCoord } from "./hex";
@@ -173,23 +173,44 @@ type OwnerViewLayerProps = {
   layout: OwnerViewLayout;
 };
 
+/**
+ * Contains sprite-texture load failures (a rejected useLoader throws on
+ * render) inside the layer: sprites are decorative, so on error the whole
+ * overlay drops to nothing instead of collapsing the /dev/map route to the
+ * route-level error boundary — the ground grid, HUD, and toggle survive.
+ */
+class SpriteErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  override state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  override render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
 export function OwnerViewLayer({ layout }: OwnerViewLayerProps) {
   return (
-    // Suspense holds sprite-texture loading (useLoader) inside the layer so
-    // the ground grid renders immediately.
-    <Suspense fallback={null}>
-      {layout.territories.map((territory) => (
-        <group key={territory.domain.id}>
-          <TerritoryTint territory={territory} />
-          <TerritoryAnchor territory={territory} />
-          {territory.work.map((marker) => (
-            <WorkMarker key={marker.entity.id} marker={marker} />
-          ))}
-        </group>
-      ))}
-      {layout.seats.map((seat) => (
-        <LockedSeatPlot key={seat.id} seat={seat} />
-      ))}
-    </Suspense>
+    // The error boundary contains sprite-load failures; Suspense holds
+    // sprite-texture loading (useLoader) inside the layer so the ground
+    // grid renders immediately.
+    <SpriteErrorBoundary>
+      <Suspense fallback={null}>
+        {layout.territories.map((territory) => (
+          <group key={territory.domain.id}>
+            <TerritoryTint territory={territory} />
+            <TerritoryAnchor territory={territory} />
+            {territory.work.map((marker) => (
+              <WorkMarker key={marker.entity.id} marker={marker} />
+            ))}
+          </group>
+        ))}
+        {layout.seats.map((seat) => (
+          <LockedSeatPlot key={seat.id} seat={seat} />
+        ))}
+      </Suspense>
+    </SpriteErrorBoundary>
   );
 }

@@ -3,6 +3,7 @@ import * as Effect from "effect/Effect";
 import { decodeMapState } from "../../app/runtime/schemas";
 import { DEV_MAP_FIXTURE, DEV_MAP_MIN_GRID_RADIUS, devMapGridRadius } from "./dev-map-fixture";
 import { createHex, generateHexGrid, hexToKey } from "./hex";
+import { LOCKED_SEAT_PREFIX } from "./layout/owner-view";
 
 describe("DEV_MAP_FIXTURE", () => {
   it("decodes with the M1 map-state schema (same shape the runtime serves)", async () => {
@@ -19,7 +20,8 @@ describe("DEV_MAP_FIXTURE", () => {
       if (position.entityType === "landmark") {
         // Landmarks are colleagues (M1) or locked future-seat plots (V2).
         expect(
-          position.entityId.startsWith("colleague:") || position.entityId.startsWith("seat:"),
+          position.entityId.startsWith("colleague:") ||
+            position.entityId.startsWith(LOCKED_SEAT_PREFIX),
         ).toBe(true);
       } else {
         expect(entityIds.has(position.entityId)).toBe(true);
