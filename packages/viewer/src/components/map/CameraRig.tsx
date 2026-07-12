@@ -15,7 +15,8 @@ const MIN_ZOOM = 4;
 const MAX_ZOOM = 16;
 const INITIAL_ZOOM = 8;
 const CAMERA_DISTANCE = 24;
-const CAMERA_ELEVATION_DEGREES = 31;
+/** Exported for camera-facing decals (labels, sprites) elsewhere in the map. */
+export const CAMERA_ELEVATION_DEGREES = 31;
 
 const isEditableTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) {

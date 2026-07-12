@@ -1,22 +1,28 @@
-// Fresh P1 container (not a promotion): the minimal render stack over the
-// promoted pieces — Canvas + lights + CameraRig + BackgroundPlane + one
-// HexCell per grid cell. Lifebuild's HexMap.tsx container was placement- and
-// panel-heavy (see quarantine rewrite references); the map's real container
-// gets written fresh against our schema in later flights.
+// The map's container (the promoted HexMap altitude, written fresh in P1):
+// Canvas + lights + CameraRig + BackgroundPlane + the promoted HexGrid.
+// Lifebuild's HexMap.tsx container was placement- and panel-heavy (see
+// quarantine rewrite references); those flows return in S2 against our
+// schema. V1 additions are strictly additive so V2's Owner view can compose
+// against the same surface: an optional Domain-view tint map for the grid,
+// and children rendered inside the Canvas (tiles, borders, labels, piles)
+// under a Suspense boundary for texture loaders.
 
 import { Canvas } from "@react-three/fiber";
-import { MAP_SCENE_COLORS } from "./colors";
+import { Suspense, type ReactNode } from "react";
+import { MAP_SCENE_COLORS, type HexTint } from "./colors";
 import type { HexGridCell } from "./hex";
-import { HexCell } from "./HexCell";
+import { HexGrid } from "./HexGrid";
 import { BackgroundPlane } from "./BackgroundPlane";
 import { CameraRig } from "./CameraRig";
 
 type MapSceneProps = {
   cells: readonly HexGridCell[];
   parchmentSeed?: number;
+  cellTintByKey?: ReadonlyMap<string, HexTint>;
+  children?: ReactNode;
 };
 
-export function MapScene({ cells, parchmentSeed = 0 }: MapSceneProps) {
+export function MapScene({ cells, parchmentSeed = 0, cellTintByKey, children }: MapSceneProps) {
   return (
     <Canvas
       orthographic
@@ -39,11 +45,12 @@ export function MapScene({ cells, parchmentSeed = 0 }: MapSceneProps) {
         intensity={0.4}
       />
 
-      <CameraRig />
-      <BackgroundPlane parchmentSeed={parchmentSeed} />
-      {cells.map((cell) => (
-        <HexCell key={cell.key} coord={cell.coord} parchmentSeed={parchmentSeed} />
-      ))}
+      <Suspense fallback={null}>
+        <CameraRig />
+        <BackgroundPlane parchmentSeed={parchmentSeed} />
+        <HexGrid cells={cells} parchmentSeed={parchmentSeed} cellTintByKey={cellTintByKey} />
+        {children}
+      </Suspense>
     </Canvas>
   );
 }
