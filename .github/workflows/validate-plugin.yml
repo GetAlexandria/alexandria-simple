@@ -61,6 +61,7 @@ jobs:
             markdown:
               - "**/*.md"
               - "!repos/**"
+              - "!quarantine/**"
               - ".markdownlint-cli2.jsonc"
             plugin:
               - "packages/alexandria-plugin/**"
@@ -205,7 +206,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run Markdown checks
-        run: pnpm exec markdownlint-cli2 "**/*.md" "#node_modules" "#**/node_modules" "#repos" "#**/repos" "#.repos" "#**/.repos" "#dist" "#.tmp" "#.var" "#.claude"
+        run: pnpm exec markdownlint-cli2 "**/*.md" "#node_modules" "#**/node_modules" "#repos" "#**/repos" "#.repos" "#**/.repos" "#dist" "#.tmp" "#.var" "#.claude" "#quarantine"
 
   check-ax:
     needs: changes
