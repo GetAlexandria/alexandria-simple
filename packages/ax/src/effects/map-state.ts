@@ -399,7 +399,10 @@ function validatePositions(
 
   const entityKindById = new Map(collections.entities.map((entity) => [entity.id, entity.kind]));
   const seenHexes = new Set<string>();
-  const seenEntityIds = new Set<string>();
+  // Landmark ids live in a different namespace than entity ids (a landmark's
+  // free-string id may coincide with a real entity id), so the one-position-
+  // per-thing rule is tracked per namespace, not across both.
+  const seenEntityKeys = new Set<string>();
   const positions: MapPosition[] = [];
 
   for (const [index, rawPosition] of value.entries()) {
@@ -452,10 +455,15 @@ function validatePositions(
     }
     seenHexes.add(hexKey);
 
-    if (seenEntityIds.has(entityId)) {
-      return validationError(`duplicate position for entity ${entityId}`);
+    const entityKey = entityType === "landmark" ? `landmark:${entityId}` : `entity:${entityId}`;
+    if (seenEntityKeys.has(entityKey)) {
+      return validationError(
+        entityType === "landmark"
+          ? `duplicate position for landmark ${entityId}`
+          : `duplicate position for entity ${entityId}`,
+      );
     }
-    seenEntityIds.add(entityId);
+    seenEntityKeys.add(entityKey);
 
     positions.push({
       q: rawPosition.q as number,

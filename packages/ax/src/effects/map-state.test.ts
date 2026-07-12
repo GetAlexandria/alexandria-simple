@@ -43,45 +43,15 @@ function runWrite(state: MapState, workspacePath: string) {
   );
 }
 
-// The plan §1.3 fixture shape: one domain, one context, a system and a
-// project entity, a system position and a colleague landmark position.
+const seedPath = join(import.meta.dir, "../../../..", "docs/alexandria/map/map-state.json");
+
+// The plan §1.3 fixture shape — one domain, one context, a system and a
+// project entity, a system position and a colleague landmark position —
+// loaded from the checked-in seed so the seed is the single source of truth.
+// Each call parses fresh, so tests that mutate the returned document stay
+// independent.
 function baseState(): Record<string, unknown> {
-  return {
-    domains: [
-      {
-        id: "software",
-        name: "Software",
-        half: "work",
-        owner: "colleague:raven",
-        region: { center: [0, -3], radius: 2 },
-      },
-    ],
-    contexts: [
-      { id: "viewer", name: "Viewer", domainId: "software", libraryContext: "product/viewer" },
-    ],
-    entities: [
-      {
-        id: "sys-raven-duty-loop",
-        kind: "system",
-        name: "Raven duty loop",
-        contextId: "viewer",
-        colleague: "raven",
-        cadence: "30m",
-        lifecycle: "planted",
-      },
-      {
-        id: "prj-map-tab",
-        kind: "project",
-        name: "Map tab",
-        contextId: "viewer",
-        lifecycle: "active",
-      },
-    ],
-    positions: [
-      { q: 1, r: -1, entityType: "system", entityId: "sys-raven-duty-loop" },
-      { q: 0, r: 0, entityType: "landmark", entityId: "colleague:raven" },
-    ],
-  };
+  return JSON.parse(readFileSync(seedPath, "utf8")) as Record<string, unknown>;
 }
 
 describe("validateMapState", () => {
@@ -271,6 +241,32 @@ describe("validateMapState", () => {
     expect((result as MapStateValidationError).message).toContain("duplicate position for entity");
   });
 
+  test("allows a landmark whose id coincides with an entity id (separate namespaces)", () => {
+    const state = baseState();
+    (state.positions as unknown[]).push({
+      q: 5,
+      r: 5,
+      entityType: "landmark",
+      entityId: "sys-raven-duty-loop",
+    });
+    expect(validateMapState(state)).not.toBeInstanceOf(MapStateValidationError);
+  });
+
+  test("rejects two positions for the same landmark", () => {
+    const state = baseState();
+    (state.positions as unknown[]).push({
+      q: 5,
+      r: 5,
+      entityType: "landmark",
+      entityId: "colleague:raven",
+    });
+    const result = validateMapState(state);
+    expect(result).toBeInstanceOf(MapStateValidationError);
+    expect((result as MapStateValidationError).message).toContain(
+      "duplicate position for landmark",
+    );
+  });
+
   test("rejects non-integer hex coordinates", () => {
     const state = baseState();
     ((state.positions as Record<string, unknown>[])[0] as Record<string, unknown>).q = 1.5;
@@ -281,18 +277,19 @@ describe("validateMapState", () => {
 });
 
 describe("the repo seed document", () => {
-  const seedPath = join(import.meta.dir, "../../../..", "docs/alexandria/map/map-state.json");
-
-  test("validates and is stored in canonical serialized form", async () => {
+  test("validates and survives a write semantically unchanged", async () => {
     const raw = readFileSync(seedPath, "utf8");
     const state = validateMapState(JSON.parse(raw));
     expect(state).not.toBeInstanceOf(MapStateValidationError);
 
-    // The checked-in seed must be byte-identical to what writeMapState
-    // produces, so a GET → POST round-trip leaves the file unchanged.
+    // Semantic equality only: positions change by hand (plan §1.3), so a
+    // valid hand edit with different formatting must not redden this suite.
+    // Byte-level write stability is pinned by the validate → write → read →
+    // write round-trip test below.
     const workspacePath = makeWorkspacePath();
     await runWrite(state as MapState, workspacePath);
-    expect(readFileSync(mapStatePathForWorkspacePath(workspacePath), "utf8")).toBe(raw);
+    const written = readFileSync(mapStatePathForWorkspacePath(workspacePath), "utf8");
+    expect(JSON.parse(written)).toEqual(JSON.parse(raw));
   });
 });
 

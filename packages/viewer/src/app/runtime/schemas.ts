@@ -1146,12 +1146,13 @@ export const InfoHubCardSchema = Schema.Struct({
   checklist: Schema.optionalWith(Schema.Array(InfoHubChecklistItemSchema), { exact: true }),
   // Map-tab joins (Map tab plan §1.1, additive and optional): the map
   // context a card belongs to, and the project/system entity that contains
-  // or generated it. Existing boards without them stay valid; the ax twin in
-  // packages/ax/src/effects/info-hub-board.ts must match.
-  contextId: Schema.optionalWith(Schema.String, { exact: true }),
+  // or generated it. Non-empty when present, matching the ax twin in
+  // packages/ax/src/effects/info-hub-board.ts; existing boards without
+  // them stay valid.
+  contextId: Schema.optionalWith(Schema.NonEmptyString, { exact: true }),
   created: Schema.String,
   detail: Schema.optionalWith(Schema.String, { exact: true }),
-  entityId: Schema.optionalWith(Schema.String, { exact: true }),
+  entityId: Schema.optionalWith(Schema.NonEmptyString, { exact: true }),
   id: Schema.String,
   pinned: Schema.optionalWith(Schema.Boolean, { exact: true }),
   priority: Schema.Number,
@@ -1217,10 +1218,13 @@ export const MapEntitySchema = Schema.Struct({
   contextId: Schema.String,
   id: Schema.String,
   kind: MapEntityKindSchema,
-  // Per-kind vocabulary (project: active|completed; system: planted|
-  // hibernating|uprooted) is enforced server-side; decoded as a free string
-  // so an unexpected authored value still decodes, matching the catalog
-  // schemas' posture above.
+  // Not a flat Schema.Literal because the vocabulary is per-kind — a
+  // project's lifecycle is active|completed while a system's is planted|
+  // hibernating|uprooted — and a struct-level literal union cannot express
+  // that kind-conditional constraint. The ax validator enforces the
+  // per-kind vocabulary server-side; decoding as a free string also keeps
+  // an unexpected authored value from failing the fetch, matching the
+  // catalog schemas' posture above.
   lifecycle: Schema.String,
   name: Schema.String,
 });

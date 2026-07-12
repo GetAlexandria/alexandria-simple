@@ -230,11 +230,17 @@ export function validateInfoHubCards(
     if (hasOwn(rawCard, "area") && typeof rawCard.area !== "string") {
       return validationError(`${ref} area must be a string`);
     }
-    if (hasOwn(rawCard, "contextId") && typeof rawCard.contextId !== "string") {
-      return validationError(`${ref} contextId must be a string`);
+    if (
+      hasOwn(rawCard, "contextId") &&
+      (typeof rawCard.contextId !== "string" || rawCard.contextId.length === 0)
+    ) {
+      return validationError(`${ref} contextId must be a non-empty string`);
     }
-    if (hasOwn(rawCard, "entityId") && typeof rawCard.entityId !== "string") {
-      return validationError(`${ref} entityId must be a string`);
+    if (
+      hasOwn(rawCard, "entityId") &&
+      (typeof rawCard.entityId !== "string" || rawCard.entityId.length === 0)
+    ) {
+      return validationError(`${ref} entityId must be a non-empty string`);
     }
     if (hasOwn(rawCard, "terminalAt")) {
       if (typeof rawCard.terminalAt !== "string" || !DATE_ONLY_PATTERN.test(rawCard.terminalAt)) {

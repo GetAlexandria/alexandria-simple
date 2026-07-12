@@ -55,6 +55,10 @@ not in memory or a database the viewer manages itself.
 - `docs/alexandria/library/` — the working product library that the Library
   viewer section reads.
 - `docs/alexandria/info-hub/` — the Info Hub work board the viewer renders.
+- `docs/alexandria/map/` — the Map tab's state file (`map-state.json`):
+  domains, contexts, project/system entities, and hex positions. Hand-edit
+  or write through the ax runtime's `/api/map/state`; both paths validate
+  against the same schema.
 - `docs/alexandria/ledger/` — retained only because the `ax`/viewer runtime
   reads it for state (event history behind library and card views); treat
   it as runtime data, not a place to hand-edit.

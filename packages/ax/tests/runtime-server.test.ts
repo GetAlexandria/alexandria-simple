@@ -652,44 +652,14 @@ async function bankVision(server: StartedAlexandriaRuntimeServer) {
   };
 }
 
-// The Map tab plan §1.3 fixture shape, as a POST body for /api/map/state.
+// The Map tab plan §1.3 fixture shape, as a POST body for /api/map/state —
+// loaded from the checked-in seed so the seed is the single source of truth.
+// Each call parses fresh, so tests that mutate the returned document stay
+// independent.
 function mapStateFixture(): Record<string, unknown> {
-  return {
-    domains: [
-      {
-        id: "software",
-        name: "Software",
-        half: "work",
-        owner: "colleague:raven",
-        region: { center: [0, -3], radius: 2 },
-      },
-    ],
-    contexts: [
-      { id: "viewer", name: "Viewer", domainId: "software", libraryContext: "product/viewer" },
-    ],
-    entities: [
-      {
-        id: "sys-raven-duty-loop",
-        kind: "system",
-        name: "Raven duty loop",
-        contextId: "viewer",
-        colleague: "raven",
-        cadence: "30m",
-        lifecycle: "planted",
-      },
-      {
-        id: "prj-map-tab",
-        kind: "project",
-        name: "Map tab",
-        contextId: "viewer",
-        lifecycle: "active",
-      },
-    ],
-    positions: [
-      { q: 1, r: -1, entityType: "system", entityId: "sys-raven-duty-loop" },
-      { q: 0, r: 0, entityType: "landmark", entityId: "colleague:raven" },
-    ],
-  };
+  return JSON.parse(
+    readFileSync(join(repoRoot, "docs/alexandria/map/map-state.json"), "utf8"),
+  ) as Record<string, unknown>;
 }
 
 async function startApiServer(
@@ -4290,12 +4260,15 @@ exit 2
         method: "POST",
       });
       expect(postResponse.status).toBe(200);
-      expect(await postResponse.json()).toEqual(posted);
+      const echoed = (await postResponse.json()) as Record<string, unknown>;
+      expect(echoed).toEqual(posted);
 
-      // Pretty-printed, mergeable on-disk form.
+      // Pretty-printed, mergeable on-disk form (compared against the
+      // server's canonicalized echo, so a hand-reformatted seed cannot
+      // redden this).
       const statePath = mapStatePathForWorkspacePath(workspacePath(cwd));
       const raw = readFileSync(statePath, "utf8");
-      expect(raw).toBe(`${JSON.stringify(posted, null, 2)}\n`);
+      expect(raw).toBe(`${JSON.stringify(echoed, null, 2)}\n`);
 
       // GET → POST round-trip leaves the file byte-identical.
       const fetched = (await (await fetch(new URL("/api/map/state", server.url))).json()) as Record<

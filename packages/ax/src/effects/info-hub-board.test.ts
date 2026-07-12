@@ -90,13 +90,23 @@ describe("validateInfoHubCards", () => {
     expect(badContextId).toBeInstanceOf(InfoHubBoardValidationError);
     const badEntityId = validateInfoHubCards([{ ...baseCard(), entityId: true }]);
     expect(badEntityId).toBeInstanceOf(InfoHubBoardValidationError);
+    const emptyContextId = validateInfoHubCards([baseCard({ contextId: "" })]);
+    expect(emptyContextId).toBeInstanceOf(InfoHubBoardValidationError);
+    expect((emptyContextId as InfoHubBoardValidationError).message).toContain(
+      "contextId must be a non-empty string",
+    );
+    const emptyEntityId = validateInfoHubCards([baseCard({ entityId: "" })]);
+    expect(emptyEntityId).toBeInstanceOf(InfoHubBoardValidationError);
   });
 
-  test("the existing repo board-state.json still validates unmodified", () => {
+  test("a pre-M1 board (frozen snapshot, no contextId/entityId) still validates unmodified", () => {
+    // A frozen snapshot of docs/alexandria/info-hub/board-state.json as it
+    // stood when the map-join fields landed (Map tab M1) — the one-time
+    // no-migration check, kept hermetic so later duty-loop board edits
+    // cannot break this suite.
     const boardPath = join(
       import.meta.dir,
-      "../../../..",
-      "docs/alexandria/info-hub/board-state.json",
+      "../../tests/fixtures/info-hub/board-state.snapshot.json",
     );
     const board = JSON.parse(readFileSync(boardPath, "utf8")) as { cards: unknown };
     expect(validateInfoHubCards(board.cards)).not.toBeInstanceOf(InfoHubBoardValidationError);
