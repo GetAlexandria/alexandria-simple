@@ -15,7 +15,7 @@ import { useEffect, useMemo, useState } from "react";
 import { MAP_LABEL_COLORS, SYSTEM_TILE_COLORS, mixHexColors } from "./colors";
 import { hexToWorld, type HexCoord } from "./hex";
 import { MapLabel } from "./MapLabel";
-import { truncateTileLabel } from "./HexTile";
+import { truncateTileLabel } from "./label-utils";
 import { HEX_SIZE, TILE_HEIGHT, TILE_INNER_TOP_HEIGHT, getSharedMapGeometries } from "./materials";
 
 const TILE_LIFT = 0.24;

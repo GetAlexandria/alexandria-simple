@@ -7,16 +7,40 @@
 // viewer dependency, with a system-serif fallback) — zero network, zero new
 // assets.
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import { CAMERA_ELEVATION_DEGREES } from "./CameraRig";
 import { MAP_LABEL_COLORS } from "./colors";
 
-/** Rotation that turns an XY plane to face the map's orthographic camera. */
+/**
+ * Rotation that leans an XY plane back toward the map's orthographic camera
+ * — the vendored Lifebuild sprite tilt, deliberately partial (not a true
+ * billboard) so labels and sprites keep a hint of the map's perspective.
+ */
 export const CAMERA_FACING_ROTATION_X = -Math.PI / 2 + (CAMERA_ELEVATION_DEGREES * Math.PI) / 180;
 
 // Rasterization size; world size comes from the `height` prop.
 const FONT_PX = 96;
+
+// Direct navigation to /dev/map never mounts the library shell (the only
+// other Cormorant Garamond user), and setting a canvas ctx.font does NOT
+// trigger the @font-face download — without an explicit load, labels bake
+// the Georgia fallback deterministically. Kick both used faces at module
+// load; labels re-rasterize once the faces arrive.
+let mapLabelFontsLoaded = false;
+const mapLabelFontsReady: Promise<void> =
+  typeof document !== "undefined" && "fonts" in document
+    ? Promise.all([
+        document.fonts.load(`600 ${FONT_PX}px "Cormorant Garamond"`),
+        document.fonts.load(`italic 600 ${FONT_PX}px "Cormorant Garamond"`),
+      ]).then(
+        () => undefined,
+        () => undefined,
+      )
+    : Promise.resolve();
+void mapLabelFontsReady.then(() => {
+  mapLabelFontsLoaded = true;
+});
 
 type MapLabelProps = {
   text: string;
@@ -126,9 +150,27 @@ export function MapLabel({
   italic = false,
   letterSpacingEm = 0,
 }: MapLabelProps) {
+  const [fontsReady, setFontsReady] = useState(mapLabelFontsLoaded);
+
+  useEffect(() => {
+    if (fontsReady) {
+      return;
+    }
+    let active = true;
+    void mapLabelFontsReady.then(() => {
+      if (active) {
+        setFontsReady(true);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [fontsReady]);
+
   const label = useMemo(
     () => createLabelTexture(text, color, haloColor, italic, letterSpacingEm),
-    [color, haloColor, italic, letterSpacingEm, text],
+    // fontsReady re-rasterizes the same text once Cormorant Garamond lands.
+    [color, haloColor, italic, letterSpacingEm, text, fontsReady],
   );
 
   useEffect(() => {

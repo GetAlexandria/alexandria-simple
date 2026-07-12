@@ -121,6 +121,19 @@ export const MAP_PATCH_TINT_STRENGTH = 0.22;
  */
 export const MAP_PATCH_ALTERNATE_MIX = 0.4;
 
+/** Mix target for lightening a pigment toward parchment white. */
+export const MIX_WHITE = "#ffffff";
+
+/**
+ * The shared dimmed-tile family: completed projects and hibernating systems
+ * deliberately fade to the same pigments ("victories stay visible" and the
+ * hibernation dim are one visual language).
+ */
+export const DIMMED_TILE_COLORS = {
+  bottom: "#c6c0b7",
+  innerTop: "#ddd5ca",
+} as const;
+
 /** Painted-border inks drawn along territory and patch boundaries. */
 export const MAP_BORDER_COLORS = {
   /** Between domains (and around each territory). */
@@ -143,10 +156,10 @@ export const MAP_LABEL_COLORS = {
 export const HEX_TILE_COLORS = {
   completedEdge: "#a7a29a",
   bottom: "#e7d8c2",
-  completedBottom: "#c6c0b7",
+  completedBottom: DIMMED_TILE_COLORS.bottom,
   innerTop: "#f5ead6",
   innerTopHighlighted: "#fff2e2",
-  innerTopCompleted: "#ddd5ca",
+  innerTopCompleted: DIMMED_TILE_COLORS.innerTop,
   hoverEmissive: "#6e5a45",
 } as const;
 
@@ -155,9 +168,9 @@ export const SYSTEM_TILE_COLORS = {
   desaturationTarget: "#9d968d",
   innerTop: "#e8e0d4",
   innerTopHighlighted: "#f0ebe2",
-  innerTopHibernating: "#ddd5ca",
+  innerTopHibernating: DIMMED_TILE_COLORS.innerTop,
   bottom: "#ddd4c6",
-  bottomHibernating: "#c6c0b7",
+  bottomHibernating: DIMMED_TILE_COLORS.bottom,
   healthDot: "#4ade80",
   healthDotHibernating: "#8b8680",
   glyph: "#ffffff",

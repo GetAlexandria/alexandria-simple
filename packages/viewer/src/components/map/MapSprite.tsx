@@ -11,6 +11,7 @@
 import { useLoader } from "@react-three/fiber";
 import { useEffect } from "react";
 import * as THREE from "three";
+import { MIX_WHITE } from "./colors";
 import { CAMERA_FACING_ROTATION_X } from "./MapLabel";
 import { hexToWorld, type HexCoord } from "./hex";
 import { HEX_SIZE } from "./materials";
@@ -31,7 +32,7 @@ export function MapSprite({
   textureUrl,
   width,
   height,
-  tint = "#ffffff",
+  tint = MIX_WHITE,
   opacity = 0.95,
   elevation = 0.58,
   zOffset = 0.45,
@@ -40,8 +41,12 @@ export function MapSprite({
   const [x, z] = hexToWorld(coord, HEX_SIZE);
 
   useEffect(() => {
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.needsUpdate = true;
+    // useLoader caches textures per URL and stray piles share stage PNGs:
+    // only touch (and re-upload) a texture that isn't already configured.
+    if (texture.colorSpace !== THREE.SRGBColorSpace) {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.needsUpdate = true;
+    }
   }, [texture]);
 
   return (

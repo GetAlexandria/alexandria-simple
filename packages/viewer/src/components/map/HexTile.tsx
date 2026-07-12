@@ -14,20 +14,15 @@
 
 import type { ThreeEvent } from "@react-three/fiber";
 import { useEffect, useMemo, useState } from "react";
-import { HEX_TILE_COLORS, MAP_LABEL_COLORS, mixHexColors } from "./colors";
+import { HEX_TILE_COLORS, MAP_LABEL_COLORS } from "./colors";
 import { hexToWorld, type HexCoord } from "./hex";
+import { truncateTileLabel } from "./label-utils";
 import { MapLabel } from "./MapLabel";
 import { ProjectSprite } from "./ProjectSprite";
 import { HEX_SIZE, TILE_HEIGHT, TILE_INNER_TOP_HEIGHT, getSharedMapGeometries } from "./materials";
 
 const TILE_LIFT = 0.24;
 const HOVER_LIFT = 0.04;
-const MAX_LABEL_LENGTH = 24;
-
-export const truncateTileLabel = (label: string, maxLength: number = MAX_LABEL_LENGTH): string => {
-  const trimmed = label.trim();
-  return trimmed.length <= maxLength ? trimmed : `${trimmed.slice(0, maxLength - 1).trimEnd()}…`;
-};
 
 export type HexTileLifecycle = "active" | "completed";
 
@@ -114,15 +109,7 @@ export function HexTile({ coord, name, accentColor, lifecycle = "active", onClic
           dispose={null}
           position={[0, TILE_HEIGHT / 2 + TILE_INNER_TOP_HEIGHT / 2, 0]}
         >
-          <meshStandardMaterial
-            color={
-              isHovered && !isCompleted
-                ? mixHexColors(innerTopColor, "#ffffff", 0.2)
-                : innerTopColor
-            }
-            roughness={0.9}
-            metalness={0.03}
-          />
+          <meshStandardMaterial color={innerTopColor} roughness={0.9} metalness={0.03} />
         </mesh>
       </mesh>
 

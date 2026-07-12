@@ -58,6 +58,12 @@ export function getSharedMapGeometries(): SharedMapGeometries {
 
 const parchmentCellMaterials = new Map<string, THREE.ShaderMaterial>();
 
+// The cache's boundedness is convention (visual states x domain tints x one
+// seed) — the seed is a baked shader uniform, so it must stay in the key.
+// If a caller ever varies seeds or strengths per cell, the cache would grow
+// per cell; surface that in dev instead of leaking silently.
+const PARCHMENT_CACHE_WARN_SIZE = 64;
+
 /**
  * Cached parchment top-face material for a ground cell. The parchment
  * pattern samples world position, so one material renders seamlessly across
@@ -78,6 +84,12 @@ export function getParchmentCellMaterial(
       highlightStrength,
     });
     parchmentCellMaterials.set(key, material);
+    if (import.meta.env?.DEV && parchmentCellMaterials.size === PARCHMENT_CACHE_WARN_SIZE) {
+      console.warn(
+        `[map] parchment material cache reached ${PARCHMENT_CACHE_WARN_SIZE} entries — ` +
+          "seeds/tints/highlights are expected to be bounded; check the caller.",
+      );
+    }
   }
   return material;
 }

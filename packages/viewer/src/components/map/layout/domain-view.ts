@@ -10,6 +10,7 @@ import type { MapDomainHalf, MapEntity, MapState } from "../../../app/runtime/sc
 import {
   MAP_DOMAIN_TINTS,
   MAP_PATCH_ALTERNATE_MIX,
+  MIX_WHITE,
   MAP_PATCH_TINT_STRENGTH,
   MAP_REGION_TINT_STRENGTH,
   mixHexColors,
@@ -136,10 +137,19 @@ function sharedEdgeSegment(cell: HexCoord, neighbor: HexCoord): DomainViewBorder
   };
 }
 
+/**
+ * Round to 3 decimals numerically before stringifying: trig noise puts tiny
+ * negatives (~-1e-16) at x = 0, and toFixed alone renders those as "-0.000"
+ * on one side of a shared edge but "0.000" on the other, defeating dedup.
+ */
+export function roundBorderCoordinate(value: number): number {
+  return Math.round(value * 1000) / 1000;
+}
+
 /** Order-independent key so a border shared by two cells draws once. */
 function segmentKey(segment: DomainViewBorderSegment): string {
-  const a = `${segment.x1.toFixed(3)},${segment.z1.toFixed(3)}`;
-  const b = `${segment.x2.toFixed(3)},${segment.z2.toFixed(3)}`;
+  const a = `${roundBorderCoordinate(segment.x1)},${roundBorderCoordinate(segment.z1)}`;
+  const b = `${roundBorderCoordinate(segment.x2)},${roundBorderCoordinate(segment.z2)}`;
   return a < b ? `${a}|${b}` : `${b}|${a}`;
 }
 
@@ -345,7 +355,7 @@ export function computeDomainViewLayout(
     const contextIndex = domainContexts.findIndex((context) => context.id === contextId);
     const color =
       contextIndex % 2 === 1
-        ? mixHexColors(domainColor, "#ffffff", MAP_PATCH_ALTERNATE_MIX)
+        ? mixHexColors(domainColor, MIX_WHITE, MAP_PATCH_ALTERNATE_MIX)
         : domainColor;
     tintByCellKey.set(key, { color, strength: MAP_PATCH_TINT_STRENGTH });
   }

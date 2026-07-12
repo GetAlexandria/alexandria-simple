@@ -2,7 +2,12 @@ import { describe, expect, it } from "bun:test";
 import type { MapState } from "../../../app/runtime/schemas";
 import { DEV_MAP_FIXTURE, DEV_MAP_STRAY_CARD_COUNTS, devMapGridRadius } from "../dev-map-fixture";
 import { createHex, generateHexGrid, getNeighbors, hexDistance, hexToKey } from "../hex";
-import { cellHalf, computeDomainViewLayout } from "./domain-view";
+import {
+  cellHalf,
+  computeDomainViewLayout,
+  roundBorderCoordinate,
+  type DomainViewBorderSegment,
+} from "./domain-view";
 
 const cells = generateHexGrid(devMapGridRadius(DEV_MAP_FIXTURE));
 const layout = computeDomainViewLayout(DEV_MAP_FIXTURE, cells, {
@@ -155,6 +160,22 @@ describe("computeDomainViewLayout washes and borders", () => {
   it("draws patch borders only between different contexts of one domain", () => {
     // The fixture has two two-context domains, so interior borders exist.
     expect(layout.patchBorders.length).toBeGreaterThan(0);
+  });
+
+  it("emits every border segment exactly once under float-noise rounding", () => {
+    // Regression: toFixed alone rendered trig noise at x = 0 as "-0.000" on
+    // one side of a shared edge and "0.000" on the other, so 6 fixture patch
+    // borders were emitted twice (double-blended dashes). Keys must round
+    // numerically before stringifying.
+    const numericKey = (segment: DomainViewBorderSegment): string => {
+      const a = `${roundBorderCoordinate(segment.x1)},${roundBorderCoordinate(segment.z1)}`;
+      const b = `${roundBorderCoordinate(segment.x2)},${roundBorderCoordinate(segment.z2)}`;
+      return a < b ? `${a}|${b}` : `${b}|${a}`;
+    };
+    for (const segments of [layout.patchBorders, layout.domainBorders]) {
+      const keys = segments.map(numericKey);
+      expect(new Set(keys).size).toBe(keys.length);
+    }
   });
 });
 
