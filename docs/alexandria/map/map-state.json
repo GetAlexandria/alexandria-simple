@@ -1,0 +1,57 @@
+{
+  "domains": [
+    {
+      "id": "software",
+      "name": "Software",
+      "half": "work",
+      "owner": "colleague:raven",
+      "region": {
+        "center": [
+          0,
+          -3
+        ],
+        "radius": 2
+      }
+    }
+  ],
+  "contexts": [
+    {
+      "id": "viewer",
+      "name": "Viewer",
+      "domainId": "software",
+      "libraryContext": "product/viewer"
+    }
+  ],
+  "entities": [
+    {
+      "id": "sys-raven-duty-loop",
+      "kind": "system",
+      "name": "Raven duty loop",
+      "contextId": "viewer",
+      "colleague": "raven",
+      "cadence": "30m",
+      "lifecycle": "planted"
+    },
+    {
+      "id": "prj-map-tab",
+      "kind": "project",
+      "name": "Map tab",
+      "contextId": "viewer",
+      "lifecycle": "active"
+    }
+  ],
+  "positions": [
+    {
+      "q": 1,
+      "r": -1,
+      "entityType": "system",
+      "entityId": "sys-raven-duty-loop"
+    },
+    {
+      "q": 0,
+      "r": 0,
+      "entityType": "landmark",
+      "entityId": "colleague:raven"
+    }
+  ]
+}

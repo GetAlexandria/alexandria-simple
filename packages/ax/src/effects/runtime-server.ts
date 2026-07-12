@@ -86,6 +86,13 @@ import {
   type InfoHubBoard,
 } from "./info-hub-board.js";
 import {
+  MapStateFileError,
+  MapStateValidationError,
+  readMapState,
+  validateMapState,
+  writeMapState,
+} from "./map-state.js";
+import {
   loadLibraryCardDetail,
   loadLibraryCatalog,
   loadLibraryGraph,
@@ -2747,6 +2754,66 @@ async function infoHubBoardWriteResponse(options: {
   }
 }
 
+async function mapStateResponse(workspacePath: string): Promise<Response> {
+  try {
+    const result = await runWithNodeFileSystem(readMapState({ workspacePath }).pipe(Effect.either));
+    if (result._tag === "Left") {
+      // A corrupt on-disk file is a structured 422, never a crash: the file
+      // needs a human (or agent) edit before the map can serve state again.
+      if (
+        result.left instanceof MapStateFileError ||
+        errorTag(result.left) === "MapStateFileError"
+      ) {
+        return jsonError(result.left.message, 422, "map_state_invalid");
+      }
+      return jsonError(result.left.message, statusForUnknownError(result.left));
+    }
+    return Response.json(result.right);
+  } catch (error) {
+    return jsonError(
+      error instanceof Error ? error.message : String(error),
+      statusForUnknownError(error),
+    );
+  }
+}
+
+async function mapStateWriteResponse(options: {
+  mutationSemaphore: Effect.Semaphore;
+  request: Request;
+  workspacePath: string;
+}): Promise<Response> {
+  let body: unknown;
+  try {
+    body = await options.request.json();
+  } catch (error) {
+    return jsonError(error instanceof Error ? error.message : String(error), 400);
+  }
+
+  // Full-document validation happens before any filesystem work, so a
+  // rejected POST (duplicate hex, unknown reference, bad shape) never
+  // touches the file on disk.
+  const state = validateMapState(body);
+  if (state instanceof MapStateValidationError) {
+    return jsonError(state.message, 400, "map_state_invalid");
+  }
+
+  try {
+    return await runWithNodeFileSystem(
+      options.mutationSemaphore.withPermits(1)(
+        Effect.gen(function* () {
+          yield* writeMapState({ state, workspacePath: options.workspacePath });
+          return Response.json(state);
+        }),
+      ),
+    );
+  } catch (error) {
+    return jsonError(
+      error instanceof Error ? error.message : String(error),
+      statusForUnknownError(error),
+    );
+  }
+}
+
 async function readVisionSourceAttachBody(
   request: Request,
 ): Promise<{ sourceId: string } | RuntimeRequestError> {
@@ -3080,6 +3147,18 @@ function createRuntimeFetchHandler(
 
     if (url.pathname === "/api/info-hub/board" && request.method === "POST") {
       return infoHubBoardWriteResponse({
+        mutationSemaphore,
+        request,
+        workspacePath: options.workspacePath,
+      });
+    }
+
+    if (url.pathname === "/api/map/state" && request.method === "GET") {
+      return mapStateResponse(options.workspacePath);
+    }
+
+    if (url.pathname === "/api/map/state" && request.method === "POST") {
+      return mapStateWriteResponse({
         mutationSemaphore,
         request,
         workspacePath: options.workspacePath,

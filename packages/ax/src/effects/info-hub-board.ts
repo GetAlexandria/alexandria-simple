@@ -36,6 +36,8 @@ const CARD_FIELD_ORDER = [
   "type",
   "status",
   "area",
+  "contextId",
+  "entityId",
   "priority",
   "source",
   "created",
@@ -62,8 +64,14 @@ export interface InfoHubCard {
   archived?: boolean;
   area?: string;
   checklist?: InfoHubChecklistItem[];
+  // Map-tab joins (Map tab plan §1.1, additive and optional): the map
+  // context a card belongs to, and the project/system entity that contains
+  // or generated it. Free strings here — the board file does not depend on
+  // map-state.json; the map derives the join at read time.
+  contextId?: string;
   created: string;
   detail?: string;
+  entityId?: string;
   id: string;
   pinned?: boolean;
   priority: number;
@@ -221,6 +229,12 @@ export function validateInfoHubCards(
     }
     if (hasOwn(rawCard, "area") && typeof rawCard.area !== "string") {
       return validationError(`${ref} area must be a string`);
+    }
+    if (hasOwn(rawCard, "contextId") && typeof rawCard.contextId !== "string") {
+      return validationError(`${ref} contextId must be a string`);
+    }
+    if (hasOwn(rawCard, "entityId") && typeof rawCard.entityId !== "string") {
+      return validationError(`${ref} entityId must be a string`);
     }
     if (hasOwn(rawCard, "terminalAt")) {
       if (typeof rawCard.terminalAt !== "string" || !DATE_ONLY_PATTERN.test(rawCard.terminalAt)) {

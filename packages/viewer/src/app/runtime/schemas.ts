@@ -1144,8 +1144,14 @@ export const InfoHubCardSchema = Schema.Struct({
   archived: Schema.optionalWith(Schema.Boolean, { exact: true }),
   area: Schema.optionalWith(Schema.String, { exact: true }),
   checklist: Schema.optionalWith(Schema.Array(InfoHubChecklistItemSchema), { exact: true }),
+  // Map-tab joins (Map tab plan §1.1, additive and optional): the map
+  // context a card belongs to, and the project/system entity that contains
+  // or generated it. Existing boards without them stay valid; the ax twin in
+  // packages/ax/src/effects/info-hub-board.ts must match.
+  contextId: Schema.optionalWith(Schema.String, { exact: true }),
   created: Schema.String,
   detail: Schema.optionalWith(Schema.String, { exact: true }),
+  entityId: Schema.optionalWith(Schema.String, { exact: true }),
   id: Schema.String,
   pinned: Schema.optionalWith(Schema.Boolean, { exact: true }),
   priority: Schema.Number,
@@ -1166,7 +1172,88 @@ export const InfoHubBoardSchema = Schema.Struct({
 
 export type InfoHubBoard = Schema.Schema.Type<typeof InfoHubBoardSchema>;
 
+// Map state (Map tab plan §1) — the browser-facing shape of
+// `docs/alexandria/map/map-state.json`, served by `/api/map/state`. The ax
+// twin in packages/ax/src/effects/map-state.ts owns validation (referential
+// integrity, one entity per hex) and must match; this schema only decodes
+// what the server already validated.
+export const MapDomainHalfSchema = Schema.Literal("work", "personal");
+
+export type MapDomainHalf = Schema.Schema.Type<typeof MapDomainHalfSchema>;
+
+export const MapDomainRegionSchema = Schema.Struct({
+  center: Schema.Tuple(Schema.Number, Schema.Number),
+  radius: Schema.Number,
+});
+
+export type MapDomainRegion = Schema.Schema.Type<typeof MapDomainRegionSchema>;
+
+export const MapDomainSchema = Schema.Struct({
+  half: MapDomainHalfSchema,
+  id: Schema.String,
+  name: Schema.String,
+  owner: Schema.optionalWith(Schema.String, { exact: true }),
+  region: MapDomainRegionSchema,
+});
+
+export type MapDomain = Schema.Schema.Type<typeof MapDomainSchema>;
+
+export const MapContextSchema = Schema.Struct({
+  domainId: Schema.String,
+  id: Schema.String,
+  libraryContext: Schema.optionalWith(Schema.String, { exact: true }),
+  name: Schema.String,
+});
+
+export type MapContext = Schema.Schema.Type<typeof MapContextSchema>;
+
+export const MapEntityKindSchema = Schema.Literal("project", "system");
+
+export type MapEntityKind = Schema.Schema.Type<typeof MapEntityKindSchema>;
+
+export const MapEntitySchema = Schema.Struct({
+  cadence: Schema.optionalWith(Schema.String, { exact: true }),
+  colleague: Schema.optionalWith(Schema.String, { exact: true }),
+  contextId: Schema.String,
+  id: Schema.String,
+  kind: MapEntityKindSchema,
+  // Per-kind vocabulary (project: active|completed; system: planted|
+  // hibernating|uprooted) is enforced server-side; decoded as a free string
+  // so an unexpected authored value still decodes, matching the catalog
+  // schemas' posture above.
+  lifecycle: Schema.String,
+  name: Schema.String,
+});
+
+export type MapEntity = Schema.Schema.Type<typeof MapEntitySchema>;
+
+export const MapPositionEntityTypeSchema = Schema.Literal("project", "system", "landmark");
+
+export type MapPositionEntityType = Schema.Schema.Type<typeof MapPositionEntityTypeSchema>;
+
+export const MapPositionSchema = Schema.Struct({
+  entityId: Schema.String,
+  entityType: MapPositionEntityTypeSchema,
+  q: Schema.Number,
+  r: Schema.Number,
+});
+
+export type MapPosition = Schema.Schema.Type<typeof MapPositionSchema>;
+
+export const MapStateSchema = Schema.Struct({
+  contexts: Schema.Array(MapContextSchema),
+  domains: Schema.Array(MapDomainSchema),
+  entities: Schema.Array(MapEntitySchema),
+  positions: Schema.Array(MapPositionSchema),
+});
+
+export type MapState = Schema.Schema.Type<typeof MapStateSchema>;
+
 export const decodeInfoHubBoard = Schema.decodeUnknown(InfoHubBoardSchema, {
+  errors: "all",
+});
+
+export const decodeMapState = Schema.decodeUnknown(MapStateSchema, {
   errors: "all",
 });
 
