@@ -1,6 +1,6 @@
 {
   "comment": "Info Hub work board (Info Hub kanban plan, Lane B). Agents edit this file directly; the Info Hub board page persists here. Git-tracked shared state — treat it like source, not per-machine runtime state.",
-  "updated": "2026-07-09",
+  "updated": "2026-07-12",
   "cards": [
     {
       "id": "wo-viewer-light-theme-remnants",
@@ -24,10 +24,22 @@
       "title": "Library Operations flow-board follow-up",
       "detail": "Extend the empty-library burndown view toward a real flow board once the library-operations pipeline contract settles.",
       "checklist": [
-        { "done": true, "text": "Confirm the BoH/FoH burndown axes (presence, coherence)" },
-        { "done": true, "text": "Sketch the flow-board columns against the pipeline contract" },
-        { "done": false, "text": "Land a first read-only flow-board view behind a mode flag" },
-        { "done": false, "text": "Wire the view into the Builder section tab strip" }
+        {
+          "done": true,
+          "text": "Confirm the BoH/FoH burndown axes (presence, coherence)"
+        },
+        {
+          "done": true,
+          "text": "Sketch the flow-board columns against the pipeline contract"
+        },
+        {
+          "done": false,
+          "text": "Land a first read-only flow-board view behind a mode flag"
+        },
+        {
+          "done": false,
+          "text": "Wire the view into the Builder section tab strip"
+        }
       ]
     },
     {
@@ -82,9 +94,9 @@
       "priority": 20,
       "source": "seed:info-hub-prototype",
       "created": "2026-06-15",
-      "terminalAt": "2026-06-24",
       "title": "Trim the hosted-instance health checks in the product-hosting runbook",
-      "detail": "Dropped a duplicate freeq-raven liveness probe the runbook carried since the first hosted instance."
+      "detail": "Dropped a duplicate freeq-raven liveness probe the runbook carried since the first hosted instance.",
+      "terminalAt": "2026-06-24"
     },
     {
       "id": "wo-bank-conformance-false-positive",
@@ -94,10 +106,21 @@
       "priority": 10,
       "source": "seed:info-hub-prototype",
       "created": "2026-06-05",
-      "terminalAt": "2026-06-09",
-      "pinned": true,
       "title": "Chase the bank-conformance gate's viewer-invisible false positive",
-      "detail": "Superseded by the #408/#409 gate fixes that closed the drift directly; kept pinned as a reference for the failure shape."
+      "detail": "Superseded by the #408/#409 gate fixes that closed the drift directly; kept pinned as a reference for the failure shape.",
+      "terminalAt": "2026-06-09",
+      "pinned": true
+    },
+    {
+      "id": "wo-runtime-task-authenticate-duty-loop-connectors",
+      "type": "task",
+      "status": "needs-a-human",
+      "priority": 15,
+      "source": "alexandria-simple-setup",
+      "created": "2026-07-12",
+      "area": "runtime",
+      "title": "Authenticate Gmail/Calendar connectors for the duty loop",
+      "detail": "The duty loop's inbox checks (duty-loop skill, step 2) degrade to no-ops until the Gmail and Google Calendar MCP connectors are authenticated for the account the cron runs as (claude.ai connector settings). A human has to do the OAuth dance — first real resident of this lane."
     }
   ]
 }
