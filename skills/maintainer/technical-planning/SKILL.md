@@ -3,7 +3,7 @@ name: alexandria-dev-technical-planning
 description: >
   Create or refine an Alexandria technical implementation plan for a GitHub issue,
   especially when the issue links to a product-level plan.md. Produces
-  `docs/alexandria/plans/<issue-number>-<task-name>/plan.md` with repo-specific scope, architectural
+  `docs/plans/<issue-number>-<task-name>/plan.md` with repo-specific scope, architectural
   boundaries, touched behavior surfaces, deterministic test coverage, eval rerun/create
   requirements, concrete risks, and deferred work.
   Use before substantial implementation on an issue in this repo.
@@ -131,13 +131,13 @@ Every risk should include a mitigation.
 
 Write the plan to a **per-issue** directory:
 
-`docs/alexandria/plans/<issue-number>-<task-name>/plan.md`
+`docs/plans/<issue-number>-<task-name>/plan.md`
 
 If the work is not tied to a numbered issue, use a stable descriptive directory name
 **distinct from any existing plan directory**.
 
 **Never write to the linked product-level plan's path or directory.** When the issue's
-`Plan:` line points at an existing `docs/alexandria/plans/<feature>/plan.md`, that file
+`Plan:` line points at an existing `docs/plans/<feature>/plan.md`, that file
 and its directory are **read-only input** — the technical plan is a separate per-issue
 artifact. Reusing the feature path overwrites the product/design plan (this has happened:
 several issues that shared one feature slug each clobbered the product `plan.md` in turn).
@@ -153,7 +153,7 @@ Before implementation starts:
 
 ## Anti-Patterns
 
-1. Copying the product-level plan into `docs/alexandria/plans/` without translating it into repo
+1. Copying the product-level plan into `docs/plans/` without translating it into repo
    boundaries
 2. **Writing the technical plan to the linked product-level plan's path or directory**, overwriting
    it — that path is read-only input; always use a distinct per-issue directory

@@ -9,6 +9,12 @@ description: >
 
 # Release
 
+STALE: `packages/deploy` (build-release-assets/update-site-release/
+publish-release-downloads) was removed in the alexandria-simple pare-back and
+`.github/workflows/release.yml` no longer runs the steps this skill documents
+below. This skill needs a rewrite once alexandria-simple's release mechanism
+is decided; until then, do not follow Step 2 literally.
+
 Run the versioned release path for the canonical `alexandria` plugin, `ax` CLI,
 Fabro sidecar, installer, public repo payload, R2 downloads, Alexandria site, and
 GitHub Releases.

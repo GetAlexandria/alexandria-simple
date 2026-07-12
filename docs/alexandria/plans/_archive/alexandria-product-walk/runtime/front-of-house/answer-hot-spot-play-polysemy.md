@@ -1,1 +1,0 @@
-"The play" means the play definition — the playbook entry that says what this play is, what agent owns it, what it does. The Workflow Package (the runnable workflow template) and the Play Skill (the agent-facing skill file) are components of a play and should keep their own separate cards. Three artifacts, one noun, two subordinate parts.

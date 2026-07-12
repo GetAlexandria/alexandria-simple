@@ -1,1 +1,0 @@
-The knowledge store — company knowledge made atomic and organized into cards so agents and humans can use it. Each division or business unit has its own library with three planes: the work of that division, strategy, and learning. The Company Library is the planned federation of all division libraries. The first library being built is Product — describing Alexandria itself.

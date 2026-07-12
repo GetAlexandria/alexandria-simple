@@ -866,7 +866,10 @@ describe("library draft overlay", () => {
     });
   });
 
-  test("loads the empty PMS-Drafts log without changing PMS-Back or sweep bytes", async () => {
+  // Skipped: reads studio/sweeps/playmaker-studio from the real repo tree,
+  // and studio/ was removed in the alexandria-simple pare-back. Needs a
+  // fixture rewrite (or removal) before re-enabling.
+  test.skip("loads the empty PMS-Drafts log without changing PMS-Back or sweep bytes", async () => {
     const sweepHashBefore = hashTree(join(repoRoot, pmsBackRoot));
     const back = await loadRoot(repoRoot, pmsBackRoot);
     const drafts = await loadRoot(repoRoot, pmsBackRoot, pmsDraftPatchLog);

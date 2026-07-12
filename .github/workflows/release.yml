@@ -92,20 +92,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Build bundled Fabro sidecar
-        run: cargo build --release --manifest-path repos/fabro/Cargo.toml -p fabro-cli
-
-      - name: Build release assets
-        env:
-          ALEXANDRIA_PUBLIC_REPO_DIR: ${{ github.workspace }}/public-repo
-          ALEXANDRIA_RELEASE_OUTPUT_DIR: ${{ github.workspace }}/release-artifacts
-          ALEXANDRIA_RELEASE_TARGET: alexandria
-          ALEXANDRIA_FABRO_BIN: ${{ github.workspace }}/repos/fabro/target/release/fabro
-        run: bun packages/deploy/src/build-release-assets.ts
-
+      # packages/deploy (and the Fabro sidecar build it depended on) was
+      # removed in the alexandria-simple pare-back. This job has no release
+      # build step until a replacement release mechanism is ruled on.
       - name: Upload release assets
         uses: actions/upload-artifact@v4
         with:
@@ -150,14 +139,9 @@ jobs:
       - name: Enable corepack
         run: corepack enable
 
-      - name: Update site release surfaces
-        env:
-          ALEXANDRIA_RELEASE_OUTPUT_DIR: ${{ github.workspace }}/.release-artifacts
-          ALEXANDRIA_SITE_REPO_DIR: ${{ github.workspace }}/alexandria-site
-          ALEXANDRIA_RELEASE_PR_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}
-          ALEXANDRIA_RELEASE_TARGET: alexandria
-        run: bun packages/deploy/src/update-site-release.ts
-
+      # packages/deploy was removed in the alexandria-simple pare-back; this
+      # job has no site-update step until a replacement release mechanism is
+      # ruled on.
       - name: Commit site release changes
         working-directory: alexandria-site
         run: |
@@ -203,14 +187,9 @@ jobs:
       - name: Install Wrangler
         run: npm install --global wrangler@4
 
-      - name: Publish download artifacts to R2
-        env:
-          ALEXANDRIA_RELEASE_OUTPUT_DIR: ${{ github.workspace }}/.release-artifacts
-          ALEXANDRIA_R2_ACCOUNT_ID: ${{ secrets.ALEXANDRIA_R2_ACCOUNT_ID }}
-          ALEXANDRIA_R2_BUCKET: ${{ secrets.ALEXANDRIA_R2_BUCKET }}
-          ALEXANDRIA_RELEASE_TARGET: alexandria
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: bun packages/deploy/src/publish-release-downloads.ts
+      # packages/deploy was removed in the alexandria-simple pare-back; this
+      # job has no R2-publish step until a replacement release mechanism is
+      # ruled on.
 
   create-github-release:
     needs:

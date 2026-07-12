@@ -26,16 +26,15 @@ interface SyncPublicRepoOptions {
   logger?: Pick<Console, "log">;
 }
 
+// packages/alexandria-marketplace (source of the public repo's root
+// .claude-plugin/marketplace.json) was removed in the alexandria-simple
+// pare-back; this needs revisiting once the release mechanism is decided.
 const ROOT_SYNC_ITEMS: SyncItem[] = [
   { source: "README.public.md", destination: "README.md" },
   { source: "install.sh", destination: "install.sh" },
   {
     source: "packages/plugin-runtime/public/.github",
     destination: ".github",
-  },
-  {
-    source: "packages/alexandria-marketplace/.claude-plugin",
-    destination: ".claude-plugin",
   },
 ];
 

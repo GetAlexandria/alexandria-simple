@@ -10,8 +10,7 @@
     "e2e:fabro-product": "bun e2e/fabro-product/run.ts",
     "format": "pnpm exec prettier --write \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" \"e2e/**/*.ts\" \"*.json\"",
     "format:check": "pnpm exec prettier --check \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" \"e2e/**/*.ts\" \"*.json\"",
-    "lint": "pnpm exec eslint src tests e2e && pnpm run lint:library-stories",
-    "lint:library-stories": "bun src/tools/library-catalog-story-lint.ts --project-root ../.. --library-root studio/library",
+    "lint": "pnpm exec eslint src tests e2e",
     "playground": "bun e2e/local-playground/run.ts",
     "test": "bun test",
     "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json"

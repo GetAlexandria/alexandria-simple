@@ -1,3 +1,0 @@
-I’ll read the required fixture first and then write the appropriate `runtime/` artifact. Since the workspace is read-only, I may need approval before creating files.The fixture is present and contains a build/product discussion. I’m going to record the boundary as the extension thread, including the capture problem and the separate “already in the library” search/deduplication concern it pulls in.Wrote `runtime/target-spans.md`.
-
-{"preferred_next_label": "Proceed"}

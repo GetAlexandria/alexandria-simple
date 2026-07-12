@@ -33,22 +33,12 @@ describe("syncPublicRepo", () => {
     expect(existsSync(join(targetRoot, "stale.txt"))).toBeFalse();
     expect(existsSync(join(targetRoot, "install.sh"))).toBeTrue();
     expect(existsSync(join(targetRoot, "install-next.sh"))).toBeFalse();
-    expect(existsSync(join(targetRoot, ".claude-plugin", "marketplace.json"))).toBeTrue();
+    // packages/alexandria-marketplace (source of the root
+    // .claude-plugin/marketplace.json) was removed in the alexandria-simple
+    // pare-back, so the public repo no longer gets one synced.
+    expect(existsSync(join(targetRoot, ".claude-plugin", "marketplace.json"))).toBeFalse();
     expect(existsSync(join(targetRoot, ".claude-plugin", "plugin.json"))).toBeFalse();
     expect(existsSync(join(targetRoot, ".agents", "plugins", "marketplace.json"))).toBeTrue();
-
-    const marketplace = JSON.parse(
-      readFileSync(join(targetRoot, ".claude-plugin", "marketplace.json"), "utf8"),
-    ) as {
-      plugins: Array<{ name: string; source: string }>;
-    };
-    expect(marketplace.plugins).toHaveLength(1);
-    expect(marketplace.plugins[0]).toEqual(
-      expect.objectContaining({
-        name: "alexandria",
-        source: "./alexandria",
-      }),
-    );
 
     const codexMarketplace = JSON.parse(
       readFileSync(join(targetRoot, ".agents", "plugins", "marketplace.json"), "utf8"),

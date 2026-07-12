@@ -1,1 +1,0 @@
-Unresolved — carry as a residual gap. The director does not recognize "Project" as a familiar product noun in this context. Needs investigation into how it's being used in the data model before a ruling can be made.
