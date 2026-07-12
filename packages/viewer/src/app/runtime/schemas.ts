@@ -1117,13 +1117,19 @@ export const InfoHubCardTypeSchema = Schema.Literal("task", "improvement", "bug"
 
 export type InfoHubCardType = Schema.Schema.Type<typeof InfoHubCardTypeSchema>;
 
-export const InfoHubCardStatusSchema = Schema.Literal(
+// The one place the board's status vocabulary is declared (lane order).
+// boardModel.ts and InfoHubBoardView.tsx derive their status sets from this;
+// packages/ax/src/effects/info-hub-board.ts keeps a server-side copy that must
+// match (ax cannot import from the viewer).
+export const INFO_HUB_CARD_STATUSES = [
   "open",
   "in-progress",
   "needs-a-human",
   "done",
   "wont-do",
-);
+] as const;
+
+export const InfoHubCardStatusSchema = Schema.Literal(...INFO_HUB_CARD_STATUSES);
 
 export type InfoHubCardStatus = Schema.Schema.Type<typeof InfoHubCardStatusSchema>;
 

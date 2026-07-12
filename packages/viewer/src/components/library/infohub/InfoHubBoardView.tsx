@@ -1,5 +1,9 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import type { InfoHubBoard, InfoHubCard } from "../../../app/runtime/schemas";
+import {
+  INFO_HUB_CARD_STATUSES,
+  type InfoHubBoard,
+  type InfoHubCard,
+} from "../../../app/runtime/schemas";
 import {
   activeWorkOrderLane,
   archiveDateForTerminalCard,
@@ -30,19 +34,13 @@ import {
  */
 
 const WORK_ORDER_TYPES: WorkOrderType[] = ["bug", "task", "testing", "improvement"];
-const WORK_ORDER_STATUSES: ActiveWorkOrderStatus[] = [
-  "open",
-  "in-progress",
-  "needs-a-human",
-  "done",
-];
-const WORK_ORDER_STATUS_FILTERS: WorkOrderStatus[] = [
-  "open",
-  "in-progress",
-  "needs-a-human",
-  "done",
-  "wont-do",
-];
+// Derived from the schema's single status declaration — lane and filter
+// order follow INFO_HUB_CARD_STATUSES; only wont-do is laneless (it folds
+// into the done lane via activeWorkOrderLane).
+const WORK_ORDER_STATUS_FILTERS: WorkOrderStatus[] = [...INFO_HUB_CARD_STATUSES];
+const WORK_ORDER_STATUSES: ActiveWorkOrderStatus[] = INFO_HUB_CARD_STATUSES.filter(
+  (status): status is ActiveWorkOrderStatus => status !== "wont-do",
+);
 
 const WORK_ORDER_TYPE_LABELS: Readonly<Record<WorkOrderType, string>> = {
   bug: "Bug",

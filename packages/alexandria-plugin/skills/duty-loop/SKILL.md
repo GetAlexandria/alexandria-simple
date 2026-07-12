@@ -23,24 +23,34 @@ remit" means, and their journal is where the beat is recorded.
 
 ### 1. Orient
 
-Read your journal at `docs/alexandria/journal/<colleague>.md` — the top
-entry is your previous beat. It tells you what you last saw, what you were
-mid-way through, and what you already escalated (do not re-escalate).
+Read the TOP entry only of your journal at
+`docs/alexandria/journal/<colleague>.md` (down to the first entry
+separator) — that is your previous beat, and it carries your cursors: the
+last git SHA you saw and the last inbox-checked timestamp. It tells you
+what you last saw, what you were mid-way through, and what you already
+escalated (do not re-escalate). Don't load the whole file; it grows
+forever and everything below the top entry is history, not state.
 
 ### 2. Check the watched surfaces
 
-- **Info Hub board** — read `docs/alexandria/info-hub/board-state.json`.
-  Compare against the board as your last journal entry described it: new
-  cards, moved cards, checklist changes. A card in your area with status
-  `open` is a standing invitation to work it.
-- **Git history** — `git log` since your last beat (the journal entry
-  records the last SHA you saw). Commits from the humans or other
-  colleagues may change what your open work means.
+- **Git history** — `git log <last-seen SHA>..HEAD` (the cursor from your
+  previous journal entry). Commits from the humans or other colleagues may
+  change what your open work means.
+- **Info Hub board** — the board is git-tracked, so its delta comes from
+  the same cursor:
+  `git diff <last-seen SHA> HEAD -- docs/alexandria/info-hub/board-state.json`
+  gives you exactly the cards that appeared, moved, or changed since your
+  last beat — no full-file re-read, no reconciling against journal prose.
+  Then read the current file only for the cards the diff surfaced. A card
+  in your area with status `open` is a standing invitation to work it.
 - **Inboxes, when connected** — if Gmail / Google Calendar MCP tools are
-  available in this session, check for new client email and imminent
-  calendar items relevant to your remit. If the connectors are not
-  authenticated, note "inboxes unavailable" in the journal and move on —
-  degrade gracefully, never treat a missing connector as an error.
+  available in this session, query them bounded to since the
+  inbox-checked-at timestamp your previous journal entry records (e.g.
+  Gmail `after:` that time) — never an unscoped pass over the whole inbox.
+  Look for new client email and imminent calendar items relevant to your
+  remit. If the connectors are not authenticated, note "inboxes
+  unavailable" in the journal and move on — degrade gracefully, never
+  treat a missing connector as an error.
 
 ### 3. Act — or escalate
 
@@ -62,10 +72,11 @@ For each event you found, decide with the library
 ### 4. Journal the beat
 
 Append one entry at the top of your journal (format in
-`docs/alexandria/journal/README.md`): timestamp, what was checked (including
-the latest git SHA seen), what was done, what was escalated. No-op beats get
-one line. The journal is both your memory for the next beat and the humans'
-catch-up feed — write it for both readers.
+`docs/alexandria/journal/README.md`): timestamp, what was checked, what was
+done, what was escalated — and always the two cursors the next beat reads:
+the latest git SHA seen and the inbox-checked-at timestamp. No-op beats get
+one line (plus cursors). The journal is both your memory for the next beat
+and the humans' catch-up feed — write it for both readers.
 
 ### 5. Commit
 

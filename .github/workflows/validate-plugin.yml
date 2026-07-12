@@ -22,7 +22,6 @@ jobs:
       plugin: ${{ steps.filter.outputs.plugin }}
       ax: ${{ steps.filter.outputs.ax }}
       viewer: ${{ steps.filter.outputs.viewer }}
-      plugin_runtime: ${{ steps.filter.outputs.plugin_runtime }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -80,14 +79,6 @@ jobs:
               - "docs/alexandria/library/**"
             viewer:
               - "packages/viewer/**"
-            plugin_runtime:
-              - "packages/plugin-runtime/**"
-              - "README.public.md"
-              - "install.sh"
-              - "VERSION"
-              - "CHANGELOG.md"
-              - "LICENSE"
-              - "packages/alexandria-plugin/**"
 
   validate-alexandria-plugin:
     needs: changes
@@ -319,27 +310,6 @@ jobs:
           path: packages/viewer/test-results/
           retention-days: 14
 
-  test-plugin-runtime:
-    needs: changes
-    if: needs.changes.outputs.plugin_runtime == 'true' || needs.changes.outputs.shared == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Setup pnpm
-        run: corepack enable pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Test plugin runtime
-        run: bun test packages/plugin-runtime
-
   check-and-test:
     needs:
       - changes
@@ -350,7 +320,6 @@ jobs:
       - check-ax
       - check-viewer
       - test-viewer-e2e
-      - test-plugin-runtime
     if: always()
     runs-on: ubuntu-latest
     steps:

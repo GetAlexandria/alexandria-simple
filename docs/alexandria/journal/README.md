@@ -23,6 +23,10 @@ without replaying the whole session.
   first — so the humans can read the top of the file and be caught up.
 - Each duty-loop beat writes exactly one entry, with:
   - **Timestamp** — when the beat ran.
+  - **Cursors** — the latest git SHA seen and the inbox-checked-at
+    timestamp. The next beat reads only the top entry, so these two lines
+    are what make each beat's checking incremental instead of a full
+    re-scan.
   - **What was checked** — the state the colleague looked at (library,
     Info Hub board, other journals, etc.) to decide whether there was
     anything to do.
@@ -37,3 +41,9 @@ Journals are committed to git like any other file under `docs/alexandria/`.
 They are shared history, not scratch space: a journal entry from three
 weeks ago should still read cleanly, and journals should never be
 gitignored, truncated, or rewritten out from under a colleague.
+
+At ~48 beats a day a journal grows without bound, and only the top entry is
+ever read as state — so once a year (or whenever the hot file feels heavy),
+move entries older than the current year to
+`<name>-archive-<year>.md` in this directory. That keeps every beat's read
+small while the full history stays in the tree, not just in git history.

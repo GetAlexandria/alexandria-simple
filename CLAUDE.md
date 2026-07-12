@@ -49,8 +49,8 @@ not in memory or a database the viewer manages itself.
   "Look at / run Alexandria" means this — `ax start viewer` (`:4321`).
 - `packages/library-card-resolver` — shared library card resolution logic
   used by `ax` and the viewer.
-- `packages/plugin-runtime` and `packages/host-claude` — host/runtime
-  integration for running the plugin inside Claude Code.
+- `packages/host-claude` — host integration for running the plugin inside
+  Claude Code.
 - `skills/` — maintainer-only local skills for this repository.
 - `docs/alexandria/library/` — the working product library that the Library
   viewer section reads.

@@ -104,8 +104,10 @@
     </div>
   </div>
   <p>
-    Net: 2,898 files and ~350,000 lines removed; six packages remain. Install,
-    typecheck, viewer build, and both test suites are green.
+    Net for the v1 build (this page is a dated snapshot of it): 2,898 files and
+    ~350,000 lines removed. Install, typecheck, viewer build, and both test
+    suites green. The living version of "what's here" is the repo's README and
+    CLAUDE.md — trust those over this page as the repo evolves.
   </p>
 
   <h2>How a colleague's day works</h2>
@@ -144,13 +146,9 @@
     </li>
     <li>
       Add the cron line (one machine that stays awake)
-      <pre><code>*/30 * * * * cd /path/to/alexandria-simple && \
-  git pull --rebase --quiet && \
-  claude -p "You are Raven. Run one beat of the duty-loop skill." && \
-  git push --quiet</code></pre>
-      <p>The pull/push bracket is what makes it multiplayer: every beat starts from
-      shared state and lands back in git. Full contract in
-      <code>docs/alexandria/duty-loop.md</code>.</p>
+      <p>The exact entry lives in <code>docs/alexandria/duty-loop.md</code> —
+      the single source of truth for the loop: the command, the pull/push
+      bracket that makes it multiplayer, and the escalation contract.</p>
     </li>
   </ol>
 

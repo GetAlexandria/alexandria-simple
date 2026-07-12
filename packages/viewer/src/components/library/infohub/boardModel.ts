@@ -1,36 +1,34 @@
 import type { InfoHubCard } from "../../../app/runtime/schemas";
 
 /**
- * Pure Info Hub work-order board projection logic (Info Hub kanban plan,
- * Lane B). Ported from the PlayMaker Studio Work Board's browser-safe model,
- * `packages/pms/viewer/src/components/studio/boardModel.ts`, with the play
- * coupling removed: no `play`/`division`/`function`, an optional `area`
- * string instead, and a `task` card type. The terminal-status, age-archive,
- * and priority rules are otherwise unchanged — keep this aligned with the
- * PMS original if the rule ever changes; `boardModel.test.ts` pins the same
- * archive table.
+ * Pure Info Hub work-order board projection logic. Originally ported from
+ * the PlayMaker Studio Work Board's browser-safe model (packages/pms, since
+ * retired from this repo) with the play coupling removed: no
+ * `play`/`division`/`function`, an optional `area` string instead, and a
+ * `task` card type. This file is now the sole owner of the terminal-status,
+ * age-archive, and priority rules; `boardModel.test.ts` pins the archive
+ * table.
  */
 
 export type WorkOrderType = InfoHubCard["type"];
 export type WorkOrderStatus = InfoHubCard["status"];
-export type ActiveWorkOrderStatus = Extract<
-  WorkOrderStatus,
-  "open" | "in-progress" | "needs-a-human" | "done"
->;
 export type TerminalWorkOrderStatus = Extract<WorkOrderStatus, "done" | "wont-do">;
+// Every status gets a lane except wont-do, which folds into the done lane
+// (see activeWorkOrderLane). Adding a status to INFO_HUB_CARD_STATUSES in
+// schemas.ts is enough to give it a lane — nothing to update here.
+export type ActiveWorkOrderStatus = Exclude<WorkOrderStatus, "wont-do">;
 export type ArchiveDisposition = TerminalWorkOrderStatus;
 
 /**
  * Derived archive window, in days. A terminal work order ages into the
  * archive on or after this many days past `terminalAt`, or date-only
  * `created` for legacy cards that lack `terminalAt`, unless it is pinned.
- * Must match the PMS `ARCHIVE_WINDOW_DAYS`.
  */
 export const ARCHIVE_WINDOW_DAYS = 7;
 
-// Lower priority number is more urgent. Mirrors the PMS defaults; kept here
-// (rather than in the view) so the add/edit form and any future caller share
-// one source instead of re-declaring the table.
+// Lower priority number is more urgent. Kept here (rather than in the view)
+// so the add/edit form and any future caller share one source instead of
+// re-declaring the table.
 export const WORK_ORDER_DEFAULT_PRIORITY: Readonly<Record<WorkOrderType, number>> = {
   bug: 10,
   improvement: 20,

@@ -52,8 +52,6 @@ importers:
 
   packages/library-card-resolver: {}
 
-  packages/plugin-runtime: {}
-
   packages/viewer:
     dependencies:
       '@alexandria/library-card-resolver':

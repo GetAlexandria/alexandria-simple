@@ -16,8 +16,8 @@ import {
   withoutArchiveOverride,
 } from "./boardModel";
 
-// Matches the PMS boardModel.test.ts fixed clock so the ported archive table
-// stays comparable to the source it was pinned against.
+// Fixed clock the archive table below is pinned against (inherited from the
+// original port; boardModel.ts is now the sole owner of these rules).
 const NOW = new Date("2026-06-24T12:00:00Z");
 
 function card(overrides: Partial<InfoHubCard> = {}): InfoHubCard {
