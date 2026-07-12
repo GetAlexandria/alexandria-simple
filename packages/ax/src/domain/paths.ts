@@ -21,6 +21,8 @@ export const SOURCE_PROCESSED_DIR = "processed";
 export const SUBSCRIPTIONS_DIR = "subscriptions";
 export const RAVEN_SOURCE_OF_TRUTH_FILE_NAME = "raven-product-context.md";
 export const SOURCE_OF_TRUTH_FILE_NAME = "source-of-truth.md";
+export const INFO_HUB_DIR = "info-hub";
+export const INFO_HUB_BOARD_FILE_NAME = "board-state.json";
 
 export function configPathForRoot(root: string): string {
   return `${root}/${DEFAULT_CONFIG_DIR}/${CONFIG_FILE_NAME}`;
@@ -132,6 +134,14 @@ export function serverMetadataPathForWorkspacePath(workspacePath: string): strin
 
 export function codexAppServerMetadataPathForWorkspacePath(workspacePath: string): string {
   return join(runtimePathForWorkspacePath(workspacePath), CODEX_APP_SERVER_METADATA_FILE_NAME);
+}
+
+export function infoHubDirForWorkspacePath(workspacePath: string): string {
+  return join(workspacePath, INFO_HUB_DIR);
+}
+
+export function infoHubBoardPathForWorkspacePath(workspacePath: string): string {
+  return join(infoHubDirForWorkspacePath(workspacePath), INFO_HUB_BOARD_FILE_NAME);
 }
 
 export function normalizeWorkspace(value: string): string {

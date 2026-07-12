@@ -78,6 +78,14 @@ import {
 import { axCliCommand } from "./ax-cli.js";
 import { FileSystem, NodeFileSystem } from "./filesystem.js";
 import {
+  InfoHubBoardValidationError,
+  mergeInfoHubCards,
+  readInfoHubBoard,
+  todayDateOnly,
+  writeInfoHubBoard,
+  type InfoHubBoard,
+} from "./info-hub-board.js";
+import {
   loadLibraryCardDetail,
   loadLibraryCatalog,
   loadLibraryGraph,
@@ -2683,6 +2691,62 @@ async function sourceCreateResponse(options: {
   }
 }
 
+async function infoHubBoardResponse(workspacePath: string): Promise<Response> {
+  try {
+    const board = await runWithNodeFileSystem(readInfoHubBoard({ workspacePath }));
+    return Response.json(board);
+  } catch (error) {
+    return jsonError(
+      error instanceof Error ? error.message : String(error),
+      statusForUnknownError(error),
+    );
+  }
+}
+
+async function infoHubBoardWriteResponse(options: {
+  mutationSemaphore: Effect.Semaphore;
+  request: Request;
+  workspacePath: string;
+}): Promise<Response> {
+  let body: unknown;
+  try {
+    body = await options.request.json();
+  } catch (error) {
+    return jsonError(error instanceof Error ? error.message : String(error), 400);
+  }
+  if (body == null || typeof body !== "object" || Array.isArray(body)) {
+    return jsonError("body must be an object", 400);
+  }
+  const postedCards = (body as Record<string, unknown>).cards;
+  if (!Array.isArray(postedCards)) {
+    return jsonError("body.cards must be an array", 400);
+  }
+
+  try {
+    return await runWithNodeFileSystem(
+      options.mutationSemaphore.withPermits(1)(
+        Effect.gen(function* () {
+          const current = yield* readInfoHubBoard({ workspacePath: options.workspacePath });
+          const today = todayDateOnly();
+          const merged = mergeInfoHubCards(current.cards, postedCards, today);
+          if (merged instanceof InfoHubBoardValidationError) {
+            return jsonError(merged.message, 400);
+          }
+
+          const next: InfoHubBoard = { comment: current.comment, cards: merged, updated: today };
+          yield* writeInfoHubBoard({ board: next, workspacePath: options.workspacePath });
+          return Response.json(next);
+        }),
+      ),
+    );
+  } catch (error) {
+    return jsonError(
+      error instanceof Error ? error.message : String(error),
+      statusForUnknownError(error),
+    );
+  }
+}
+
 async function readVisionSourceAttachBody(
   request: Request,
 ): Promise<{ sourceId: string } | RuntimeRequestError> {
@@ -3007,6 +3071,18 @@ function createRuntimeFetchHandler(
         mutationSemaphore,
         projectRoot: options.projectRoot,
         subscribers,
+      });
+    }
+
+    if (url.pathname === "/api/info-hub/board" && request.method === "GET") {
+      return infoHubBoardResponse(options.workspacePath);
+    }
+
+    if (url.pathname === "/api/info-hub/board" && request.method === "POST") {
+      return infoHubBoardWriteResponse({
+        mutationSemaphore,
+        request,
+        workspacePath: options.workspacePath,
       });
     }
 

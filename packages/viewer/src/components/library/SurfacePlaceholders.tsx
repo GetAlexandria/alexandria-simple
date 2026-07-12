@@ -16,16 +16,6 @@ function PlaceholderPanel({ body, eyebrow, title }: PlaceholderPanelProps) {
   );
 }
 
-export function InfoHubPlaceholder() {
-  return (
-    <PlaceholderPanel
-      body="Info Hub route ready. The product surface will fill in here once its state contract is defined."
-      eyebrow="placeholder"
-      title="Info Hub"
-    />
-  );
-}
-
 export function NotFoundView({ path }: { path: string }) {
   return (
     <PlaceholderPanel

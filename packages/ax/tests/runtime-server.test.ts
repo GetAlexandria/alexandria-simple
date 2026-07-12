@@ -14,7 +14,10 @@ import {
 } from "fs";
 import { tmpdir } from "os";
 import { join, resolve } from "path";
-import { connectionPathForWorkspacePath } from "../src/domain/paths.js";
+import {
+  connectionPathForWorkspacePath,
+  infoHubBoardPathForWorkspacePath,
+} from "../src/domain/paths.js";
 import {
   LIBRARY_CATALOG_DRAFT_MANIFEST_FILE,
   LIBRARY_CATALOG_MANIFEST_FILE,
@@ -4053,6 +4056,171 @@ exit 2
       expect(malformed.cursor.afterEventId).toBe(tail.event.id);
       expect(malformed.events).toEqual([]);
       expect(existsSync(`${cursorPath(cwd, "test:malformed")}.invalid`)).toBeTrue();
+    } finally {
+      await Effect.runPromise(server.stop);
+    }
+  });
+
+  test("serves a default empty Info Hub board when the file is missing, without creating it", async () => {
+    const cwd = makeProjectDir();
+    initProject(cwd);
+    const server = await startApiServer(cwd);
+
+    try {
+      const response = await fetch(new URL("/api/info-hub/board", server.url));
+      expect(response.status).toBe(200);
+      const board = (await response.json()) as {
+        cards: unknown[];
+        comment: string;
+        updated: string;
+      };
+      expect(board.cards).toEqual([]);
+      expect(board.comment.length).toBeGreaterThan(0);
+      expect(existsSync(infoHubBoardPathForWorkspacePath(workspacePath(cwd)))).toBeFalse();
+    } finally {
+      await Effect.runPromise(server.stop);
+    }
+  });
+
+  test("creates the Info Hub board file on first POST and merges cards by id on later posts", async () => {
+    const cwd = makeProjectDir();
+    initProject(cwd);
+    const server = await startApiServer(cwd);
+
+    try {
+      const firstPost = await fetch(new URL("/api/info-hub/board", server.url), {
+        body: JSON.stringify({
+          cards: [
+            {
+              id: "wo-a",
+              type: "task",
+              status: "open",
+              priority: 15,
+              source: "board:director",
+              created: "2026-07-01",
+              title: "First card",
+            },
+            {
+              id: "wo-b",
+              type: "bug",
+              status: "open",
+              priority: 10,
+              source: "board:director",
+              created: "2026-07-01",
+            },
+          ],
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      });
+      expect(firstPost.status).toBe(200);
+      const firstBoard = (await firstPost.json()) as {
+        cards: Array<{ id: string; status: string; terminalAt?: string }>;
+      };
+      expect(firstBoard.cards.map((card) => card.id)).toEqual(["wo-a", "wo-b"]);
+      expect(existsSync(infoHubBoardPathForWorkspacePath(workspacePath(cwd)))).toBeTrue();
+
+      // A second POST that only mentions wo-a and moves it to done must
+      // preserve wo-b untouched and auto-stamp terminalAt on wo-a.
+      const secondPost = await fetch(new URL("/api/info-hub/board", server.url), {
+        body: JSON.stringify({
+          cards: [
+            {
+              id: "wo-a",
+              type: "task",
+              status: "done",
+              priority: 15,
+              source: "board:director",
+              created: "2026-07-01",
+              title: "First card",
+            },
+          ],
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      });
+      expect(secondPost.status).toBe(200);
+      const secondBoard = (await secondPost.json()) as {
+        cards: Array<{ id: string; status: string; terminalAt?: string }>;
+      };
+      expect(secondBoard.cards.map((card) => card.id)).toEqual(["wo-a", "wo-b"]);
+      const woA = secondBoard.cards.find((card) => card.id === "wo-a");
+      expect(woA?.status).toBe("done");
+      expect(woA?.terminalAt).toBeTruthy();
+      expect(secondBoard.cards.find((card) => card.id === "wo-b")?.status).toBe("open");
+
+      // A direct file edit (as an agent would make) shows up on the next GET.
+      const boardPath = infoHubBoardPathForWorkspacePath(workspacePath(cwd));
+      const onDisk = JSON.parse(readFileSync(boardPath, "utf8")) as {
+        cards: Array<Record<string, unknown>>;
+        comment: string;
+        updated: string;
+      };
+      onDisk.cards.push({
+        id: "wo-c",
+        type: "improvement",
+        status: "open",
+        priority: 20,
+        source: "agent:test",
+        created: "2026-07-09",
+      });
+      writeFileSync(boardPath, `${JSON.stringify(onDisk, null, 2)}\n`, "utf8");
+
+      const afterEdit = (await (
+        await fetch(new URL("/api/info-hub/board", server.url))
+      ).json()) as { cards: Array<{ id: string }> };
+      expect(afterEdit.cards.map((card) => card.id)).toEqual(["wo-a", "wo-b", "wo-c"]);
+    } finally {
+      await Effect.runPromise(server.stop);
+    }
+  });
+
+  test("rejects an Info Hub board POST with an unknown field or bad enum as 400", async () => {
+    const cwd = makeProjectDir();
+    initProject(cwd);
+    const server = await startApiServer(cwd);
+
+    try {
+      const badField = await fetch(new URL("/api/info-hub/board", server.url), {
+        body: JSON.stringify({
+          cards: [
+            {
+              id: "wo-a",
+              type: "task",
+              status: "open",
+              priority: 15,
+              source: "board:director",
+              created: "2026-07-01",
+              play: "not-allowed",
+            },
+          ],
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      });
+      expect(badField.status).toBe(400);
+      const badFieldBody = (await badField.json()) as RuntimeErrorBody;
+      expect(badFieldBody.error.message).toContain("unknown fields");
+
+      const badEnum = await fetch(new URL("/api/info-hub/board", server.url), {
+        body: JSON.stringify({
+          cards: [
+            {
+              id: "wo-a",
+              type: "chore",
+              status: "open",
+              priority: 15,
+              source: "board:director",
+              created: "2026-07-01",
+            },
+          ],
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      });
+      expect(badEnum.status).toBe(400);
+
+      expect(existsSync(infoHubBoardPathForWorkspacePath(workspacePath(cwd)))).toBeFalse();
     } finally {
       await Effect.runPromise(server.stop);
     }
