@@ -1,4 +1,9 @@
-export type LibraryRuntimeErrorSurface = "card-detail" | "catalog" | "graph" | "ledger";
+export type LibraryRuntimeErrorSurface =
+  | "card-detail"
+  | "catalog"
+  | "graph"
+  | "info-hub"
+  | "ledger";
 export type TrackerRuntimeErrorSurface = "run-events" | "studio-runs";
 export type RuntimeErrorSurface = LibraryRuntimeErrorSurface | TrackerRuntimeErrorSurface;
 
@@ -17,6 +22,7 @@ const SURFACE_LABELS: Readonly<Record<LibraryRuntimeErrorSurface, string>> = {
   "card-detail": "card content",
   catalog: "library catalog",
   graph: "library graph",
+  "info-hub": "Info Hub board",
   ledger: "ledger",
 };
 

@@ -1,6 +1,0 @@
-{
-  "outcome": "succeeded",
-  "notes": "Script completed: n=$(wc -w < runtime/spoken-paragraph.md | tr -d ' '); if [ \"$n\" -le 75 ]; then echo \"WORDCOUNT_OK: $n words (ceiling 75)\"; else echo \"WORDCOUNT_OVER: $n words, $((n-75)) over (ceiling 75) - cut a thought, not compress one\"; fi",
-  "failure_reason": null,
-  "timestamp": "2026-06-12T19:33:20.297117Z"
-}

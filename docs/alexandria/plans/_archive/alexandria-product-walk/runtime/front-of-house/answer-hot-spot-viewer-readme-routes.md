@@ -1,1 +1,0 @@
-Unresolved — carry as a residual gap. The director needs to discuss with cofounder (Jess) whether code or README is canon and whether the README should be corrected. The scan's assumption (code is canon) is provisional until confirmed.

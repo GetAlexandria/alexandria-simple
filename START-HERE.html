@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>alexandria-simple — start here</title>
+<style>
+  :root {
+    --bg: #101014; --panel: #18181f; --ink: #e8e6e1; --dim: #9a9790;
+    --accent: #c9a86a; --line: #2a2a33; --good: #7fb069; --code: #1f1f28;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 17px/1.65 Georgia, 'Times New Roman', serif;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 56px 24px 96px; }
+  h1 { font-size: 34px; line-height: 1.2; margin: 0 0 8px; font-weight: normal; }
+  h1 .accent { color: var(--accent); }
+  .sub { color: var(--dim); margin: 0 0 40px; font-style: italic; }
+  h2 {
+    font-size: 15px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--accent); font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    font-weight: 600; margin: 48px 0 12px; border-bottom: 1px solid var(--line);
+    padding-bottom: 8px;
+  }
+  p { margin: 0 0 16px; }
+  a { color: var(--accent); }
+  code, pre {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 14.5px;
+    background: var(--code); border-radius: 4px;
+  }
+  code { padding: 2px 6px; }
+  pre { padding: 14px 16px; overflow-x: auto; border: 1px solid var(--line); line-height: 1.5; }
+  pre code { padding: 0; background: none; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0 24px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; }
+  .card h3 {
+    margin: 0 0 10px; font-size: 13px; letter-spacing: .1em; text-transform: uppercase;
+    font-family: -apple-system, 'Helvetica Neue', sans-serif; font-weight: 600;
+  }
+  .card.kept h3 { color: var(--good); }
+  .card.gone h3 { color: var(--dim); }
+  .card ul { margin: 0; padding-left: 18px; }
+  .card li { margin: 4px 0; font-size: 15px; }
+  .card.gone li { color: var(--dim); }
+  ol.steps { padding-left: 22px; }
+  ol.steps li { margin: 0 0 18px; }
+  ol.steps li p { margin: 4px 0 8px; color: var(--dim); font-size: 15.5px; }
+  .beat { border-left: 3px solid var(--accent); padding: 4px 0 4px 18px; margin: 20px 0; }
+  .beat p { margin: 0 0 8px; }
+  .foot { margin-top: 56px; color: var(--dim); font-size: 14.5px; border-top: 1px solid var(--line); padding-top: 16px; }
+  @media (max-width: 620px) { .cols { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>alexandria-<span class="accent">simple</span></h1>
+  <p class="sub">A personal Alexandria for two people and their AI colleagues. No factory, no hosting, no babysitting.</p>
+
+  <h2>What this is</h2>
+  <p>
+    This repo is a snapshot of <code>alexandria-internal</code> pared down to the
+    architecture Danvers and Jess actually run: the library, the playbook skills,
+    the viewer, and named colleagues (Raven, Damien) who work on a schedule.
+    Everything commercial-scale — the multi-tenant build factory, deploy and
+    hosting machinery, the PMS/Studio surface, vendored dependency trees — is gone.
+    What's left is a system with almost nothing that can break while you sleep.
+  </p>
+
+  <h2>The whole design, one paragraph</h2>
+  <p>
+    <strong>Files are the substrate</strong> — the library, the work board, and the
+    colleagues' journals are plain git-tracked files anyone (human or agent) can read
+    and edit. <strong>Git is sync and history</strong> — commits are how state moves
+    between the two of you and between machines; there is no sync service.
+    <strong>One viewer is the lens</strong> — a local web app that renders those files
+    and owns no state of its own. And <strong>colleagues run a duty loop</strong> — a
+    cron wakes each one every 30 minutes to check the board, git, and inboxes, do a
+    bounded beat of work, journal it, and escalate anything that needs human judgment.
+  </p>
+
+  <h2>Kept vs. retired</h2>
+  <div class="cols">
+    <div class="card kept">
+      <h3>Kept</h3>
+      <ul>
+        <li>Product library (171 cards)</li>
+        <li>Viewer (<code>:4321</code>) + <code>ax</code> CLI</li>
+        <li>Colleague plugin (Raven, Damien, skills)</li>
+        <li>Info Hub work board</li>
+        <li>Ledger (the runtime reads it)</li>
+      </ul>
+    </div>
+    <div class="card gone">
+      <h3>Retired</h3>
+      <ul>
+        <li>Fabro factory + local server</li>
+        <li>Deploy / hosted instances / marketplace</li>
+        <li>PMS &amp; Studio surface</li>
+        <li>codex / opencode host adapters</li>
+        <li>Vendored repos, plans archive, ops runbooks</li>
+      </ul>
+    </div>
+  </div>
+  <p>
+    Net for the v1 build (this page is a dated snapshot of it): 2,898 files and
+    ~350,000 lines removed. Install, typecheck, viewer build, and both test
+    suites green. The living version of "what's here" is the repo's README and
+    CLAUDE.md — trust those over this page as the repo evolves.
+  </p>
+
+  <h2>How a colleague's day works</h2>
+  <div class="beat">
+    <p><strong>Every 30 minutes</strong>, a headless session wakes as Raven: read the
+    last journal entry, diff the board and git log since then, check email and
+    calendar if connected. Anything clearly in remit and reversible — just do it,
+    commit it. Anything that needs judgment — move the card to the
+    <strong>Needs&nbsp;a&nbsp;Human</strong> lane with a note, and end the beat.
+    Never block, never ping.</p>
+    <p><strong>You sweep the lane</strong> in the viewer on your own rhythm; ruling on
+    a card and moving it back hands it to the next beat. <strong>Urgent things skip
+    the loop entirely</strong> — open a session and kick the colleague directly,
+    like tapping a teammate's shoulder.</p>
+  </div>
+
+  <h2>Setup (each machine, ~5 minutes)</h2>
+  <ol class="steps">
+    <li>
+      <code>git clone https://github.com/GetAlexandria/alexandria-simple.git</code>
+      <p>Private repo; you and Jess both have access through GetAlexandria.</p>
+    </li>
+    <li>
+      <code>cd alexandria-simple &amp;&amp; pnpm install</code>
+    </li>
+    <li>
+      <code>bun packages/ax/src/cli/main.ts start viewer</code>
+      <p>The viewer at <a href="http://localhost:4321">http://localhost:4321</a> —
+      library, board, and lanes, straight off the files in the repo.</p>
+    </li>
+    <li>
+      Authenticate the Gmail + Google Calendar connectors
+      <p>claude.ai → Settings → Connectors, for the account the cron will run as.
+      Until then the duty loop's inbox checks quietly no-op — this is the first
+      card waiting in the Needs a Human lane.</p>
+    </li>
+    <li>
+      Add the cron line (one machine that stays awake)
+      <p>The exact entry lives in <code>docs/alexandria/duty-loop.md</code> —
+      the single source of truth for the loop: the command, the pull/push
+      bracket that makes it multiplayer, and the escalation contract.</p>
+    </li>
+  </ol>
+
+  <h2>Where things live</h2>
+  <pre><code>docs/alexandria/library/            the product library (the cards)
+docs/alexandria/info-hub/           the work board (board-state.json)
+docs/alexandria/journal/            colleague journals — the catch-up feed
+docs/alexandria/duty-loop.md        the loop: cron, escalation, urgency
+docs/alexandria/colleagues.md       how to add a colleague (one file)
+packages/alexandria-plugin/         Raven, Damien, and the skills they run</code></pre>
+
+  <p class="foot">
+    Forked from <code>alexandria-internal @ e9cc377</code>, July 12 2026.
+    The old repo is untouched; this one is home now. When something feels missing,
+    ask whether it can be a file the agents write and the viewer renders — that's
+    the whole trick.
+  </p>
+</main>
+</body>
+</html>

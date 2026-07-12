@@ -2510,7 +2510,10 @@ trend: "Not yet reading."`,
     });
   });
 
-  test("keeps renderer-resolved board wikilinks out of derived missing-card threads", () => {
+  // Skipped: reads studio/library from the real repo tree, and studio/ was
+  // removed in the alexandria-simple pare-back. Needs a fixture rewrite (or
+  // removal) before re-enabling.
+  test.skip("keeps renderer-resolved board wikilinks out of derived missing-card threads", () => {
     const studioLibraryRoot = join(import.meta.dir, "../../../..", "studio/library");
     const files = collectMarkdownFiles(studioLibraryRoot);
     const catalog = buildLibraryCatalog({
@@ -2690,7 +2693,10 @@ trend: "Not yet reading."`,
     );
   });
 
-  test("raw fixture roots without ledger events expose only derived threads", async () => {
+  // Skipped: reads studio/library and studio/sweeps/playmaker-studio from the
+  // real repo tree, and studio/ was removed in the alexandria-simple
+  // pare-back. Needs a fixture rewrite (or removal) before re-enabling.
+  test.skip("raw fixture roots without ledger events expose only derived threads", async () => {
     // Load through the real runtime loader (the path the viewer/API use) so the
     // operational-markdown and runtime/ exclusions apply. Counts are asserted as
     // non-empty rather than exact, so a re-swept fixture can grow or shrink

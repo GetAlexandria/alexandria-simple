@@ -64,7 +64,7 @@ surface that gap immediately.
 Before substantial code changes, read `contributor-skills/technical-planning/SKILL.md` and
 write or update:
 
-`docs/alexandria/plans/<issue-number>-<task-name>/plan.md`
+`docs/plans/<issue-number>-<task-name>/plan.md`
 
 The plan must translate the product-level issue into repo-specific implementation work.
 At minimum, it must cover:

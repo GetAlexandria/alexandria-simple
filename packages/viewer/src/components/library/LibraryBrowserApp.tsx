@@ -39,14 +39,16 @@ import { notepadBadgeCountForCatalog } from "./notepad-view-model";
 import { RuntimeUnavailablePanel } from "./RuntimeUnavailablePanel";
 import { WorkflowView } from "./WorkflowView";
 import { errorMessage } from "./error-message";
+import { useInfoHubBoard } from "./hooks/useInfoHubBoard";
 import { useLibraryCatalog } from "./hooks/useLibraryCatalog";
 import { useLibraryGraph } from "./hooks/useLibraryGraph";
 import { usePlayRunLauncher } from "./hooks/usePlayRunLauncher";
 import { useProjectState } from "./hooks/useProjectState";
 import { useViewerRoute } from "./hooks/useViewerRoute";
+import { InfoHubBoardView } from "./infohub/InfoHubBoardView";
 import { PlaybookView } from "./PlaybookView";
 import { RavenKnowledgeBankStatus } from "./RavenKnowledgeBankStatus";
-import { InfoHubPlaceholder, NotFoundView } from "./SurfacePlaceholders";
+import { NotFoundView } from "./SurfacePlaceholders";
 import type { LibraryBrowserView, LibraryCatalog, LibraryGraph, LibraryViewMode } from "./types";
 import { useRavenConnections } from "./useRavenConnectionState";
 import {
@@ -383,6 +385,7 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
     runtimeClient,
     projectState.refresh,
   );
+  const infoHubBoard = useInfoHubBoard(runtimeClient, route.surface === "info");
   const {
     connectionState: ravenConnectionState,
     disconnectConnection: disconnectRavenConnection,
@@ -784,7 +787,26 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
           runningPlayId={runningPlayId}
         />
       ) : activeView === "info" ? (
-        <InfoHubPlaceholder />
+        infoHubBoard.error != null && infoHubBoard.board == null ? (
+          <div className="m-7">
+            <RuntimeUnavailablePanel
+              message={infoHubBoard.error}
+              onRetry={infoHubBoard.refresh}
+              title="Info Hub board unavailable"
+            />
+          </div>
+        ) : infoHubBoard.board == null ? (
+          <div className="m-7 border border-[#4b3827] bg-[#1c1712]/80 p-5 font-display text-[#d4a052]">
+            Loading Info Hub board
+          </div>
+        ) : (
+          <InfoHubBoardView
+            board={infoHubBoard.board}
+            onSaveCards={infoHubBoard.saveCards}
+            saveError={infoHubBoard.saveError}
+            saving={infoHubBoard.saving}
+          />
+        )
       ) : activeView === "ledger" ? (
         <LedgerView runtimeClient={runtimeClient} />
       ) : activeView === "not-found" ? (

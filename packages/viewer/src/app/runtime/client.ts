@@ -7,6 +7,7 @@ import {
 } from "./errors";
 import {
   decodeError,
+  decodeInfoHubBoard,
   decodeLibraryCatalog,
   decodeLibraryCardDetail,
   decodeLibraryGraph,
@@ -19,6 +20,8 @@ import {
   decodeRuntimeRavenVisionBankResult,
   decodeRuntimeRavenVisionProjection,
   decodeRuntimeSourceCreateResult,
+  type InfoHubBoard,
+  type InfoHubCard,
   type LibraryCardDetail,
   type LibraryCatalog,
   type LibraryConfirmationEdit,
@@ -214,6 +217,29 @@ const listRuntimeEvents = Effect.fn("ViewerRuntimeClient.listEvents")(function* 
   const payload = yield* fetchJson(context, `/api/events?limit=${limit}`);
   return yield* decodeRuntimeEventPage(payload).pipe(
     Effect.mapError((cause) => decodeError("event page", cause)),
+  );
+});
+
+const getInfoHubBoard = Effect.fn("ViewerRuntimeClient.getInfoHubBoard")(function* (
+  context: ViewerRuntimeRequestContext,
+) {
+  const payload = yield* fetchJson(context, "/api/info-hub/board");
+  return yield* decodeInfoHubBoard(payload).pipe(
+    Effect.mapError((cause) => decodeError("info hub board", cause)),
+  );
+});
+
+const saveInfoHubBoard = Effect.fn("ViewerRuntimeClient.saveInfoHubBoard")(function* (
+  context: ViewerRuntimeRequestContext,
+  cards: readonly InfoHubCard[],
+) {
+  const payload = yield* fetchJson(context, "/api/info-hub/board", {
+    body: JSON.stringify({ cards }),
+    headers: { "content-type": "application/json" },
+    method: "POST",
+  });
+  return yield* decodeInfoHubBoard(payload).pipe(
+    Effect.mapError((cause) => decodeError("info hub board", cause)),
   );
 });
 
@@ -510,6 +536,7 @@ export interface ViewerRuntimeClient {
   ) => Effect.Effect<RuntimeConnectionSummary, ViewerRuntimeError>;
   getConnections: Effect.Effect<RuntimeConnectionSummary, ViewerRuntimeError>;
   getHealth: Effect.Effect<RuntimeHealth, ViewerRuntimeError>;
+  getInfoHubBoard: Effect.Effect<InfoHubBoard, ViewerRuntimeError>;
   getLibraryCatalog: Effect.Effect<LibraryCatalog, ViewerRuntimeError>;
   getLibraryCatalogForRequest: (
     request: LibraryCatalogRequest,
@@ -530,6 +557,9 @@ export interface ViewerRuntimeClient {
     request: RuntimeLibraryConfirmationRequest & { editList: LibraryConfirmationEdit[] },
   ) => Effect.Effect<RuntimeLibraryConfirmationResult, ViewerRuntimeError>;
   runPlay: (playId: string) => Effect.Effect<RuntimePlayRunLaunchResult, ViewerRuntimeError>;
+  saveInfoHubBoard: (
+    cards: readonly InfoHubCard[],
+  ) => Effect.Effect<InfoHubBoard, ViewerRuntimeError>;
   skipRavenVisionSlot: (
     slotId: RuntimeRavenVisionSlotId,
   ) => Effect.Effect<RuntimeRavenVisionProjection, ViewerRuntimeError>;
@@ -558,6 +588,7 @@ export function makeViewerRuntimeClient(
     disconnectConnection: (connectionId) => disconnectRuntimeConnection(context, connectionId),
     getConnections: getRuntimeConnections(context),
     getHealth: getRuntimeHealth(context),
+    getInfoHubBoard: getInfoHubBoard(context),
     getLibraryCatalog: getLibraryCatalog(context),
     getLibraryCatalogForRequest: (request) => getLibraryCatalog(context, request),
     getLibraryCard: (card) => getLibraryCardDetail(context, card),
@@ -570,6 +601,7 @@ export function makeViewerRuntimeClient(
     requestPlay: (playId, agentId) => requestRuntimePlay(context, playId, agentId),
     rejectLibrary: (request) => rejectRuntimeLibrary(context, request),
     runPlay: (playId) => runRuntimePlay(context, playId),
+    saveInfoHubBoard: (cards) => saveInfoHubBoard(context, cards),
     requestRavenVisionDrafting: requestRuntimeRavenVisionDrafting(context),
     skipRavenVisionSlot: (slotId) => skipRuntimeRavenVisionSlot(context, slotId),
     startRavenVision: startRuntimeRavenVision(context),

@@ -1,8 +1,0 @@
-I’ll read the current draft, bounce note, and the source context first so I can make only the requested frame fixes and keep already-passing material stable.The first read hit the local sandbox launcher rather than the files themselves, so I’m rerunning the same read-only inspections outside the broken sandbox.The bounce note names a single failing quote: the “Half my best source material…” line must match the transcript’s line break exactly. I’m checking the transcript and context files now so the final rewrite stays traceable.The sandbox read path is still unavailable for new file reads, so I’m escalating the same read-only context checks as well.The transcript confirms the quote must break after “source”. I’m checking line numbers in the draft before editing, because the displayed draft already appears to have that break and I want to avoid altering unrelated passing entries.The draft file already carries the transcript’s line break at lines 32-33. I’m doing one direct string check now; if it stays clean, there is no substantive edit to make without changing passing content.Checked [runtime/draft-brief.md](/workspace/alexandria-internal/runtime/draft-brief.md:32). The bounced quote already matches the transcript exactly with the line break after `source`, so I left the passing draft unchanged.
-
-Verified against `meeting-snippet-01.md`: both files have:
-
-```text
-Half my best source
-material dies in tabs.
-```

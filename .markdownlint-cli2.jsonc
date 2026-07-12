@@ -1,8 +1,5 @@
 {
-  // The studio is an archive of dated records, excluded from markdown
-  // lint by repo rule (root CLAUDE.md) — implemented here 2026-06-12
-  // when verbatim run dumps and the frozen play dir first hit CI.
-  "ignores": ["studio/**", ".repos/**"],
+  "ignores": [".repos/**"],
   "config": {
     "default": false,
     "MD010": true,

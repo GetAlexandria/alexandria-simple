@@ -1,0 +1,126 @@
+{
+  "comment": "Info Hub work board (Info Hub kanban plan, Lane B). Agents edit this file directly; the Info Hub board page persists here. Git-tracked shared state — treat it like source, not per-machine runtime state.",
+  "updated": "2026-07-12",
+  "cards": [
+    {
+      "id": "wo-viewer-light-theme-remnants",
+      "type": "improvement",
+      "status": "open",
+      "area": "viewer",
+      "priority": 20,
+      "source": "seed:info-hub-prototype",
+      "created": "2026-07-02",
+      "title": "Restyle the library viewer's light-theme remnants",
+      "detail": "packages/viewer/src/components/library/ (~28 files) still hardcodes the legacy light palette and font-mono; reuse the raven-kb-* dark-brand classes instead."
+    },
+    {
+      "id": "wo-library-operations-flow-board",
+      "type": "task",
+      "status": "in-progress",
+      "area": "library",
+      "priority": 15,
+      "source": "seed:info-hub-prototype",
+      "created": "2026-06-28",
+      "title": "Library Operations flow-board follow-up",
+      "detail": "Extend the empty-library burndown view toward a real flow board once the library-operations pipeline contract settles.",
+      "checklist": [
+        {
+          "done": true,
+          "text": "Confirm the BoH/FoH burndown axes (presence, coherence)"
+        },
+        {
+          "done": true,
+          "text": "Sketch the flow-board columns against the pipeline contract"
+        },
+        {
+          "done": false,
+          "text": "Land a first read-only flow-board view behind a mode flag"
+        },
+        {
+          "done": false,
+          "text": "Wire the view into the Builder section tab strip"
+        }
+      ]
+    },
+    {
+      "id": "wo-ax-suite-local-flakiness",
+      "type": "bug",
+      "status": "open",
+      "area": "runtime",
+      "priority": 10,
+      "source": "seed:info-hub-prototype",
+      "created": "2026-07-01",
+      "title": "ax full-suite local run drops tests to contention",
+      "detail": "The whole local `bun test` suite for packages/ax loses ~10 tests to contention while each file passes alone; Linux CI stays clean. Track down the shared-state culprit before trusting local full-suite red."
+    },
+    {
+      "id": "wo-info-hub-server-endpoints",
+      "type": "task",
+      "status": "open",
+      "area": "runtime",
+      "priority": 15,
+      "source": "seed:info-hub-prototype",
+      "created": "2026-07-09",
+      "title": "Wire GET/POST /api/info-hub/board into the ax server",
+      "detail": "Lane A of the Info Hub kanban plan: info-hub-board.ts validation/merge effect plus the runtime-server route handlers, guarded by the shared mutation semaphore."
+    },
+    {
+      "id": "wo-info-hub-board-polish",
+      "type": "improvement",
+      "status": "in-progress",
+      "area": "viewer",
+      "priority": 20,
+      "source": "seed:info-hub-prototype",
+      "created": "2026-07-08",
+      "title": "Polish the Info Hub board's dark-brand styling",
+      "detail": "First pass ported the PMS Work Board layout; pass again for spacing and the amber/brass accent balance once real board data is flowing."
+    },
+    {
+      "id": "wo-testing-center-info-hub-coverage",
+      "type": "testing",
+      "status": "open",
+      "area": "viewer",
+      "priority": 15,
+      "source": "seed:info-hub-prototype",
+      "created": "2026-07-09",
+      "title": "Add Testing Center coverage for the Info Hub board",
+      "detail": "Extend the Play Testing Preflight/Diagnostics/Coverage tabs to cover the Info Hub board's GET/POST round trip and archive-window behavior."
+    },
+    {
+      "id": "wo-ops-runbook-healthcheck-trim",
+      "type": "improvement",
+      "status": "done",
+      "area": "ops",
+      "priority": 20,
+      "source": "seed:info-hub-prototype",
+      "created": "2026-06-15",
+      "title": "Trim the hosted-instance health checks in the product-hosting runbook",
+      "detail": "Dropped a duplicate freeq-raven liveness probe the runbook carried since the first hosted instance.",
+      "terminalAt": "2026-06-24"
+    },
+    {
+      "id": "wo-bank-conformance-false-positive",
+      "type": "bug",
+      "status": "wont-do",
+      "area": "library",
+      "priority": 10,
+      "source": "seed:info-hub-prototype",
+      "created": "2026-06-05",
+      "title": "Chase the bank-conformance gate's viewer-invisible false positive",
+      "detail": "Superseded by the #408/#409 gate fixes that closed the drift directly; kept pinned as a reference for the failure shape.",
+      "terminalAt": "2026-06-09",
+      "pinned": true
+    },
+    {
+      "id": "wo-runtime-task-authenticate-duty-loop-connectors",
+      "type": "task",
+      "status": "needs-a-human",
+      "priority": 15,
+      "source": "alexandria-simple-setup",
+      "created": "2026-07-12",
+      "area": "runtime",
+      "title": "Authenticate Gmail/Calendar connectors for the duty loop",
+      "detail": "The duty loop's inbox checks (duty-loop skill, step 2) degrade to no-ops until the Gmail and Google Calendar MCP connectors are authenticated for the account the cron runs as (claude.ai connector settings). A human has to do the OAuth dance — first real resident of this lane."
+    }
+  ]
+}

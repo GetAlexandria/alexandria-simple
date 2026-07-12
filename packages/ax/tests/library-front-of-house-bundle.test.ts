@@ -1657,7 +1657,10 @@ describe("front-of-house bundle command flow", () => {
     });
   });
 
-  test("PMS fixture prepares a synthesized frame plus 12 thread-backed agenda items", async () => {
+  // Skipped: stages studio/sweeps/playmaker-studio from the real repo tree,
+  // and studio/ was removed in the alexandria-simple pare-back. Needs a
+  // fixture rewrite (or removal) before re-enabling.
+  test.skip("PMS fixture prepares a synthesized frame plus 12 thread-backed agenda items", async () => {
     const cwd = makeTempDir();
     const bundle = join(cwd, "playmaker-studio");
     cpSync(join(REPO_ROOT, "studio/sweeps/playmaker-studio"), bundle, { recursive: true });
@@ -1818,7 +1821,10 @@ describe("front-of-house bundle command flow", () => {
     expect(readFileSync(keystonePath, "utf8")).toBe(keystoneBefore);
   });
 
-  test("small-el2 fixture prepares a prior-bearing reshape agenda", async () => {
+  // Skipped: stages studio/plays/front-of-house-walk/fixtures/small-el2 from
+  // the real repo tree, and studio/ was removed in the alexandria-simple
+  // pare-back. Needs a fixture rewrite (or removal) before re-enabling.
+  test.skip("small-el2 fixture prepares a prior-bearing reshape agenda", async () => {
     const cwd = makeTempDir();
     const bundle = join(cwd, "small-el2-bundle");
     cpSync(join(SMALL_EL2_FIXTURE_DIR, "bundle"), bundle, { recursive: true });

@@ -1,6 +1,6 @@
 # Technical Plan Template
 
-Use this structure for `docs/alexandria/plans/<issue-number>-<task-name>/plan.md` (a
+Use this structure for `docs/plans/<issue-number>-<task-name>/plan.md` (a
 per-issue directory — never the linked product-level plan's path).
 
 ## Header

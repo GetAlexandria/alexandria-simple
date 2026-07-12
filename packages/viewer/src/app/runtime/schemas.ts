@@ -1107,6 +1107,69 @@ export const RuntimeProjectStateSchema = Schema.Struct({
 
 export type RuntimeProjectState = Schema.Schema.Type<typeof RuntimeProjectStateSchema>;
 
+// Info Hub work-order board (Info Hub kanban plan, Lane B) — the browser-facing
+// shape of `docs/alexandria/info-hub/board-state.json`. Deliberately narrower
+// than the PMS `StudioBoardCard` twin in packages/pms/viewer/src/app/runtime/
+// studio.ts: no `play`/`division`/`function` (Alexandria has no plays or org
+// catalog yet) and one optional free-string `area` instead, plus a `task`
+// type and a checklist allowed on any card type.
+export const InfoHubCardTypeSchema = Schema.Literal("task", "improvement", "bug", "testing");
+
+export type InfoHubCardType = Schema.Schema.Type<typeof InfoHubCardTypeSchema>;
+
+// The one place the board's status vocabulary is declared (lane order).
+// boardModel.ts and InfoHubBoardView.tsx derive their status sets from this;
+// packages/ax/src/effects/info-hub-board.ts keeps a server-side copy that must
+// match (ax cannot import from the viewer).
+export const INFO_HUB_CARD_STATUSES = [
+  "open",
+  "in-progress",
+  "needs-a-human",
+  "done",
+  "wont-do",
+] as const;
+
+export const InfoHubCardStatusSchema = Schema.Literal(...INFO_HUB_CARD_STATUSES);
+
+export type InfoHubCardStatus = Schema.Schema.Type<typeof InfoHubCardStatusSchema>;
+
+export const InfoHubChecklistItemSchema = Schema.Struct({
+  done: Schema.Boolean,
+  text: Schema.String,
+});
+
+export type InfoHubChecklistItem = Schema.Schema.Type<typeof InfoHubChecklistItemSchema>;
+
+export const InfoHubCardSchema = Schema.Struct({
+  archived: Schema.optionalWith(Schema.Boolean, { exact: true }),
+  area: Schema.optionalWith(Schema.String, { exact: true }),
+  checklist: Schema.optionalWith(Schema.Array(InfoHubChecklistItemSchema), { exact: true }),
+  created: Schema.String,
+  detail: Schema.optionalWith(Schema.String, { exact: true }),
+  id: Schema.String,
+  pinned: Schema.optionalWith(Schema.Boolean, { exact: true }),
+  priority: Schema.Number,
+  source: Schema.String,
+  status: InfoHubCardStatusSchema,
+  terminalAt: Schema.optionalWith(Schema.String, { exact: true }),
+  title: Schema.optionalWith(Schema.String, { exact: true }),
+  type: InfoHubCardTypeSchema,
+});
+
+export type InfoHubCard = Schema.Schema.Type<typeof InfoHubCardSchema>;
+
+export const InfoHubBoardSchema = Schema.Struct({
+  cards: Schema.Array(InfoHubCardSchema),
+  comment: Schema.optionalWith(Schema.String, { exact: true }),
+  updated: Schema.optionalWith(Schema.String, { exact: true }),
+});
+
+export type InfoHubBoard = Schema.Schema.Type<typeof InfoHubBoardSchema>;
+
+export const decodeInfoHubBoard = Schema.decodeUnknown(InfoHubBoardSchema, {
+  errors: "all",
+});
+
 export const decodeLibraryGraph = Schema.decodeUnknown(LibraryGraphSchema, {
   errors: "all",
 });

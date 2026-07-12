@@ -12,13 +12,6 @@ dist/
 bin/.compiled/
 .release-artifacts/
 
-# Python bytecode caches. studio/tools/check.sh runs `python3 -m py_compile`
-# on tools/play-resync.py, writing studio/tools/__pycache__/*.pyc. Left
-# untracked and unignored it dirties the tree on every Studio data check, which
-# stalled Fabro ax-feature runs (validate/review/verify never saw a clean tree).
-__pycache__/
-*.pyc
-
 # Alexandria Next local runtime state (ax2 init)
 .alexandria-next/
 .ax2-runtime/
@@ -33,11 +26,6 @@ docs/alexandria/.ax-runtime/
 
 .playwright-mcp/
 
-# Embedded-factory per-run node outputs (not tracked)
-studio/plays/*/runtime/
-studio/plays/*/fixtures/*/runtime/
-# Generated Studio Operations disposition projection (refreshed from the ledger).
-studio/inheritance/dispositions.md
 .alexandria/*
 !.alexandria/alexandria-config.json
 

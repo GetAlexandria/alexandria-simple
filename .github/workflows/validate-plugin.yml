@@ -20,14 +20,8 @@ jobs:
       workspace: ${{ steps.filter.outputs.workspace }}
       markdown: ${{ steps.filter.outputs.markdown }}
       plugin: ${{ steps.filter.outputs.plugin }}
-      marketplace: ${{ steps.filter.outputs.marketplace }}
       ax: ${{ steps.filter.outputs.ax }}
       viewer: ${{ steps.filter.outputs.viewer }}
-      deploy: ${{ steps.filter.outputs.deploy }}
-      plugin_runtime: ${{ steps.filter.outputs.plugin_runtime }}
-      factory: ${{ steps.filter.outputs.factory }}
-      pms: ${{ steps.filter.outputs.pms }}
-      studio: ${{ steps.filter.outputs.studio }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -59,7 +53,6 @@ jobs:
               - "install.sh"
               - "setup"
               - "scripts/**"
-              - "packages/deploy/build-tarball.sh"
             workspace:
               - "package.json"
               - "pnpm-lock.yaml"
@@ -71,8 +64,6 @@ jobs:
               - ".markdownlint-cli2.jsonc"
             plugin:
               - "packages/alexandria-plugin/**"
-            marketplace:
-              - "packages/alexandria-marketplace/**"
             ax:
               - "packages/ax/**"
               - "install.sh"
@@ -88,47 +79,6 @@ jobs:
               - "docs/alexandria/library/**"
             viewer:
               - "packages/viewer/**"
-            pms:
-              - "packages/pms/**"
-              - "studio/**"
-              - "packages/alexandria-plugin/workflows/**"
-            deploy:
-              - "packages/deploy/**"
-              - ".github/workflows/release.yml"
-            factory:
-              - "packages/factory/**"
-              # The factory tests pin path lists inside scripts/fabro-*
-              # helpers, so a scripts/ change must re-run this gate (#589
-              # moved paths in fabro-validate-impacted-if-changed and broke
-              # the factory tests silently; fixed in #601).
-              - "scripts/**"
-            plugin_runtime:
-              - "packages/plugin-runtime/**"
-              - "README.public.md"
-              - "install.sh"
-              - "VERSION"
-              - "CHANGELOG.md"
-              - "LICENSE"
-              - "packages/alexandria-plugin/**"
-              - "packages/alexandria-marketplace/**"
-            studio:
-              - "studio/**"
-              # The Studio data guards import the shipped ax domain parsers
-              # (threads, search-prior), and their tests pin the parsers'
-              # message strings — so an ax-domain change must re-run this gate
-              # too (the #469 cross-root lesson).
-              - "packages/ax/src/domain/**"
-              # Post boundary migration (#568) the risk-map/move guards import
-              # the PMS viewer's studio components instead — a pms change must
-              # re-run this gate for the same reason (#570 broke it silently
-              # before this job existed).
-              - "packages/pms/**"
-              # check.sh's story-lint/machine-language gates read the product
-              # library bundle directly — a library-only change (e.g. a card
-              # edit) must re-run this gate too, or the no-orphans/diagram-
-              # parity gate silently skips (#627 shipped an orphan card and a
-              # diagram-parity gap this way; the #649 fix).
-              - "docs/alexandria/library/**"
 
   validate-alexandria-plugin:
     needs: changes
@@ -146,27 +96,10 @@ jobs:
       - name: Validate Alexandria plugin package
         run: pnpm --filter @alexandria/plugin run validate
 
-  validate-marketplace:
-    needs: changes
-    if: needs.changes.outputs.marketplace == 'true' || needs.changes.outputs.shared == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Install Claude Code
-        run: npm install -g @anthropic-ai/claude-code
-
-      - name: Setup pnpm
-        run: corepack enable pnpm
-
-      - name: Validate Alexandria marketplace package
-        run: pnpm --filter @alexandria/marketplace run validate
-
   validate-plugin:
     needs:
       - changes
       - validate-alexandria-plugin
-      - validate-marketplace
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -228,13 +161,7 @@ jobs:
             install.sh \
             setup \
             scripts/ensure-shell-tools \
-            scripts/fabro-host-bun \
-            scripts/fabro-local-prune \
-            scripts/fabro-local-server \
-            scripts/fabro-setup-env \
-            scripts/fabro-validate-plugin-if-changed \
-            scripts/setup-dev \
-            packages/deploy/build-tarball.sh
+            scripts/setup-dev
 
       - name: Check shell formatting
         run: |
@@ -242,13 +169,7 @@ jobs:
             install.sh \
             setup \
             scripts/ensure-shell-tools \
-            scripts/fabro-host-bun \
-            scripts/fabro-local-prune \
-            scripts/fabro-local-server \
-            scripts/fabro-setup-env \
-            scripts/fabro-validate-plugin-if-changed \
-            scripts/setup-dev \
-            packages/deploy/build-tarball.sh
+            scripts/setup-dev
 
   check-workspace-install:
     needs: changes
@@ -389,134 +310,6 @@ jobs:
           path: packages/viewer/test-results/
           retention-days: 14
 
-  check-pms:
-    needs: changes
-    if: needs.changes.outputs.pms == 'true' || needs.changes.outputs.shared == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Setup pnpm
-        run: corepack enable pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Check pms formatting
-        run: pnpm --filter @alexandria/pms run format:check
-
-      - name: Typecheck pms
-        run: pnpm --filter @alexandria/pms run typecheck
-
-      - name: Test pms
-        run: pnpm --filter @alexandria/pms run test
-
-      - name: Check pms viewer formatting
-        run: pnpm --filter @alexandria/pms-viewer run format:check
-
-      - name: Typecheck pms viewer
-        run: pnpm --filter @alexandria/pms-viewer run typecheck
-
-      - name: Test pms viewer
-        run: pnpm --filter @alexandria/pms-viewer run test
-
-      - name: Build pms viewer
-        run: pnpm --filter @alexandria/pms-viewer run build
-
-  test-deploy:
-    needs: changes
-    if: needs.changes.outputs.deploy == 'true' || needs.changes.outputs.shared == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Setup pnpm
-        run: corepack enable pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Test deploy
-        run: bun test packages/deploy
-
-  test-plugin-runtime:
-    needs: changes
-    if: needs.changes.outputs.plugin_runtime == 'true' || needs.changes.outputs.shared == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Setup pnpm
-        run: corepack enable pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Test plugin runtime
-        run: bun test packages/plugin-runtime
-
-  test-factory:
-    needs: changes
-    if: needs.changes.outputs.factory == 'true' || needs.changes.outputs.shared == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Setup pnpm
-        run: corepack enable pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Test factory
-        run: bun test packages/factory
-
-  check-studio:
-    needs: changes
-    if: needs.changes.outputs.studio == 'true' || needs.changes.outputs.shared == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Setup pnpm
-        run: corepack enable pnpm
-
-      # check.sh shells out to python3 (stdlib only) and node — both
-      # preinstalled on the runner — plus bun. Most guards import only
-      # dependency-free relative-import modules (ax domain parsers,
-      # pms-viewer studio parsers), but check-keystone.ts imports `effect`
-      # from the ax workspace, so the gate needs the workspace install.
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Check Studio data
-        run: sh studio/tools/check.sh
-
   check-and-test:
     needs:
       - changes
@@ -527,11 +320,6 @@ jobs:
       - check-ax
       - check-viewer
       - test-viewer-e2e
-      - check-pms
-      - test-deploy
-      - test-plugin-runtime
-      - test-factory
-      - check-studio
     if: always()
     runs-on: ubuntu-latest
     steps:
