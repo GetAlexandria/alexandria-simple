@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Component, Suspense, lazy, useMemo, useState, type ReactNode } from "react";
 import * as Effect from "effect/Effect";
 import { makeViewerRuntimeClient, type LibraryCatalogRequest } from "../../app/runtime/client";
 import type { RuntimeRavenVisionBankResult } from "../../app/runtime/schemas";
@@ -68,6 +68,8 @@ import {
   type ViewerRoute,
 } from "./viewer-routes";
 import { VisionOnboardingView } from "./vision/VisionOnboardingView";
+import { MAP_FALLBACK_COLORS } from "../map/colors";
+import { MapMessagePanel } from "../map/MapMessagePanel";
 
 interface LibraryBrowserAppProps {
   initialCatalog?: LibraryCatalog;
@@ -92,8 +94,57 @@ function activeViewForRoute(route: ViewerRoute): LibraryBrowserView {
       return "knowledge-bank";
     case "raven-vision":
       return "vision-onboarding";
+    case "dev-map":
+      return "dev-map";
     case "not-found":
       return "not-found";
+  }
+}
+
+// The /dev/map first-light harness lazy-loads the whole map stack
+// (three.js, @react-three/fiber, the promoted parchment components) so the
+// main viewer bundle is unaffected until the dev route is visited.
+// map/colors and map/MapMessagePanel above are deliberately three.js-free,
+// so importing them here does not defeat that lazy split.
+const LazyMapDevView = lazy(() => import("../map/MapDevView"));
+
+// A rejected lazy-chunk load (e.g. a stale hashed chunk after an ax
+// rebuild — astro build empties outDir) would otherwise propagate through
+// Suspense and unmount the entire client:only island into a blank page.
+// Reloading fetches the current index.html and chunk hashes, which also
+// self-heals the stale-chunk case.
+class MapDevErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  override state = { hasError: false };
+
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true };
+  }
+
+  override render(): ReactNode {
+    if (!this.state.hasError) {
+      return this.props.children;
+    }
+
+    return (
+      <MapMessagePanel
+        title="Map failed to load"
+        subtext="Reload to fetch the latest map code."
+        action={
+          <button
+            type="button"
+            className="mt-2 border px-2 py-1 text-xs font-semibold"
+            style={{
+              backgroundColor: MAP_FALLBACK_COLORS.field,
+              borderColor: MAP_FALLBACK_COLORS.border,
+              color: MAP_FALLBACK_COLORS.subtext,
+            }}
+            onClick={() => window.location.reload()}
+          >
+            Reload
+          </button>
+        }
+      />
+    );
   }
 }
 
@@ -710,6 +761,27 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
         runtimeClient={runtimeClient}
         selectedCardPath={selectedCardPath}
       />
+    );
+  }
+
+  if (activeView === "dev-map") {
+    return (
+      <MapDevErrorBoundary>
+        <Suspense
+          fallback={
+            <div
+              className="flex h-screen w-full items-center justify-center"
+              style={{ backgroundColor: MAP_FALLBACK_COLORS.field }}
+            >
+              <div className="text-sm font-semibold" style={{ color: MAP_FALLBACK_COLORS.text }}>
+                Loading map...
+              </div>
+            </div>
+          }
+        >
+          <LazyMapDevView />
+        </Suspense>
+      </MapDevErrorBoundary>
     );
   }
 

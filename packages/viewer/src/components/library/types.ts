@@ -61,6 +61,7 @@ export type LibraryBrowserView =
   | "playbook"
   | "knowledge-bank"
   | "vision-onboarding"
+  | "dev-map"
   | "not-found";
 
 export type RavenConnectionState = "connected" | "disconnected";

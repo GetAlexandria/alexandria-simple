@@ -83,6 +83,9 @@ describe("viewer routes", () => {
     expect(parseViewerRoute("/ledger", "").surface).toBe("ledger");
     expect(parseViewerRoute("/raven/knowledge-bank", "").surface).toBe("raven-knowledge-bank");
     expect(parseViewerRoute("/raven/vision", "").surface).toBe("raven-vision");
+    // Map first-light dev harness (map-tab plan, P1).
+    expect(parseViewerRoute("/dev/map", "").surface).toBe("dev-map");
+    expect(parseViewerRoute("/dev/map/", "").surface).toBe("dev-map");
     // PMS surfaces left the Alexandria viewer (boundary migration, Slice 2).
     expect(parseViewerRoute("/studio", "").surface).toBe("not-found");
     expect(parseViewerRoute("/library/pms-back", "").surface).toBe("not-found");
