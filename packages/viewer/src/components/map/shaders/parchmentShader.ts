@@ -282,32 +282,35 @@ export const applyParchmentUniforms = (
 export const createParchmentMaterial = (
   params: ParchmentShaderParams = DEFAULT_PARCHMENT_PARAMS,
 ): THREE.ShaderMaterial => {
+  // Uniform keys are declared here with placeholder values; the
+  // applyParchmentUniforms call below is the single owner of the
+  // param -> uniform value mapping (it overwrites every key).
   const material = new THREE.ShaderMaterial({
     uniforms: {
       uHighlight: { value: new THREE.Vector3(0, 0, 0) },
-      uHighlightStrength: { value: 0.0 },
+      uHighlightStrength: { value: 0 },
 
-      uRegionScale: { value: params.regionScale },
-      uRegion2Scale: { value: params.region2Scale },
-      uBlotchScale: { value: params.blotchScale },
-      uBlotch2Scale: { value: params.blotch2Scale },
-      uWetEdgeScale: { value: params.wetEdgeScale },
-      uGrainScale: { value: params.grainScale },
-      uFiberScaleX: { value: params.fiberScaleX },
-      uFiberScaleY: { value: params.fiberScaleY },
-      uSpeckleScale: { value: params.speckleScale },
+      uRegionScale: { value: 0 },
+      uRegion2Scale: { value: 0 },
+      uBlotchScale: { value: 0 },
+      uBlotch2Scale: { value: 0 },
+      uWetEdgeScale: { value: 0 },
+      uGrainScale: { value: 0 },
+      uFiberScaleX: { value: 0 },
+      uFiberScaleY: { value: 0 },
+      uSpeckleScale: { value: 0 },
 
-      uSageStrength: { value: params.sageStrength },
-      uStainStrength: { value: params.stainStrength },
-      uPoolLightStrength: { value: params.poolLightStrength },
-      uPoolDarkStrength: { value: params.poolDarkStrength },
-      uWetEdgeStrength: { value: params.wetEdgeStrength },
-      uGrainIntensity: { value: params.grainIntensity },
-      uFiberIntensity: { value: params.fiberIntensity },
-      uSpeckleIntensity: { value: params.speckleIntensity },
+      uSageStrength: { value: 0 },
+      uStainStrength: { value: 0 },
+      uPoolLightStrength: { value: 0 },
+      uPoolDarkStrength: { value: 0 },
+      uWetEdgeStrength: { value: 0 },
+      uGrainIntensity: { value: 0 },
+      uFiberIntensity: { value: 0 },
+      uSpeckleIntensity: { value: 0 },
 
-      uEdgeStrength: { value: params.edgeStrength },
-      uEdgeWidth: { value: params.edgeWidth },
+      uEdgeStrength: { value: 0 },
+      uEdgeWidth: { value: 0 },
       uNoiseSeed: { value: 0 },
     },
     vertexShader,

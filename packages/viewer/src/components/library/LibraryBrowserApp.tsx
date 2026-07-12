@@ -69,6 +69,7 @@ import {
 } from "./viewer-routes";
 import { VisionOnboardingView } from "./vision/VisionOnboardingView";
 import { MAP_FALLBACK_COLORS } from "../map/colors";
+import { MapMessagePanel } from "../map/MapMessagePanel";
 
 interface LibraryBrowserAppProps {
   initialCatalog?: LibraryCatalog;
@@ -103,8 +104,8 @@ function activeViewForRoute(route: ViewerRoute): LibraryBrowserView {
 // The /dev/map first-light harness lazy-loads the whole map stack
 // (three.js, @react-three/fiber, the promoted parchment components) so the
 // main viewer bundle is unaffected until the dev route is visited.
-// map/colors above is a tokens-only module with no three.js import, so
-// reading it here does not defeat that lazy split.
+// map/colors and map/MapMessagePanel above are deliberately three.js-free,
+// so importing them here does not defeat that lazy split.
 const LazyMapDevView = lazy(() => import("../map/MapDevView"));
 
 // A rejected lazy-chunk load (e.g. a stale hashed chunk after an ax
@@ -125,21 +126,10 @@ class MapDevErrorBoundary extends Component<{ children: ReactNode }, { hasError:
     }
 
     return (
-      <div
-        className="flex h-screen w-full items-center justify-center"
-        style={{ backgroundColor: MAP_FALLBACK_COLORS.field, color: MAP_FALLBACK_COLORS.text }}
-      >
-        <div
-          className="max-w-sm border p-4 text-center"
-          style={{
-            backgroundColor: MAP_FALLBACK_COLORS.panel,
-            borderColor: MAP_FALLBACK_COLORS.border,
-          }}
-        >
-          <p className="text-sm font-semibold">Map failed to load</p>
-          <p className="mt-1 text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
-            Reload to fetch the latest map code.
-          </p>
+      <MapMessagePanel
+        title="Map failed to load"
+        subtext="Reload to fetch the latest map code."
+        action={
           <button
             type="button"
             className="mt-2 border px-2 py-1 text-xs font-semibold"
@@ -152,8 +142,8 @@ class MapDevErrorBoundary extends Component<{ children: ReactNode }, { hasError:
           >
             Reload
           </button>
-        </div>
-      </div>
+        }
+      />
     );
   }
 }

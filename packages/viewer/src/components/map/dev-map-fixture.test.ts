@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import * as Effect from "effect/Effect";
 import { decodeMapState } from "../../app/runtime/schemas";
 import { DEV_MAP_FIXTURE, DEV_MAP_MIN_GRID_RADIUS, devMapGridRadius } from "./dev-map-fixture";
-import { generateHexGrid } from "./hex";
+import { createHex, generateHexGrid, hexToKey } from "./hex";
 
 describe("DEV_MAP_FIXTURE", () => {
   it("decodes with the M1 map-state schema (same shape the runtime serves)", async () => {
@@ -35,13 +35,12 @@ describe("devMapGridRadius", () => {
     const gridKeys = new Set(generateHexGrid(radius).map((cell) => cell.key));
 
     for (const position of DEV_MAP_FIXTURE.positions) {
-      const s = -position.q - position.r;
-      expect(gridKeys.has(`${position.q},${position.r},${s}`)).toBe(true);
+      expect(gridKeys.has(hexToKey(createHex(position.q, position.r)))).toBe(true);
     }
 
     for (const domain of DEV_MAP_FIXTURE.domains) {
       const [q, r] = domain.region.center;
-      expect(gridKeys.has(`${q},${r},${-q - r}`)).toBe(true);
+      expect(gridKeys.has(hexToKey(createHex(q, r)))).toBe(true);
     }
   });
 });
