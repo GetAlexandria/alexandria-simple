@@ -29,6 +29,14 @@ export type MapProjectLifecycle = (typeof MAP_PROJECT_LIFECYCLES)[number];
 export type MapSystemLifecycle = (typeof MAP_SYSTEM_LIFECYCLES)[number];
 export type MapPositionEntityType = (typeof MAP_POSITION_ENTITY_TYPES)[number];
 
+// Exhaustive by construction: adding a kind to MAP_ENTITY_KINDS forces an
+// entry here, so a new kind can never silently inherit another kind's
+// lifecycle vocabulary.
+const MAP_LIFECYCLES_BY_KIND: Record<MapEntityKind, readonly string[]> = {
+  project: MAP_PROJECT_LIFECYCLES,
+  system: MAP_SYSTEM_LIFECYCLES,
+};
+
 const DOMAIN_FIELD_ORDER = ["id", "name", "half", "owner", "region"] as const;
 const CONTEXT_FIELD_ORDER = ["id", "name", "domainId", "libraryContext"] as const;
 const ENTITY_FIELD_ORDER = [
@@ -169,12 +177,6 @@ function validateRegion(value: unknown, ref: string): MapStateValidationError | 
     return validationError(`${ref} region radius must be a positive integer`);
   }
   return null;
-}
-
-interface ValidatedCollections {
-  contexts: MapContext[];
-  domains: MapDomain[];
-  entities: MapEntity[];
 }
 
 function validateDomains(value: unknown): MapDomain[] | MapStateValidationError {
@@ -352,7 +354,7 @@ function validateEntities(
     }
 
     const kind = rawEntity.kind as MapEntityKind;
-    const lifecycles = kind === "project" ? MAP_PROJECT_LIFECYCLES : MAP_SYSTEM_LIFECYCLES;
+    const lifecycles = MAP_LIFECYCLES_BY_KIND[kind];
     if (!lifecycles.some((lifecycle) => lifecycle === rawEntity.lifecycle)) {
       return validationError(
         `${ref} lifecycle must be one of ${JSON.stringify([...lifecycles].sort())} for a ${kind}`,
@@ -391,13 +393,13 @@ function validateEntities(
 
 function validatePositions(
   value: unknown,
-  collections: ValidatedCollections,
+  entities: readonly MapEntity[],
 ): MapPosition[] | MapStateValidationError {
   if (!Array.isArray(value)) {
     return validationError("positions must be a list");
   }
 
-  const entityKindById = new Map(collections.entities.map((entity) => [entity.id, entity.kind]));
+  const entityKindById = new Map(entities.map((entity) => [entity.id, entity.kind]));
   const seenHexes = new Set<string>();
   // Landmark ids live in a different namespace than entity ids (a landmark's
   // free-string id may coincide with a real entity id), so the one-position-
@@ -406,7 +408,7 @@ function validatePositions(
   const positions: MapPosition[] = [];
 
   for (const [index, rawPosition] of value.entries()) {
-    const ref = `position ${index + 1}`;
+    const ref = entryRef("position", rawPosition, index + 1);
     if (!isRecord(rawPosition)) {
       return validationError("positions must contain objects");
     }
@@ -508,7 +510,7 @@ export function validateMapState(value: unknown): MapState | MapStateValidationE
   if (entities instanceof MapStateValidationError) {
     return entities;
   }
-  const positions = validatePositions(value.positions, { contexts, domains, entities });
+  const positions = validatePositions(value.positions, entities);
   if (positions instanceof MapStateValidationError) {
     return positions;
   }
@@ -543,12 +545,13 @@ export function readMapState(options: {
   return Effect.gen(function* () {
     const fs = yield* FileSystem;
     const statePath = mapStatePathForWorkspacePath(options.workspacePath);
-    const content = yield* fs.readText(statePath).pipe(
-      Effect.map((text): string | null => text),
-      Effect.catchAll((error) =>
-        isMissingFileError(error) ? Effect.succeed(null) : Effect.fail(error),
-      ),
-    );
+    const content = yield* fs
+      .readText(statePath)
+      .pipe(
+        Effect.catchAll((error) =>
+          isMissingFileError(error) ? Effect.succeed<string | null>(null) : Effect.fail(error),
+        ),
+      );
 
     if (content == null) {
       return defaultMapState();

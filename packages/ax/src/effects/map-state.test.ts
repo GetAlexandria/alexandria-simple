@@ -1,6 +1,14 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { Effect } from "effect";
-import { existsSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync } from "fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "fs";
 import { tmpdir } from "os";
 import { dirname, join } from "path";
 import { mapStatePathForWorkspacePath } from "../domain/paths.js";
@@ -334,7 +342,6 @@ describe("readMapState / writeMapState", () => {
     const state = validateMapState(baseState()) as MapState;
     await runWrite(state, workspacePath);
     const statePath = mapStatePathForWorkspacePath(workspacePath);
-    const { writeFileSync } = await import("fs");
     writeFileSync(statePath, "{not json", "utf8");
 
     const result = await Effect.runPromise(
@@ -352,7 +359,6 @@ describe("readMapState / writeMapState", () => {
     const broken = baseState();
     ((broken.contexts as Record<string, unknown>[])[0] as Record<string, unknown>).domainId =
       "gone";
-    const { writeFileSync } = await import("fs");
     writeFileSync(statePath, `${JSON.stringify(broken, null, 2)}\n`, "utf8");
 
     const result = await Effect.runPromise(
