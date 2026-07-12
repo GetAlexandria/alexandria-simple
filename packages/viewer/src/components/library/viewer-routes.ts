@@ -142,11 +142,15 @@ export type ViewerRoute =
   | { searchParams: URLSearchParams; surface: "ledger" }
   | { searchParams: URLSearchParams; surface: "raven-knowledge-bank" }
   | { searchParams: URLSearchParams; surface: "raven-vision" }
+  // Dev-only first-light harness for the Map tab (plan §3 Gate 2); renders
+  // the promoted parchment stack against fixture data. Not linked from nav.
+  | { searchParams: URLSearchParams; surface: "dev-map" }
   | { path: string; searchParams: URLSearchParams; surface: "not-found" };
 
 export type ViewerNavigationAction = "push" | "replace";
 
 const SURFACE_PATHS = {
+  "dev-map": "/dev/map",
   home: "/",
   info: "/info",
   ledger: "/ledger",
@@ -314,6 +318,8 @@ export function parseViewerRoute(pathname: string, search = ""): ViewerRoute {
       return { searchParams, surface: "raven-knowledge-bank" };
     case "/raven/vision":
       return { searchParams, surface: "raven-vision" };
+    case "/dev/map":
+      return { searchParams, surface: "dev-map" };
     default:
       return {
         path: pathname,

@@ -10,7 +10,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "test": "bun test src/app/runtime/client.test.ts src/components/library/engine-view-model.test.ts src/components/library/library-peek-view-model.test.ts src/components/library/EmptyLibraryView.test.tsx src/components/library/IndexView.test.tsx src/components/library/CatalogView.test.tsx src/components/library/WorkflowView.test.tsx src/components/library/NotepadView.test.tsx src/components/library/notepad-view-model.test.ts src/components/library/TypeLegend.test.tsx src/components/library/constellation-view-model.test.ts src/components/library/DraftsView.test.tsx src/components/library/EngineCardDrawer.test.tsx src/components/library/BuilderBundleSelector.test.tsx src/components/library/hooks/cardDetailLoader.test.ts src/components/library/library-bundle-registry.test.ts src/components/library/library-mode-config.test.ts src/components/library/LibraryBrowserApp.test.tsx src/components/library/ledger-event-view-model.test.ts src/components/library/runtime-error-copy.test.ts src/components/library/useRavenConnectionState.test.ts src/components/library/viewer-routes.test.ts src/components/library/vision/vision-slot-guidance.test.ts src/components/library/infohub/boardModel.test.ts src/components/library/infohub/InfoHubBoardView.test.tsx",
+    "test": "bun test src/app/runtime/client.test.ts src/components/library/engine-view-model.test.ts src/components/library/library-peek-view-model.test.ts src/components/library/EmptyLibraryView.test.tsx src/components/library/IndexView.test.tsx src/components/library/CatalogView.test.tsx src/components/library/WorkflowView.test.tsx src/components/library/NotepadView.test.tsx src/components/library/notepad-view-model.test.ts src/components/library/TypeLegend.test.tsx src/components/library/constellation-view-model.test.ts src/components/library/DraftsView.test.tsx src/components/library/EngineCardDrawer.test.tsx src/components/library/BuilderBundleSelector.test.tsx src/components/library/hooks/cardDetailLoader.test.ts src/components/library/library-bundle-registry.test.ts src/components/library/library-mode-config.test.ts src/components/library/LibraryBrowserApp.test.tsx src/components/library/ledger-event-view-model.test.ts src/components/library/runtime-error-copy.test.ts src/components/library/useRavenConnectionState.test.ts src/components/library/viewer-routes.test.ts src/components/library/vision/vision-slot-guidance.test.ts src/components/library/infohub/boardModel.test.ts src/components/library/infohub/InfoHubBoardView.test.tsx src/components/map/hex/math.test.ts src/components/map/hex/grid.test.ts src/components/map/dev-map-fixture.test.ts",
     "test:e2e": "playwright test",
     "storybook": "storybook dev --host 127.0.0.1 --port 6006",
     "storybook:build": "storybook build"
@@ -21,13 +21,16 @@
     "@astrojs/tailwind": "^6.0.2",
     "@fontsource/cormorant-garamond": "^5.2.11",
     "@fontsource/inter": "^5.2.8",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
     "astro": "^5.13.5",
     "effect": "^3.20.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
@@ -38,6 +41,7 @@
     "@storybook/react-vite": "^10.4.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
+    "@types/three": "^0.185.1",
     "storybook": "^10.4.1",
     "tslib": "^2.8.1",
     "typescript": "^5.9.3"

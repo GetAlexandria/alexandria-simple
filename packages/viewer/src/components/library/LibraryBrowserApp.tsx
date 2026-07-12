@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Suspense, lazy, useMemo, useState } from "react";
 import * as Effect from "effect/Effect";
 import { makeViewerRuntimeClient, type LibraryCatalogRequest } from "../../app/runtime/client";
 import type { RuntimeRavenVisionBankResult } from "../../app/runtime/schemas";
@@ -92,10 +92,17 @@ function activeViewForRoute(route: ViewerRoute): LibraryBrowserView {
       return "knowledge-bank";
     case "raven-vision":
       return "vision-onboarding";
+    case "dev-map":
+      return "dev-map";
     case "not-found":
       return "not-found";
   }
 }
+
+// The /dev/map first-light harness lazy-loads the whole map stack
+// (three.js, @react-three/fiber, the promoted parchment components) so the
+// main viewer bundle is unaffected until the dev route is visited.
+const LazyMapDevView = lazy(() => import("../map/MapDevView"));
 
 function modeForRoute(route: ViewerRoute): LibraryViewMode {
   return route.surface === "library" ? route.mode : "index";
@@ -710,6 +717,20 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
         runtimeClient={runtimeClient}
         selectedCardPath={selectedCardPath}
       />
+    );
+  }
+
+  if (activeView === "dev-map") {
+    return (
+      <Suspense
+        fallback={
+          <div className="flex h-screen w-full items-center justify-center bg-[#efe2cd]">
+            <div className="text-sm font-semibold text-[#6f5b44]">Loading map...</div>
+          </div>
+        }
+      >
+        <LazyMapDevView />
+      </Suspense>
     );
   }
 
