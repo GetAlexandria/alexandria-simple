@@ -24,8 +24,9 @@ import {
   HEX_CELL_HEIGHT,
   HEX_SIZE,
   getParchmentCellMaterial,
+  getRimMaterial,
   getSharedMapGeometries,
-  getStandardMaterial,
+  getSideMaterial,
 } from "./materials";
 
 const HOVER_LIFT = 0.03;
@@ -93,8 +94,8 @@ export const HexCell = memo(function HexCell({
     highlight.color,
     highlight.strength,
   );
-  const rimMaterial = getStandardMaterial(rimColor, 0.94, 0.04);
-  const sideMaterial = getStandardMaterial(sideColor, 0.91, 0.02);
+  const rimMaterial = getRimMaterial(rimColor);
+  const sideMaterial = getSideMaterial(sideColor);
 
   const pointerCursor = useMemo(() => {
     if (visualState === "blocked") {

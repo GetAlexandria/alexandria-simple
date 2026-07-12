@@ -11,18 +11,19 @@
 import { useLoader } from "@react-three/fiber";
 import { useEffect } from "react";
 import * as THREE from "three";
-import { MIX_WHITE } from "./colors";
 import { CAMERA_FACING_ROTATION_X } from "./MapLabel";
 import { hexToWorld, type HexCoord } from "./hex";
 import { HEX_SIZE } from "./materials";
+
+// The only caller (StrayPile) doesn't vary this; inline rather than thread
+// an opacity prop through for a single fixed value.
+const SPRITE_OPACITY = 0.95;
 
 type MapSpriteProps = {
   coord: HexCoord;
   textureUrl: string;
   width: number;
   height: number;
-  tint?: string;
-  opacity?: number;
   elevation?: number;
   zOffset?: number;
 };
@@ -32,8 +33,6 @@ export function MapSprite({
   textureUrl,
   width,
   height,
-  tint = MIX_WHITE,
-  opacity = 0.95,
   elevation = 0.58,
   zOffset = 0.45,
 }: MapSpriteProps) {
@@ -58,9 +57,8 @@ export function MapSprite({
       <planeGeometry args={[width, height]} />
       <meshBasicMaterial
         map={texture}
-        color={tint}
         transparent
-        opacity={opacity}
+        opacity={SPRITE_OPACITY}
         depthWrite={false}
         side={THREE.DoubleSide}
       />

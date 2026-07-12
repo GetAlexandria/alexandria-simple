@@ -14,10 +14,13 @@
 // for tests and HMR, not for component lifecycles.
 
 import * as THREE from "three";
+import { HEX_SIZE } from "./hex";
 import { createParchmentMaterial, applyParchmentUniforms } from "./shaders/parchmentShader";
 import { DEFAULT_PARCHMENT_PARAMS } from "./shaders/parchmentShader";
 
-export const HEX_SIZE = 1;
+// Re-exported so this module stays the one-stop import for the map's shared
+// GPU resources; the value itself is owned by ./hex (three-free).
+export { HEX_SIZE };
 export const HEX_CELL_HEIGHT = 0.22;
 
 export const TILE_RADIUS = 0.68;
@@ -96,8 +99,12 @@ export function getParchmentCellMaterial(
 
 const standardMaterials = new Map<string, THREE.MeshStandardMaterial>();
 
-/** Cached MeshStandardMaterial for cell rims/sides and other flat tints. */
-export function getStandardMaterial(
+/**
+ * Cached MeshStandardMaterial, keyed on color alone. Callers fix their own
+ * roughness/metalness — HexCell has exactly two flat-tint roles (rim, side),
+ * so `getRimMaterial`/`getSideMaterial` below are the only entry points.
+ */
+function getStandardMaterial(
   color: string,
   roughness: number,
   metalness: number,
@@ -109,6 +116,16 @@ export function getStandardMaterial(
     standardMaterials.set(key, material);
   }
   return material;
+}
+
+/** Cached hex-cell rim material for a given color. */
+export function getRimMaterial(color: string): THREE.MeshStandardMaterial {
+  return getStandardMaterial(color, 0.94, 0.04);
+}
+
+/** Cached hex-cell side-wall material for a given color. */
+export function getSideMaterial(color: string): THREE.MeshStandardMaterial {
+  return getStandardMaterial(color, 0.91, 0.02);
 }
 
 /** Test/HMR hook; see the ownership note at the top of this module. */

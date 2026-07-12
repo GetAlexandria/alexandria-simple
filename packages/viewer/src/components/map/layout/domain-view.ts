@@ -17,6 +17,7 @@ import {
   type HexTint,
 } from "../colors";
 import {
+  HEX_SIZE,
   createHex,
   getNeighbors,
   hexDistance,
@@ -25,8 +26,6 @@ import {
   type HexCoord,
   type HexGridCell,
 } from "../hex";
-
-const HEX_SIZE = 1;
 
 // A patch should hold its entities plus breathing room for a pile + label.
 const MIN_PATCH_SIZE = 4;
@@ -57,7 +56,6 @@ export type DomainViewTile = {
 
 export type DomainViewPile = {
   contextId: string;
-  contextName: string;
   coord: HexCoord;
   cardCount: number;
 };
@@ -72,9 +70,18 @@ export type DomainViewLayout = {
   labels: readonly DomainViewLabel[];
   tiles: readonly DomainViewTile[];
   piles: readonly DomainViewPile[];
-  /** Which domain owns each territory cell. */
+};
+
+/**
+ * Intermediate assignment maps behind a DomainViewLayout — which domain
+ * owns each territory cell, which context patch owns a cell (a subset of
+ * territory cells), and each domain's wash pigment. No renderer reads these
+ * directly (MapScene/DomainView only need the derived tint/border/label/pile
+ * output), but the layout algorithm's own tests assert on them directly to
+ * pin down territory/patch assignment; see computeDomainViewLayoutInternal.
+ */
+export type DomainViewLayoutInternals = {
   territoryByCellKey: ReadonlyMap<string, string>;
-  /** Which context patch owns a cell (subset of territory cells). */
   patchByCellKey: ReadonlyMap<string, string>;
   domainColorById: ReadonlyMap<string, string>;
 };
@@ -153,11 +160,16 @@ function segmentKey(segment: DomainViewBorderSegment): string {
   return a < b ? `${a}|${b}` : `${b}|${a}`;
 }
 
-export function computeDomainViewLayout(
+/**
+ * Full layout output, including the intermediate assignment maps. Exported
+ * for this module's own tests, which assert on territory/patch assignment
+ * directly; renderers should use `computeDomainViewLayout` instead.
+ */
+export function computeDomainViewLayoutInternal(
   state: MapState,
   cells: readonly HexGridCell[],
   options: DomainViewLayoutOptions = {},
-): DomainViewLayout {
+): DomainViewLayout & DomainViewLayoutInternals {
   const strayCardCounts = options.strayCardCounts ?? {};
 
   const domainColorById = new Map<string, string>(
@@ -295,7 +307,11 @@ export function computeDomainViewLayout(
       }
     }
 
-    // Round-robin growth.
+    // Round-robin growth: each context claims one cell per turn (BFS over
+    // its claimed cells) until it reaches its target size or its frontier is
+    // exhausted. `frontierIndex` is where the BFS scan resumes — cells only
+    // ever gain claimed neighbors, so a cell that once yields no unclaimed
+    // neighbor never will again and the cursor never has to look back.
     const targetSizes = new Map(
       domainContexts.map((context) => [
         context.id,
@@ -305,6 +321,7 @@ export function computeDomainViewLayout(
         ),
       ]),
     );
+    const frontierIndex = new Map(domainContexts.map((context) => [context.id, 0]));
     const growing = new Set(domainContexts.map((context) => context.id));
     while (growing.size > 0) {
       for (const context of domainContexts) {
@@ -316,11 +333,10 @@ export function computeDomainViewLayout(
           growing.delete(context.id);
           continue;
         }
-        // First unclaimed territory neighbor, scanning claimed cells in
-        // claim order (breadth-first by construction).
+        let index = frontierIndex.get(context.id)!;
         let grew = false;
-        for (const claimedKey of claimed) {
-          for (const neighbor of getNeighbors(cellByKey.get(claimedKey)!.coord)) {
+        for (; index < claimed.length && !grew; index += 1) {
+          for (const neighbor of getNeighbors(cellByKey.get(claimed[index]!)!.coord)) {
             const neighborKey = hexToKey(neighbor);
             if (territoryKeys.has(neighborKey) && !patchByCellKey.has(neighborKey)) {
               patchByCellKey.set(neighborKey, context.id);
@@ -329,10 +345,10 @@ export function computeDomainViewLayout(
               break;
             }
           }
-          if (grew) {
-            break;
-          }
         }
+        // On growth the loop advanced past the yielding cell; step back so
+        // its remaining unclaimed neighbors are claimed on later turns.
+        frontierIndex.set(context.id, grew ? index - 1 : index);
         if (!grew) {
           growing.delete(context.id);
         }
@@ -400,7 +416,6 @@ export function computeDomainViewLayout(
     occupiedCellKeys.add(pileKey);
     piles.push({
       contextId: context.id,
-      contextName: context.name,
       coord: cellByKey.get(pileKey)!.coord,
       cardCount,
     });
@@ -484,4 +499,20 @@ export function computeDomainViewLayout(
     patchByCellKey,
     domainColorById,
   };
+}
+
+/**
+ * Domain-view layout for renderers: territory/patch washes, painted
+ * borders, labels, tiles, and stray piles. Drops the intermediate
+ * territory/patch assignment maps that only this module's tests read; use
+ * `computeDomainViewLayoutInternal` if you need those.
+ */
+export function computeDomainViewLayout(
+  state: MapState,
+  cells: readonly HexGridCell[],
+  options: DomainViewLayoutOptions = {},
+): DomainViewLayout {
+  const { tintByCellKey, domainBorders, patchBorders, labels, tiles, piles } =
+    computeDomainViewLayoutInternal(state, cells, options);
+  return { tintByCellKey, domainBorders, patchBorders, labels, tiles, piles };
 }

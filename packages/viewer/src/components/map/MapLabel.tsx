@@ -49,11 +49,9 @@ type MapLabelProps = {
   /** World-unit height of the rendered line. */
   height: number;
   color: string;
-  /** Parchment-cream stroke behind the glyphs; pass null to disable. */
-  haloColor?: string | null;
+  /** Parchment-cream stroke behind the glyphs. */
+  haloColor?: string;
   opacity?: number;
-  /** "facing" tilts toward the camera; "flat" lies on the parchment. */
-  orientation?: "facing" | "flat";
   italic?: boolean;
   /** Extra tracking (em fraction), for cartographic uppercase region names. */
   letterSpacingEm?: number;
@@ -64,7 +62,7 @@ type LabelTexture = { texture: THREE.CanvasTexture; aspect: number };
 function createLabelTexture(
   text: string,
   color: string,
-  haloColor: string | null,
+  haloColor: string,
   italic: boolean,
   letterSpacingEm: number,
 ): LabelTexture {
@@ -146,7 +144,6 @@ export function MapLabel({
   color,
   haloColor = MAP_LABEL_COLORS.halo,
   opacity = 1,
-  orientation = "facing",
   italic = false,
   letterSpacingEm = 0,
 }: MapLabelProps) {
@@ -179,12 +176,10 @@ export function MapLabel({
     };
   }, [label]);
 
-  const rotationX = orientation === "flat" ? -Math.PI / 2 : CAMERA_FACING_ROTATION_X;
-
   return (
     <mesh
       position={[position[0], position[1], position[2]]}
-      rotation={[rotationX, 0, 0]}
+      rotation={[CAMERA_FACING_ROTATION_X, 0, 0]}
       raycast={() => null}
     >
       <planeGeometry args={[height * label.aspect, height]} />

@@ -5,12 +5,15 @@ import { createHex, generateHexGrid, getNeighbors, hexDistance, hexToKey } from 
 import {
   cellHalf,
   computeDomainViewLayout,
+  computeDomainViewLayoutInternal,
   roundBorderCoordinate,
   type DomainViewBorderSegment,
 } from "./domain-view";
 
 const cells = generateHexGrid(devMapGridRadius(DEV_MAP_FIXTURE));
-const layout = computeDomainViewLayout(DEV_MAP_FIXTURE, cells, {
+// The internal variant exposes territory/patch assignment maps that only
+// this test file reads; computeDomainViewLayout is the renderer-facing API.
+const layout = computeDomainViewLayoutInternal(DEV_MAP_FIXTURE, cells, {
   strayCardCounts: DEV_MAP_STRAY_CARD_COUNTS,
 });
 
@@ -94,7 +97,7 @@ describe("computeDomainViewLayout territories", () => {
       entities: [],
       positions: [],
     };
-    const overlapLayout = computeDomainViewLayout(overlapping, cells);
+    const overlapLayout = computeDomainViewLayoutInternal(overlapping, cells);
     // (1, -2) is distance 1 from both centers: the earlier domain wins.
     expect(overlapLayout.territoryByCellKey.get(hexToKey(createHex(1, -2)))).toBe("a");
     // Cells strictly nearer one center belong to it.
@@ -225,7 +228,7 @@ describe("computeDomainViewLayout tiles, piles, labels", () => {
   });
 
   it("is deterministic for a given state and grid", () => {
-    const again = computeDomainViewLayout(DEV_MAP_FIXTURE, cells, {
+    const again = computeDomainViewLayoutInternal(DEV_MAP_FIXTURE, cells, {
       strayCardCounts: DEV_MAP_STRAY_CARD_COUNTS,
     });
     expect(again).toEqual(layout);
