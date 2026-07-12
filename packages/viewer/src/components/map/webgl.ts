@@ -3,17 +3,29 @@
 // WebGL 2 (or WebGL 1) context before mounting the three.js canvas so
 // unsupported browsers get a plain message instead of a crash.
 
+let cachedSupport: boolean | undefined;
+
 export function supportsWebGL(): boolean {
+  if (cachedSupport !== undefined) {
+    return cachedSupport;
+  }
+
   if (typeof document === "undefined") {
     return false;
   }
 
   try {
     const canvas = document.createElement("canvas");
-    return Boolean(canvas.getContext("webgl2") ?? canvas.getContext("webgl"));
+    const context = canvas.getContext("webgl2") ?? canvas.getContext("webgl");
+    // Release the throwaway probe context instead of leaving it for GC;
+    // browsers cap live WebGL contexts per page.
+    context?.getExtension("WEBGL_lose_context")?.loseContext();
+    cachedSupport = context != null;
   } catch {
-    return false;
+    cachedSupport = false;
   }
+
+  return cachedSupport;
 }
 
 /**

@@ -8,16 +8,15 @@
 // is unaffected until the route is visited.
 
 import { useMemo, useState } from "react";
+import { MAP_FALLBACK_COLORS } from "./colors";
 import { DEV_MAP_FIXTURE, devMapGridRadius } from "./dev-map-fixture";
 import { generateHexGrid } from "./hex";
 import { MapScene } from "./MapScene";
 import { isWebGLForcedOff, supportsWebGL } from "./webgl";
 
-// Fallback panel palette: the map's parchment field tones (same family as
-// the ./colors scene tokens), rendered as plain DOM when WebGL is missing.
-const FALLBACK_PANEL_STYLE = {
-  backgroundColor: "#efe2cd",
-  color: "#6f5b44",
+const PANEL_STYLE = {
+  backgroundColor: MAP_FALLBACK_COLORS.panel,
+  borderColor: MAP_FALLBACK_COLORS.border,
 } as const;
 
 export function MapDevView() {
@@ -30,11 +29,13 @@ export function MapDevView() {
     return (
       <div
         className="flex h-screen w-full items-center justify-center"
-        style={FALLBACK_PANEL_STYLE}
+        style={{ backgroundColor: MAP_FALLBACK_COLORS.field, color: MAP_FALLBACK_COLORS.text }}
       >
-        <div className="max-w-sm border border-[#d8cab3] bg-[#fff8ec]/95 p-4 text-center">
+        <div className="max-w-sm border p-4 text-center" style={PANEL_STYLE}>
           <p className="text-sm font-semibold">The map can&apos;t render here</p>
-          <p className="mt-1 text-xs text-[#7f6952]">WebGL is required to render the map.</p>
+          <p className="mt-1 text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+            WebGL is required to render the map.
+          </p>
         </div>
       </div>
     );
@@ -42,9 +43,14 @@ export function MapDevView() {
 
   return (
     <div className="relative h-screen w-full">
-      <div className="pointer-events-none absolute left-4 top-4 z-10 rounded border border-[#d8cab3] bg-[#fff8ec]/90 px-3 py-2">
-        <p className="text-xs font-semibold text-[#2f2b27]">Map dev harness</p>
-        <p className="mt-0.5 text-[10px] text-[#7f6952]">
+      <div
+        className="pointer-events-none absolute left-4 top-4 z-10 rounded border px-3 py-2"
+        style={PANEL_STYLE}
+      >
+        <p className="text-xs font-semibold" style={{ color: MAP_FALLBACK_COLORS.heading }}>
+          Map dev harness
+        </p>
+        <p className="mt-0.5 text-[10px]" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
           {cells.length} fixture hexes - wheel zooms, arrow keys pan, pointer hover highlights
         </p>
       </div>

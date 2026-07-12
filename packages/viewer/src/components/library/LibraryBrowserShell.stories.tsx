@@ -4,6 +4,10 @@ import type { LibraryBundle } from "./library-bundle-registry";
 import { LibraryBrowserShell } from "./LibraryBrowserShell";
 import type { LibraryBrowserView, LibraryViewMode, RavenConnectionState } from "./types";
 
+// The shell never renders the /dev/map surface (LibraryBrowserApp early-returns
+// before the shell), so its stories use the same shell-facing view type.
+type ShellView = Exclude<LibraryBrowserView, "dev-map">;
+
 const STORY_BUNDLES: LibraryBundle[] = [
   {
     id: "alexandria-product",
@@ -16,11 +20,11 @@ function ShellStory({
   initialView = "home",
   ravenConnectionState = "disconnected",
 }: {
-  initialView?: LibraryBrowserView;
+  initialView?: ShellView;
   ravenConnectionState?: RavenConnectionState;
 }) {
   const [mode, setMode] = useState<LibraryViewMode>("engine");
-  const [activeView, setActiveView] = useState<LibraryBrowserView>(initialView);
+  const [activeView, setActiveView] = useState<ShellView>(initialView);
   const [selectedBundleId, setSelectedBundleId] = useState(STORY_BUNDLES[0]!.id);
 
   return (

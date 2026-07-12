@@ -76,7 +76,12 @@ export const computeGroundPlaneCoverage = (
     maxZ = Math.max(maxZ, scratch.intersectionPoint.z);
   }
 
-  if (![minX, maxX, minZ, maxZ].every((value) => Number.isFinite(value))) {
+  if (
+    !Number.isFinite(minX) ||
+    !Number.isFinite(maxX) ||
+    !Number.isFinite(minZ) ||
+    !Number.isFinite(maxZ)
+  ) {
     return null;
   }
 
@@ -117,10 +122,9 @@ export function BackgroundPlane({ parchmentSeed = 0 }: BackgroundPlaneProps) {
       return;
     }
 
-    // Keep matrixWorld in sync with the latest camera pose before coverage math.
-    // This avoids stale one-frame coverage on wheel zoom in demand-driven render loops.
-    camera.updateMatrixWorld(true);
-
+    // matrixWorld is already current here: CameraRig runs at frame priority
+    // -1 and calls updateMatrixWorld(true) whenever the pose changes, so the
+    // coverage math below never sees a stale one-frame camera on wheel zoom.
     const mesh = meshRef.current;
     if (!mesh) {
       return;

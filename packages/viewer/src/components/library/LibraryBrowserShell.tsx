@@ -114,7 +114,9 @@ function LibraryModeTab({
 }
 
 interface LibraryBrowserShellProps {
-  activeView: LibraryBrowserView;
+  // "dev-map" is excluded: the shell has no branch for it, so the type forces
+  // LibraryBrowserApp's early return to keep the dev route outside the chrome.
+  activeView: Exclude<LibraryBrowserView, "dev-map">;
   agents?: RuntimeAgent[];
   children: ReactNode;
   // The Builder section tab's Notepad burndown badge (issue #613): always the

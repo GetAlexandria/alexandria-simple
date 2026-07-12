@@ -17,6 +17,22 @@ export const MAP_SCENE_COLORS = {
   hemisphereGround: "#d4b896",
 } as const;
 
+/**
+ * Plain-DOM surfaces that stand in for (or float above) the canvas: the
+ * WebGL fallback panel, the chunk-load error panel, the lazy-load fallback,
+ * and the dev-route HUD. Kept three.js-free so LibraryBrowserApp can import
+ * this module without defeating the lazy map chunk.
+ */
+export const MAP_FALLBACK_COLORS = {
+  /** Full-bleed stand-in for the parchment field (same tone as the canvas clear color). */
+  field: MAP_SCENE_COLORS.background,
+  panel: "#fff8ec",
+  border: "#d8cab3",
+  heading: "#2f2b27",
+  text: "#6f5b44",
+  subtext: "#7f6952",
+} as const;
+
 /** Per-visual-state cylinder materials: top rim and side wall tints. */
 export const HEX_CELL_MATERIAL_COLORS: Record<HexCellVisualState, { rim: string; side: string }> = {
   default: { rim: "#ab8f72", side: "#cfb693" },

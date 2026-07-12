@@ -43,6 +43,14 @@ export function CameraRig() {
   const keys = useRef(new Set<string>());
   const target = useRef(new Vector3(0, 0, 0));
   const zoom = useRef(INITIAL_ZOOM);
+  // Last-applied camera inputs; lets useFrame skip the projection/pose update
+  // on frames where nothing moved. NaN sentinels force the first frame.
+  const lastApplied = useRef({
+    aspect: Number.NaN,
+    x: Number.NaN,
+    z: Number.NaN,
+    zoom: Number.NaN,
+  });
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -77,7 +85,16 @@ export function CameraRig() {
 
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
-      zoom.current = MathUtils.clamp(zoom.current + event.deltaY * ZOOM_SPEED, MIN_ZOOM, MAX_ZOOM);
+      // Normalize deltaMode: line-mode (1) and page-mode (2) wheels report
+      // far smaller deltaY values than pixel-mode (0); scale them so one
+      // notch zooms about the same everywhere.
+      const deltaScale =
+        event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
+      zoom.current = MathUtils.clamp(
+        zoom.current + event.deltaY * deltaScale * ZOOM_SPEED,
+        MIN_ZOOM,
+        MAX_ZOOM,
+      );
     };
 
     const activeKeys = keys.current;
@@ -120,6 +137,16 @@ export function CameraRig() {
     target.current.z += dz;
 
     const aspectRatio = size.width / Math.max(size.height, 1);
+    const last = lastApplied.current;
+    if (
+      last.zoom === zoom.current &&
+      last.x === target.current.x &&
+      last.z === target.current.z &&
+      last.aspect === aspectRatio
+    ) {
+      return;
+    }
+
     orthoCamera.left = -zoom.current * aspectRatio;
     orthoCamera.right = zoom.current * aspectRatio;
     orthoCamera.top = zoom.current;
@@ -136,6 +163,11 @@ export function CameraRig() {
     );
     orthoCamera.lookAt(target.current);
     orthoCamera.updateMatrixWorld(true);
+
+    last.zoom = zoom.current;
+    last.x = target.current.x;
+    last.z = target.current.z;
+    last.aspect = aspectRatio;
   }, -1);
 
   return null;
