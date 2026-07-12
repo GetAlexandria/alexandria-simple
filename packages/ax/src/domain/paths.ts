@@ -23,6 +23,8 @@ export const RAVEN_SOURCE_OF_TRUTH_FILE_NAME = "raven-product-context.md";
 export const SOURCE_OF_TRUTH_FILE_NAME = "source-of-truth.md";
 export const INFO_HUB_DIR = "info-hub";
 export const INFO_HUB_BOARD_FILE_NAME = "board-state.json";
+export const MAP_DIR = "map";
+export const MAP_STATE_FILE_NAME = "map-state.json";
 
 export function configPathForRoot(root: string): string {
   return `${root}/${DEFAULT_CONFIG_DIR}/${CONFIG_FILE_NAME}`;
@@ -142,6 +144,14 @@ export function infoHubDirForWorkspacePath(workspacePath: string): string {
 
 export function infoHubBoardPathForWorkspacePath(workspacePath: string): string {
   return join(infoHubDirForWorkspacePath(workspacePath), INFO_HUB_BOARD_FILE_NAME);
+}
+
+export function mapDirForWorkspacePath(workspacePath: string): string {
+  return join(workspacePath, MAP_DIR);
+}
+
+export function mapStatePathForWorkspacePath(workspacePath: string): string {
+  return join(mapDirForWorkspacePath(workspacePath), MAP_STATE_FILE_NAME);
 }
 
 export function normalizeWorkspace(value: string): string {

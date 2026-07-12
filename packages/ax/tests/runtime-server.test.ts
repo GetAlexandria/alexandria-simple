@@ -17,6 +17,7 @@ import { join, resolve } from "path";
 import {
   connectionPathForWorkspacePath,
   infoHubBoardPathForWorkspacePath,
+  mapStatePathForWorkspacePath,
 } from "../src/domain/paths.js";
 import {
   LIBRARY_CATALOG_DRAFT_MANIFEST_FILE,
@@ -649,6 +650,16 @@ async function bankVision(server: StartedAlexandriaRuntimeServer) {
     };
     vision: RuntimeVisionProjection;
   };
+}
+
+// The Map tab plan §1.3 fixture shape, as a POST body for /api/map/state —
+// loaded from the checked-in seed so the seed is the single source of truth.
+// Each call parses fresh, so tests that mutate the returned document stay
+// independent.
+function mapStateFixture(): Record<string, unknown> {
+  return JSON.parse(
+    readFileSync(join(repoRoot, "docs/alexandria/map/map-state.json"), "utf8"),
+  ) as Record<string, unknown>;
 }
 
 async function startApiServer(
@@ -4221,6 +4232,201 @@ exit 2
       expect(badEnum.status).toBe(400);
 
       expect(existsSync(infoHubBoardPathForWorkspacePath(workspacePath(cwd)))).toBeFalse();
+    } finally {
+      await Effect.runPromise(server.stop);
+    }
+  });
+
+  test("serves a default empty map state when the file is missing, and round-trips a posted document through GET/POST unchanged", async () => {
+    const cwd = makeProjectDir();
+    initProject(cwd);
+    const server = await startApiServer(cwd);
+
+    try {
+      const emptyResponse = await fetch(new URL("/api/map/state", server.url));
+      expect(emptyResponse.status).toBe(200);
+      expect(await emptyResponse.json()).toEqual({
+        domains: [],
+        contexts: [],
+        entities: [],
+        positions: [],
+      });
+      expect(existsSync(mapStatePathForWorkspacePath(workspacePath(cwd)))).toBeFalse();
+
+      const posted = mapStateFixture();
+      const postResponse = await fetch(new URL("/api/map/state", server.url), {
+        body: JSON.stringify(posted),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      });
+      expect(postResponse.status).toBe(200);
+      const echoed = (await postResponse.json()) as Record<string, unknown>;
+      expect(echoed).toEqual(posted);
+
+      // Pretty-printed, mergeable on-disk form (compared against the
+      // server's canonicalized echo, so a hand-reformatted seed cannot
+      // redden this).
+      const statePath = mapStatePathForWorkspacePath(workspacePath(cwd));
+      const raw = readFileSync(statePath, "utf8");
+      expect(raw).toBe(`${JSON.stringify(echoed, null, 2)}\n`);
+
+      // GET → POST round-trip leaves the file byte-identical.
+      const fetched = (await (await fetch(new URL("/api/map/state", server.url))).json()) as Record<
+        string,
+        unknown
+      >;
+      expect(fetched).toEqual(posted);
+      const secondPost = await fetch(new URL("/api/map/state", server.url), {
+        body: JSON.stringify(fetched),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      });
+      expect(secondPost.status).toBe(200);
+      expect(readFileSync(statePath, "utf8")).toBe(raw);
+
+      // A position change persists.
+      const moved = mapStateFixture();
+      (moved.positions as Array<Record<string, unknown>>)[0] = {
+        q: 2,
+        r: -2,
+        entityType: "system",
+        entityId: "sys-raven-duty-loop",
+      };
+      const moveResponse = await fetch(new URL("/api/map/state", server.url), {
+        body: JSON.stringify(moved),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      });
+      expect(moveResponse.status).toBe(200);
+      const onDisk = JSON.parse(readFileSync(statePath, "utf8")) as {
+        positions: Array<{ q: number; r: number }>;
+      };
+      expect(onDisk.positions[0]).toEqual({
+        q: 2,
+        r: -2,
+        entityType: "system",
+        entityId: "sys-raven-duty-loop",
+      } as never);
+    } finally {
+      await Effect.runPromise(server.stop);
+    }
+  });
+
+  test("rejects a map state POST with a duplicate hex or unknown reference as a structured 400, leaving the file untouched", async () => {
+    const cwd = makeProjectDir();
+    initProject(cwd);
+    const server = await startApiServer(cwd);
+
+    try {
+      const seedResponse = await fetch(new URL("/api/map/state", server.url), {
+        body: JSON.stringify(mapStateFixture()),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      });
+      expect(seedResponse.status).toBe(200);
+      const statePath = mapStatePathForWorkspacePath(workspacePath(cwd));
+      const before = readFileSync(statePath, "utf8");
+
+      // A second entity on an occupied hex.
+      const duplicateHex = mapStateFixture();
+      (duplicateHex.positions as unknown[]).push({
+        q: 1,
+        r: -1,
+        entityType: "project",
+        entityId: "prj-map-tab",
+      });
+      const duplicateHexResponse = await fetch(new URL("/api/map/state", server.url), {
+        body: JSON.stringify(duplicateHex),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      });
+      expect(duplicateHexResponse.status).toBe(400);
+      const duplicateHexBody = (await duplicateHexResponse.json()) as RuntimeErrorBody;
+      expect(duplicateHexBody.error.code).toBe("map_state_invalid");
+      expect(duplicateHexBody.error.message).toContain("one entity per hex");
+
+      // An entity pointing at a context that does not exist.
+      const unknownContext = mapStateFixture();
+      (
+        (unknownContext.entities as Array<Record<string, unknown>>)[0] as Record<string, unknown>
+      ).contextId = "nowhere";
+      const unknownContextResponse = await fetch(new URL("/api/map/state", server.url), {
+        body: JSON.stringify(unknownContext),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      });
+      expect(unknownContextResponse.status).toBe(400);
+      expect(((await unknownContextResponse.json()) as RuntimeErrorBody).error.message).toContain(
+        "unknown contextId",
+      );
+
+      // A context pointing at a domain that does not exist.
+      const unknownDomain = mapStateFixture();
+      (
+        (unknownDomain.contexts as Array<Record<string, unknown>>)[0] as Record<string, unknown>
+      ).domainId = "marketing";
+      const unknownDomainResponse = await fetch(new URL("/api/map/state", server.url), {
+        body: JSON.stringify(unknownDomain),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      });
+      expect(unknownDomainResponse.status).toBe(400);
+      expect(((await unknownDomainResponse.json()) as RuntimeErrorBody).error.message).toContain(
+        "unknown domainId",
+      );
+
+      // A position pointing at an entity that does not exist.
+      const unknownEntity = mapStateFixture();
+      (unknownEntity.positions as unknown[]).push({
+        q: 4,
+        r: 4,
+        entityType: "project",
+        entityId: "prj-missing",
+      });
+      const unknownEntityResponse = await fetch(new URL("/api/map/state", server.url), {
+        body: JSON.stringify(unknownEntity),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      });
+      expect(unknownEntityResponse.status).toBe(400);
+      expect(((await unknownEntityResponse.json()) as RuntimeErrorBody).error.message).toContain(
+        "unknown entityId",
+      );
+
+      // Every rejection left the on-disk file byte-identical.
+      expect(readFileSync(statePath, "utf8")).toBe(before);
+    } finally {
+      await Effect.runPromise(server.stop);
+    }
+  });
+
+  test("answers a corrupt on-disk map state with a structured 422, not a crash", async () => {
+    const cwd = makeProjectDir();
+    initProject(cwd);
+    const server = await startApiServer(cwd);
+
+    try {
+      const statePath = mapStatePathForWorkspacePath(workspacePath(cwd));
+      mkdirSync(join(workspacePath(cwd), "map"), { recursive: true });
+      writeFileSync(statePath, "{corrupt", "utf8");
+
+      const corruptJson = await fetch(new URL("/api/map/state", server.url));
+      expect(corruptJson.status).toBe(422);
+      const corruptJsonBody = (await corruptJson.json()) as RuntimeErrorBody;
+      expect(corruptJsonBody.error.code).toBe("map_state_invalid");
+      expect(corruptJsonBody.error.message).toContain("Invalid map state JSON");
+
+      // Valid JSON that fails document validation is corruption too.
+      const invalidDocument = mapStateFixture();
+      (
+        (invalidDocument.contexts as Array<Record<string, unknown>>)[0] as Record<string, unknown>
+      ).domainId = "gone";
+      writeFileSync(statePath, `${JSON.stringify(invalidDocument, null, 2)}\n`, "utf8");
+      const invalidResponse = await fetch(new URL("/api/map/state", server.url));
+      expect(invalidResponse.status).toBe(422);
+      expect(((await invalidResponse.json()) as RuntimeErrorBody).error.message).toContain(
+        "unknown domainId",
+      );
     } finally {
       await Effect.runPromise(server.stop);
     }
