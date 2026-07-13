@@ -1253,11 +1253,38 @@ export const MapStateSchema = Schema.Struct({
 
 export type MapState = Schema.Schema.Type<typeof MapStateSchema>;
 
+// Colleague journal (Map tab plan §1.1) — the browser-facing shape of a
+// parsed `docs/alexandria/journal/<name>.md`, served by
+// `/api/colleague/<name>/journal`. The ax reader in
+// packages/ax/src/effects/colleague-journal.ts owns the markdown parsing
+// (append-at-top files → entries newest-first); this schema only decodes the
+// already-parsed entries. A colleague with no journal yet decodes as an empty
+// entries list, never an error.
+export const JournalEntrySchema = Schema.Struct({
+  body: Schema.String,
+  /** ISO date from the entry heading, or "" when the heading carried none. */
+  date: Schema.String,
+  title: Schema.String,
+});
+
+export type JournalEntry = Schema.Schema.Type<typeof JournalEntrySchema>;
+
+export const ColleagueJournalSchema = Schema.Struct({
+  entries: Schema.Array(JournalEntrySchema),
+  name: Schema.String,
+});
+
+export type ColleagueJournal = Schema.Schema.Type<typeof ColleagueJournalSchema>;
+
 export const decodeInfoHubBoard = Schema.decodeUnknown(InfoHubBoardSchema, {
   errors: "all",
 });
 
 export const decodeMapState = Schema.decodeUnknown(MapStateSchema, {
+  errors: "all",
+});
+
+export const decodeColleagueJournal = Schema.decodeUnknown(ColleagueJournalSchema, {
   errors: "all",
 });
 

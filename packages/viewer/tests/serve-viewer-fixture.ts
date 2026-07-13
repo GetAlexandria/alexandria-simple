@@ -2036,6 +2036,24 @@ function fixtureMapStateResponse(): Response {
   });
 }
 
+// Raven's fixture journal (L2): four dated entries, newest first, so the
+// colleague overlay's "top ~3" slice is exercised through the real UI (the
+// fourth entry must not render). A colleague with no journal returns empty
+// entries — the server's missing-file→empty behavior.
+const FIXTURE_RAVEN_JOURNAL_ENTRIES = [
+  { date: "2026-07-12", title: "seed entry", body: "Wired the Map tab's colleague overlay." },
+  { date: "2026-07-11", title: "earlier beat", body: "Placed the reserved landmark hexes." },
+  { date: "2026-07-10", title: "older still", body: "Sketched the bench and the hearth." },
+  { date: "2026-07-09", title: "fourth entry", body: "Beyond the top three — should stay hidden." },
+];
+
+function fixtureColleagueJournalResponse(name: string): Response {
+  return Response.json({
+    name,
+    entries: name === "raven" ? FIXTURE_RAVEN_JOURNAL_ENTRIES : [],
+  });
+}
+
 async function fixtureMapStateWrite(request: Request): Promise<Response> {
   const ifMatch = request.headers.get("if-match");
   if (ifMatch != null) {
@@ -2389,6 +2407,11 @@ Bun.serve({
 
     if (url.pathname === "/api/info-hub/board" && request.method === "POST") {
       return fixtureInfoHubBoardWrite(request);
+    }
+
+    const fixtureJournalMatch = /^\/api\/colleague\/([a-z0-9-]+)\/journal$/.exec(url.pathname);
+    if (fixtureJournalMatch != null && request.method === "GET") {
+      return fixtureColleagueJournalResponse(fixtureJournalMatch[1]!);
     }
 
     if (url.pathname === "/__fixture/reset-map-board" && request.method === "POST") {

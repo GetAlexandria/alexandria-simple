@@ -25,6 +25,7 @@ export const INFO_HUB_DIR = "info-hub";
 export const INFO_HUB_BOARD_FILE_NAME = "board-state.json";
 export const MAP_DIR = "map";
 export const MAP_STATE_FILE_NAME = "map-state.json";
+export const JOURNAL_DIR = "journal";
 
 export function configPathForRoot(root: string): string {
   return `${root}/${DEFAULT_CONFIG_DIR}/${CONFIG_FILE_NAME}`;
@@ -152,6 +153,24 @@ export function mapDirForWorkspacePath(workspacePath: string): string {
 
 export function mapStatePathForWorkspacePath(workspacePath: string): string {
   return join(mapDirForWorkspacePath(workspacePath), MAP_STATE_FILE_NAME);
+}
+
+export function journalDirForWorkspacePath(workspacePath: string): string {
+  return join(workspacePath, JOURNAL_DIR);
+}
+
+/**
+ * A colleague journal is a single git-tracked file `journal/<name>.md`. The
+ * `name` reaches here from a URL segment, so it is constrained to lowercase
+ * letters, digits, and single hyphens (the colleague-id shape) — anything
+ * else returns an Error rather than a path, so a `../` or slashed segment can
+ * never escape the journal directory.
+ */
+export function journalPathForWorkspacePath(workspacePath: string, name: string): string | Error {
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)) {
+    return new Error(`Invalid colleague journal name: ${JSON.stringify(name)}`);
+  }
+  return join(journalDirForWorkspacePath(workspacePath), `${name}.md`);
 }
 
 export function normalizeWorkspace(value: string): string {

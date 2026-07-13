@@ -102,6 +102,36 @@
       "r": 0,
       "entityType": "landmark",
       "entityId": "colleague:damien"
+    },
+    {
+      "q": 1,
+      "r": 0,
+      "entityType": "landmark",
+      "entityId": "campfire:hearth"
+    },
+    {
+      "q": 2,
+      "r": 0,
+      "entityType": "landmark",
+      "entityId": "seat:bench-1"
+    },
+    {
+      "q": 3,
+      "r": 0,
+      "entityType": "landmark",
+      "entityId": "seat:bench-2"
+    },
+    {
+      "q": 4,
+      "r": 0,
+      "entityType": "landmark",
+      "entityId": "seat:bench-3"
+    },
+    {
+      "q": 5,
+      "r": 0,
+      "entityType": "landmark",
+      "entityId": "seat:bench-4"
     }
   ]
 }

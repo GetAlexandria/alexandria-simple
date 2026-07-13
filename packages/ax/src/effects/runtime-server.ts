@@ -94,6 +94,7 @@ import {
   writeMapState,
   type MapState,
 } from "./map-state.js";
+import { readColleagueJournal } from "./colleague-journal.js";
 import {
   loadLibraryCardDetail,
   loadLibraryCatalog,
@@ -2712,6 +2713,24 @@ async function infoHubBoardResponse(workspacePath: string): Promise<Response> {
   }
 }
 
+/**
+ * Read-only colleague journal for the Map tab's landmark overlay (L2). A
+ * missing journal returns empty entries (not an error), mirroring the map
+ * state read; the `name` is already constrained to the colleague-id shape by
+ * the route pattern before this runs.
+ */
+async function colleagueJournalResponse(workspacePath: string, name: string): Promise<Response> {
+  try {
+    const journal = await runWithNodeFileSystem(readColleagueJournal({ name, workspacePath }));
+    return Response.json(journal);
+  } catch (error) {
+    return jsonError(
+      error instanceof Error ? error.message : String(error),
+      statusForUnknownError(error),
+    );
+  }
+}
+
 async function infoHubBoardWriteResponse(options: {
   mutationSemaphore: Effect.Semaphore;
   request: Request;
@@ -3223,6 +3242,13 @@ function createRuntimeFetchHandler(
         request,
         workspacePath: options.workspacePath,
       });
+    }
+
+    const colleagueJournalMatch = /^\/api\/colleague\/([a-z0-9]+(?:-[a-z0-9]+)*)\/journal$/.exec(
+      url.pathname,
+    );
+    if (colleagueJournalMatch != null && request.method === "GET") {
+      return colleagueJournalResponse(options.workspacePath, colleagueJournalMatch[1]!);
     }
 
     if (url.pathname === "/api/raven/onboarding/vision" && request.method === "GET") {

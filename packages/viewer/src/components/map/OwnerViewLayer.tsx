@@ -21,13 +21,9 @@ import * as THREE from "three";
 import { OWNER_VIEW_COLORS } from "./colors";
 import { FixedBuilding } from "./FixedBuilding";
 import { HEX_SIZE, hexToWorld, type HexCoord } from "./hex";
+import { LockedSeatLandmark } from "./MapLandmarks";
 import { HEX_CELL_HEIGHT } from "./materials";
-import type {
-  LockedSeat,
-  OwnerTerritory,
-  OwnerViewLayout,
-  OwnerWorkMarker,
-} from "./layout/owner-view";
+import type { OwnerTerritory, OwnerViewLayout, OwnerWorkMarker } from "./layout/owner-view";
 
 // Work markers float just above the ground-cell tops.
 const WORK_MARKER_Y = HEX_CELL_HEIGHT + 0.08;
@@ -137,7 +133,13 @@ function WorkMarker({ marker }: { marker: OwnerWorkMarker }) {
 }
 
 /** The domain anchor: owner building, human statue, or vacant plot. */
-function TerritoryAnchor({ territory }: { territory: OwnerTerritory }) {
+function TerritoryAnchor({
+  territory,
+  onColleagueClick,
+}: {
+  territory: OwnerTerritory;
+  onColleagueClick: (colleagueId: string) => void;
+}) {
   const { ownership, anchor, domain } = territory;
 
   if (ownership.status !== "owned") {
@@ -170,6 +172,10 @@ function TerritoryAnchor({ territory }: { territory: OwnerTerritory }) {
         kind={owner.kind === "colleague" ? "colleague" : "human"}
         coord={anchor}
         ownerId={owner.id}
+        // A colleague anchor opens the same colleague overlay a Domain-view
+        // bench building does; a human statue is not a colleague, so it stays
+        // inert.
+        onClick={owner.kind === "colleague" ? () => onColleagueClick(owner.id) : undefined}
       />
       <OwnerChip coord={anchor} variant="card">
         <span className="block text-[11px] font-semibold">{owner.name}</span>
@@ -181,34 +187,27 @@ function TerritoryAnchor({ territory }: { territory: OwnerTerritory }) {
   );
 }
 
-function LockedSeatPlot({ seat }: { seat: LockedSeat }) {
-  return (
-    <>
-      <FixedBuilding kind="locked-seat" coord={seat.coord} />
-      <OwnerChip coord={seat.coord} muted className="italic">
-        Locked seat
-      </OwnerChip>
-    </>
-  );
-}
-
 type OwnerViewLayerProps = {
   layout: OwnerViewLayout;
+  /** Opens the colleague overlay from a colleague anchor (L2). */
+  onColleagueClick: (colleagueId: string) => void;
 };
 
-export function OwnerViewLayer({ layout }: OwnerViewLayerProps) {
+export function OwnerViewLayer({ layout, onColleagueClick }: OwnerViewLayerProps) {
   return (
     <>
       {layout.territories.map((territory) => (
         <group key={territory.domain.id}>
-          <TerritoryAnchor territory={territory} />
+          <TerritoryAnchor territory={territory} onColleagueClick={onColleagueClick} />
           {territory.work.map((marker) => (
             <WorkMarker key={marker.entity.id} marker={marker} />
           ))}
         </group>
       ))}
+      {/* Seats render through the shared locked-seat piece (MapLandmarks) so a
+          future-teammate plot looks and behaves the same in both view modes. */}
       {layout.seats.map((seat) => (
-        <LockedSeatPlot key={seat.id} seat={seat} />
+        <LockedSeatLandmark key={seat.id} coord={seat.coord} />
       ))}
     </>
   );

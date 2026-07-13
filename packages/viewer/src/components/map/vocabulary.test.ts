@@ -48,9 +48,14 @@ describe("parseLandmarkId", () => {
     expect(parseLandmarkId("seat:bench-1")).toEqual({ kind: "seat", id: "bench-1" });
   });
 
+  it("parses the campfire landmark", () => {
+    expect(parseLandmarkId("campfire:hearth")).toEqual({ kind: "campfire", id: "hearth" });
+  });
+
   it("returns unknown for empty ids and foreign prefixes", () => {
     expect(parseLandmarkId("colleague:")).toEqual({ kind: "unknown", raw: "colleague:" });
     expect(parseLandmarkId("seat:")).toEqual({ kind: "unknown", raw: "seat:" });
+    expect(parseLandmarkId("campfire:")).toEqual({ kind: "unknown", raw: "campfire:" });
     expect(parseLandmarkId("statue-of-jess")).toEqual({
       kind: "unknown",
       raw: "statue-of-jess",

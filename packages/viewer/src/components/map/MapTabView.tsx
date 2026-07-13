@@ -19,21 +19,33 @@
 // three.js) is only loaded through React.lazy in LibraryBrowserApp.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { InfoHubBoard, InfoHubCard, MapEntity, MapState } from "../../app/runtime/schemas";
+import type { ViewerRuntimeClient } from "../../app/runtime/client";
+import type {
+  InfoHubBoard,
+  InfoHubCard,
+  MapEntity,
+  MapState,
+  RuntimeAgent,
+} from "../../app/runtime/schemas";
+import { useColleagueJournal } from "../library/hooks/useColleagueJournal";
 import type { MapStateSaveError } from "../library/hooks/useMapState";
 import {
   withChecklistItemToggled,
   withStatus,
   type WorkOrderStatus,
 } from "../library/infohub/boardModel";
+import { colleagueNeedsHumanCount, resolveColleagueIdentity } from "./colleague-overlay";
+import { ColleagueOverlay } from "./ColleagueOverlay";
 import { MAP_FALLBACK_COLORS } from "./colors";
 import { DomainView } from "./DomainView";
 import { generateHexGrid, hexToKey, type HexCoord } from "./hex";
 import type { HexCellVisualState } from "./HexCell";
+import { mapLandmarks, ownerAnchoredColleagueIds } from "./landmarks";
 import { computeDomainViewLayout } from "./layout/domain-view";
 import { buildOwnerViewLayout } from "./layout/owner-view";
 import { mapStateGridRadius } from "./map-grid";
 import { MapEntityForm } from "./MapEntityForm";
+import { MapLandmarks } from "./MapLandmarks";
 import { MapMessagePanel } from "./MapMessagePanel";
 import { MapOverlay, type MapOverlayTarget } from "./MapOverlay";
 import { MapScene } from "./MapScene";
@@ -78,6 +90,14 @@ export type MapTabViewProps = {
   boardSaving: boolean;
   /** The EXISTING board save path (useInfoHubBoard.saveCards) — overlay card writes go here. */
   onSaveCards: (cards: readonly InfoHubCard[]) => Promise<InfoHubBoard | null>;
+  /** Runtime client — the colleague overlay reads a colleague's journal through it. */
+  runtimeClient: ViewerRuntimeClient;
+  /** Agent roster (name/role) for the colleague overlay's identity line. */
+  agents: readonly RuntimeAgent[];
+  /** Jump to the Info Hub board filtered to a colleague's needs-a-human cards. */
+  onOpenColleagueBoard: (colleagueId: string) => void;
+  /** Open a colleague's per-agent page (the bench quick-bar link). */
+  onOpenAgentPage: (colleagueId: string) => void;
 };
 
 /** The entity form's open state: create, or edit a specific entity. */
@@ -283,6 +303,10 @@ export function MapTabView({
   boardSaveError,
   boardSaving,
   onSaveCards,
+  runtimeClient,
+  agents,
+  onOpenColleagueBoard,
+  onOpenAgentPage,
 }: MapTabViewProps) {
   const [hasWebGLSupport] = useState(
     () => supportsWebGL() && !isWebGLForcedOff(window.location.search),
@@ -291,6 +315,8 @@ export function MapTabView({
   const [placingEntityId, setPlacingEntityId] = useState<string | null>(null);
   const [entityForm, setEntityForm] = useState<EntityFormState | null>(null);
   const [overlayTarget, setOverlayTarget] = useState<MapOverlayTarget | null>(null);
+  // The open colleague landmark overlay (L2), by bare colleague id, or null.
+  const [openColleagueId, setOpenColleagueId] = useState<string | null>(null);
 
   // Key the grid memo on the derived radius NUMBER, not the state object:
   // every save/refresh produces a new state identity, and regenerating the
@@ -323,6 +349,29 @@ export function MapTabView({
     [state, cells, strayCardCounts],
   );
   const ownerLayout = useMemo(() => (state == null ? null : buildOwnerViewLayout(state)), [state]);
+
+  // Landmarks (L2): colleague buildings, locked seats, and the campfire, from
+  // the map's `landmark` positions. Owner view anchors owned colleagues on
+  // their region centers, so those are skipped in the landmark layer there.
+  const landmarks = useMemo(() => (state == null ? [] : mapLandmarks(state)), [state]);
+  const anchoredColleagueIds = useMemo(
+    () => (state == null ? new Set<string>() : ownerAnchoredColleagueIds(state)),
+    [state],
+  );
+  const colleagueName = useCallback(
+    (colleagueId: string) => resolveColleagueIdentity(colleagueId, agents).name,
+    [agents],
+  );
+
+  // The clicked colleague's journal (read once per open colleague, cleared on
+  // close) plus the derived overlay inputs — identity and needs-a-human count.
+  const colleagueJournal = useColleagueJournal(runtimeClient, openColleagueId);
+  const openColleagueIdentity =
+    openColleagueId == null ? null : resolveColleagueIdentity(openColleagueId, agents);
+  const openColleagueNeedsHuman =
+    openColleagueId == null || state == null
+      ? 0
+      : colleagueNeedsHumanCount(state, board?.cards ?? [], openColleagueId);
 
   // Every stored position occupies its hex — entity tiles and landmark
   // hexes alike (landmark hexes are the reserved ones, plan §1.3).
@@ -494,6 +543,7 @@ export function MapTabView({
     setEntityGoneNotice(null);
     setPlacingEntityId(null);
     setOverlayTarget(null);
+    setOpenColleagueId(null);
   }, []);
 
   // --- Tile/pile overlay (S2): a tile or pile click opens that target's work
@@ -506,7 +556,24 @@ export function MapTabView({
         cancelPlacement();
         return;
       }
+      setOpenColleagueId(null);
       setOverlayTarget(target);
+    },
+    [placingEntityId, cancelPlacement],
+  );
+
+  // --- Colleague landmark overlay (L2): a colleague building click opens the
+  // colleague overlay (journal + quick bar). Mirrors openOverlay: during
+  // placement a landmark click is click-away (cancel), not an open.
+  const openColleague = useCallback(
+    (colleagueId: string) => {
+      if (placingEntityId != null) {
+        cancelPlacement();
+        return;
+      }
+      setOverlayTarget(null);
+      setEntityForm(null);
+      setOpenColleagueId(colleagueId);
     },
     [placingEntityId, cancelPlacement],
   );
@@ -778,22 +845,41 @@ export function MapTabView({
         onPointerMissed={placingEntityId == null ? undefined : cancelPlacement}
       >
         {viewMode === "domain" && domainLayout != null ? (
-          <DomainView
-            layout={domainLayout}
-            onTileClick={(entity) => openOverlay({ kind: "entity", entityId: entity.id })}
-            // Undefined during placement: a pile by construction sits on a
-            // free (placeable) patch cell, and a clickable sprite would
-            // swallow the placement click (stopPropagation) and cancel the
-            // mode. With no onClick the sprite reverts to raycast-inert, so
-            // clicks and hover pass through to the cell (PR #20 gate).
-            onPileClick={
-              placingEntityId == null
-                ? (contextId) => openOverlay({ kind: "pile", contextId })
-                : undefined
-            }
-          />
+          <>
+            <DomainView
+              layout={domainLayout}
+              onTileClick={(entity) => openOverlay({ kind: "entity", entityId: entity.id })}
+              // Undefined during placement: a pile by construction sits on a
+              // free (placeable) patch cell, and a clickable sprite would
+              // swallow the placement click (stopPropagation) and cancel the
+              // mode. With no onClick the sprite reverts to raycast-inert, so
+              // clicks and hover pass through to the cell (PR #20 gate).
+              onPileClick={
+                placingEntityId == null
+                  ? (contextId) => openOverlay({ kind: "pile", contextId })
+                  : undefined
+              }
+            />
+            {/* Domain-view furniture: colleague buildings on their bench hexes,
+                locked seats, and the campfire. */}
+            <MapLandmarks
+              landmarks={landmarks}
+              onColleagueClick={openColleague}
+              colleagueName={colleagueName}
+            />
+          </>
         ) : viewMode === "owner" && ownerLayout != null ? (
-          <OwnerViewLayer layout={ownerLayout} />
+          <>
+            <OwnerViewLayer layout={ownerLayout} onColleagueClick={openColleague} />
+            {/* Seats + campfire (view-independent); owned colleagues are the
+                Owner-view anchors, so they are skipped here. */}
+            <MapLandmarks
+              landmarks={landmarks}
+              onColleagueClick={openColleague}
+              skipColleagueIds={anchoredColleagueIds}
+              colleagueName={colleagueName}
+            />
+          </>
         ) : null}
       </MapScene>
 
@@ -809,6 +895,19 @@ export function MapTabView({
           onToggleChecklistItem={toggleChecklistItem}
           onEditEntity={(entityId) => openEntityForm(entityId)}
           onClose={() => setOverlayTarget(null)}
+        />
+      ) : null}
+
+      {openColleagueId != null && openColleagueIdentity != null ? (
+        <ColleagueOverlay
+          identity={openColleagueIdentity}
+          journal={colleagueJournal.journal}
+          journalLoading={colleagueJournal.loading}
+          journalError={colleagueJournal.error}
+          needsHumanCount={openColleagueNeedsHuman}
+          onOpenAgentPage={() => onOpenAgentPage(openColleagueId)}
+          onOpenBoard={() => onOpenColleagueBoard(openColleagueId)}
+          onClose={() => setOpenColleagueId(null)}
         />
       ) : null}
     </div>

@@ -1,6 +1,7 @@
 export type LibraryRuntimeErrorSurface =
   | "card-detail"
   | "catalog"
+  | "colleague-journal"
   | "graph"
   | "info-hub"
   | "ledger"
@@ -22,6 +23,7 @@ type RuntimeErrorTag =
 const SURFACE_LABELS: Readonly<Record<LibraryRuntimeErrorSurface, string>> = {
   "card-detail": "card content",
   catalog: "library catalog",
+  "colleague-journal": "colleague journal",
   graph: "library graph",
   "info-hub": "Info Hub board",
   ledger: "ledger",

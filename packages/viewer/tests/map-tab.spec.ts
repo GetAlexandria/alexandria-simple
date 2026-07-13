@@ -30,6 +30,8 @@ import {
   CAMERA_ELEVATION_DEGREES,
   CAMERA_INITIAL_ZOOM,
   HEX_CELL_HEIGHT,
+  LANDMARK_SPRITE_ELEVATION,
+  LANDMARK_SPRITE_Z_OFFSET,
   STRAY_PILE_ELEVATION,
   STRAY_PILE_Z_OFFSET,
   TILE_HEIGHT,
@@ -99,6 +101,21 @@ function viewerPileCoord(): HexCoord {
 function viewerPileSpritePoint(): { x: number; y: number; z: number } {
   const [x, z] = hexToWorld(viewerPileCoord(), HEX_SIZE);
   return { x, y: STRAY_PILE_ELEVATION, z: z + STRAY_PILE_Z_OFFSET };
+}
+
+/** Raven's colleague landmark building world center (L2, from the fixture). */
+function ravenBuildingSpritePoint(): { x: number; y: number; z: number } {
+  const landmark = FIXTURE_MAP_STATE.positions.find(
+    (entry) => entry.entityType === "landmark" && entry.entityId === "colleague:raven",
+  );
+  if (landmark == null) {
+    throw new Error("fixture has no colleague:raven landmark");
+  }
+  const [x, z] = hexToWorld(
+    { q: landmark.q, r: landmark.r, s: -landmark.q - landmark.r },
+    HEX_SIZE,
+  );
+  return { x, y: LANDMARK_SPRITE_ELEVATION, z: z + LANDMARK_SPRITE_Z_OFFSET };
 }
 
 /**
@@ -238,6 +255,36 @@ test("tile click opens the entity overlay with its joined board cards; hover sho
   // Escape closes the overlay; the map stayed mounted behind it.
   await page.keyboard.press("Escape");
   await expect(page.locator('[data-testid="map-overlay"]')).toHaveCount(0);
+});
+
+test("clicking a colleague building opens the colleague overlay (role + journal top entries)", async ({
+  page,
+}) => {
+  await openMapTab(page);
+
+  // Raven's building is a clickable landmark on the neutral row; hover flips
+  // the cursor to pointer, then the click opens the colleague overlay.
+  await clickWorldPoint(page, ravenBuildingSpritePoint());
+
+  await expect(page.getByTestId("colleague-overlay")).toBeVisible();
+  await expect(page.getByTestId("colleague-overlay-title")).toHaveText("Raven");
+  // Name/role line from the agent roster (fixtureAgents).
+  await expect(page.getByTestId("colleague-overlay-role")).toHaveText("Product Owner");
+
+  // The journal's top three entries render (newest first); the fourth is
+  // sliced off — the file is the source of truth, the overlay shows the head.
+  const journal = page.getByTestId("colleague-overlay-journal");
+  await expect(journal).toContainText("seed entry");
+  await expect(journal).toContainText("earlier beat");
+  await expect(journal).toContainText("older still");
+  await expect(journal).not.toContainText("fourth entry");
+
+  // The needs-a-human jump affordance is present.
+  await expect(page.getByTestId("colleague-overlay-needs-human")).toBeVisible();
+
+  // Escape closes; the map stayed mounted behind it.
+  await page.keyboard.press("Escape");
+  await expect(page.locator('[data-testid="colleague-overlay"]')).toHaveCount(0);
 });
 
 test("pile click opens the context's loose cards (exactly the stray set)", async ({ page }) => {
