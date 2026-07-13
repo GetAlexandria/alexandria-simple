@@ -76,6 +76,7 @@ import {
   type StateCursor,
 } from "../domain/state-cursors.js";
 import { axCliCommand } from "./ax-cli.js";
+import { readColleagueJournals } from "./colleague-journals.js";
 import { FileSystem, NodeFileSystem } from "./filesystem.js";
 import {
   InfoHubBoardValidationError,
@@ -2712,6 +2713,18 @@ async function infoHubBoardResponse(workspacePath: string): Promise<Response> {
   }
 }
 
+async function colleagueJournalsResponse(workspacePath: string): Promise<Response> {
+  try {
+    const journals = await runWithNodeFileSystem(readColleagueJournals({ workspacePath }));
+    return Response.json({ journals });
+  } catch (error) {
+    return jsonError(
+      error instanceof Error ? error.message : String(error),
+      statusForUnknownError(error),
+    );
+  }
+}
+
 async function infoHubBoardWriteResponse(options: {
   mutationSemaphore: Effect.Semaphore;
   request: Request;
@@ -3211,6 +3224,10 @@ function createRuntimeFetchHandler(
         request,
         workspacePath: options.workspacePath,
       });
+    }
+
+    if (url.pathname === "/api/journals" && request.method === "GET") {
+      return colleagueJournalsResponse(options.workspacePath);
     }
 
     if (url.pathname === "/api/map/state" && request.method === "GET") {

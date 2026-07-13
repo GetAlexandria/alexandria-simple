@@ -73,16 +73,16 @@ export function saveErrorFromRuntimeError(error: ViewerRuntimeError): MapStateSa
  * placement UI renders as "map changed — refresh"; a successful save adopts
  * the server's canonicalized document and new revision.
  *
- * This is the third hook (after useInfoHubBoard, useLedgerEvents) built on
- * the same abort-controller load/refresh/effect scaffold — a rule-of-three
- * candidate for extraction. Deliberately not extracted here: saveState's
+ * This hook and useInfoHubBoard remain hand-rolled on the abort-controller
+ * load/refresh/effect scaffold rather than sharing useFetchOnce (the READ-ONLY
+ * hooks — useColleagueJournals, useLedgerEvents — are built on it): saveState's
  * abort-in-flight-load-then-setLoading(false) interaction and the
  * non-rendering revisionRef are exactly the semantics two rounds of
  * correctness review just settled on, this repo has no DOM/act test harness
- * to catch a subtly wrong generalization of that interaction, and the three
- * hooks' mutation shapes (saveState vs saveCards vs none) don't share a
- * single obvious seam. Worth revisiting with a real hook-render test harness
- * before generalizing.
+ * to catch a subtly wrong generalization of that interaction, and this hook's
+ * mutation shape (a revision-guarded saveState) doesn't share one obvious seam
+ * with useInfoHubBoard's (saveCards, no revision). Worth revisiting with a
+ * real hook-render test harness before generalizing.
  */
 export function useMapState(runtimeClient: ViewerRuntimeClient, enabled = true): MapStateStore {
   const [state, setState] = useState<MapState | null>(null);

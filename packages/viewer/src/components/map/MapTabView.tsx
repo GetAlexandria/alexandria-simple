@@ -19,7 +19,13 @@
 // three.js) is only loaded through React.lazy in LibraryBrowserApp.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { InfoHubBoard, InfoHubCard, MapEntity, MapState } from "../../app/runtime/schemas";
+import type {
+  ColleagueJournal,
+  InfoHubBoard,
+  InfoHubCard,
+  MapEntity,
+  MapState,
+} from "../../app/runtime/schemas";
 import type { MapStateSaveError } from "../library/hooks/useMapState";
 import {
   withChecklistItemToggled,
@@ -35,10 +41,11 @@ import { buildOwnerViewLayout } from "./layout/owner-view";
 import { mapStateGridRadius } from "./map-grid";
 import { MapEntityForm } from "./MapEntityForm";
 import { MapMessagePanel } from "./MapMessagePanel";
+import { MapLegend } from "./MapLegend";
 import { MapOverlay, type MapOverlayTarget } from "./MapOverlay";
 import { MapScene } from "./MapScene";
 import { OwnerViewLayer } from "./OwnerViewLayer";
-import { PanelButton, ParchmentActionButton } from "./panel-buttons";
+import { Panel, PanelButton, ParchmentActionButton } from "./panel-buttons";
 import {
   entityKindLabel,
   occupiedHexKeys,
@@ -54,6 +61,7 @@ import {
   withEntityRemoved,
   type MapEntityDraft,
 } from "./placement";
+import { deriveTileSignalsByEntity, tileSignalsByEntityEqual, type TileSignals } from "./signals";
 import { type MapViewMode, VIEW_MODES } from "./view-mode";
 import { isWebGLForcedOff, supportsWebGL } from "./webgl";
 
@@ -78,6 +86,13 @@ export type MapTabViewProps = {
   boardSaving: boolean;
   /** The EXISTING board save path (useInfoHubBoard.saveCards) — overlay card writes go here. */
   onSaveCards: (cards: readonly InfoHubCard[]) => Promise<InfoHubBoard | null>;
+  /**
+   * Colleague duty-loop journals (L1): the read-only data path the system
+   * health dots and overdue candle flicker derive from. Null while loading or
+   * unavailable — systems fall back to a neutral health reading (no false
+   * flicker), same graceful-degrade posture as the board behind the piles.
+   */
+  journals: readonly ColleagueJournal[] | null;
 };
 
 /** The entity form's open state: create, or edit a specific entity. */
@@ -139,14 +154,7 @@ function PlacementPanel({
   unplacedEntities: readonly MapEntity[];
 }) {
   return (
-    <div
-      className="pointer-events-auto w-64 overflow-hidden rounded border"
-      style={{
-        backgroundColor: MAP_FALLBACK_COLORS.panel,
-        borderColor: MAP_FALLBACK_COLORS.border,
-      }}
-      data-testid="map-placement-panel"
-    >
+    <Panel className="pointer-events-auto w-64 overflow-hidden" testId="map-placement-panel">
       <div className="flex items-start justify-between gap-2 px-3 py-2">
         <div>
           <p className="text-xs font-semibold" style={{ color: MAP_FALLBACK_COLORS.heading }}>
@@ -266,7 +274,7 @@ function PlacementPanel({
           </ul>
         )}
       </div>
-    </div>
+    </Panel>
   );
 }
 
@@ -283,6 +291,7 @@ export function MapTabView({
   boardSaveError,
   boardSaving,
   onSaveCards,
+  journals,
 }: MapTabViewProps) {
   const [hasWebGLSupport] = useState(
     () => supportsWebGL() && !isWebGLForcedOff(window.location.search),
@@ -323,6 +332,34 @@ export function MapTabView({
     [state, cells, strayCardCounts],
   );
   const ownerLayout = useMemo(() => (state == null ? null : buildOwnerViewLayout(state)), [state]);
+
+  // The four ambient signals (L1, plan §1.4), derived at read time — never
+  // stored. needs-a-human and staleness read the board cards already fetched;
+  // system health and overdue read the colleague journals. `Date.now()` at
+  // derivation is the reference for the day/cadence-window math (fetch-once, so
+  // "now" at load is the read time the plan specifies). Recomputed whenever the
+  // map state, board, or journals change; empty until state loads.
+  //
+  // Held at a stable identity across a board/journal refresh that leaves every
+  // entity's signals unchanged — same rationale and shape as strayCardCounts
+  // above: reuse the previous map whenever the recomputed one is value-equal
+  // (tileSignalsByEntityEqual), so a signal-irrelevant board write (e.g. a
+  // checklist toggle) doesn't hand every tile a fresh signals object.
+  const signalsRef = useRef<Map<string, TileSignals> | null>(null);
+  const signalsByEntityId = useMemo(() => {
+    const next = deriveTileSignalsByEntity({
+      entities: state?.entities ?? [],
+      cards: board?.cards ?? [],
+      journals,
+      nowMs: Date.now(),
+    });
+    const previous = signalsRef.current;
+    if (previous != null && tileSignalsByEntityEqual(previous, next)) {
+      return previous;
+    }
+    signalsRef.current = next;
+    return next;
+  }, [state, board, journals]);
 
   // Every stored position occupies its hex — entity tiles and landmark
   // hexes alike (landmark hexes are the reserved ones, plan §1.3).
@@ -587,32 +624,18 @@ export function MapTabView({
 
   return (
     <div className="relative h-full w-full" data-testid="map-tab">
-      <div
-        className="pointer-events-none absolute left-4 top-4 z-10 rounded border px-3 py-2"
-        style={{
-          backgroundColor: MAP_FALLBACK_COLORS.panel,
-          borderColor: MAP_FALLBACK_COLORS.border,
-        }}
-      >
+      <Panel className="pointer-events-none absolute left-4 top-4 z-10 px-3 py-2">
         <p className="text-xs font-semibold" style={{ color: MAP_FALLBACK_COLORS.heading }}>
           Map — {VIEW_MODES.find(({ mode }) => mode === viewMode)!.label}
         </p>
         <p className="mt-0.5 text-[10px]" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
           {hudStats} — wheel zooms, arrow keys pan
         </p>
-      </div>
+      </Panel>
 
       <div className="absolute right-4 top-4 z-10 flex flex-col items-end gap-3">
         <div className="flex items-stretch gap-2">
-          <div
-            className="flex overflow-hidden rounded border"
-            style={{
-              backgroundColor: MAP_FALLBACK_COLORS.panel,
-              borderColor: MAP_FALLBACK_COLORS.border,
-            }}
-            role="group"
-            aria-label="Map view mode"
-          >
+          <Panel className="flex overflow-hidden" role="group" ariaLabel="Map view mode">
             {VIEW_MODES.map(({ mode, label }) => (
               <PanelButton
                 key={mode}
@@ -624,27 +647,15 @@ export function MapTabView({
                 }}
               />
             ))}
-          </div>
-          <div
-            className="flex overflow-hidden rounded border"
-            style={{
-              backgroundColor: MAP_FALLBACK_COLORS.panel,
-              borderColor: MAP_FALLBACK_COLORS.border,
-            }}
-          >
+          </Panel>
+          <Panel className="flex overflow-hidden">
             <PanelButton disabled={loading || saving} label="Refresh" onClick={onRefresh} />
-          </div>
+          </Panel>
         </div>
 
         {viewMode === "domain" ? (
           entityForm != null ? (
-            <div
-              className="pointer-events-auto w-64 overflow-hidden rounded border"
-              style={{
-                backgroundColor: MAP_FALLBACK_COLORS.panel,
-                borderColor: MAP_FALLBACK_COLORS.border,
-              }}
-            >
+            <Panel className="pointer-events-auto w-64 overflow-hidden">
               <MapEntityForm
                 // Remount per target so field state never leaks between
                 // "create" and different edited entities.
@@ -655,7 +666,7 @@ export function MapTabView({
                 onSubmit={submitEntityForm}
                 saving={saving}
               />
-            </div>
+            </Panel>
           ) : (
             <PlacementPanel
               contextNameById={contextNameById}
@@ -677,14 +688,7 @@ export function MapTabView({
             whole domain territory is occupied still shows its stray count
             here instead of silently dropping it (issue #9 carry-over). */}
         {viewMode === "domain" && (domainLayout?.unplacedPiles.length ?? 0) > 0 ? (
-          <div
-            className="pointer-events-auto w-64 rounded border px-3 py-2"
-            data-testid="map-unplaced-piles"
-            style={{
-              backgroundColor: MAP_FALLBACK_COLORS.panel,
-              borderColor: MAP_FALLBACK_COLORS.border,
-            }}
-          >
+          <Panel className="pointer-events-auto w-64 px-3 py-2" testId="map-unplaced-piles">
             <p
               className="text-[10px] font-semibold uppercase tracking-wide"
               style={{ color: MAP_FALLBACK_COLORS.subtext }}
@@ -709,19 +713,15 @@ export function MapTabView({
                 </li>
               ))}
             </ul>
-          </div>
+          </Panel>
         ) : null}
       </div>
 
       {/* Top-center notices: the fixed RavenBench bar owns the viewport
           bottom, so feedback anchors under the stone bar instead. */}
       {saveError != null ? (
-        <div
-          className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-3 rounded border px-3 py-2"
-          style={{
-            backgroundColor: MAP_FALLBACK_COLORS.panel,
-            borderColor: MAP_FALLBACK_COLORS.border,
-          }}
+        <Panel
+          className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-3 px-3 py-2"
           role="alert"
         >
           <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.heading }}>
@@ -731,39 +731,29 @@ export function MapTabView({
           {saveError.kind === "conflict" ? (
             <ParchmentActionButton label="Refresh" onClick={onRefresh} />
           ) : null}
-        </div>
+        </Panel>
       ) : null}
 
       {entityGoneNotice != null ? (
-        <div
-          className="absolute left-1/2 top-16 z-10 flex -translate-x-1/2 items-center gap-3 rounded border px-3 py-2"
-          style={{
-            backgroundColor: MAP_FALLBACK_COLORS.panel,
-            borderColor: MAP_FALLBACK_COLORS.border,
-          }}
+        <Panel
+          className="absolute left-1/2 top-16 z-10 flex -translate-x-1/2 items-center gap-3 px-3 py-2"
           role="alert"
-          data-testid="map-entity-gone-notice"
+          testId="map-entity-gone-notice"
         >
           <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
             {entityGoneNotice}
           </p>
           <ParchmentActionButton label="Dismiss" onClick={() => setEntityGoneNotice(null)} />
-        </div>
+        </Panel>
       ) : null}
 
       {placingEntity != null && placeableKeys.size === 0 ? (
-        <div
-          className="absolute left-1/2 top-16 z-10 -translate-x-1/2 rounded border px-3 py-2"
-          style={{
-            backgroundColor: MAP_FALLBACK_COLORS.panel,
-            borderColor: MAP_FALLBACK_COLORS.border,
-          }}
-        >
+        <Panel className="absolute left-1/2 top-16 z-10 -translate-x-1/2 px-3 py-2">
           <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
             No free hex in {contextNameById.get(placingEntity.contextId) ?? "this context"}&apos;s
             patch — remove a tile or grow the domain first.
           </p>
-        </div>
+        </Panel>
       ) : null}
 
       <MapScene
@@ -780,6 +770,7 @@ export function MapTabView({
         {viewMode === "domain" && domainLayout != null ? (
           <DomainView
             layout={domainLayout}
+            signalsByEntityId={signalsByEntityId}
             onTileClick={(entity) => openOverlay({ kind: "entity", entityId: entity.id })}
             // Undefined during placement: a pile by construction sits on a
             // free (placeable) patch cell, and a clickable sprite would
@@ -796,6 +787,12 @@ export function MapTabView({
           <OwnerViewLayer layout={ownerLayout} />
         ) : null}
       </MapScene>
+
+      {/* Signal legend (L1): small, collapsed by default. Scoped to Domain
+          view — that is where the signals ride the tiles; Owner view renders
+          work markers beside colleague landmarks (L2) and carries none of the
+          four treatments, so the legend would claim states nothing shows. */}
+      {viewMode === "domain" ? <MapLegend /> : null}
 
       {overlayTarget != null ? (
         <MapOverlay

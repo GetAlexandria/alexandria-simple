@@ -12,6 +12,7 @@ import type { MapEntity } from "../../app/runtime/schemas";
 import { MAP_BORDER_COLORS, MAP_LABEL_COLORS } from "./colors";
 import { HexTile, type HexTileLifecycle } from "./HexTile";
 import { MapLabel } from "./MapLabel";
+import { NEUTRAL_TILE_SIGNALS, type TileSignals } from "./signals";
 import { StrayPile } from "./StrayPile";
 import { SystemHexTile, type SystemHexTileLifecycle } from "./SystemHexTile";
 import type { DomainViewBorderSegment, DomainViewLayout } from "./layout/domain-view";
@@ -32,9 +33,21 @@ type DomainViewProps = {
   onTileClick?: (entity: MapEntity) => void;
   /** S2: pile click opens the context's loose-cards overlay. */
   onPileClick?: (contextId: string) => void;
+  /**
+   * L1: per-entity ambient signals (needs-a-human glow, staleness sepia,
+   * system health dots, overdue flicker), derived at read time in MapTabView.
+   * Missing entries fall back to neutral so the map renders before signals
+   * resolve or when the board/journals are unavailable.
+   */
+  signalsByEntityId?: ReadonlyMap<string, TileSignals>;
 };
 
-export function DomainView({ layout, onTileClick, onPileClick }: DomainViewProps) {
+export function DomainView({
+  layout,
+  onTileClick,
+  onPileClick,
+  signalsByEntityId,
+}: DomainViewProps) {
   const domainBorderPoints = useMemo(
     () => toSegmentPoints(layout.domainBorders),
     [layout.domainBorders],
@@ -112,8 +125,9 @@ export function DomainView({ layout, onTileClick, onPileClick }: DomainViewProps
         );
       })}
 
-      {layout.tiles.map((tile) =>
-        tile.entity.kind === "project" ? (
+      {layout.tiles.map((tile) => {
+        const signals = signalsByEntityId?.get(tile.entity.id) ?? NEUTRAL_TILE_SIGNALS;
+        return tile.entity.kind === "project" ? (
           <HexTile
             key={tile.entity.id}
             coord={tile.coord}
@@ -124,6 +138,8 @@ export function DomainView({ layout, onTileClick, onPileClick }: DomainViewProps
                 ? "completed"
                 : ("active" satisfies HexTileLifecycle)
             }
+            needsHuman={signals.needsHuman}
+            stale={signals.stale}
             // Completed projects stay clickable ("victories stay visible" —
             // the overlay opens read-only upstream).
             onClick={onTileClick == null ? undefined : () => onTileClick(tile.entity)}
@@ -139,10 +155,15 @@ export function DomainView({ layout, onTileClick, onPileClick }: DomainViewProps
                 ? "hibernating"
                 : ("planted" satisfies SystemHexTileLifecycle)
             }
+            needsHuman={signals.needsHuman}
+            stale={signals.stale}
+            filledDots={signals.filledDots}
+            healthKnown={signals.healthKnown}
+            overdue={signals.overdue}
             onClick={onTileClick == null ? undefined : () => onTileClick(tile.entity)}
           />
-        ),
-      )}
+        );
+      })}
 
       {layout.piles.map((pile) => (
         <StrayPile

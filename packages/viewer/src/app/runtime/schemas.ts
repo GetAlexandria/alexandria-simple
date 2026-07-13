@@ -1173,6 +1173,32 @@ export const InfoHubBoardSchema = Schema.Struct({
 
 export type InfoHubBoard = Schema.Schema.Type<typeof InfoHubBoardSchema>;
 
+// Colleague journals (Map tab plan §1.4, L1) — the read-only projection of
+// `docs/alexandria/journal/<name>.md` that the Map tab's system-health dots
+// and overdue candle flicker derive from. The ax twin
+// (packages/ax/src/effects/colleague-journals.ts) parses each duty-loop
+// entry's header timestamp; this schema only decodes what the server already
+// extracted. Read-only: L1 adds no journal writes and no stored signal state.
+export const JournalEntrySchema = Schema.Struct({
+  timestamp: Schema.String,
+  title: Schema.String,
+});
+
+export type JournalEntry = Schema.Schema.Type<typeof JournalEntrySchema>;
+
+export const ColleagueJournalSchema = Schema.Struct({
+  colleague: Schema.String,
+  entries: Schema.Array(JournalEntrySchema),
+});
+
+export type ColleagueJournal = Schema.Schema.Type<typeof ColleagueJournalSchema>;
+
+export const ColleagueJournalsSchema = Schema.Struct({
+  journals: Schema.Array(ColleagueJournalSchema),
+});
+
+export type ColleagueJournals = Schema.Schema.Type<typeof ColleagueJournalsSchema>;
+
 // Map state (Map tab plan §1) — the browser-facing shape of
 // `docs/alexandria/map/map-state.json`, served by `/api/map/state`. The ax
 // twin in packages/ax/src/effects/map-state.ts owns validation (referential
@@ -1258,6 +1284,10 @@ export const decodeInfoHubBoard = Schema.decodeUnknown(InfoHubBoardSchema, {
 });
 
 export const decodeMapState = Schema.decodeUnknown(MapStateSchema, {
+  errors: "all",
+});
+
+export const decodeColleagueJournals = Schema.decodeUnknown(ColleagueJournalsSchema, {
   errors: "all",
 });
 
