@@ -11,8 +11,9 @@ import {
 } from "./domain-view";
 
 const cells = generateHexGrid(devMapGridRadius(DEV_MAP_FIXTURE));
-// The internal variant exposes territory/patch assignment maps that only
-// this test file reads; computeDomainViewLayout is the renderer-facing API.
+// The internal variant additionally exposes the territory/color assignment
+// maps that only this test file reads (patchByCellKey is public since S1);
+// computeDomainViewLayout is the renderer-facing API.
 const layout = computeDomainViewLayoutInternal(DEV_MAP_FIXTURE, cells, {
   strayCardCounts: DEV_MAP_STRAY_CARD_COUNTS,
 });
@@ -87,7 +88,7 @@ describe("computeDomainViewLayout territories", () => {
     }
   });
 
-  it("resolves overlapping regions to the nearest center, earlier domain on ties", () => {
+  it("resolves overlapping regions to the nearest center, smaller domain id on ties", () => {
     const overlapping: MapState = {
       domains: [
         { id: "a", name: "A", half: "work", region: { center: [0, -2], radius: 2 } },
@@ -98,11 +99,26 @@ describe("computeDomainViewLayout territories", () => {
       positions: [],
     };
     const overlapLayout = computeDomainViewLayoutInternal(overlapping, cells);
-    // (1, -2) is distance 1 from both centers: the earlier domain wins.
+    // (1, -2) is distance 1 from both centers: the smaller id wins the tie.
     expect(overlapLayout.territoryByCellKey.get(hexToKey(createHex(1, -2)))).toBe("a");
     // Cells strictly nearer one center belong to it.
     expect(overlapLayout.territoryByCellKey.get(hexToKey(createHex(0, -2)))).toBe("a");
     expect(overlapLayout.territoryByCellKey.get(hexToKey(createHex(2, -2)))).toBe("b");
+  });
+
+  it("keeps territory assignment and wash colors identical when the domains array is reordered", () => {
+    // S1 gate note: file order must never decide equidistant-cell ownership
+    // or repaint domains — hand edits to the git-tracked file are routine.
+    const reordered: MapState = {
+      ...DEV_MAP_FIXTURE,
+      domains: [...DEV_MAP_FIXTURE.domains].reverse(),
+    };
+    const reorderedLayout = computeDomainViewLayoutInternal(reordered, cells, {
+      strayCardCounts: DEV_MAP_STRAY_CARD_COUNTS,
+    });
+    expect(reorderedLayout.territoryByCellKey).toEqual(layout.territoryByCellKey);
+    expect(new Map(reorderedLayout.domainColorById)).toEqual(new Map(layout.domainColorById));
+    expect(reorderedLayout.tintByCellKey).toEqual(layout.tintByCellKey);
   });
 });
 

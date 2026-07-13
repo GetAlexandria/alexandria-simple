@@ -683,6 +683,99 @@ describe("viewer runtime client", () => {
   });
 });
 
+describe("viewer runtime client map state endpoints", () => {
+  const mapStatePayload = {
+    domains: [
+      {
+        id: "software",
+        name: "Software",
+        half: "work",
+        owner: "human:danvers",
+        region: { center: [0, -3], radius: 2 },
+      },
+    ],
+    contexts: [{ id: "viewer", name: "Viewer", domainId: "software" }],
+    entities: [
+      {
+        id: "prj-map-tab",
+        kind: "project",
+        name: "Map tab",
+        contextId: "viewer",
+        lifecycle: "active",
+      },
+    ],
+    positions: [{ q: 1, r: -3, entityType: "project", entityId: "prj-map-tab" }],
+  };
+
+  test("decodes map state and carries the GET ETag as the revision", async () => {
+    const client = makeViewerRuntimeClient({
+      fetcher: async () =>
+        Response.json(mapStatePayload, { headers: { etag: '"abc123def4567890"' } }),
+    });
+
+    const loaded = await Effect.runPromise(client.getMapState);
+
+    expect(loaded.state.domains[0]?.id).toBe("software");
+    expect(loaded.state.positions).toHaveLength(1);
+    expect(loaded.revision).toBe("abc123def4567890");
+  });
+
+  test("tolerates a missing ETag (revision null → unconditional save)", async () => {
+    const client = makeViewerRuntimeClient({
+      fetcher: async () => Response.json(mapStatePayload),
+    });
+
+    const loaded = await Effect.runPromise(client.getMapState);
+    expect(loaded.revision).toBeNull();
+  });
+
+  test("saves map state with the revision echoed as If-Match and adopts the new revision", async () => {
+    const requests: { ifMatch: string | null; method: string | undefined }[] = [];
+    const client = makeViewerRuntimeClient({
+      fetcher: async (_input, init) => {
+        requests.push({
+          ifMatch: new Headers(init?.headers).get("if-match"),
+          method: init?.method,
+        });
+        return Response.json(mapStatePayload, { headers: { etag: '"fedcba9876543210"' } });
+      },
+    });
+
+    const loaded = await Effect.runPromise(client.getMapState);
+    const saved = await Effect.runPromise(client.saveMapState(loaded.state, loaded.revision));
+
+    expect(requests[1]).toEqual({ ifMatch: '"fedcba9876543210"', method: "POST" });
+    expect(saved.revision).toBe("fedcba9876543210");
+  });
+
+  test("surfaces a stale-revision save as a 409 ViewerHttpError with the structured body", async () => {
+    const conflictBody = JSON.stringify({
+      error: {
+        code: "map_state_conflict",
+        message: "The map state changed since this client last loaded it.",
+      },
+    });
+    const client = makeViewerRuntimeClient({
+      fetcher: async () => new Response(conflictBody, { status: 409, statusText: "Conflict" }),
+    });
+
+    const error = await Effect.runPromise(
+      Effect.flip(
+        client.saveMapState(
+          { contexts: [], domains: [], entities: [], positions: [] },
+          "stalestalestale1",
+        ),
+      ),
+    );
+
+    expect(error._tag).toBe("ViewerHttpError");
+    if (error._tag === "ViewerHttpError") {
+      expect(error.status).toBe(409);
+      expect(error.body).toContain("map_state_conflict");
+    }
+  });
+});
+
 describe("viewer runtime client library endpoints", () => {
   const graphPayload = {
     cards: [

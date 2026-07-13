@@ -29,6 +29,7 @@ import {
   parseViewerRoute,
   sectionForLibraryMode,
   serializeViewerRoute,
+  surfaceRoute,
   updateFolderRouteClosedFolder,
   updateFolderRouteOpenFolders,
   updateFolderRouteSelectedCard,
@@ -83,6 +84,9 @@ describe("viewer routes", () => {
     expect(parseViewerRoute("/ledger", "").surface).toBe("ledger");
     expect(parseViewerRoute("/raven/knowledge-bank", "").surface).toBe("raven-knowledge-bank");
     expect(parseViewerRoute("/raven/vision", "").surface).toBe("raven-vision");
+    // The Map stone tab (map-tab plan, S1).
+    expect(parseViewerRoute("/map", "").surface).toBe("map");
+    expect(parseViewerRoute("/map/", "").surface).toBe("map");
     // Map first-light dev harness (map-tab plan, P1).
     expect(parseViewerRoute("/dev/map", "").surface).toBe("dev-map");
     expect(parseViewerRoute("/dev/map/", "").surface).toBe("dev-map");
@@ -175,6 +179,12 @@ describe("viewer routes", () => {
     expect(serializeViewerRoute(librarySectionDefaultRoute("builder"))).toBe(
       "/library/builder/alexandria-back",
     );
+  });
+
+  test("serializes and round-trips the Map surface route (S1)", () => {
+    const route = surfaceRoute("map");
+    expect(serializeViewerRoute(route)).toBe("/map");
+    expect(parseViewerRoute("/map", "")).toMatchObject({ surface: "map" });
   });
 
   test("serializes agent routes", () => {

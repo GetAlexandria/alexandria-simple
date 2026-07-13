@@ -4,13 +4,26 @@
       "id": "software",
       "name": "Software",
       "half": "work",
-      "owner": "colleague:raven",
+      "owner": "human:danvers",
       "region": {
         "center": [
           0,
           -3
         ],
         "radius": 2
+      }
+    },
+    {
+      "id": "new-media",
+      "name": "New Media",
+      "half": "work",
+      "owner": "colleague:damien",
+      "region": {
+        "center": [
+          -4,
+          -1
+        ],
+        "radius": 1
       }
     }
   ],
@@ -20,6 +33,16 @@
       "name": "Viewer",
       "domainId": "software",
       "libraryContext": "product/viewer"
+    },
+    {
+      "id": "colleagues",
+      "name": "Colleagues",
+      "domainId": "software"
+    },
+    {
+      "id": "demos",
+      "name": "Demos",
+      "domainId": "new-media"
     }
   ],
   "entities": [
@@ -27,7 +50,7 @@
       "id": "sys-raven-duty-loop",
       "kind": "system",
       "name": "Raven duty loop",
-      "contextId": "viewer",
+      "contextId": "colleagues",
       "colleague": "raven",
       "cadence": "30m",
       "lifecycle": "planted"
@@ -38,20 +61,47 @@
       "name": "Map tab",
       "contextId": "viewer",
       "lifecycle": "active"
+    },
+    {
+      "id": "sys-damien-duty-loop",
+      "kind": "system",
+      "name": "Damien duty loop",
+      "contextId": "demos",
+      "colleague": "damien",
+      "cadence": "30m",
+      "lifecycle": "planted"
     }
   ],
   "positions": [
     {
-      "q": 1,
-      "r": -1,
+      "q": 0,
+      "r": -2,
       "entityType": "system",
       "entityId": "sys-raven-duty-loop"
+    },
+    {
+      "q": 1,
+      "r": -3,
+      "entityType": "project",
+      "entityId": "prj-map-tab"
+    },
+    {
+      "q": -4,
+      "r": -2,
+      "entityType": "system",
+      "entityId": "sys-damien-duty-loop"
     },
     {
       "q": 0,
       "r": 0,
       "entityType": "landmark",
       "entityId": "colleague:raven"
+    },
+    {
+      "q": -1,
+      "r": 0,
+      "entityType": "landmark",
+      "entityId": "colleague:damien"
     }
   ]
 }

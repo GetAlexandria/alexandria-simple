@@ -106,26 +106,37 @@ describe("buildOwnerViewLayout", () => {
     }
   });
 
-  it("resolves overlapping region discs toward earlier domains (Domain-view tie-break)", () => {
-    const overlapping = buildOwnerViewLayout({
-      domains: [
-        {
-          id: "a",
-          name: "A",
-          half: "work",
-          owner: "colleague:raven",
-          region: { center: [0, -2], radius: 1 },
-        },
-        { id: "b", name: "B", half: "work", region: { center: [1, -2], radius: 1 } },
-      ],
-      contexts: [],
-      entities: [],
-      positions: [],
-    });
-    // (1, -2) is inside both discs; the earlier, claimed domain's wash wins.
-    expect(overlapping.tintByCellKey.get(hexToKey(createHex(1, -2)))).toEqual(
-      OWNER_VIEW_TERRITORY_TINTS.claimed,
-    );
+  it("resolves overlapping region discs toward the smaller domain id, whatever the file order", () => {
+    const domainA = {
+      id: "a",
+      name: "A",
+      half: "work",
+      owner: "colleague:raven",
+      region: { center: [0, -2] as [number, number], radius: 1 },
+    } as const;
+    const domainB = {
+      id: "b",
+      name: "B",
+      half: "work",
+      region: { center: [1, -2] as [number, number], radius: 1 },
+    } as const;
+    for (const domains of [
+      [domainA, domainB],
+      [domainB, domainA],
+    ]) {
+      const overlapping = buildOwnerViewLayout({
+        domains,
+        contexts: [],
+        entities: [],
+        positions: [],
+      });
+      // (1, -2) is inside both discs; the smaller-id, claimed domain's wash
+      // wins regardless of how the state file orders the domains (S1 gate
+      // note: hand reorders must not repaint the map).
+      expect(overlapping.tintByCellKey.get(hexToKey(createHex(1, -2)))).toEqual(
+        OWNER_VIEW_TERRITORY_TINTS.claimed,
+      );
+    }
   });
 
   it("dims a malformed-owner territory like unclaimed (never a fake owner)", () => {

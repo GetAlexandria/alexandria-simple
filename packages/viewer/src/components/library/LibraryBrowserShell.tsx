@@ -137,6 +137,7 @@ interface LibraryBrowserShellProps {
   onHome(): void;
   onInfo(): void;
   onLibrary(): void;
+  onMap(): void;
   onAgent(agentId: string): void;
   onBundleSelect(bundleId: string): void;
   onFrameProblem(): void;
@@ -161,6 +162,7 @@ export function LibraryBrowserShell({
   onHome,
   onInfo,
   onLibrary,
+  onMap,
   onAgent,
   onBundleSelect,
   onFrameProblem,
@@ -182,6 +184,7 @@ export function LibraryBrowserShell({
         onInfo={onInfo}
         onLedger={onLedger}
         onLibrary={onLibrary}
+        onMap={onMap}
         onPlaybook={onPlaybook}
       />
       <main className="pb-[280px]">

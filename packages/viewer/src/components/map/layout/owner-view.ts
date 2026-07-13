@@ -51,8 +51,9 @@ export type OwnerViewLayout = {
   /**
    * Parchment wash per grid-cell key for MapScene's cellTintByKey: claimed
    * territories take the warm wash, unclaimed/malformed the muted dim.
-   * Overlapping region discs resolve toward earlier domains in the state
-   * file (the Domain-view tie-break convention).
+   * Overlapping region discs resolve toward the lexicographically smaller
+   * domain id (the Domain-view tie-break convention), so reordering domains
+   * in the git-tracked state file never repaints the overlap.
    */
   tintByCellKey: ReadonlyMap<string, HexTint>;
 };
@@ -111,8 +112,13 @@ export function buildOwnerViewLayout(state: MapState): OwnerViewLayout {
     };
   });
 
+  // First-write-wins per cell, iterated in domain-id order (not file order)
+  // so an overlap resolves identically however the file is arranged.
   const tintByCellKey = new Map<string, HexTint>();
-  for (const territory of territories) {
+  const territoriesById = [...territories].sort((left, right) =>
+    left.domain.id < right.domain.id ? -1 : left.domain.id > right.domain.id ? 1 : 0,
+  );
+  for (const territory of territoriesById) {
     const tint =
       territory.ownership.status === "owned"
         ? OWNER_VIEW_TERRITORY_TINTS.claimed

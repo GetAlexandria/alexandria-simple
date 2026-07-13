@@ -1,6 +1,7 @@
 // Full-screen message panel for the map surface's non-canvas states: the
-// WebGL-unsupported fallback (MapDevView) and the lazy-chunk load error
-// (LibraryBrowserApp's MapDevErrorBoundary). Like ./colors, this module is
+// WebGL-unsupported fallback (MapDevView/MapTabView) and the lazy-chunk load
+// error (LibraryBrowserApp's MapChunkErrorBoundary). Like ./colors, this
+// module is
 // deliberately three.js-free so LibraryBrowserApp can import it statically
 // without defeating the lazy map chunk split.
 
@@ -11,12 +12,18 @@ type MapMessagePanelProps = {
   title: string;
   subtext: string;
   action?: ReactNode;
+  /**
+   * Fill the parent instead of the viewport: the Map stone tab renders this
+   * inside the cave chrome's fixed-height map field (S1), while the /dev/map
+   * route keeps the full-screen default.
+   */
+  fill?: boolean;
 };
 
-export function MapMessagePanel({ title, subtext, action }: MapMessagePanelProps) {
+export function MapMessagePanel({ title, subtext, action, fill = false }: MapMessagePanelProps) {
   return (
     <div
-      className="flex h-screen w-full items-center justify-center"
+      className={`flex ${fill ? "h-full" : "h-screen"} w-full items-center justify-center`}
       style={{ backgroundColor: MAP_FALLBACK_COLORS.field, color: MAP_FALLBACK_COLORS.text }}
     >
       <div

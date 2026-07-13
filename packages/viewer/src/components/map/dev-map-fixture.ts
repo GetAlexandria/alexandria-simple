@@ -19,7 +19,7 @@
 // adjacent so their patch grows contiguous from its seeds.
 
 import type { MapState } from "../../app/runtime/schemas";
-import { createHex, hexDistance } from "./hex";
+import { MAP_MIN_GRID_RADIUS, mapStateGridRadius } from "./map-grid";
 
 export const DEV_MAP_FIXTURE = {
   domains: [
@@ -203,28 +203,11 @@ export const DEV_MAP_STRAY_CARD_COUNTS: Readonly<Record<string, number>> = {
   household: 6,
 };
 
-export const DEV_MAP_MIN_GRID_RADIUS = 5;
+export const DEV_MAP_MIN_GRID_RADIUS = MAP_MIN_GRID_RADIUS;
 
 /**
- * Grid radius needed to cover everything the fixture places: every domain
- * region (center distance + region radius) and every positioned entity,
- * floored at DEV_MAP_MIN_GRID_RADIUS (the P1 acceptance bar).
+ * Grid radius needed to cover everything the fixture places. S1 extracted
+ * the sizing rule to ./map-grid (shared with the real Map tab); this alias
+ * keeps the dev harness's established name.
  */
-export function devMapGridRadius(
-  state: MapState,
-  minimum: number = DEV_MAP_MIN_GRID_RADIUS,
-): number {
-  const origin = createHex(0, 0);
-  let radius = minimum;
-
-  for (const domain of state.domains) {
-    const [q, r] = domain.region.center;
-    radius = Math.max(radius, hexDistance(origin, createHex(q, r)) + domain.region.radius);
-  }
-
-  for (const position of state.positions) {
-    radius = Math.max(radius, hexDistance(origin, createHex(position.q, position.r)));
-  }
-
-  return radius;
-}
+export const devMapGridRadius = mapStateGridRadius;

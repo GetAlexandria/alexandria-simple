@@ -116,6 +116,14 @@ Rules: one entity per hex (validated on write); reserved hexes for landmarks; co
 projects stay greyed; hibernating/uprooted systems dim/leave. The stray pile is derived
 (cards with `contextId` but no `entityId`) and never has a stored position.
 
+Half convention (validated on write since S1): the `work` half is the r < 0 side of the
+grid, the `personal` half the r > 0 side, and the r = 0 row stays neutral parchment. A
+domain's `region.center` r-sign must match its declared `half` — a wrong-side region
+would render as a ghost domain, so the ax validator rejects it. Writes also carry a
+cheap revision precondition: `GET /api/map/state` serves a content-hash `ETag`, a
+client echoes it back as `If-Match`, and a stale full-document POST fails with a
+structured 409 instead of silently clobbering a concurrent write.
+
 ### 1.4 Signals are derived, never stored
 
 Computed at read time — no new server state, no new writes by anyone:
@@ -219,6 +227,8 @@ doesn't); M1 and S2 are the modeling work; Q1, L1–L3 are small.
    artifact on the table.
 6. The Work Board (and this whole build) lives in **alexandria-simple only**; nothing in
    alexandria-internal is touched, including PR #784, which stays as-is there.
+7. Both prototype looks approved (2026-07-12); the Domain ↔ Owner toggle ships as a view
+   mode on the Map tab.
 
 **Still open:** `libraryContext` linkage strictness — optional field now (recommended),
 reconcile with the library's context names once the draft library settles.

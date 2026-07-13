@@ -22,14 +22,9 @@ import { buildOwnerViewLayout } from "./layout/owner-view";
 import { MapMessagePanel } from "./MapMessagePanel";
 import { MapScene } from "./MapScene";
 import { OwnerViewLayer } from "./OwnerViewLayer";
+import { PanelButton } from "./panel-buttons";
+import { type MapViewMode, VIEW_MODES } from "./view-mode";
 import { isWebGLForcedOff, supportsWebGL } from "./webgl";
-
-type MapViewMode = "domain" | "owner";
-
-const VIEW_MODES: { mode: MapViewMode; label: string }[] = [
-  { mode: "domain", label: "Domain view" },
-  { mode: "owner", label: "Owner view" },
-];
 
 export function MapDevView() {
   const [hasWebGLSupport] = useState(
@@ -89,24 +84,12 @@ export function MapDevView() {
         aria-label="Map view mode"
       >
         {VIEW_MODES.map(({ mode, label }) => (
-          <button
+          <PanelButton
             key={mode}
-            type="button"
-            aria-pressed={viewMode === mode}
+            active={viewMode === mode}
+            label={label}
             onClick={() => setViewMode(mode)}
-            className="px-3 py-1.5 text-xs"
-            style={
-              viewMode === mode
-                ? {
-                    backgroundColor: MAP_FALLBACK_COLORS.border,
-                    color: MAP_FALLBACK_COLORS.heading,
-                    fontWeight: 600,
-                  }
-                : { color: MAP_FALLBACK_COLORS.subtext }
-            }
-          >
-            {label}
-          </button>
+          />
         ))}
       </div>
 

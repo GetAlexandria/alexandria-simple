@@ -9,17 +9,30 @@
 // radius) instead of the vendored hardcoded GRID_RADIUS.
 
 import type { HexTint } from "./colors";
-import type { HexGridCell } from "./hex";
-import { HexCell } from "./HexCell";
+import type { HexCoord, HexGridCell } from "./hex";
+import { HexCell, type HexCellVisualState } from "./HexCell";
 
 type HexGridProps = {
   cells: readonly HexGridCell[];
   parchmentSeed?: number;
   /** Domain-view wash per cell key; untinted cells render bare parchment. */
   cellTintByKey?: ReadonlyMap<string, HexTint>;
+  /**
+   * Placement-mode overrides per cell key (S1: "placeable" highlights the
+   * selected entity's patch); absent cells keep hover/default behavior.
+   */
+  visualStateByKey?: ReadonlyMap<string, HexCellVisualState>;
+  /** Ground-cell click handler (S1 placement); fires for every cell. */
+  onCellClick?: (coord: HexCoord) => void;
 };
 
-export function HexGrid({ cells, parchmentSeed = 0, cellTintByKey }: HexGridProps) {
+export function HexGrid({
+  cells,
+  parchmentSeed = 0,
+  cellTintByKey,
+  visualStateByKey,
+  onCellClick,
+}: HexGridProps) {
   return (
     <group>
       {cells.map((cell) => (
@@ -28,6 +41,8 @@ export function HexGrid({ cells, parchmentSeed = 0, cellTintByKey }: HexGridProp
           coord={cell.coord}
           parchmentSeed={parchmentSeed}
           tint={cellTintByKey?.get(cell.key)}
+          visualStateOverride={visualStateByKey?.get(cell.key)}
+          onClick={onCellClick}
         />
       ))}
     </group>

@@ -150,9 +150,11 @@ export const OWNER_VIEW_COLORS = {
 // --- Domain view (V1) ------------------------------------------------------
 
 /**
- * Region wash colors assigned to domains by index (cycled). Chosen as
- * watercolor pigments that stay legible when mixed into the parchment at
- * MAP_REGION_TINT_STRENGTH / MAP_PATCH_TINT_STRENGTH.
+ * The domain region wash palette. Chosen as watercolor pigments that stay
+ * legible when mixed into the parchment at MAP_REGION_TINT_STRENGTH /
+ * MAP_PATCH_TINT_STRENGTH. Assignment goes through `domainWashColors` —
+ * never by array index — so hand-edits to the git-tracked state file don't
+ * repaint the map.
  */
 export const MAP_DOMAIN_TINTS: readonly string[] = [
   "#6f9455", // sage
@@ -162,6 +164,41 @@ export const MAP_DOMAIN_TINTS: readonly string[] = [
   "#8a7fa8", // faded violet
   "#5f9d8a", // verdigris
 ];
+
+/** FNV-1a 32-bit — a tiny stable string hash for palette anchoring. */
+function stableStringHash(value: string): number {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return hash >>> 0;
+}
+
+/**
+ * Wash color per domain id, keyed off a stable hash of the id (S1 gate
+ * note): inserting or reordering a domain in the state file must not
+ * recolor every later domain. Ids are processed in sorted order and hash
+ * collisions probe forward to the next free pigment, so colors stay
+ * distinct while there are at most MAP_DOMAIN_TINTS.length domains and the
+ * assignment depends only on the SET of ids, never on file order.
+ */
+export function domainWashColors(domainIds: readonly string[]): Map<string, string> {
+  const paletteSize = MAP_DOMAIN_TINTS.length;
+  const used = new Set<number>();
+  const colors = new Map<string, string>();
+  for (const id of [...new Set(domainIds)].sort()) {
+    let slot = stableStringHash(id) % paletteSize;
+    if (used.size < paletteSize) {
+      while (used.has(slot)) {
+        slot = (slot + 1) % paletteSize;
+      }
+    }
+    used.add(slot);
+    colors.set(id, MAP_DOMAIN_TINTS[slot]!);
+  }
+  return colors;
+}
 
 /** Wash strength for a domain territory cell outside any context patch. */
 export const MAP_REGION_TINT_STRENGTH = 0.12;

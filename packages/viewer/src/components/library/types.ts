@@ -58,6 +58,7 @@ export type LibraryBrowserView =
   | "info"
   | "ledger"
   | "library"
+  | "map"
   | "playbook"
   | "knowledge-bank"
   | "vision-onboarding"

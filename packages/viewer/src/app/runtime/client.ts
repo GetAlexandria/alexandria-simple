@@ -8,6 +8,7 @@ import {
 import {
   decodeError,
   decodeInfoHubBoard,
+  decodeMapState,
   decodeLibraryCatalog,
   decodeLibraryCardDetail,
   decodeLibraryGraph,
@@ -26,6 +27,7 @@ import {
   type LibraryCatalog,
   type LibraryConfirmationEdit,
   type LibraryGraph,
+  type MapState,
   type RuntimeConnectionSummary,
   type RuntimeEventPage,
   type RuntimeHealth,
@@ -76,22 +78,38 @@ const parseJson = Effect.fn("ViewerRuntimeClient.parseJson")(function* (response
   });
 });
 
+/**
+ * One fetch-and-decode pipeline: request, surface a network/HTTP/JSON
+ * failure as the corresponding ViewerRuntimeError, and hand back the
+ * decoded payload plus the raw Response for callers that need header
+ * access (map state's ETag/If-Match). Most callers only need the payload —
+ * see fetchJson below.
+ */
+const fetchJsonKeepingResponse = Effect.fn("ViewerRuntimeClient.fetchJsonKeepingResponse")(
+  function* (context: ViewerRuntimeRequestContext, path: string, init?: RequestInit) {
+    const response = yield* Effect.tryPromise({
+      catch: (cause) => new ViewerNetworkError(cause),
+      try: async (): Promise<Response> => context.fetcher(endpoint(path, context.baseUrl), init),
+    });
+
+    if (!response.ok) {
+      const body = yield* readErrorBody(response);
+      return yield* Effect.fail(new ViewerHttpError(response.status, response.statusText, body));
+    }
+
+    const payload = yield* parseJson(response);
+    return { payload, response };
+  },
+);
+
+/** fetchJsonKeepingResponse, discarding the Response — the common case. */
 const fetchJson = Effect.fn("ViewerRuntimeClient.fetchJson")(function* (
   context: ViewerRuntimeRequestContext,
   path: string,
   init?: RequestInit,
 ) {
-  const response = yield* Effect.tryPromise({
-    catch: (cause) => new ViewerNetworkError(cause),
-    try: async (): Promise<Response> => context.fetcher(endpoint(path, context.baseUrl), init),
-  });
-
-  if (!response.ok) {
-    const body = yield* readErrorBody(response);
-    return yield* Effect.fail(new ViewerHttpError(response.status, response.statusText, body));
-  }
-
-  return yield* parseJson(response);
+  const { payload } = yield* fetchJsonKeepingResponse(context, path, init);
+  return payload;
 });
 
 export interface LibraryCardRef {
@@ -241,6 +259,56 @@ const saveInfoHubBoard = Effect.fn("ViewerRuntimeClient.saveInfoHubBoard")(funct
   return yield* decodeInfoHubBoard(payload).pipe(
     Effect.mapError((cause) => decodeError("info hub board", cause)),
   );
+});
+
+/**
+ * Map state plus the server's revision (the GET/POST ETag). The revision is
+ * echoed back as `If-Match` on the next save so a stale full-document POST
+ * fails with a structured 409 instead of clobbering a concurrent write.
+ */
+export interface MapStateWithRevision {
+  revision: string | null;
+  state: MapState;
+}
+
+function revisionFromResponse(response: Response): string | null {
+  const etag = response.headers.get("etag");
+  if (etag == null) {
+    return null;
+  }
+  return etag.trim().replace(/^W\//, "").replace(/^"|"$/g, "");
+}
+
+const decodeMapStateWithRevision = Effect.fn("ViewerRuntimeClient.decodeMapStateWithRevision")(
+  function* (payload: unknown, response: Response) {
+    const state = yield* decodeMapState(payload).pipe(
+      Effect.mapError((cause) => decodeError("map state", cause)),
+    );
+    return { revision: revisionFromResponse(response), state } satisfies MapStateWithRevision;
+  },
+);
+
+const getMapState = Effect.fn("ViewerRuntimeClient.getMapState")(function* (
+  context: ViewerRuntimeRequestContext,
+) {
+  const { payload, response } = yield* fetchJsonKeepingResponse(context, "/api/map/state");
+  return yield* decodeMapStateWithRevision(payload, response);
+});
+
+const saveMapState = Effect.fn("ViewerRuntimeClient.saveMapState")(function* (
+  context: ViewerRuntimeRequestContext,
+  state: MapState,
+  revision: string | null,
+) {
+  const { payload, response } = yield* fetchJsonKeepingResponse(context, "/api/map/state", {
+    body: JSON.stringify(state),
+    headers: {
+      "content-type": "application/json",
+      ...(revision == null ? {} : { "if-match": `"${revision}"` }),
+    },
+    method: "POST",
+  });
+  return yield* decodeMapStateWithRevision(payload, response);
 });
 
 export interface RuntimeLibraryConfirmationRequest {
@@ -537,6 +605,7 @@ export interface ViewerRuntimeClient {
   getConnections: Effect.Effect<RuntimeConnectionSummary, ViewerRuntimeError>;
   getHealth: Effect.Effect<RuntimeHealth, ViewerRuntimeError>;
   getInfoHubBoard: Effect.Effect<InfoHubBoard, ViewerRuntimeError>;
+  getMapState: Effect.Effect<MapStateWithRevision, ViewerRuntimeError>;
   getLibraryCatalog: Effect.Effect<LibraryCatalog, ViewerRuntimeError>;
   getLibraryCatalogForRequest: (
     request: LibraryCatalogRequest,
@@ -560,6 +629,10 @@ export interface ViewerRuntimeClient {
   saveInfoHubBoard: (
     cards: readonly InfoHubCard[],
   ) => Effect.Effect<InfoHubBoard, ViewerRuntimeError>;
+  saveMapState: (
+    state: MapState,
+    revision: string | null,
+  ) => Effect.Effect<MapStateWithRevision, ViewerRuntimeError>;
   skipRavenVisionSlot: (
     slotId: RuntimeRavenVisionSlotId,
   ) => Effect.Effect<RuntimeRavenVisionProjection, ViewerRuntimeError>;
@@ -589,6 +662,7 @@ export function makeViewerRuntimeClient(
     getConnections: getRuntimeConnections(context),
     getHealth: getRuntimeHealth(context),
     getInfoHubBoard: getInfoHubBoard(context),
+    getMapState: getMapState(context),
     getLibraryCatalog: getLibraryCatalog(context),
     getLibraryCatalogForRequest: (request) => getLibraryCatalog(context, request),
     getLibraryCard: (card) => getLibraryCardDetail(context, card),
@@ -602,6 +676,7 @@ export function makeViewerRuntimeClient(
     rejectLibrary: (request) => rejectRuntimeLibrary(context, request),
     runPlay: (playId) => runRuntimePlay(context, playId),
     saveInfoHubBoard: (cards) => saveInfoHubBoard(context, cards),
+    saveMapState: (state, revision) => saveMapState(context, state, revision),
     requestRavenVisionDrafting: requestRuntimeRavenVisionDrafting(context),
     skipRavenVisionSlot: (slotId) => skipRuntimeRavenVisionSlot(context, slotId),
     startRavenVision: startRuntimeRavenVision(context),
