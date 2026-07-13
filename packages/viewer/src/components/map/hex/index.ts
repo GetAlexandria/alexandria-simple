@@ -1,4 +1,4 @@
-// Promoted from quarantine/lifebuild-map/packages/shared/src/hex/index.ts
+// Promoted from packages/shared/src/hex/index.ts
 // (lifebuild @ bf183a3).
 
 export * from "./types";

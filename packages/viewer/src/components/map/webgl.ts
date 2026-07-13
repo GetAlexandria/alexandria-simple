@@ -1,4 +1,4 @@
-// Ported behavior from quarantine/lifebuild-map/packages/web/src/components/
+// Ported behavior from packages/web/src/components/
 // life-map/LifeMap.tsx (supportsWebGL, lifebuild @ bf183a3): probe for a
 // WebGL 2 (or WebGL 1) context before mounting the three.js canvas so
 // unsupported browsers get a plain message instead of a crash.

@@ -1,7 +1,7 @@
 // New V1 code over a promoted asset + component: the stray task pile — one
 // crop-plot sprite per context for board cards joined to the context but to
 // no project/system (plan §1.1). The three crop-plot growth stages from
-// Lifebuild's prototype sprites (quarantine MANIFEST: asset) step with the
+// Lifebuild's prototype sprites (port-manifest: promoted asset) step with the
 // context's stray card count, and the sprite scales up a notch per stage.
 // Card counts were fixture-fed in V1; since S2 the Map tab derives them
 // from the Info Hub board (placement.ts strayCardCountsByContext).

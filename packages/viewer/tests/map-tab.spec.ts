@@ -7,7 +7,7 @@
 // coordinates through CameraRig's steady-state pose using the SAME constants
 // the scene imports (src/components/map/scene-constants.ts), so a camera or
 // geometry tweak breaks these tests loudly instead of skewing them silently.
-// This is also where the quarantine HexTile interaction coverage lands
+// This is also where the ported HexTile interaction coverage lands
 // (issue #9 carry-over: hover affordance, completed tiles remain clickable) —
 // behaviors that need a real DOM + WebGL, which bun:test lacks.
 //

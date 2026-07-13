@@ -1,5 +1,5 @@
 // Promoted from
-// quarantine/lifebuild-map/packages/web/src/components/hex-map/HexTile.tsx
+// packages/web/src/components/hex-map/HexTile.tsx
 // (lifebuild @ bf183a3): the project tile — accent-ringed hex platform with
 // the ProjectSprite house on top. Adapted to M1's types at promotion (props
 // are our entity vocabulary, never the reverse): `categoryColor` becomes the

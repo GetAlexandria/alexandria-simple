@@ -1,5 +1,5 @@
 // Promoted from
-// quarantine/lifebuild-map/packages/web/src/components/hex-map/HexCell.tsx
+// packages/web/src/components/hex-map/HexCell.tsx
 // (lifebuild @ bf183a3). Era-modernization at promotion: hex math imported
 // from the house module instead of `@lifebuild/shared`, inline color
 // literals consolidated into ./colors tokens, React 19 / @react-three/fiber

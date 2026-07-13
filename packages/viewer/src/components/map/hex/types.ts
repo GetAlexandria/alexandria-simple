@@ -1,5 +1,5 @@
-// Promoted from quarantine/lifebuild-map/packages/shared/src/hex/types.ts
-// (lifebuild @ bf183a3). See quarantine/lifebuild-map/MANIFEST.md.
+// Promoted from packages/shared/src/hex/types.ts
+// (lifebuild @ bf183a3). See docs/alexandria/plans/map-tab/port-manifest.md.
 
 /** Cube coordinate (q + r + s = 0). */
 export interface HexCoord {

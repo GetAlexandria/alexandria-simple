@@ -1,5 +1,5 @@
 // Promoted from
-// quarantine/lifebuild-map/packages/web/src/components/hex-map/FixedBuilding.tsx
+// packages/web/src/components/hex-map/FixedBuilding.tsx
 // (lifebuild @ bf183a3). Era-adaptation at promotion: the theme record is
 // re-keyed to our Owner-view landmark vocabulary (colleague / human /
 // vacant-plot / locked-seat) instead of Lifebuild's campfire / sanctuary /
@@ -7,8 +7,8 @@
 // origin/scale props, campfire ember, and Html activation button dropped
 // (activation overlays are L2). Sprites are served from
 // /map/sprites/*.png, copied from
-// quarantine/lifebuild-map/packages/hex-grid-prototype/public/sprites/
-// (provenance: quarantine MANIFEST.md, lifebuild @ bf183a3).
+// packages/hex-grid-prototype/public/sprites/
+// (provenance: map-tab port-manifest.md, lifebuild @ bf183a3).
 
 import { LANDMARK_SPRITE_COLORS } from "./colors";
 import type { HexCoord } from "./hex";

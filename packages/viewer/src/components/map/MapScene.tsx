@@ -1,7 +1,7 @@
 // The map's container (the promoted HexMap altitude, written fresh in P1):
 // Canvas + lights + CameraRig + BackgroundPlane + the promoted HexGrid.
-// Lifebuild's HexMap.tsx container was placement- and panel-heavy (see
-// quarantine rewrite references); those flows return in S2 against our
+// Lifebuild's HexMap.tsx container was placement- and panel-heavy (see the
+// port-manifest rewrite-reference rows); those flows return in S2 against our
 // schema. V1 additions are strictly additive so V2's Owner view can compose
 // against the same surface: an optional Domain-view tint map for the grid,
 // and children rendered inside the Canvas (tiles, borders, labels, piles).

@@ -1,5 +1,5 @@
 // Promoted from
-// quarantine/lifebuild-map/packages/web/src/components/hex-map/ProjectSprite.tsx
+// packages/web/src/components/hex-map/ProjectSprite.tsx
 // (lifebuild @ bf183a3): the little geometric house that sits on a project
 // tile. Era-modernization at promotion: pigments consolidated into ./colors
 // (the vendored file carried its own hex literals and a private color

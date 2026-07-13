@@ -1,4 +1,4 @@
-// Promoted from quarantine/lifebuild-map/packages/shared/tests/hex/math.test.ts
+// Promoted from packages/shared/tests/hex/math.test.ts
 // (lifebuild @ bf183a3), adapted from vitest to bun:test and moved beside the
 // source per house convention.
 

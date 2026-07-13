@@ -1,5 +1,5 @@
 // Promoted from
-// quarantine/lifebuild-map/packages/web/src/components/hex-map/HexGrid.tsx
+// packages/web/src/components/hex-map/HexGrid.tsx
 // (lifebuild @ bf183a3), simplified per plan §2/§3 at promotion: the
 // vendored grid was placement-heavy (placement mode, reserved coords, fixed
 // buildings, debug tree sprites, LiveStore-adjacent handlers). Placement is

@@ -1,7 +1,7 @@
 // The campfire (L2, plan §1.1 "gratuitous — keep it"): a 15-frame flame
 // animation over a static logs base, on one reserved landmark hex. Frames are
 // the Lifebuild prototype's `campfire/flame-00..14.png` (+ `logs.png`),
-// promoted to /map/sprites/campfire/ (provenance: quarantine MANIFEST.md,
+// promoted to /map/sprites/campfire/ (provenance: map-tab port-manifest.md,
 // lifebuild @ bf183a3 — the same hand-copy path FixedBuilding's sprites took).
 //
 // Cycling is a cheap useFrame frame index driven off the shared clock: the

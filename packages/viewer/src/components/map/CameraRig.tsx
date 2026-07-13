@@ -1,5 +1,5 @@
 // Promoted from
-// quarantine/lifebuild-map/packages/web/src/components/hex-map/CameraRig.tsx
+// packages/web/src/components/hex-map/CameraRig.tsx
 // (lifebuild @ bf183a3). Wheel zoom + arrow-key pan on an orthographic
 // camera. Unchanged in behavior; already compatible with @react-three/fiber
 // v9 (useThree/useFrame signatures are the same in the v9 line).
