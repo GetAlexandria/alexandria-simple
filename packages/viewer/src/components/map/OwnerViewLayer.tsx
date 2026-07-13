@@ -21,7 +21,6 @@ import * as THREE from "three";
 import { OWNER_VIEW_COLORS } from "./colors";
 import { FixedBuilding } from "./FixedBuilding";
 import { HEX_SIZE, hexToWorld, type HexCoord } from "./hex";
-import { LockedSeatLandmark } from "./MapLandmarks";
 import { HEX_CELL_HEIGHT } from "./materials";
 import type { OwnerTerritory, OwnerViewLayout, OwnerWorkMarker } from "./layout/owner-view";
 
@@ -194,6 +193,10 @@ type OwnerViewLayerProps = {
 };
 
 export function OwnerViewLayer({ layout, onColleagueClick }: OwnerViewLayerProps) {
+  // Locked seats are NOT rendered here: they are view-independent landmarks,
+  // owned by the MapLandmarks layer mounted beside this one in both view modes
+  // (rendering them here too would double-draw every seat in Owner view).
+  // `layout.seats` still feeds the HUD's locked-seat count.
   return (
     <>
       {layout.territories.map((territory) => (
@@ -203,11 +206,6 @@ export function OwnerViewLayer({ layout, onColleagueClick }: OwnerViewLayerProps
             <WorkMarker key={marker.entity.id} marker={marker} />
           ))}
         </group>
-      ))}
-      {/* Seats render through the shared locked-seat piece (MapLandmarks) so a
-          future-teammate plot looks and behaves the same in both view modes. */}
-      {layout.seats.map((seat) => (
-        <LockedSeatLandmark key={seat.id} coord={seat.coord} />
       ))}
     </>
   );

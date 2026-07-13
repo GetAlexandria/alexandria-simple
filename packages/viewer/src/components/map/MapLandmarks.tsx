@@ -58,11 +58,18 @@ export function LockedSeatLandmark({ coord }: { coord: HexCoord }) {
   return (
     <>
       <FixedBuilding kind="locked-seat" coord={coord} onHoverChange={setHovered} />
+      {/* A quiet persistent marker so a resting (or touch, no-hover) seat still
+          reads as a locked plot rather than a bare ghost building; hovering
+          swaps in the fuller "future teammate" caption. */}
       {hovered ? (
         <LandmarkTooltip coord={coord} italic>
           Future teammate — this seat unlocks later.
         </LandmarkTooltip>
-      ) : null}
+      ) : (
+        <LandmarkTooltip coord={coord} muted>
+          Locked seat
+        </LandmarkTooltip>
+      )}
     </>
   );
 }

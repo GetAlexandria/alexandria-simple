@@ -926,11 +926,10 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
                 onSaveCards={infoHubBoard.saveCards}
                 runtimeClient={runtimeClient}
                 agents={projectState.agents}
-                // The colleague overlay's needs-a-human jump lands on the
-                // board filtered to that status (cards carry no colleague
-                // field to filter by; the overlay shows the colleague-scoped
-                // count).
-                onOpenColleagueBoard={() =>
+                // Opens the board's needs-a-human lane for everyone (cards
+                // carry no colleague field to filter by; the overlay shows the
+                // colleague-scoped count separately).
+                onOpenNeedsHumanBoard={() =>
                   navigate({
                     surface: "info",
                     searchParams: new URLSearchParams({ status: "needs-a-human" }),

@@ -94,8 +94,12 @@ export type MapTabViewProps = {
   runtimeClient: ViewerRuntimeClient;
   /** Agent roster (name/role) for the colleague overlay's identity line. */
   agents: readonly RuntimeAgent[];
-  /** Jump to the Info Hub board filtered to a colleague's needs-a-human cards. */
-  onOpenColleagueBoard: (colleagueId: string) => void;
+  /**
+   * Open the Info Hub board's needs-a-human lane (the whole lane — cards carry
+   * no colleague field, so it is not filtered to one colleague; the overlay's
+   * count is the colleague-scoped number).
+   */
+  onOpenNeedsHumanBoard: () => void;
   /** Open a colleague's per-agent page (the bench quick-bar link). */
   onOpenAgentPage: (colleagueId: string) => void;
 };
@@ -305,7 +309,7 @@ export function MapTabView({
   onSaveCards,
   runtimeClient,
   agents,
-  onOpenColleagueBoard,
+  onOpenNeedsHumanBoard,
   onOpenAgentPage,
 }: MapTabViewProps) {
   const [hasWebGLSupport] = useState(
@@ -906,7 +910,7 @@ export function MapTabView({
           journalError={colleagueJournal.error}
           needsHumanCount={openColleagueNeedsHuman}
           onOpenAgentPage={() => onOpenAgentPage(openColleagueId)}
-          onOpenBoard={() => onOpenColleagueBoard(openColleagueId)}
+          onOpenBoard={onOpenNeedsHumanBoard}
           onClose={() => setOpenColleagueId(null)}
         />
       ) : null}

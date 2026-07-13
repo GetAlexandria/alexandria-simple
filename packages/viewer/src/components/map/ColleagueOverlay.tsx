@@ -162,29 +162,34 @@ export function ColleagueOverlay({
           )}
 
           <div
-            className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3"
+            className="mt-3 flex flex-col gap-2 border-t pt-3"
             style={{ borderColor: MAP_FALLBACK_COLORS.border }}
           >
-            <ParchmentActionButton
-              label={`${identity.name}'s workspace`}
-              onClick={onOpenAgentPage}
-            />
-            <button
-              type="button"
-              data-testid="colleague-overlay-needs-human"
-              onClick={onOpenBoard}
-              className="rounded border px-2 py-1 text-xs font-semibold"
-              style={{
-                backgroundColor: MAP_FALLBACK_COLORS.field,
-                borderColor: MAP_FALLBACK_COLORS.border,
-                color: MAP_FALLBACK_COLORS.subtext,
-              }}
+            {/* The count is colleague-scoped (cards joined to the systems this
+                colleague runs); the action opens the board's whole
+                needs-a-human lane — cards carry no colleague field, so the
+                board can't be filtered to one colleague. Count and destination
+                are worded so they don't contradict. */}
+            <p
+              className="text-[11px]"
+              data-testid="colleague-overlay-needs-human-count"
+              style={{ color: MAP_FALLBACK_COLORS.subtext }}
             >
               {needsHumanCount === 1
-                ? "1 card needs a human"
-                : `${needsHumanCount} cards need a human`}
-              <span className="ml-1 opacity-70">· see on the board</span>
-            </button>
+                ? `1 of ${identity.name}'s cards needs a human`
+                : `${needsHumanCount} of ${identity.name}'s cards need a human`}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <ParchmentActionButton
+                label={`${identity.name}'s workspace`}
+                onClick={onOpenAgentPage}
+              />
+              <ParchmentActionButton
+                label="Open the board's needs-a-human lane"
+                onClick={onOpenBoard}
+                testId="colleague-overlay-needs-human"
+              />
+            </div>
           </div>
         </div>
       </div>
