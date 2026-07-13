@@ -7,16 +7,17 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { MathUtils, OrthographicCamera, Vector3 } from "three";
+import { CAMERA_ELEVATION_DEGREES, CAMERA_INITIAL_ZOOM } from "./scene-constants";
 
 const ARROW_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]);
 const PAN_SPEED = 12;
 const ZOOM_SPEED = 0.02;
 const MIN_ZOOM = 4;
 const MAX_ZOOM = 16;
-const INITIAL_ZOOM = 8;
 const CAMERA_DISTANCE = 24;
-/** Exported for camera-facing decals (labels, sprites) elsewhere in the map. */
-export const CAMERA_ELEVATION_DEGREES = 31;
+// Re-exported for camera-facing decals (labels, sprites); the value itself
+// lives in scene-constants.ts so the e2e projection math shares it.
+export { CAMERA_ELEVATION_DEGREES };
 
 const isEditableTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) {
@@ -43,7 +44,7 @@ export function CameraRig() {
   const { camera, size, gl } = useThree();
   const keys = useRef(new Set<string>());
   const target = useRef(new Vector3(0, 0, 0));
-  const zoom = useRef(INITIAL_ZOOM);
+  const zoom = useRef(CAMERA_INITIAL_ZOOM);
   // Last-applied camera inputs; lets useFrame skip the projection/pose update
   // on frames where nothing moved. NaN sentinels force the first frame.
   const lastApplied = useRef({

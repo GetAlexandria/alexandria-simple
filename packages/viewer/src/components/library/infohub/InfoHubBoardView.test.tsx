@@ -169,7 +169,7 @@ describe("InfoHubBoardView", () => {
           ],
           positions: [],
         },
-        onSaveMapState: async () => true,
+        onSaveMapState: async () => null,
         mapSaving: false,
       }),
     );

@@ -917,6 +917,7 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
                 state={mapState.state}
                 board={infoHubBoard.board}
                 boardError={infoHubBoard.error}
+                boardSaveError={infoHubBoard.saveError}
                 boardSaving={infoHubBoard.saving}
                 onSaveCards={infoHubBoard.saveCards}
               />

@@ -8,6 +8,7 @@
 
 import { MapSprite } from "./MapSprite";
 import type { HexCoord } from "./hex";
+import { STRAY_PILE_ELEVATION, STRAY_PILE_Z_OFFSET } from "./scene-constants";
 
 // Crop-plot PNGs are ~1.45:1 (width:height).
 const SPRITE_ASPECT = 1.45;
@@ -42,8 +43,8 @@ export function StrayPile({ coord, cardCount, onClick }: StrayPileProps) {
       textureUrl={`/map/sprites/crop-plot${stage}.png`}
       width={height * SPRITE_ASPECT}
       height={height}
-      elevation={0.42}
-      zOffset={0.18}
+      elevation={STRAY_PILE_ELEVATION}
+      zOffset={STRAY_PILE_Z_OFFSET}
       onClick={onClick}
     />
   );

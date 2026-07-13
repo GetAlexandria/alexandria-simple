@@ -32,6 +32,8 @@ type MapOverlayProps = {
   /** Board cards, or null while the board is unavailable on this surface. */
   cards: readonly InfoHubCard[] | null;
   boardError: string | null;
+  /** Last board write failure — a status/checklist click must not fail silently. */
+  boardSaveError: string | null;
   boardSaving: boolean;
   onMoveStatus: (cardId: string, status: WorkOrderStatus) => void;
   onToggleChecklistItem: (cardId: string, index: number) => void;
@@ -52,6 +54,7 @@ export function MapOverlay({
   state,
   cards,
   boardError,
+  boardSaveError,
   boardSaving,
   onMoveStatus,
   onToggleChecklistItem,
@@ -161,6 +164,21 @@ export function MapOverlay({
         </div>
 
         <div className="overflow-y-auto px-4 py-3">
+          {boardSaveError != null ? (
+            // Same failure the board surface banners; a status/checklist
+            // click from the overlay must not fail silently (PR #20 gate).
+            <p
+              className="mb-3 text-xs font-semibold"
+              data-testid="map-overlay-save-error"
+              role="alert"
+              style={{ color: MAP_FALLBACK_COLORS.heading }}
+            >
+              The card change didn&apos;t save:{" "}
+              <span className="font-normal" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+                {boardSaveError}
+              </span>
+            </p>
+          ) : null}
           {cards == null ? (
             <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
               {boardError ?? "Loading the Info Hub board…"}

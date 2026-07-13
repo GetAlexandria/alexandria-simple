@@ -18,8 +18,13 @@ export interface MapStateStore {
   loading: boolean;
   refresh(): Promise<void>;
   saveError: MapStateSaveError | null;
-  /** POSTs the full document with the loaded revision; true on success. */
-  saveState(next: MapState): Promise<boolean>;
+  /**
+   * POSTs the full document with the loaded revision. Resolves null on
+   * success, or the structured save error (also set as `saveError`) so a
+   * caller awaiting the result can branch on conflict-vs-error without
+   * racing the state update (the promote flow does).
+   */
+  saveState(next: MapState): Promise<MapStateSaveError | null>;
   saving: boolean;
   state: MapState | null;
 }
@@ -140,7 +145,7 @@ export function useMapState(runtimeClient: ViewerRuntimeClient, enabled = true):
   }, [enabled, loadState]);
 
   const saveState = useCallback(
-    async (next: MapState): Promise<boolean> => {
+    async (next: MapState): Promise<MapStateSaveError | null> => {
       // A save supersedes any in-flight load. Without this abort, a stale
       // GET resolving after the POST would roll state and revisionRef back:
       // the placed tile vanishes from the UI (though it is on disk) and the
@@ -156,12 +161,13 @@ export function useMapState(runtimeClient: ViewerRuntimeClient, enabled = true):
       );
       setSaving(false);
       if (result._tag === "Left") {
-        setSaveError(saveErrorFromRuntimeError(result.left));
-        return false;
+        const failure = saveErrorFromRuntimeError(result.left);
+        setSaveError(failure);
+        return failure;
       }
       setState(result.right.state);
       revisionRef.current = result.right.revision;
-      return true;
+      return null;
     },
     [runtimeClient],
   );

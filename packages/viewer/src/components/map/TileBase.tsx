@@ -11,8 +11,10 @@ import { useEffect, useState } from "react";
 import { MAP_LABEL_COLORS } from "./colors";
 import { MapLabel } from "./MapLabel";
 import { TILE_HEIGHT, TILE_INNER_TOP_HEIGHT, getSharedMapGeometries } from "./materials";
+import { TILE_LIFT } from "./scene-constants";
 
-export const TILE_LIFT = 0.24;
+// Re-exported from scene-constants so the e2e projection math shares it.
+export { TILE_LIFT };
 export const HOVER_LIFT = 0.04;
 
 type TileGroupProps = {

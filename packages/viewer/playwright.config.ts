@@ -9,6 +9,13 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
+        launchOptions: {
+          // Force software WebGL (ANGLE → SwiftShader) so the map-tab canvas
+          // specs render in headless CI runners with no GPU; without this the
+          // context probe fails and MapTabView shows its no-WebGL panel
+          // (PR #20 review gate). Harmless where a real GPU exists.
+          args: ["--use-gl=angle", "--use-angle=swiftshader-webgl"],
+        },
         viewport: { height: 900, width: 1280 },
       },
     },

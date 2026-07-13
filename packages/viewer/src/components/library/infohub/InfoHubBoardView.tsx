@@ -5,6 +5,7 @@ import {
   type InfoHubCard,
   type MapState,
 } from "../../../app/runtime/schemas";
+import type { MapStateSaveError } from "../hooks/useMapState";
 import { promotionDraftFromCard, withCardJoin, withEntityCreated } from "../../map/placement";
 import {
   activeWorkOrderLane,
@@ -119,14 +120,34 @@ export interface InfoHubBoardViewProps {
   mapState?: MapState | null;
   /**
    * Promote-to-project's one map write: useMapState's revision-guarded
-   * full-document save (the shared path for ALL map writes). Absent →
-   * promote is hidden.
+   * full-document save (the shared path for ALL map writes; resolves null
+   * on success, the structured save error otherwise — the promote flow
+   * branches conflict-vs-error on it). Absent → promote is hidden.
    */
-  onSaveMapState?: (next: MapState) => Promise<boolean>;
+  onSaveMapState?: (next: MapState) => Promise<MapStateSaveError | null>;
   /** Refresh remedy for a promote that hit a stale map revision (409). */
   onRefreshMapState?: () => void;
   mapSaving?: boolean;
 }
+
+/**
+ * A promote whose map half landed (the project exists) but whose board join
+ * hasn't yet: retrying skips entity creation and only re-attempts the join,
+ * so a flaky board save can never mint duplicate orphan projects
+ * (PR #20 review gate).
+ */
+type PendingPromotion = {
+  cardId: string;
+  contextId: string;
+  entityId: string;
+  entityName: string;
+};
+
+type PromoteFailure = {
+  /** conflict → offer "Refresh map data"; error/join → message only. */
+  kind: "conflict" | "error" | "join";
+  message: string;
+};
 
 export function InfoHubBoardView({
   board,
@@ -161,32 +182,46 @@ export function InfoHubBoardView({
   const [cardEntityId, setCardEntityId] = useState("");
   // Promote-to-project state (detail modal footer).
   const [promoteContextId, setPromoteContextId] = useState("");
-  const [promoteError, setPromoteError] = useState<string | null>(null);
+  const [promoteError, setPromoteError] = useState<PromoteFailure | null>(null);
   const [promoting, setPromoting] = useState(false);
+  const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
   const titleInputRef = useRef<HTMLInputElement | null>(null);
 
-  const mapContexts = mapState?.contexts ?? [];
+  const mapContexts = useMemo(() => mapState?.contexts ?? [], [mapState]);
   const mapEntities = useMemo(() => mapState?.entities ?? [], [mapState]);
   const joinUiAvailable = mapState != null && mapContexts.length > 0;
+  // Stored joins are reconciled against the live map (PR #20 gate): an id
+  // whose context/entity no longer exists (or whose entity moved contexts)
+  // renders as unselected, and the SAVE writes exactly what the form shows —
+  // never a stale join back.
+  const effectiveCardContextId = mapContexts.some((context) => context.id === cardContextId)
+    ? cardContextId
+    : "";
   // The entity picker narrows to the picked context; without a context it
   // offers every entity (picking one adopts its context, below).
   const entityOptions = useMemo(
     () =>
-      cardContextId.length === 0
+      effectiveCardContextId.length === 0
         ? mapEntities
-        : mapEntities.filter((entity) => entity.contextId === cardContextId),
-    [mapEntities, cardContextId],
+        : mapEntities.filter((entity) => entity.contextId === effectiveCardContextId),
+    [mapEntities, effectiveCardContextId],
   );
+  const effectiveCardEntityId = entityOptions.some((entity) => entity.id === cardEntityId)
+    ? cardEntityId
+    : "";
 
   // Seed the promote picker whenever the detail modal lands on a new card:
-  // its own context when it has one, otherwise "pick one".
+  // its own context when that context still exists on the map, otherwise
+  // "pick one" (with a dead-context hint rendered in the footer).
   const detailCardId = detailCard?.id ?? null;
   const detailCardContextId = detailCard?.contextId ?? "";
   useEffect(() => {
-    setPromoteContextId(detailCardContextId);
+    setPromoteContextId(
+      mapContexts.some((context) => context.id === detailCardContextId) ? detailCardContextId : "",
+    );
     setPromoteError(null);
-  }, [detailCardId, detailCardContextId]);
+  }, [detailCardId, detailCardContextId, mapContexts]);
 
   const cards = useMemo(() => sortCardsByPriority(board.cards), [board.cards]);
   // Refreshed whenever the board reloads so derived archive membership can
@@ -301,7 +336,10 @@ export function InfoHubBoardView({
       const title = cardTitle.trim() || WORK_ORDER_TYPE_LABELS[cardType];
       const checklist = parseChecklist(cardChecklist);
       // Join fields ride through withCardJoin so ""/absent means "omit the
-      // field" — never an empty string on disk.
+      // field" — never an empty string on disk. With the join UI visible the
+      // RECONCILED ids are written (what the pickers display); without map
+      // state the stored ids pass through untouched, so editing a card while
+      // the map is unavailable never strips its joins.
       return withCardJoin(
         {
           ...(existing?.archived == null ? {} : { archived: existing.archived }),
@@ -318,7 +356,9 @@ export function InfoHubBoardView({
           title,
           type: cardType,
         },
-        { contextId: cardContextId, entityId: cardEntityId },
+        joinUiAvailable
+          ? { contextId: effectiveCardContextId, entityId: effectiveCardEntityId }
+          : { contextId: cardContextId, entityId: cardEntityId },
       );
     },
     [
@@ -331,6 +371,9 @@ export function InfoHubBoardView({
       cardTitle,
       cardType,
       cards,
+      effectiveCardContextId,
+      effectiveCardEntityId,
+      joinUiAvailable,
     ],
   );
 
@@ -354,38 +397,67 @@ export function InfoHubBoardView({
   /**
    * Promote a card to a project (plan §1.1): one revision-guarded map save
    * creating the (unplaced) entity, then the card joins it through the
-   * existing board save path. On a map conflict the card is left untouched.
+   * existing board save path. A map failure leaves the card untouched and
+   * branches conflict-vs-error copy; a board-join failure parks the created
+   * entity as a PendingPromotion so retrying only re-attempts the join.
    */
   const promoteCard = useCallback(
     async (card: InfoHubCard, contextId: string) => {
-      if (mapState == null || onSaveMapState == null || contextId.length === 0) {
+      if (mapState == null || onSaveMapState == null) {
         return;
       }
       setPromoting(true);
       setPromoteError(null);
-      const { next, entity } = withEntityCreated(mapState, promotionDraftFromCard(card, contextId));
-      const mapSaved = await onSaveMapState(next);
-      if (!mapSaved) {
-        setPromoteError(
-          "Couldn't add the project to the map (it may have changed since it loaded) — refresh the map data and retry.",
+      let created = pendingPromotion?.cardId === card.id ? pendingPromotion : null;
+      if (created == null) {
+        if (contextId.length === 0) {
+          setPromoting(false);
+          return;
+        }
+        const { next, entity } = withEntityCreated(
+          mapState,
+          promotionDraftFromCard(card, contextId),
         );
-        setPromoting(false);
-        return;
+        const failure = await onSaveMapState(next);
+        if (failure != null) {
+          setPromoteError(
+            failure.kind === "conflict"
+              ? {
+                  kind: "conflict",
+                  message: "The map changed since it loaded here — refresh the map data and retry.",
+                }
+              : {
+                  kind: "error",
+                  message: `Couldn't add the project to the map: ${failure.message}`,
+                },
+          );
+          setPromoting(false);
+          return;
+        }
+        created = { cardId: card.id, contextId, entityId: entity.id, entityName: entity.name };
+        setPendingPromotion(created);
       }
-      const joined = withCardJoin(card, { contextId, entityId: entity.id });
+      const joined = withCardJoin(card, {
+        contextId: created.contextId,
+        entityId: created.entityId,
+      });
       const result = await onSaveCards(
         cards.map((candidate) => (candidate.id === card.id ? joined : candidate)),
       );
       setPromoting(false);
       if (result == null) {
-        setPromoteError(
-          `The project was created on the map, but joining the card failed — pick "${entity.name}" in the card form to finish the join.`,
-        );
+        setPromoteError({
+          kind: "join",
+          message:
+            `The project "${created.entityName}" is on the map, but joining the card failed — ` +
+            "retry the join.",
+        });
         return;
       }
+      setPendingPromotion(null);
       setDetailCard(joined);
     },
-    [cards, mapState, onSaveCards, onSaveMapState],
+    [cards, mapState, onSaveCards, onSaveMapState, pendingPromotion],
   );
 
   const handleSubmit = useCallback(
@@ -765,6 +837,9 @@ export function InfoHubBoardView({
                       Map context
                       <select
                         aria-label="Promote target context"
+                        // Once the project exists (a parked join retry), the
+                        // context is settled — only the join is left.
+                        disabled={pendingPromotion?.cardId === detailCard.id}
                         onChange={(event) => setPromoteContextId(event.target.value)}
                         value={promoteContextId}
                       >
@@ -781,19 +856,36 @@ export function InfoHubBoardView({
                         className="info-hub-action-btn"
                         data-variant="positive"
                         data-testid="promote-card-button"
-                        disabled={saving || mapSaving || promoting || promoteContextId.length === 0}
+                        disabled={
+                          saving ||
+                          mapSaving ||
+                          promoting ||
+                          (pendingPromotion?.cardId !== detailCard.id &&
+                            promoteContextId.length === 0)
+                        }
                         onClick={() => void promoteCard(detailCard, promoteContextId)}
                         title="Create an unplaced project on the map from this card and join the card to it"
                         type="button"
                       >
-                        {promoting ? "Promoting…" : "Promote to project"}
+                        {promoting
+                          ? "Promoting…"
+                          : pendingPromotion?.cardId === detailCard.id
+                            ? "Retry join"
+                            : "Promote to project"}
                       </button>
                     </div>
                   </div>
+                  {detailCard.contextId != null &&
+                  !mapContexts.some((context) => context.id === detailCard.contextId) ? (
+                    <p className="info-hub-card-scope mt-2" data-testid="promote-context-gone">
+                      This card&apos;s stored context (&quot;{detailCard.contextId}&quot;) no longer
+                      exists on the map — pick one.
+                    </p>
+                  ) : null}
                   {promoteError != null ? (
                     <p className="info-hub-form-error mt-2" data-testid="promote-card-error">
-                      {promoteError}
-                      {onRefreshMapState != null ? (
+                      {promoteError.message}
+                      {promoteError.kind === "conflict" && onRefreshMapState != null ? (
                         <button
                           className="info-hub-action-btn ml-2"
                           onClick={onRefreshMapState}
@@ -899,7 +991,10 @@ export function InfoHubBoardView({
                       setCardEntityId("");
                     }
                   }}
-                  value={cardContextId}
+                  // The RECONCILED id: a stored context that left the map
+                  // renders (and saves) as "No context", never silently
+                  // written back stale.
+                  value={effectiveCardContextId}
                 >
                   <option value="">No context</option>
                   {mapContexts.map((context) => (
@@ -923,7 +1018,10 @@ export function InfoHubBoardView({
                       setCardContextId(entity.contextId);
                     }
                   }}
-                  value={cardEntityId}
+                  // The RECONCILED id: a stored entity that left the map (or
+                  // moved contexts) renders (and saves) as Loose — the write
+                  // always matches the display.
+                  value={effectiveCardEntityId}
                 >
                   <option value="">Loose (stray pile when a context is set)</option>
                   {entityOptions.map((entity) => (

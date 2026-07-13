@@ -11,8 +11,8 @@
 // and a failed sprite fetch drops the decoration layer instead of killing
 // the whole route.
 
-import { Canvas } from "@react-three/fiber";
-import { Component, Suspense, type ReactNode } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Component, Suspense, useRef, type ReactNode } from "react";
 import { MAP_SCENE_COLORS, type HexTint } from "./colors";
 import type { HexCoord, HexGridCell } from "./hex";
 import type { HexCellVisualState } from "./HexCell";
@@ -34,6 +34,25 @@ class SpriteErrorBoundary extends Component<{ children: ReactNode }, { hasError:
   override render(): ReactNode {
     return this.state.hasError ? null : this.props.children;
   }
+}
+
+/**
+ * Stamps `data-map-first-frame="true"` on the canvas element once the first
+ * frame has run — a deterministic "the scene is live and CameraRig's pose is
+ * applied" signal the Playwright suite waits for instead of a fixed sleep
+ * (PR #20 review gate). Default priority (0) runs after CameraRig's -1 and,
+ * unlike a positive priority, does NOT take over r3f's automatic render loop.
+ */
+function FirstFrameFlag() {
+  const gl = useThree((state) => state.gl);
+  const stamped = useRef(false);
+  useFrame(() => {
+    if (!stamped.current) {
+      stamped.current = true;
+      gl.domElement.dataset.mapFirstFrame = "true";
+    }
+  });
+  return null;
 }
 
 type MapSceneProps = {
@@ -84,6 +103,7 @@ export function MapScene({
       />
 
       <CameraRig />
+      <FirstFrameFlag />
       <BackgroundPlane parchmentSeed={parchmentSeed} />
       <HexGrid
         cells={cells}

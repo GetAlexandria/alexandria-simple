@@ -4,17 +4,32 @@
 // the two state files. Canvas clicks are computed, not guessed: the spec
 // recomputes the Domain-view layout from the same fixture state the server
 // serves (tests/map-board-fixture.ts), then projects tile/pile world
-// coordinates through CameraRig's deterministic steady-state pose
-// (target origin, zoom 8, elevation 31°, orthographic). This is also where
-// the quarantine HexTile interaction coverage lands (issue #9 carry-over:
-// hover affordance, completed tiles remain clickable) — behaviors that need
-// a real DOM + WebGL, which bun:test lacks.
+// coordinates through CameraRig's steady-state pose using the SAME constants
+// the scene imports (src/components/map/scene-constants.ts), so a camera or
+// geometry tweak breaks these tests loudly instead of skewing them silently.
+// This is also where the quarantine HexTile interaction coverage lands
+// (issue #9 carry-over: hover affordance, completed tiles remain clickable) —
+// behaviors that need a real DOM + WebGL, which bun:test lacks.
+//
+// WebGL in CI: playwright.config.ts forces software GL (ANGLE → SwiftShader).
+// If a runner still can't produce a context, the canvas-click tests SKIP with
+// a message (openMapTab's probe) rather than timing out against the
+// no-WebGL fallback panel.
 
 import { expect, test, type Page } from "@playwright/test";
-import { generateHexGrid, hexToWorld, HEX_SIZE } from "../src/components/map/hex";
+import { generateHexGrid, hexToWorld, HEX_SIZE, type HexCoord } from "../src/components/map/hex";
 import { computeDomainViewLayout } from "../src/components/map/layout/domain-view";
 import { mapStateGridRadius } from "../src/components/map/map-grid";
 import { strayCardCountsByContext } from "../src/components/map/placement";
+import {
+  CAMERA_ELEVATION_DEGREES,
+  CAMERA_INITIAL_ZOOM,
+  HEX_CELL_HEIGHT,
+  STRAY_PILE_ELEVATION,
+  STRAY_PILE_Z_OFFSET,
+  TILE_HEIGHT,
+  TILE_LIFT,
+} from "../src/components/map/scene-constants";
 import { initialFixtureInfoHubCards, initialFixtureMapState } from "./map-board-fixture";
 
 const FIXTURE_MAP_STATE = initialFixtureMapState();
@@ -25,16 +40,14 @@ const FIXTURE_LAYOUT = computeDomainViewLayout(
   { strayCardCounts: strayCardCountsByContext(FIXTURE_CARDS) },
 );
 
-// CameraRig steady state (CameraRig.tsx): INITIAL_ZOOM half-height, the
-// exported elevation, orthographic, looking at the origin. For an ortho
+// CameraRig steady state: orthographic, looking at the origin, initial zoom
+// (world units of half viewport height), fixed elevation. For an ortho
 // camera the position drops out: cameraX = worldX, cameraY = y·cos(e) − z·sin(e).
-const CAMERA_ZOOM = 8;
-const CAMERA_ELEVATION_RADIANS = (31 * Math.PI) / 180;
-// Tile tops sit at TILE_LIFT + TILE_HEIGHT/2 (TileBase/materials).
-const TILE_TOP_Y = 0.24 + 0.22 / 2;
-// StrayPile sprite center (StrayPile.tsx elevation/zOffset).
-const PILE_Y = 0.42;
-const PILE_Z_OFFSET = 0.18;
+const CAMERA_ELEVATION_RADIANS = (CAMERA_ELEVATION_DEGREES * Math.PI) / 180;
+/** Entity tile top: group lift + half the tile cylinder height. */
+const TILE_TOP_Y = TILE_LIFT + TILE_HEIGHT / 2;
+/** Ground cell top: cells sit centered on y = 0. */
+const GROUND_TOP_Y = HEX_CELL_HEIGHT / 2;
 
 async function canvasPointForWorld(
   page: Page,
@@ -47,10 +60,10 @@ async function canvasPointForWorld(
     throw new Error("map canvas is not visible");
   }
   const aspect = box.width / box.height;
-  const ndcX = worldX / (CAMERA_ZOOM * aspect);
+  const ndcX = worldX / (CAMERA_INITIAL_ZOOM * aspect);
   const ndcY =
     (worldY * Math.cos(CAMERA_ELEVATION_RADIANS) - worldZ * Math.sin(CAMERA_ELEVATION_RADIANS)) /
-    CAMERA_ZOOM;
+    CAMERA_INITIAL_ZOOM;
   return {
     x: box.x + ((ndcX + 1) / 2) * box.width,
     y: box.y + ((1 - ndcY) / 2) * box.height,
@@ -69,18 +82,66 @@ function tileWorldPoint(entityId: string): { x: number; y: number; z: number } {
   return { x, y: TILE_TOP_Y, z };
 }
 
+function viewerPileCoord(): HexCoord {
+  const pile = FIXTURE_LAYOUT.piles.find((candidate) => candidate.contextId === "viewer");
+  if (pile == null) {
+    throw new Error("fixture layout has no viewer pile");
+  }
+  return pile.coord;
+}
+
+/** The viewer pile sprite's world center (elevated, z-offset from its hex). */
+function viewerPileSpritePoint(): { x: number; y: number; z: number } {
+  const [x, z] = hexToWorld(viewerPileCoord(), HEX_SIZE);
+  return { x, y: STRAY_PILE_ELEVATION, z: z + STRAY_PILE_Z_OFFSET };
+}
+
+/**
+ * Opens the Map tab and waits for the scene's deterministic readiness
+ * signal — the `data-map-first-frame` attribute MapScene stamps after the
+ * first rendered frame (CameraRig's pose applied) — instead of a fixed
+ * sleep. Skips the calling test when the environment truly has no WebGL.
+ */
 async function openMapTab(page: Page): Promise<void> {
   await page.request.post("/__fixture/reset-map-board");
   await page.goto("/map");
+  const hasWebGL = await page.evaluate(() => {
+    try {
+      const canvas = document.createElement("canvas");
+      return canvas.getContext("webgl2") != null || canvas.getContext("webgl") != null;
+    } catch {
+      return false;
+    }
+  });
+  test.skip(
+    !hasWebGL,
+    "No WebGL context available (even with the SwiftShader launch flags) — canvas-click coverage skipped.",
+  );
   await expect(page.getByTestId("map-placement-panel")).toBeVisible();
-  // Give the lazy three.js chunk + first rendered frame a beat: the canvas
-  // must be laid out before world → screen projection makes sense.
-  await expect(page.locator('[data-testid="map-field"] canvas')).toBeVisible();
-  await page.waitForTimeout(600);
+  await expect(
+    page.locator('[data-testid="map-field"] canvas[data-map-first-frame="true"]'),
+  ).toBeAttached();
+}
+
+/**
+ * Moves the mouse onto a scene object and waits for its pointer-cursor
+ * affordance. Deterministic mount signal for tiles/piles: the decoration
+ * layer suspends on sprite textures, and three only re-raycasts on a fresh
+ * pointer move, so each poll jiggles the mouse.
+ */
+async function hoverUntilPointer(page: Page, point: { x: number; y: number }): Promise<void> {
+  await expect
+    .poll(async () => {
+      await page.mouse.move(point.x + 4, point.y);
+      await page.mouse.move(point.x, point.y);
+      return page.evaluate(() => document.body.style.cursor);
+    })
+    .toBe("pointer");
 }
 
 async function clickWorldPoint(page: Page, world: { x: number; y: number; z: number }) {
   const point = await canvasPointForWorld(page, world.x, world.y, world.z);
+  await hoverUntilPointer(page, point);
   await page.mouse.click(point.x, point.y);
 }
 
@@ -94,8 +155,7 @@ test("tile click opens the entity overlay with its joined board cards; hover sho
 
   // Quarantine HexTile coverage: hovering a clickable tile flips the body
   // cursor to pointer (useTileInteraction).
-  await page.mouse.move(point.x, point.y);
-  await expect.poll(async () => page.evaluate(() => document.body.style.cursor)).toBe("pointer");
+  await hoverUntilPointer(page, point);
 
   await page.mouse.click(point.x, point.y);
   await expect(page.getByTestId("map-overlay")).toBeVisible();
@@ -129,12 +189,7 @@ test("tile click opens the entity overlay with its joined board cards; hover sho
 test("pile click opens the context's loose cards (exactly the stray set)", async ({ page }) => {
   await openMapTab(page);
 
-  const pile = FIXTURE_LAYOUT.piles.find((candidate) => candidate.contextId === "viewer");
-  if (pile == null) {
-    throw new Error("fixture layout has no viewer pile");
-  }
-  const [x, z] = hexToWorld(pile.coord, HEX_SIZE);
-  await clickWorldPoint(page, { x, y: PILE_Y, z: z + PILE_Z_OFFSET });
+  await clickWorldPoint(page, viewerPileSpritePoint());
 
   await expect(page.getByTestId("map-overlay")).toBeVisible();
   await expect(page.getByTestId("map-overlay-title")).toHaveText("Loose cards");
@@ -185,6 +240,51 @@ test("entity create writes through the revision-guarded save and lands in the Un
   expect(created?.colleague).toBe("raven");
   // Created unplaced: no position was written.
   expect(state.positions.some((position) => position.entityId === "sys-night-watch")).toBe(false);
+});
+
+test("a stray pile never blocks placement: in placement mode the sprite is inert and the cell places", async ({
+  page,
+}) => {
+  await openMapTab(page);
+
+  // A fresh viewer project to place.
+  await page.getByTestId("map-new-entity").click();
+  await page.getByLabel("Entity name").fill("Pile squatter");
+  await page.getByLabel("Entity kind").selectOption("project");
+  await page.getByLabel("Entity context").selectOption("viewer");
+  await page.getByTestId("map-entity-form-submit").click();
+  await expect(page.getByTestId("map-placement-panel")).toBeVisible();
+
+  // Prove the pile sprite is mounted AND interactive before placement mode —
+  // otherwise a pass-through click would be trivially true.
+  const spritePoint = await canvasPointForWorld(
+    page,
+    viewerPileSpritePoint().x,
+    viewerPileSpritePoint().y,
+    viewerPileSpritePoint().z,
+  );
+  await hoverUntilPointer(page, spritePoint);
+
+  // Enter placement mode and click the PILE'S CELL — a free patch cell, so
+  // it is placeable. Pre-fix the always-clickable sprite swallowed this
+  // click (stopPropagation) and cancelled placement; now the sprite goes
+  // raycast-inert during placement and the click reaches the cell.
+  await page.getByRole("button", { name: /Pile squatter/ }).click();
+  const pileCell = viewerPileCoord();
+  const [cellX, cellZ] = hexToWorld(pileCell, HEX_SIZE);
+  await clickWorldPoint(page, { x: cellX, y: GROUND_TOP_Y, z: cellZ });
+
+  await expect
+    .poll(async () => {
+      const state = (await (await page.request.get("/api/map/state")).json()) as {
+        positions: { entityId: string; q: number; r: number }[];
+      };
+      const position = state.positions.find((entry) => entry.entityId === "prj-pile-squatter");
+      return position == null ? null : `${position.q},${position.r}`;
+    })
+    .toBe(`${pileCell.q},${pileCell.r}`);
+  // Placement completed (no overlay opened, mode exited).
+  await expect(page.locator('[data-testid="map-overlay"]')).toHaveCount(0);
 });
 
 test("board form joins a card to a context/entity; promote creates an unplaced project", async ({

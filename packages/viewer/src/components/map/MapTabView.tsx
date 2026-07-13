@@ -55,8 +55,8 @@ export type MapTabViewProps = {
   error: string | null;
   loading: boolean;
   onRefresh: () => void;
-  /** Full-document save through the loaded revision; true on success. */
-  onSave: (next: MapState) => Promise<boolean>;
+  /** Full-document save through the loaded revision; null on success. */
+  onSave: (next: MapState) => Promise<MapStateSaveError | null>;
   saveError: MapStateSaveError | null;
   saving: boolean;
   state: MapState | null;
@@ -67,6 +67,8 @@ export type MapTabViewProps = {
    */
   board: InfoHubBoard | null;
   boardError: string | null;
+  /** Last board WRITE failure (useInfoHubBoard.saveError) — the overlay renders it. */
+  boardSaveError: string | null;
   boardSaving: boolean;
   /** The EXISTING board save path (useInfoHubBoard.saveCards) — overlay card writes go here. */
   onSaveCards: (cards: readonly InfoHubCard[]) => Promise<InfoHubBoard | null>;
@@ -276,6 +278,7 @@ export function MapTabView({
   state,
   board,
   boardError,
+  boardSaveError,
   boardSaving,
   onSaveCards,
 }: MapTabViewProps) {
@@ -379,7 +382,7 @@ export function MapTabView({
       if (state == null || placingEntity == null) {
         return;
       }
-      if (await onSave(withEntityPlaced(state, placingEntity, coord))) {
+      if ((await onSave(withEntityPlaced(state, placingEntity, coord))) == null) {
         setPlacingEntityId(null);
       }
     },
@@ -432,26 +435,46 @@ export function MapTabView({
     [entityForm, state],
   );
 
+  // If the edited entity vanishes from the loaded state while the form is
+  // open (e.g. a refresh after an external delete), close the form with a
+  // notice instead of letting a submit route to a silent no-op edit
+  // (PR #20 review gate).
+  const [entityGoneNotice, setEntityGoneNotice] = useState<string | null>(null);
+  useEffect(() => {
+    if (state != null && entityForm?.entityId != null && editingEntity == null) {
+      setEntityForm(null);
+      setEntityGoneNotice(
+        `Entity "${entityForm.entityId}" is no longer in the map state — it may have been removed elsewhere.`,
+      );
+    }
+  }, [state, entityForm, editingEntity]);
+
   const submitEntityForm = useCallback(
     async (draft: MapEntityDraft): Promise<boolean> => {
       if (state == null) {
+        return false;
+      }
+      if (entityForm?.entityId != null && editingEntity == null) {
+        // Belt and braces alongside the effect above: never submit an edit
+        // for an entity the loaded document no longer contains.
         return false;
       }
       const next =
         entityForm?.entityId == null
           ? withEntityCreated(state, draft).next
           : withEntityEdited(state, entityForm.entityId, draft);
-      const saved = await onSave(next);
-      if (saved) {
-        setEntityForm(null);
+      if ((await onSave(next)) != null) {
+        return false;
       }
-      return saved;
+      setEntityForm(null);
+      return true;
     },
-    [state, entityForm, onSave],
+    [state, entityForm, editingEntity, onSave],
   );
 
   const openEntityForm = useCallback((entityId: string | null) => {
     setEntityForm({ entityId });
+    setEntityGoneNotice(null);
     setPlacingEntityId(null);
     setOverlayTarget(null);
   }, []);
@@ -709,6 +732,23 @@ export function MapTabView({
         </div>
       ) : null}
 
+      {entityGoneNotice != null ? (
+        <div
+          className="absolute left-1/2 top-16 z-10 flex -translate-x-1/2 items-center gap-3 rounded border px-3 py-2"
+          style={{
+            backgroundColor: MAP_FALLBACK_COLORS.panel,
+            borderColor: MAP_FALLBACK_COLORS.border,
+          }}
+          role="alert"
+          data-testid="map-entity-gone-notice"
+        >
+          <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+            {entityGoneNotice}
+          </p>
+          <ParchmentActionButton label="Dismiss" onClick={() => setEntityGoneNotice(null)} />
+        </div>
+      ) : null}
+
       {placingEntity != null && placeableKeys.size === 0 ? (
         <div
           className="absolute left-1/2 top-16 z-10 -translate-x-1/2 rounded border px-3 py-2"
@@ -739,7 +779,12 @@ export function MapTabView({
           <DomainView
             layout={domainLayout}
             onTileClick={handleTileClick}
-            onPileClick={handlePileClick}
+            // Undefined during placement: a pile by construction sits on a
+            // free (placeable) patch cell, and a clickable sprite would
+            // swallow the placement click (stopPropagation) and cancel the
+            // mode. With no onClick the sprite reverts to raycast-inert, so
+            // clicks and hover pass through to the cell (PR #20 gate).
+            onPileClick={placingEntityId == null ? handlePileClick : undefined}
           />
         ) : viewMode === "owner" && ownerLayout != null ? (
           <OwnerViewLayer layout={ownerLayout} />
@@ -752,6 +797,7 @@ export function MapTabView({
           state={state}
           cards={board?.cards ?? null}
           boardError={boardError}
+          boardSaveError={boardSaveError}
           boardSaving={boardSaving}
           onMoveStatus={moveCardStatus}
           onToggleChecklistItem={toggleChecklistItem}
