@@ -70,6 +70,20 @@
       "colleague": "damien",
       "cadence": "30m",
       "lifecycle": "planted"
+    },
+    {
+      "id": "prj-authenticate-gmail-calendar-connectors-for-the-duty-loop",
+      "kind": "project",
+      "name": "Authenticate Gmail/Calendar connectors for the duty loop",
+      "contextId": "viewer",
+      "lifecycle": "active"
+    },
+    {
+      "id": "prj-map-glow-up",
+      "kind": "project",
+      "name": "Map Glow Up",
+      "contextId": "viewer",
+      "lifecycle": "active"
     }
   ],
   "positions": [
@@ -78,12 +92,6 @@
       "r": -2,
       "entityType": "system",
       "entityId": "sys-raven-duty-loop"
-    },
-    {
-      "q": 1,
-      "r": -3,
-      "entityType": "project",
-      "entityId": "prj-map-tab"
     },
     {
       "q": -4,
@@ -132,6 +140,24 @@
       "r": 0,
       "entityType": "landmark",
       "entityId": "seat:bench-4"
+    },
+    {
+      "q": 2,
+      "r": -5,
+      "entityType": "project",
+      "entityId": "prj-map-glow-up"
+    },
+    {
+      "q": 2,
+      "r": -4,
+      "entityType": "project",
+      "entityId": "prj-authenticate-gmail-calendar-connectors-for-the-duty-loop"
+    },
+    {
+      "q": 1,
+      "r": -5,
+      "entityType": "project",
+      "entityId": "prj-map-tab"
     }
   ]
 }

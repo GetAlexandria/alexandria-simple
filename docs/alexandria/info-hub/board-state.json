@@ -118,11 +118,56 @@
       "type": "task",
       "status": "needs-a-human",
       "area": "runtime",
+      "contextId": "viewer",
+      "entityId": "prj-authenticate-gmail-calendar-connectors-for-the-duty-loop",
       "priority": 15,
       "source": "alexandria-simple-setup",
       "created": "2026-07-12",
       "title": "Authenticate Gmail/Calendar connectors for the duty loop",
       "detail": "The duty loop's inbox checks (duty-loop skill, step 2) degrade to no-ops until the Gmail and Google Calendar MCP connectors are authenticated for the account the cron runs as (claude.ai connector settings). A human has to do the OAuth dance — first real resident of this lane."
+    },
+    {
+      "id": "wo-map-declutter-colleagues-to-tray",
+      "type": "task",
+      "status": "open",
+      "area": "viewer",
+      "contextId": "viewer",
+      "entityId": "prj-map-glow-up",
+      "priority": 15,
+      "source": "board:director",
+      "created": "2026-07-13",
+      "title": "Declutter the map: colleagues live in the coin tray; Owner view groups by owner",
+      "detail": "Both Domain view and Owner view carry a full row of colleague furniture — colleague buildings, the campfire, and four locked bench seats — across the neutral middle of the map. That furniture predates the coin tray (RavenBench), which is now a fixed top bar on every tab (the Map tab included) and is already the agent action surface: a coin fires plays today. With the tray in place, the map no longer needs to host colleagues.\n\nDecisions (director, 2026-07-13):\n- Domain view loses the entire landmark row: colleague buildings, campfire, and locked seats.\n- Owner view works exactly like Domain view (same work-geography — contexts, projects, systems, stray piles) except each region is labelled and grouped by its owner (e.g. 'DANVERS', from domain.owner with the human:/colleague: prefix stripped) instead of its domain name (e.g. 'SOFTWARE'). Ownership is not assumed 1:1 with domains: a domain may map to a single owner (then the two views differ only in the label), or ownership may regroup regions.\n- The two features the colleague building overlay carried — the work journal and the Needs-a-Human lane — move onto the colleague's coin as coin actions.\n- The colleague-level escalation cue moves with them: a coin glows or badges when its colleague has a Needs-a-Human item or an overdue/unhealthy system, preserving the at-a-glance signal the building glow used to give. Tile-level Needs-a-Human glow stays on the work tile (L1) unchanged.\n\nScope:\n- Domain-view layout: stop rendering the colleague/seat/campfire landmark layer (MapLandmarks renders in both modes today; skip the whole row in Domain view).\n- Owner view: reuse the Domain-view work layout; label and group regions by domain.owner rather than name; keep an owner-less region visibly unclaimed (demand signal, plan §1.2).\n- Coin (RavenBench): add Journal and Needs-a-Human actions to the coin action menu; wire the coin lit/activated state to a colleague-level escalation rollup.\n\nOut of scope:\n- Placement UX for unplaced projects (tracked separately, in flight).\n- The long-term question of whether the map becomes purely work and whether Owner view survives — noted in the Map Glow Up thread, not decided here.",
+      "checklist": [
+        {
+          "done": false,
+          "text": "Domain view renders no colleague buildings, campfire, or locked seats — work-geography only"
+        },
+        {
+          "done": false,
+          "text": "Owner view shows the same work layout as Domain view, with each region labelled and grouped by owner (e.g. DANVERS) instead of domain name"
+        },
+        {
+          "done": false,
+          "text": "Owner-less regions render visibly unclaimed in Owner view (demand signal)"
+        },
+        {
+          "done": false,
+          "text": "The coin action menu opens the colleague's work journal"
+        },
+        {
+          "done": false,
+          "text": "The coin action menu opens the Needs-a-Human lane"
+        },
+        {
+          "done": false,
+          "text": "A coin glows or badges when its colleague has a Needs-a-Human item or an overdue system"
+        },
+        {
+          "done": false,
+          "text": "Tile-level Needs-a-Human glow still renders on the work tile (L1 unchanged)"
+        }
+      ]
     }
   ]
 }
