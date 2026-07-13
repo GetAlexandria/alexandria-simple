@@ -278,6 +278,63 @@ export const SYSTEM_TILE_COLORS = {
   glyphHaloHibernating: "#d4cec4",
 } as const;
 
+// --- Ambient signal treatments (L1, plan §1.4) -----------------------------
+
+/**
+ * The LOOK of the four derived map signals (the WHEN lives in ./signals).
+ * Promoted from Lifebuild's smoke-signal components (quarantine
+ * `HexTile.r3-e4918c9.tsx` / `SystemHexTile.r3-e4918c9.tsx`), which carried
+ * these as inline hex literals per component — Gate 3 consolidates them here
+ * as the single palette for the map surface. Philosophy (ported verbatim):
+ * ambient, not alarming; warm treatments, no badges or counts.
+ */
+export const MAP_SIGNAL_COLORS = {
+  /**
+   * "Needs a human" emissive glow — ported from the work-at-hand stream glow
+   * (Lifebuild's gold/silver/bronze), recolored to a single warm brand tone: a
+   * lantern lit on the tile where a human is wanted. Steady (not animated) so
+   * it reads calmer than the overdue flicker it takes precedence over.
+   */
+  needsHumanGlow: "#e2a13a",
+  /** Top-cap (accent ring) emissive intensity for the needs-a-human glow. */
+  needsHumanGlowIntensity: 0.4,
+  /**
+   * Inner-disk emissive intensity — the large top surface, so this carries the
+   * glow's legibility. Higher than the ring so the whole tile top reads as lit
+   * against the bright parchment, while staying a warm steady glow (ambient,
+   * not a flashing alert).
+   */
+  needsHumanInnerGlowIntensity: 0.28,
+  /** Staleness sepia mix target (ported `sepia()`: mix toward this…). */
+  sepiaTarget: "#b5a99a",
+  /** …at this weight (40%). */
+  sepiaWeight: 0.4,
+  /** Drained (unlit) health dot on a degraded system tile. */
+  healthDotEmpty: "#c7bba7",
+  /**
+   * Dim "unknown" health dot: a system with no measurable journal beat (no
+   * colleague, no journal file / no readable entry, or the journals endpoint
+   * unavailable). Reads as unmeasured/calm — distinct from the drained dots of
+   * a lapsed loop, and never paired with a flicker.
+   */
+  healthDotUnknown: "#b4ab9b",
+  /** Overdue candle flicker warm emissive (ported from R3 e4918c9). */
+  candleEmissive: "#e8a954",
+  /** Candle flicker: baseline emissive intensity the sine oscillates around. */
+  candleBaseIntensity: 0.06,
+  /** Candle flicker: sine amplitude (kept low — a gentle pulse, not a strobe). */
+  candleAmplitude: 0.08,
+} as const;
+
+/**
+ * Sepia-mix a color toward the staleness target at the ported weight (the
+ * vendored components' `sepia()` helper). Applied to a stale tile's base
+ * pigments so the sepia composes with any emissive treatment on top.
+ */
+export function sepiaMix(color: string): string {
+  return mixHexColors(color, MAP_SIGNAL_COLORS.sepiaTarget, MAP_SIGNAL_COLORS.sepiaWeight);
+}
+
 /** ProjectSprite (the little house on a project tile) base pigments. */
 export const PROJECT_SPRITE_COLORS = {
   body: "#c68d57",

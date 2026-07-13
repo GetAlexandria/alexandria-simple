@@ -271,13 +271,13 @@ test("clicking a colleague building opens the colleague overlay (role + journal 
   // Name/role line from the agent roster (fixtureAgents).
   await expect(page.getByTestId("colleague-overlay-role")).toHaveText("Product Owner");
 
-  // The journal's top three entries render (newest first); the fourth is
-  // sliced off — the file is the source of truth, the overlay shows the head.
+  // The journal's top three entries render (newest first, from the shared
+  // /api/journals feed); the fourth is sliced off — the overlay shows the head.
   const journal = page.getByTestId("colleague-overlay-journal");
-  await expect(journal).toContainText("seed entry");
+  await expect(journal).toContainText("duty-loop beat");
   await expect(journal).toContainText("earlier beat");
   await expect(journal).toContainText("older still");
-  await expect(journal).not.toContainText("fourth entry");
+  await expect(journal).not.toContainText("oldest beat");
 
   // The needs-a-human jump affordance is present.
   await expect(page.getByTestId("colleague-overlay-needs-human")).toBeVisible();

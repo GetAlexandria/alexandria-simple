@@ -14,7 +14,7 @@
 // small next to the cell grid.
 
 import { useMemo } from "react";
-import { HEX_TILE_COLORS } from "./colors";
+import { HEX_TILE_COLORS, MAP_SIGNAL_COLORS, sepiaMix } from "./colors";
 import { hexToWorld, type HexCoord } from "./hex";
 import { truncateTileLabel } from "./label-utils";
 import { HEX_SIZE } from "./materials";
@@ -29,22 +29,47 @@ type HexTileProps = {
   /** Domain accent color (Domain view: the territory's wash pigment). */
   accentColor: string;
   lifecycle?: HexTileLifecycle;
+  /** L1: a joined card is in `needs-a-human` → steady brand glow on the tile. */
+  needsHuman?: boolean;
+  /** L1: joined cards untouched ≥ 14 days → sepia the tile pigments. */
+  stale?: boolean;
   onClick?: () => void;
 };
 
-export function HexTile({ coord, name, accentColor, lifecycle = "active", onClick }: HexTileProps) {
+export function HexTile({
+  coord,
+  name,
+  accentColor,
+  lifecycle = "active",
+  needsHuman = false,
+  stale = false,
+  onClick,
+}: HexTileProps) {
   const [x, z] = useMemo(() => hexToWorld(coord, HEX_SIZE), [coord]);
   const isCompleted = lifecycle === "completed";
   const label = useMemo(() => truncateTileLabel(name), [name]);
   const { isHovered, groupProps } = useTileInteraction(onClick);
 
-  const edgeColor = isCompleted ? HEX_TILE_COLORS.completedEdge : accentColor;
-  const emissiveIntensity = isHovered ? 0.12 : 0;
-  const innerTopColor = isCompleted
-    ? HEX_TILE_COLORS.innerTopCompleted
+  // Staleness sepia mixes the tile's base pigments toward the sepia target; it
+  // composes with the emissive glow below (color vs emissive are orthogonal).
+  const tint = (color: string): string => (stale ? sepiaMix(color) : color);
+  const edgeColor = tint(isCompleted ? HEX_TILE_COLORS.completedEdge : accentColor);
+  const innerTopColor = tint(
+    isCompleted
+      ? HEX_TILE_COLORS.innerTopCompleted
+      : isHovered
+        ? HEX_TILE_COLORS.innerTopHighlighted
+        : HEX_TILE_COLORS.innerTop,
+  );
+
+  // Needs-a-human takes the emissive channel with a steady brand glow (the
+  // ported work-at-hand treatment); otherwise the hover highlight stands.
+  const topEmissive = needsHuman ? MAP_SIGNAL_COLORS.needsHumanGlow : HEX_TILE_COLORS.hoverEmissive;
+  const topEmissiveIntensity = needsHuman
+    ? MAP_SIGNAL_COLORS.needsHumanGlowIntensity
     : isHovered
-      ? HEX_TILE_COLORS.innerTopHighlighted
-      : HEX_TILE_COLORS.innerTop;
+      ? 0.12
+      : 0;
 
   return (
     <group position={[x, TILE_LIFT + (isHovered ? HOVER_LIFT : 0), z]} {...groupProps}>
@@ -52,17 +77,25 @@ export function HexTile({ coord, name, accentColor, lifecycle = "active", onClic
         side={{ color: edgeColor, roughness: 0.62, metalness: 0.12 }}
         top={{
           color: edgeColor,
-          emissive: HEX_TILE_COLORS.hoverEmissive,
-          emissiveIntensity,
+          emissive: topEmissive,
+          emissiveIntensity: topEmissiveIntensity,
           roughness: 0.9,
           metalness: 0.03,
         }}
         bottom={{
-          color: isCompleted ? HEX_TILE_COLORS.completedBottom : HEX_TILE_COLORS.bottom,
+          color: tint(isCompleted ? HEX_TILE_COLORS.completedBottom : HEX_TILE_COLORS.bottom),
           roughness: 0.85,
           metalness: 0.02,
         }}
-        innerTop={{ color: innerTopColor, roughness: 0.9, metalness: 0.03 }}
+        innerTop={{
+          color: innerTopColor,
+          emissive: needsHuman ? MAP_SIGNAL_COLORS.needsHumanGlow : undefined,
+          emissiveIntensity: needsHuman
+            ? MAP_SIGNAL_COLORS.needsHumanInnerGlowIntensity
+            : undefined,
+          roughness: 0.9,
+          metalness: 0.03,
+        }}
       />
 
       <ProjectSprite isCompleted={isCompleted} />

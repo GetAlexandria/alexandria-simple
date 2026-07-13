@@ -7,7 +7,8 @@
 // loop glyph, health dots) and material colors.
 
 import type { ThreeEvent } from "@react-three/fiber";
-import { useEffect, useState } from "react";
+import { type Ref, useEffect, useState } from "react";
+import type { MeshStandardMaterial } from "three";
 import { MAP_LABEL_COLORS } from "./colors";
 import { MapLabel } from "./MapLabel";
 import { TILE_HEIGHT, TILE_INNER_TOP_HEIGHT, getSharedMapGeometries } from "./materials";
@@ -80,6 +81,13 @@ type TileChassisProps = {
   top: TileMaterialProps;
   bottom: TileMaterialProps;
   innerTop: TileMaterialProps;
+  /**
+   * Ref to the top-cap material (material-1). The overdue candle flicker (L1)
+   * animates this material's `emissiveIntensity` per frame, so a flickering
+   * tile needs a handle on its own instance — see CandleFlicker's module note
+   * on why tile materials are per-instance and safe to mutate.
+   */
+  topMaterialRef?: Ref<MeshStandardMaterial>;
 };
 
 /**
@@ -88,14 +96,14 @@ type TileChassisProps = {
  * Callers own material colors/emissive/opacity; the mesh structure and
  * shared geometries are fixed.
  */
-export function TileChassis({ side, top, bottom, innerTop }: TileChassisProps) {
+export function TileChassis({ side, top, bottom, innerTop, topMaterialRef }: TileChassisProps) {
   const geometries = getSharedMapGeometries();
   return (
     <mesh geometry={geometries.tile} dispose={null}>
       {/* material-0 = side faces (tube) */}
       <meshStandardMaterial attach="material-0" {...side} />
       {/* material-1 = top cap (accent ring base) */}
-      <meshStandardMaterial attach="material-1" {...top} />
+      <meshStandardMaterial ref={topMaterialRef} attach="material-1" {...top} />
       {/* material-2 = bottom cap */}
       <meshStandardMaterial attach="material-2" {...bottom} />
 

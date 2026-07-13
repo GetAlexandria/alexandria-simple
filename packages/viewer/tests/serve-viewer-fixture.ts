@@ -2040,20 +2040,6 @@ function fixtureMapStateResponse(): Response {
 // colleague overlay's "top ~3" slice is exercised through the real UI (the
 // fourth entry must not render). A colleague with no journal returns empty
 // entries — the server's missing-file→empty behavior.
-const FIXTURE_RAVEN_JOURNAL_ENTRIES = [
-  { date: "2026-07-12", title: "seed entry", body: "Wired the Map tab's colleague overlay." },
-  { date: "2026-07-11", title: "earlier beat", body: "Placed the reserved landmark hexes." },
-  { date: "2026-07-10", title: "older still", body: "Sketched the bench and the hearth." },
-  { date: "2026-07-09", title: "fourth entry", body: "Beyond the top three — should stay hidden." },
-];
-
-function fixtureColleagueJournalResponse(name: string): Response {
-  return Response.json({
-    name,
-    entries: name === "raven" ? FIXTURE_RAVEN_JOURNAL_ENTRIES : [],
-  });
-}
-
 async function fixtureMapStateWrite(request: Request): Promise<Response> {
   const ifMatch = request.headers.get("if-match");
   if (ifMatch != null) {
@@ -2093,6 +2079,38 @@ async function fixtureInfoHubBoardWrite(request: Request): Promise<Response> {
     return card == null ? [] : [card];
   });
   return fixtureInfoHubBoardResponse();
+}
+
+function fixtureColleagueJournalsResponse(): Response {
+  // The shared journals data path (/api/journals): L1's system-health dots +
+  // overdue flicker read the newest entry's timestamp, and L2's colleague
+  // overlay reads the top ~3 entries' title/body. The newest entry stays
+  // `recent` so the fixture duty-loop reads healthy (full dots, no flicker,
+  // no extra useFrame — signals aren't asserted in the map-tab spec); three
+  // older entries below it exercise the overlay's top-3 slice (the fourth,
+  // "oldest beat", must not render). Every entry carries a body (schema-required).
+  const recent = new Date(Date.now() - 5 * 60_000).toISOString().slice(0, 16).replace("T", " ");
+  return Response.json({
+    journals: [
+      {
+        colleague: "raven",
+        entries: [
+          { timestamp: recent, title: "duty-loop beat", body: "Checked the board and journals." },
+          {
+            timestamp: "2026-07-11",
+            title: "earlier beat",
+            body: "Placed the reserved landmark hexes.",
+          },
+          {
+            timestamp: "2026-07-10",
+            title: "older still",
+            body: "Sketched the bench and the hearth.",
+          },
+          { timestamp: "2026-07-09", title: "oldest beat", body: "Beyond the top three." },
+        ],
+      },
+    ],
+  });
 }
 
 async function staticResponse(url: URL): Promise<Response> {
@@ -2401,17 +2419,16 @@ Bun.serve({
       return fixtureMapStateWrite(request);
     }
 
+    if (url.pathname === "/api/journals" && request.method === "GET") {
+      return fixtureColleagueJournalsResponse();
+    }
+
     if (url.pathname === "/api/info-hub/board" && request.method === "GET") {
       return fixtureInfoHubBoardResponse();
     }
 
     if (url.pathname === "/api/info-hub/board" && request.method === "POST") {
       return fixtureInfoHubBoardWrite(request);
-    }
-
-    const fixtureJournalMatch = /^\/api\/colleague\/([a-z0-9-]+)\/journal$/.exec(url.pathname);
-    if (fixtureJournalMatch != null && request.method === "GET") {
-      return fixtureColleagueJournalResponse(fixtureJournalMatch[1]!);
     }
 
     if (url.pathname === "/__fixture/reset-map-board" && request.method === "POST") {

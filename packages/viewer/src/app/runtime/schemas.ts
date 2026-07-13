@@ -1173,6 +1173,35 @@ export const InfoHubBoardSchema = Schema.Struct({
 
 export type InfoHubBoard = Schema.Schema.Type<typeof InfoHubBoardSchema>;
 
+// Colleague journals (Map tab plan §1.4, L1) — the read-only projection of
+// `docs/alexandria/journal/<name>.md` that the Map tab's system-health dots
+// and overdue candle flicker derive from. The ax twin
+// (packages/ax/src/effects/colleague-journals.ts) parses each duty-loop
+// entry's header timestamp (for L1's health/overdue signals) and its body (for
+// L2's colleague overlay); this schema only decodes what the server extracted.
+// Read-only: neither L1 nor L2 writes journals or stores signal state.
+export const JournalEntrySchema = Schema.Struct({
+  timestamp: Schema.String,
+  title: Schema.String,
+  /** The entry's body prose (L2 colleague overlay); "" when the entry is header-only. */
+  body: Schema.String,
+});
+
+export type JournalEntry = Schema.Schema.Type<typeof JournalEntrySchema>;
+
+export const ColleagueJournalSchema = Schema.Struct({
+  colleague: Schema.String,
+  entries: Schema.Array(JournalEntrySchema),
+});
+
+export type ColleagueJournal = Schema.Schema.Type<typeof ColleagueJournalSchema>;
+
+export const ColleagueJournalsSchema = Schema.Struct({
+  journals: Schema.Array(ColleagueJournalSchema),
+});
+
+export type ColleagueJournals = Schema.Schema.Type<typeof ColleagueJournalsSchema>;
+
 // Map state (Map tab plan §1) — the browser-facing shape of
 // `docs/alexandria/map/map-state.json`, served by `/api/map/state`. The ax
 // twin in packages/ax/src/effects/map-state.ts owns validation (referential
@@ -1253,29 +1282,6 @@ export const MapStateSchema = Schema.Struct({
 
 export type MapState = Schema.Schema.Type<typeof MapStateSchema>;
 
-// Colleague journal (Map tab plan §1.1) — the browser-facing shape of a
-// parsed `docs/alexandria/journal/<name>.md`, served by
-// `/api/colleague/<name>/journal`. The ax reader in
-// packages/ax/src/effects/colleague-journal.ts owns the markdown parsing
-// (append-at-top files → entries newest-first); this schema only decodes the
-// already-parsed entries. A colleague with no journal yet decodes as an empty
-// entries list, never an error.
-export const JournalEntrySchema = Schema.Struct({
-  body: Schema.String,
-  /** ISO date from the entry heading, or "" when the heading carried none. */
-  date: Schema.String,
-  title: Schema.String,
-});
-
-export type JournalEntry = Schema.Schema.Type<typeof JournalEntrySchema>;
-
-export const ColleagueJournalSchema = Schema.Struct({
-  entries: Schema.Array(JournalEntrySchema),
-  name: Schema.String,
-});
-
-export type ColleagueJournal = Schema.Schema.Type<typeof ColleagueJournalSchema>;
-
 export const decodeInfoHubBoard = Schema.decodeUnknown(InfoHubBoardSchema, {
   errors: "all",
 });
@@ -1284,7 +1290,7 @@ export const decodeMapState = Schema.decodeUnknown(MapStateSchema, {
   errors: "all",
 });
 
-export const decodeColleagueJournal = Schema.decodeUnknown(ColleagueJournalSchema, {
+export const decodeColleagueJournals = Schema.decodeUnknown(ColleagueJournalsSchema, {
   errors: "all",
 });
 

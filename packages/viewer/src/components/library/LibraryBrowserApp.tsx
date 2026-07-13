@@ -39,6 +39,7 @@ import { notepadBadgeCountForCatalog } from "./notepad-view-model";
 import { RuntimeUnavailablePanel } from "./RuntimeUnavailablePanel";
 import { WorkflowView } from "./WorkflowView";
 import { errorMessage } from "./error-message";
+import { useColleagueJournals } from "./hooks/useColleagueJournals";
 import { useInfoHubBoard } from "./hooks/useInfoHubBoard";
 import { useMapState } from "./hooks/useMapState";
 import { useLibraryCatalog } from "./hooks/useLibraryCatalog";
@@ -450,6 +451,11 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
   // Info Hub, plus the revision-guarded full-document save that placement,
   // entity create/edit, and promote-to-project all share.
   const mapState = useMapState(runtimeClient, boardOrMapOpen);
+  // The Map tab's L1 signals read the colleague duty-loop journals for system
+  // health + overdue (plan §1.4): a read-only fetch-once load, alongside the
+  // map document and board. Only loaded on the map surface, and the map
+  // degrades gracefully (neutral health) when it is unavailable.
+  const colleagueJournals = useColleagueJournals(runtimeClient, route.surface === "map");
   const {
     connectionState: ravenConnectionState,
     disconnectConnection: disconnectRavenConnection,
@@ -910,10 +916,12 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
                 error={mapState.error}
                 loading={mapState.loading}
                 onRefresh={() => {
-                  // The tab shows joined state, so Refresh re-reads both
-                  // files (map document + board cards behind the piles).
+                  // The tab shows joined state, so Refresh re-reads every
+                  // source: the map document, the board cards behind the
+                  // piles, and the journals behind the health/overdue signals.
                   void mapState.refresh();
                   void infoHubBoard.refresh();
+                  void colleagueJournals.refresh();
                 }}
                 onSave={mapState.saveState}
                 saveError={mapState.saveError}
@@ -924,7 +932,6 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
                 boardSaveError={infoHubBoard.saveError}
                 boardSaving={infoHubBoard.saving}
                 onSaveCards={infoHubBoard.saveCards}
-                runtimeClient={runtimeClient}
                 agents={projectState.agents}
                 // Opens the board's needs-a-human lane for everyone (cards
                 // carry no colleague field to filter by; the overlay shows the
@@ -937,6 +944,7 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
                 }
                 // The bench quick-bar link: the colleague's per-agent page.
                 onOpenAgentPage={(colleagueId) => navigate(agentRoute(colleagueId))}
+                journals={colleagueJournals.journals}
               />
             </Suspense>
           </MapChunkErrorBoundary>

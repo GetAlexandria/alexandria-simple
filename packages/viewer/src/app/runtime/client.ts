@@ -6,7 +6,7 @@ import {
   type ViewerRuntimeError,
 } from "./errors";
 import {
-  decodeColleagueJournal,
+  decodeColleagueJournals,
   decodeError,
   decodeInfoHubBoard,
   decodeMapState,
@@ -22,7 +22,7 @@ import {
   decodeRuntimeRavenVisionBankResult,
   decodeRuntimeRavenVisionProjection,
   decodeRuntimeSourceCreateResult,
-  type ColleagueJournal,
+  type ColleagueJournals,
   type InfoHubBoard,
   type InfoHubCard,
   type LibraryCardDetail,
@@ -249,13 +249,12 @@ const getInfoHubBoard = Effect.fn("ViewerRuntimeClient.getInfoHubBoard")(functio
   );
 });
 
-const getColleagueJournal = Effect.fn("ViewerRuntimeClient.getColleagueJournal")(function* (
+const getColleagueJournals = Effect.fn("ViewerRuntimeClient.getColleagueJournals")(function* (
   context: ViewerRuntimeRequestContext,
-  name: string,
 ) {
-  const payload = yield* fetchJson(context, `/api/colleague/${encodeURIComponent(name)}/journal`);
-  return yield* decodeColleagueJournal(payload).pipe(
-    Effect.mapError((cause) => decodeError("colleague journal", cause)),
+  const payload = yield* fetchJson(context, "/api/journals");
+  return yield* decodeColleagueJournals(payload).pipe(
+    Effect.mapError((cause) => decodeError("colleague journals", cause)),
   );
 });
 
@@ -614,7 +613,7 @@ export interface ViewerRuntimeClient {
   disconnectConnection: (
     connectionId: string,
   ) => Effect.Effect<RuntimeConnectionSummary, ViewerRuntimeError>;
-  getColleagueJournal: (name: string) => Effect.Effect<ColleagueJournal, ViewerRuntimeError>;
+  getColleagueJournals: Effect.Effect<ColleagueJournals, ViewerRuntimeError>;
   getConnections: Effect.Effect<RuntimeConnectionSummary, ViewerRuntimeError>;
   getHealth: Effect.Effect<RuntimeHealth, ViewerRuntimeError>;
   getInfoHubBoard: Effect.Effect<InfoHubBoard, ViewerRuntimeError>;
@@ -672,7 +671,7 @@ export function makeViewerRuntimeClient(
     createNoteSource: (input) => createRuntimeNoteSource(context, input),
     createUrlSource: (input) => createRuntimeUrlSource(context, input),
     disconnectConnection: (connectionId) => disconnectRuntimeConnection(context, connectionId),
-    getColleagueJournal: (name) => getColleagueJournal(context, name),
+    getColleagueJournals: getColleagueJournals(context),
     getConnections: getRuntimeConnections(context),
     getHealth: getRuntimeHealth(context),
     getInfoHubBoard: getInfoHubBoard(context),

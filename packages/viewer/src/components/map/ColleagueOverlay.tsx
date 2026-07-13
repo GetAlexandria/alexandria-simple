@@ -8,7 +8,7 @@
 // rather than the card overlay itself — this lens shows a journal, not cards.
 
 import { useEffect, type CSSProperties } from "react";
-import type { ColleagueJournal } from "../../app/runtime/schemas";
+import type { JournalEntry } from "../../app/runtime/schemas";
 import type { ColleagueIdentity } from "./colleague-overlay";
 import { topJournalEntries } from "./colleague-overlay";
 import { MAP_FALLBACK_COLORS, MAP_OVERLAY_SCRIM_INK, withAlpha } from "./colors";
@@ -28,22 +28,23 @@ const ENTRY_BODY_CLAMP: CSSProperties = {
 
 type ColleagueOverlayProps = {
   identity: ColleagueIdentity;
-  journal: ColleagueJournal | null;
-  journalLoading: boolean;
-  journalError: string | null;
+  /**
+   * The colleague's journal entries, selected from the shared journals feed:
+   * null while journals load / are unavailable, [] when the colleague has no
+   * journal file yet, otherwise newest-first entries.
+   */
+  entries: readonly JournalEntry[] | null;
   needsHumanCount: number;
   /** Opens the colleague's per-agent page (the bench quick-bar link). */
   onOpenAgentPage: () => void;
-  /** Jumps to the Info Hub board filtered to needs-a-human. */
+  /** Opens the Info Hub board's needs-a-human lane. */
   onOpenBoard: () => void;
   onClose: () => void;
 };
 
 export function ColleagueOverlay({
   identity,
-  journal,
-  journalLoading,
-  journalError,
+  entries,
   needsHumanCount,
   onOpenAgentPage,
   onOpenBoard,
@@ -61,7 +62,8 @@ export function ColleagueOverlay({
     };
   }, [onClose]);
 
-  const entries = journal == null ? [] : topJournalEntries(journal.entries, JOURNAL_ENTRY_LIMIT);
+  const journalLoading = entries == null;
+  const topEntries = entries == null ? [] : topJournalEntries(entries, JOURNAL_ENTRY_LIMIT);
 
   return (
     <div
@@ -117,19 +119,15 @@ export function ColleagueOverlay({
             <p className="mt-1 text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
               Reading {identity.name}&apos;s journal…
             </p>
-          ) : journalError != null ? (
-            <p className="mt-1 text-xs" role="alert" style={{ color: MAP_FALLBACK_COLORS.heading }}>
-              {journalError}
-            </p>
-          ) : entries.length === 0 ? (
+          ) : topEntries.length === 0 ? (
             <p className="mt-1 text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
               No journal entries yet — {identity.name} hasn&apos;t written a beat.
             </p>
           ) : (
             <ul className="mt-2 flex flex-col gap-2" data-testid="colleague-overlay-journal">
-              {entries.map((entry, index) => (
+              {topEntries.map((entry, index) => (
                 <li
-                  key={`${entry.date}:${entry.title}:${index}`}
+                  key={`${entry.timestamp}:${entry.title}:${index}`}
                   className="rounded border px-2 py-1.5"
                   data-testid="colleague-overlay-entry"
                   style={{ borderColor: MAP_FALLBACK_COLORS.border }}
@@ -139,12 +137,12 @@ export function ColleagueOverlay({
                     style={{ color: MAP_FALLBACK_COLORS.heading }}
                   >
                     {entry.title || "Untitled entry"}
-                    {entry.date.length > 0 ? (
+                    {entry.timestamp.length > 0 ? (
                       <span
                         className="ml-1 font-normal"
                         style={{ color: MAP_FALLBACK_COLORS.subtext }}
                       >
-                        · {entry.date}
+                        · {entry.timestamp}
                       </span>
                     ) : null}
                   </p>
