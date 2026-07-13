@@ -13,6 +13,7 @@ import {
   MIX_WHITE,
   MAP_PATCH_TINT_STRENGTH,
   MAP_REGION_TINT_STRENGTH,
+  domainWashColors,
   mixHexColors,
   type HexTint,
 } from "../colors";
@@ -172,12 +173,9 @@ export function computeDomainViewLayoutInternal(
 ): DomainViewLayout & DomainViewLayoutInternals {
   const strayCardCounts = options.strayCardCounts ?? {};
 
-  const domainColorById = new Map<string, string>(
-    state.domains.map((domain, index) => [
-      domain.id,
-      MAP_DOMAIN_TINTS[index % MAP_DOMAIN_TINTS.length]!,
-    ]),
-  );
+  // Wash colors key off a stable hash of the domain id (see domainWashColors)
+  // so hand-edits/reorders of the git-tracked state file never repaint the map.
+  const domainColorById = domainWashColors(state.domains.map((domain) => domain.id));
 
   const cellByKey = new Map(cells.map((cell) => [cell.key, cell]));
   const domainCenters = new Map(
@@ -188,8 +186,9 @@ export function computeDomainViewLayoutInternal(
   );
 
   // --- 1. Territories: each in-half cell joins the nearest domain whose
-  // region disc covers it (ties break toward earlier domains in the state
-  // file, keeping assignment deterministic).
+  // region disc covers it. Ties break toward the lexicographically smaller
+  // domain id — NOT file order — so reordering domains in the git-tracked
+  // state file can never flip ownership of equidistant cells (S1 gate note).
   const territoryByCellKey = new Map<string, string>();
   const territoryCellsByDomainId = new Map<string, HexGridCell[]>(
     state.domains.map((domain) => [domain.id, []]),
@@ -207,7 +206,11 @@ export function computeDomainViewLayoutInternal(
         continue;
       }
       const distance = hexDistance(cell.coord, domainCenters.get(domain.id)!);
-      if (distance <= domain.region.radius && distance < bestDistance) {
+      if (
+        distance <= domain.region.radius &&
+        (distance < bestDistance ||
+          (distance === bestDistance && bestDomainId != null && domain.id < bestDomainId))
+      ) {
         bestDomainId = domain.id;
         bestDistance = distance;
       }

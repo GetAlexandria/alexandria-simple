@@ -3,7 +3,8 @@ export type LibraryRuntimeErrorSurface =
   | "catalog"
   | "graph"
   | "info-hub"
-  | "ledger";
+  | "ledger"
+  | "map";
 export type TrackerRuntimeErrorSurface = "run-events" | "studio-runs";
 export type RuntimeErrorSurface = LibraryRuntimeErrorSurface | TrackerRuntimeErrorSurface;
 
@@ -24,6 +25,7 @@ const SURFACE_LABELS: Readonly<Record<LibraryRuntimeErrorSurface, string>> = {
   graph: "library graph",
   "info-hub": "Info Hub board",
   ledger: "ledger",
+  map: "map state",
 };
 
 const NO_RUNTIME_FAILURE = Symbol("NO_RUNTIME_FAILURE");

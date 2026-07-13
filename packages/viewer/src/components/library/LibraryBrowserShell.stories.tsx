@@ -38,6 +38,7 @@ function ShellStory({
       onHome={() => setActiveView("home")}
       onInfo={() => setActiveView("info")}
       onLibrary={() => setActiveView("library")}
+      onMap={() => setActiveView("map")}
       onAgent={() => setActiveView("agent")}
       onFrameProblem={() => {}}
       onKnowledgeBank={() => setActiveView("knowledge-bank")}

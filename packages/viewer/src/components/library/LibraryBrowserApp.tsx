@@ -40,6 +40,7 @@ import { RuntimeUnavailablePanel } from "./RuntimeUnavailablePanel";
 import { WorkflowView } from "./WorkflowView";
 import { errorMessage } from "./error-message";
 import { useInfoHubBoard } from "./hooks/useInfoHubBoard";
+import { useMapState } from "./hooks/useMapState";
 import { useLibraryCatalog } from "./hooks/useLibraryCatalog";
 import { useLibraryGraph } from "./hooks/useLibraryGraph";
 import { usePlayRunLauncher } from "./hooks/usePlayRunLauncher";
@@ -94,6 +95,8 @@ function activeViewForRoute(route: ViewerRoute): LibraryBrowserView {
       return "knowledge-bank";
     case "raven-vision":
       return "vision-onboarding";
+    case "map":
+      return "map";
     case "dev-map":
       return "dev-map";
     case "not-found":
@@ -101,19 +104,24 @@ function activeViewForRoute(route: ViewerRoute): LibraryBrowserView {
   }
 }
 
-// The /dev/map first-light harness lazy-loads the whole map stack
-// (three.js, @react-three/fiber, the promoted parchment components) so the
-// main viewer bundle is unaffected until the dev route is visited.
+// The map surfaces (the Map stone tab and the /dev/map harness) lazy-load
+// the whole map stack (three.js, @react-three/fiber, the promoted parchment
+// components) so the main viewer bundle is unaffected until one is visited.
 // map/colors and map/MapMessagePanel above are deliberately three.js-free,
 // so importing them here does not defeat that lazy split.
 const LazyMapDevView = lazy(() => import("../map/MapDevView"));
+const LazyMapTabView = lazy(() => import("../map/MapTabView"));
 
 // A rejected lazy-chunk load (e.g. a stale hashed chunk after an ax
 // rebuild — astro build empties outDir) would otherwise propagate through
 // Suspense and unmount the entire client:only island into a blank page.
 // Reloading fetches the current index.html and chunk hashes, which also
-// self-heals the stale-chunk case.
-class MapDevErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+// self-heals the stale-chunk case. `fill` renders the panel parent-sized
+// (the Map tab's in-chrome field) instead of viewport-sized (/dev/map).
+class MapChunkErrorBoundary extends Component<
+  { children: ReactNode; fill?: boolean },
+  { hasError: boolean }
+> {
   override state = { hasError: false };
 
   static getDerivedStateFromError(): { hasError: boolean } {
@@ -127,6 +135,7 @@ class MapDevErrorBoundary extends Component<{ children: ReactNode }, { hasError:
 
     return (
       <MapMessagePanel
+        fill={this.props.fill ?? false}
         title="Map failed to load"
         subtext="Reload to fetch the latest map code."
         action={
@@ -437,6 +446,9 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
     projectState.refresh,
   );
   const infoHubBoard = useInfoHubBoard(runtimeClient, route.surface === "info");
+  // The Map tab's state store (S1): fetch-once + manual refresh like the
+  // Info Hub, plus the revision-guarded full-document save placement uses.
+  const mapState = useMapState(runtimeClient, route.surface === "map");
   const {
     connectionState: ravenConnectionState,
     disconnectConnection: disconnectRavenConnection,
@@ -766,7 +778,7 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
 
   if (activeView === "dev-map") {
     return (
-      <MapDevErrorBoundary>
+      <MapChunkErrorBoundary>
         <Suspense
           fallback={
             <div
@@ -781,7 +793,7 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
         >
           <LazyMapDevView />
         </Suspense>
-      </MapDevErrorBoundary>
+      </MapChunkErrorBoundary>
     );
   }
 
@@ -808,6 +820,7 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
       onKnowledgeBank={() => navigate(surfaceRoute("raven-knowledge-bank"))}
       onLedger={() => navigate(surfaceRoute("ledger"))}
       onLibrary={() => navigate(librarySectionDefaultRoute("viewer"))}
+      onMap={() => navigate(surfaceRoute("map"))}
       onModeChange={changeLibraryMode}
       onPlaybook={() => navigate(surfaceRoute("playbook"))}
       onSectionChange={changeLibrarySection}
@@ -881,6 +894,40 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
         )
       ) : activeView === "ledger" ? (
         <LedgerView runtimeClient={runtimeClient} />
+      ) : activeView === "map" ? (
+        // Parchment in dark chrome (plan §5 ruling 5): the canvas owns the
+        // map field below the stone bar; the cave chrome owns the page.
+        <div className="h-[calc(100vh-84px)]" data-testid="map-field">
+          <MapChunkErrorBoundary fill>
+            <Suspense
+              fallback={
+                <div
+                  className="flex h-full w-full items-center justify-center"
+                  style={{ backgroundColor: MAP_FALLBACK_COLORS.field }}
+                >
+                  <div
+                    className="text-sm font-semibold"
+                    style={{ color: MAP_FALLBACK_COLORS.text }}
+                  >
+                    Loading map...
+                  </div>
+                </div>
+              }
+            >
+              <LazyMapTabView
+                error={mapState.error}
+                loading={mapState.loading}
+                onRefresh={() => {
+                  void mapState.refresh();
+                }}
+                onSave={mapState.saveState}
+                saveError={mapState.saveError}
+                saving={mapState.saving}
+                state={mapState.state}
+              />
+            </Suspense>
+          </MapChunkErrorBoundary>
+        </div>
       ) : activeView === "not-found" ? (
         <NotFoundView path={route.surface === "not-found" ? route.path : ""} />
       ) : (

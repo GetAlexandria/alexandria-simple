@@ -17,6 +17,7 @@ import {
   MapStateFileError,
   MapStateValidationError,
   defaultMapState,
+  mapStateRevision,
   readMapState,
   validateMapState,
   writeMapState,
@@ -63,16 +64,17 @@ function baseState(): Record<string, unknown> {
 }
 
 describe("validateMapState", () => {
-  test("accepts the plan §1.3 fixture shape", () => {
+  test("accepts the checked-in seed world shape", () => {
     const result = validateMapState(baseState());
     expect(result).not.toBeInstanceOf(MapStateValidationError);
     const state = result as MapState;
-    expect(state.domains[0]?.id).toBe("software");
+    expect(state.domains.map((domain) => domain.id)).toEqual(["software", "new-media"]);
     expect(state.entities.map((entity) => entity.id)).toEqual([
       "sys-raven-duty-loop",
       "prj-map-tab",
+      "sys-damien-duty-loop",
     ]);
-    expect(state.positions).toHaveLength(2);
+    expect(state.positions).toHaveLength(5);
   });
 
   test("accepts an empty document", () => {
@@ -117,6 +119,40 @@ describe("validateMapState", () => {
     const result = validateMapState(state);
     expect(result).toBeInstanceOf(MapStateValidationError);
     expect((result as MapStateValidationError).message).toContain("unknown fields");
+  });
+
+  test("rejects a domain whose region center sits on the wrong side for its half", () => {
+    // Work is the r < 0 side, personal the r > 0 side (module header). A
+    // wrong-side region renders as a ghost domain, so it must fail loudly.
+    const workOnPersonalSide = baseState();
+    (
+      (workOnPersonalSide.domains as Record<string, unknown>[])[0] as Record<string, unknown>
+    ).region = { center: [0, 3], radius: 2 };
+    const workResult = validateMapState(workOnPersonalSide);
+    expect(workResult).toBeInstanceOf(MapStateValidationError);
+    expect((workResult as MapStateValidationError).message).toContain(
+      "region center r must be negative",
+    );
+
+    const personalOnWorkSide = baseState();
+    const domain = (personalOnWorkSide.domains as Record<string, unknown>[])[0] as Record<
+      string,
+      unknown
+    >;
+    domain.half = "personal";
+    const personalResult = validateMapState(personalOnWorkSide);
+    expect(personalResult).toBeInstanceOf(MapStateValidationError);
+    expect((personalResult as MapStateValidationError).message).toContain(
+      "region center r must be positive",
+    );
+
+    // The r = 0 row is neutral parchment — no half may center on it.
+    const neutralRow = baseState();
+    ((neutralRow.domains as Record<string, unknown>[])[0] as Record<string, unknown>).region = {
+      center: [0, 0],
+      radius: 2,
+    };
+    expect(validateMapState(neutralRow)).toBeInstanceOf(MapStateValidationError);
   });
 
   test("rejects a bad domain half enum and a bad region", () => {
@@ -199,9 +235,11 @@ describe("validateMapState", () => {
 
   test("rejects two positions on the same hex (one entity per hex)", () => {
     const state = baseState();
+    // The seed's first position's hex, claimed again by a different entity.
+    const occupied = (state.positions as Array<Record<string, unknown>>)[0]!;
     (state.positions as unknown[]).push({
-      q: 1,
-      r: -1,
+      q: occupied.q,
+      r: occupied.r,
       entityType: "project",
       entityId: "prj-map-tab",
     });
@@ -298,6 +336,21 @@ describe("the repo seed document", () => {
     await runWrite(state as MapState, workspacePath);
     const written = readFileSync(mapStatePathForWorkspacePath(workspacePath), "utf8");
     expect(JSON.parse(written)).toEqual(JSON.parse(raw));
+  });
+});
+
+describe("mapStateRevision", () => {
+  test("is stable for semantically equal documents and changes when the document changes", () => {
+    const first = validateMapState(baseState()) as MapState;
+    const second = validateMapState(baseState()) as MapState;
+    expect(mapStateRevision(first)).toBe(mapStateRevision(second));
+
+    const moved = validateMapState(baseState()) as MapState;
+    moved.positions[0] = { ...moved.positions[0]!, q: moved.positions[0]!.q + 1, r: 5 };
+    expect(mapStateRevision(moved)).not.toBe(mapStateRevision(first));
+
+    expect(mapStateRevision(first)).toMatch(/^[0-9a-f]{16}$/);
+    expect(mapStateRevision(defaultMapState())).toMatch(/^[0-9a-f]{16}$/);
   });
 });
 

@@ -14,7 +14,8 @@
 import { Canvas } from "@react-three/fiber";
 import { Component, Suspense, type ReactNode } from "react";
 import { MAP_SCENE_COLORS, type HexTint } from "./colors";
-import type { HexGridCell } from "./hex";
+import type { HexCoord, HexGridCell } from "./hex";
+import type { HexCellVisualState } from "./HexCell";
 import { HexGrid } from "./HexGrid";
 import { BackgroundPlane } from "./BackgroundPlane";
 import { CameraRig } from "./CameraRig";
@@ -40,17 +41,32 @@ type MapSceneProps = {
   parchmentSeed?: number;
   /** Per-view territory wash for the ground grid (Domain or Owner look). */
   cellTintByKey?: ReadonlyMap<string, HexTint>;
+  /** Placement-mode per-cell overrides (S1), passed through to the grid. */
+  cellVisualStateByKey?: ReadonlyMap<string, HexCellVisualState>;
+  /** Ground-cell click handler (S1 placement), passed through to the grid. */
+  onCellClick?: (coord: HexCoord) => void;
+  /** Fires when a click hits no scene object (S1 click-away cancel). */
+  onPointerMissed?: () => void;
   /** View-specific layers rendered above the ground grid (V1/V2 looks). */
   children?: ReactNode;
 };
 
-export function MapScene({ cells, parchmentSeed = 0, cellTintByKey, children }: MapSceneProps) {
+export function MapScene({
+  cells,
+  parchmentSeed = 0,
+  cellTintByKey,
+  cellVisualStateByKey,
+  onCellClick,
+  onPointerMissed,
+  children,
+}: MapSceneProps) {
   return (
     <Canvas
       orthographic
       camera={{ position: [0, 40, 35], zoom: 1, near: 0.1, far: 200 }}
       gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
       dpr={[1, 2]}
+      onPointerMissed={onPointerMissed}
     >
       <color attach="background" args={[MAP_SCENE_COLORS.background]} />
 
@@ -69,7 +85,13 @@ export function MapScene({ cells, parchmentSeed = 0, cellTintByKey, children }: 
 
       <CameraRig />
       <BackgroundPlane parchmentSeed={parchmentSeed} />
-      <HexGrid cells={cells} parchmentSeed={parchmentSeed} cellTintByKey={cellTintByKey} />
+      <HexGrid
+        cells={cells}
+        parchmentSeed={parchmentSeed}
+        cellTintByKey={cellTintByKey}
+        visualStateByKey={cellVisualStateByKey}
+        onCellClick={onCellClick}
+      />
       <SpriteErrorBoundary>
         <Suspense fallback={null}>{children}</Suspense>
       </SpriteErrorBoundary>

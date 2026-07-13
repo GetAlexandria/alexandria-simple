@@ -140,10 +140,14 @@ export type ViewerRoute =
   | { searchParams: URLSearchParams; surface: "playbook" }
   | { searchParams: URLSearchParams; surface: "info" }
   | { searchParams: URLSearchParams; surface: "ledger" }
+  // The Map stone tab (Map tab plan, S1): the real map over
+  // docs/alexandria/map/map-state.json via the ax API.
+  | { searchParams: URLSearchParams; surface: "map" }
   | { searchParams: URLSearchParams; surface: "raven-knowledge-bank" }
   | { searchParams: URLSearchParams; surface: "raven-vision" }
   // Dev-only first-light harness for the Map tab (plan §3 Gate 2); renders
-  // the promoted parchment stack against fixture data. Not linked from nav.
+  // the promoted parchment stack against fixture data. Not linked from nav —
+  // it stays permanently as the map's fixture regression harness.
   | { searchParams: URLSearchParams; surface: "dev-map" }
   | { path: string; searchParams: URLSearchParams; surface: "not-found" };
 
@@ -154,6 +158,7 @@ const SURFACE_PATHS = {
   home: "/",
   info: "/info",
   ledger: "/ledger",
+  map: "/map",
   playbook: "/playbook",
   "raven-knowledge-bank": "/raven/knowledge-bank",
   "raven-vision": "/raven/vision",
@@ -314,6 +319,8 @@ export function parseViewerRoute(pathname: string, search = ""): ViewerRoute {
       return { searchParams, surface: "info" };
     case "/ledger":
       return { searchParams, surface: "ledger" };
+    case "/map":
+      return { searchParams, surface: "map" };
     case "/raven/knowledge-bank":
       return { searchParams, surface: "raven-knowledge-bank" };
     case "/raven/vision":

@@ -88,9 +88,11 @@ import {
 import {
   MapStateFileError,
   MapStateValidationError,
+  mapStateRevision,
   readMapState,
   validateMapState,
   writeMapState,
+  type MapState,
 } from "./map-state.js";
 import {
   loadLibraryCardDetail,
@@ -2754,6 +2756,20 @@ async function infoHubBoardWriteResponse(options: {
   }
 }
 
+/** JSON response carrying the map state's revision as a strong ETag. */
+function mapStateJsonResponse(state: MapState): Response {
+  return Response.json(state, { headers: { etag: `"${mapStateRevision(state)}"` } });
+}
+
+/** An `If-Match` header value normalized to a bare revision (or null). */
+function revisionFromIfMatch(request: Request): string | null {
+  const raw = request.headers.get("if-match");
+  if (raw == null) {
+    return null;
+  }
+  return raw.trim().replace(/^W\//, "").replace(/^"|"$/g, "");
+}
+
 async function mapStateResponse(workspacePath: string): Promise<Response> {
   try {
     const result = await runWithNodeFileSystem(readMapState({ workspacePath }).pipe(Effect.either));
@@ -2768,7 +2784,7 @@ async function mapStateResponse(workspacePath: string): Promise<Response> {
       }
       return jsonError(result.left.message, statusForUnknownError(result.left));
     }
-    return Response.json(result.right);
+    return mapStateJsonResponse(result.right);
   } catch (error) {
     return jsonError(
       error instanceof Error ? error.message : String(error),
@@ -2797,12 +2813,43 @@ async function mapStateWriteResponse(options: {
     return jsonError(state.message, 400, "map_state_invalid");
   }
 
+  // The POST is a full-document replace, so a stale client would silently
+  // clobber a concurrent write. Guard: `If-Match` carries the revision the
+  // client loaded (GET's ETag); under the mutation semaphore the current
+  // on-disk revision is compared and a mismatch is a structured 409 the
+  // placement UI surfaces as "map changed — refresh". The header is
+  // optional so curl/agent repair writes (including over a corrupt file)
+  // stay unconditional; the viewer always sends it.
+  const expectedRevision = revisionFromIfMatch(options.request);
+
   try {
     return await runWithNodeFileSystem(
       options.mutationSemaphore.withPermits(1)(
         Effect.gen(function* () {
+          if (expectedRevision != null) {
+            const current = yield* readMapState({ workspacePath: options.workspacePath }).pipe(
+              Effect.either,
+            );
+            if (current._tag === "Left") {
+              // The on-disk file is unreadable, so the precondition cannot
+              // hold; a conditional writer must refresh (an unconditional
+              // POST remains the repair path).
+              return jsonError(
+                `The on-disk map state could not be read to check the write precondition: ${current.left.message}`,
+                409,
+                "map_state_conflict",
+              );
+            }
+            if (mapStateRevision(current.right) !== expectedRevision) {
+              return jsonError(
+                "The map state changed since this client last loaded it. Refresh the map and retry.",
+                409,
+                "map_state_conflict",
+              );
+            }
+          }
           yield* writeMapState({ state, workspacePath: options.workspacePath });
-          return Response.json(state);
+          return mapStateJsonResponse(state);
         }),
       ),
     );

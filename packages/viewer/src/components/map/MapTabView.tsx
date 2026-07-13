@@ -1,0 +1,596 @@
+// The Map stone tab's container (S1) — fresh code, not a port of
+// Lifebuild's LifeMap: the real `docs/alexandria/map/map-state.json`
+// document arrives as props (fetched once + manually refreshed by
+// useMapState in LibraryBrowserApp, the Info Hub pattern), is reshaped
+// through the existing pure layout modules, and renders through the same
+// MapScene surface as the /dev/map harness. Plan §5 ruling 7: both looks
+// shipped — the Domain ↔ Owner toggle is a real view mode here.
+//
+// Placement (director-only, plan §1.1): the side panel lists unplaced
+// entities; selecting one highlights the free hexes of its context's patch
+// ("placeable" cell overrides through MapScene's cellVisualStateByKey);
+// clicking a highlighted hex POSTs the full document with the loaded
+// revision. Escape / click-away cancels. Occupied hexes — including
+// reserved landmark hexes — are excluded client-side (the server rejects
+// them anyway via M1's one-entity-per-hex rule). A 409 conflict surfaces as
+// "map changed — refresh", never a silent clobber.
+//
+// Like MapDevView, this module (and everything it imports, including
+// three.js) is only loaded through React.lazy in LibraryBrowserApp.
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { MapEntity, MapState } from "../../app/runtime/schemas";
+import type { MapStateSaveError } from "../library/hooks/useMapState";
+import { MAP_FALLBACK_COLORS } from "./colors";
+import { DomainView } from "./DomainView";
+import { createHex, generateHexGrid, hexToKey, type HexCoord } from "./hex";
+import type { HexCellVisualState } from "./HexCell";
+import { computeDomainViewLayoutInternal } from "./layout/domain-view";
+import { buildOwnerViewLayout } from "./layout/owner-view";
+import { mapStateGridRadius } from "./map-grid";
+import { MapMessagePanel } from "./MapMessagePanel";
+import { MapScene } from "./MapScene";
+import { OwnerViewLayer } from "./OwnerViewLayer";
+import { isWebGLForcedOff, supportsWebGL } from "./webgl";
+
+type MapViewMode = "domain" | "owner";
+
+const VIEW_MODES: { mode: MapViewMode; label: string }[] = [
+  { mode: "domain", label: "Domain view" },
+  { mode: "owner", label: "Owner view" },
+];
+
+export type MapTabViewProps = {
+  error: string | null;
+  loading: boolean;
+  onRefresh: () => void;
+  /** Full-document save through the loaded revision; true on success. */
+  onSave: (next: MapState) => Promise<boolean>;
+  saveError: MapStateSaveError | null;
+  saving: boolean;
+  state: MapState | null;
+};
+
+/** Parchment-styled panel button (HUD chrome floating over the canvas). */
+function PanelButton({
+  active = false,
+  disabled = false,
+  label,
+  onClick,
+}: {
+  active?: boolean;
+  disabled?: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      disabled={disabled}
+      onClick={onClick}
+      className="px-3 py-1.5 text-xs disabled:opacity-50"
+      style={
+        active
+          ? {
+              backgroundColor: MAP_FALLBACK_COLORS.border,
+              color: MAP_FALLBACK_COLORS.heading,
+              fontWeight: 600,
+            }
+          : { color: MAP_FALLBACK_COLORS.subtext }
+      }
+    >
+      {label}
+    </button>
+  );
+}
+
+function entityKindLabel(entity: MapEntity): string {
+  return entity.kind === "project" ? "Project" : "System";
+}
+
+/**
+ * The placement side panel (Domain view only): unplaced entities to select
+ * for placement, placed tiles with remove-from-map, grouped copy kept
+ * minimal — S2 adds entity create/edit and card joins.
+ */
+function PlacementPanel({
+  contextNameById,
+  onRemove,
+  onSelect,
+  placingEntityId,
+  placedEntities,
+  saving,
+  unplacedEntities,
+}: {
+  contextNameById: ReadonlyMap<string, string>;
+  onRemove: (entityId: string) => void;
+  onSelect: (entityId: string) => void;
+  placingEntityId: string | null;
+  placedEntities: readonly MapEntity[];
+  saving: boolean;
+  unplacedEntities: readonly MapEntity[];
+}) {
+  return (
+    <div
+      className="pointer-events-auto w-64 overflow-hidden rounded border"
+      style={{
+        backgroundColor: MAP_FALLBACK_COLORS.panel,
+        borderColor: MAP_FALLBACK_COLORS.border,
+      }}
+      data-testid="map-placement-panel"
+    >
+      <div className="px-3 py-2">
+        <p className="text-xs font-semibold" style={{ color: MAP_FALLBACK_COLORS.heading }}>
+          Placement
+        </p>
+        <p className="mt-0.5 text-[10px]" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+          {placingEntityId == null
+            ? "Pick an unplaced entity, then click a highlighted hex."
+            : "Click a highlighted hex to place — Esc or click away to cancel."}
+        </p>
+      </div>
+
+      <div className="border-t px-3 py-2" style={{ borderColor: MAP_FALLBACK_COLORS.border }}>
+        <p
+          className="text-[10px] font-semibold uppercase tracking-wide"
+          style={{ color: MAP_FALLBACK_COLORS.subtext }}
+        >
+          Unplaced
+        </p>
+        {unplacedEntities.length === 0 ? (
+          <p className="mt-1 text-[11px]" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+            Everything is on the map.
+          </p>
+        ) : (
+          <ul className="mt-1 space-y-1">
+            {unplacedEntities.map((entity) => (
+              <li key={entity.id}>
+                <button
+                  type="button"
+                  aria-pressed={placingEntityId === entity.id}
+                  disabled={saving}
+                  onClick={() => onSelect(entity.id)}
+                  className="w-full rounded border px-2 py-1 text-left text-[11px] disabled:opacity-50"
+                  style={
+                    placingEntityId === entity.id
+                      ? {
+                          backgroundColor: MAP_FALLBACK_COLORS.border,
+                          borderColor: MAP_FALLBACK_COLORS.border,
+                          color: MAP_FALLBACK_COLORS.heading,
+                          fontWeight: 600,
+                        }
+                      : {
+                          borderColor: MAP_FALLBACK_COLORS.border,
+                          color: MAP_FALLBACK_COLORS.text,
+                        }
+                  }
+                >
+                  {entity.name}
+                  <span className="ml-1 opacity-70">
+                    · {entityKindLabel(entity)} · {contextNameById.get(entity.contextId) ?? entity.contextId}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="border-t px-3 py-2" style={{ borderColor: MAP_FALLBACK_COLORS.border }}>
+        <p
+          className="text-[10px] font-semibold uppercase tracking-wide"
+          style={{ color: MAP_FALLBACK_COLORS.subtext }}
+        >
+          On the map
+        </p>
+        {placedEntities.length === 0 ? (
+          <p className="mt-1 text-[11px]" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+            No tiles placed yet.
+          </p>
+        ) : (
+          <ul className="mt-1 space-y-1">
+            {placedEntities.map((entity) => (
+              <li
+                key={entity.id}
+                className="flex items-center justify-between gap-2 text-[11px]"
+                style={{ color: MAP_FALLBACK_COLORS.text }}
+              >
+                <span className="truncate">{entity.name}</span>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => onRemove(entity.id)}
+                  className="shrink-0 rounded border px-1.5 py-0.5 text-[10px] disabled:opacity-50"
+                  style={{
+                    borderColor: MAP_FALLBACK_COLORS.border,
+                    color: MAP_FALLBACK_COLORS.subtext,
+                  }}
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function MapTabView({
+  error,
+  loading,
+  onRefresh,
+  onSave,
+  saveError,
+  saving,
+  state,
+}: MapTabViewProps) {
+  const [hasWebGLSupport] = useState(
+    () => supportsWebGL() && !isWebGLForcedOff(window.location.search),
+  );
+  const [viewMode, setViewMode] = useState<MapViewMode>("domain");
+  const [placingEntityId, setPlacingEntityId] = useState<string | null>(null);
+
+  const cells = useMemo(
+    () => (state == null ? [] : generateHexGrid(mapStateGridRadius(state))),
+    [state],
+  );
+  const domainLayout = useMemo(
+    () => (state == null ? null : computeDomainViewLayoutInternal(state, cells)),
+    [state, cells],
+  );
+  const ownerLayout = useMemo(() => (state == null ? null : buildOwnerViewLayout(state)), [state]);
+
+  // Every stored position occupies its hex — entity tiles and landmark
+  // hexes alike (landmark hexes are the reserved ones, plan §1.3).
+  const occupiedKeys = useMemo(
+    () =>
+      new Set(
+        (state?.positions ?? []).map((position) => hexToKey(createHex(position.q, position.r))),
+      ),
+    [state],
+  );
+  const positionedEntityIds = useMemo(
+    () =>
+      new Set(
+        (state?.positions ?? [])
+          .filter((position) => position.entityType !== "landmark")
+          .map((position) => position.entityId),
+      ),
+    [state],
+  );
+
+  const unplacedEntities = useMemo(
+    () =>
+      (state?.entities ?? []).filter(
+        (entity) =>
+          !positionedEntityIds.has(entity.id) &&
+          !(entity.kind === "system" && entity.lifecycle === "uprooted"),
+      ),
+    [state, positionedEntityIds],
+  );
+  const placedEntities = useMemo(
+    () => (state?.entities ?? []).filter((entity) => positionedEntityIds.has(entity.id)),
+    [state, positionedEntityIds],
+  );
+  const contextNameById = useMemo(
+    () => new Map((state?.contexts ?? []).map((context) => [context.id, context.name])),
+    [state],
+  );
+
+  const placingEntity = useMemo(
+    () =>
+      placingEntityId == null
+        ? null
+        : (unplacedEntities.find((entity) => entity.id === placingEntityId) ?? null),
+    [placingEntityId, unplacedEntities],
+  );
+
+  // The free hexes of the placing entity's context patch.
+  const placeableKeys = useMemo(() => {
+    if (placingEntity == null || domainLayout == null) {
+      return new Set<string>();
+    }
+    const keys = new Set<string>();
+    for (const [key, contextId] of domainLayout.patchByCellKey) {
+      if (contextId === placingEntity.contextId && !occupiedKeys.has(key)) {
+        keys.add(key);
+      }
+    }
+    return keys;
+  }, [placingEntity, domainLayout, occupiedKeys]);
+
+  const cellVisualStateByKey = useMemo(() => {
+    if (placeableKeys.size === 0) {
+      return undefined;
+    }
+    const byKey = new Map<string, HexCellVisualState>();
+    for (const key of placeableKeys) {
+      byKey.set(key, "placeable");
+    }
+    return byKey;
+  }, [placeableKeys]);
+
+  const cancelPlacement = useCallback(() => {
+    setPlacingEntityId(null);
+  }, []);
+
+  useEffect(() => {
+    if (placingEntityId == null) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        cancelPlacement();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [placingEntityId, cancelPlacement]);
+
+  const placeAt = useCallback(
+    async (coord: HexCoord) => {
+      if (state == null || placingEntity == null) {
+        return;
+      }
+      const next: MapState = {
+        contexts: state.contexts,
+        domains: state.domains,
+        entities: state.entities,
+        positions: [
+          ...state.positions,
+          {
+            entityId: placingEntity.id,
+            entityType: placingEntity.kind,
+            q: coord.q,
+            r: coord.r,
+          },
+        ],
+      };
+      if (await onSave(next)) {
+        setPlacingEntityId(null);
+      }
+    },
+    [state, placingEntity, onSave],
+  );
+
+  const handleCellClick = useCallback(
+    (coord: HexCoord) => {
+      if (placingEntityId == null) {
+        return;
+      }
+      if (!saving && placeableKeys.has(hexToKey(coord))) {
+        void placeAt(coord);
+        return;
+      }
+      // Clicking any non-placeable ground cancels (spec: click-away).
+      cancelPlacement();
+    },
+    [placingEntityId, saving, placeableKeys, placeAt, cancelPlacement],
+  );
+
+  const removeFromMap = useCallback(
+    (entityId: string) => {
+      if (state == null || saving) {
+        return;
+      }
+      const next: MapState = {
+        contexts: state.contexts,
+        domains: state.domains,
+        entities: state.entities,
+        positions: state.positions.filter(
+          (position) => position.entityType === "landmark" || position.entityId !== entityId,
+        ),
+      };
+      void onSave(next);
+    },
+    [state, saving, onSave],
+  );
+
+  if (!hasWebGLSupport) {
+    return (
+      <MapMessagePanel
+        fill
+        title="The map can't render here"
+        subtext="WebGL is required to render the map."
+      />
+    );
+  }
+
+  if (state == null) {
+    if (loading) {
+      return (
+        <MapMessagePanel fill title="Loading the map" subtext="Reading docs/alexandria/map/map-state.json…" />
+      );
+    }
+    return (
+      <MapMessagePanel
+        fill
+        title="The map state couldn't load"
+        subtext={error ?? "Unknown error."}
+        action={
+          <button
+            type="button"
+            className="mt-2 border px-2 py-1 text-xs font-semibold"
+            style={{
+              backgroundColor: MAP_FALLBACK_COLORS.field,
+              borderColor: MAP_FALLBACK_COLORS.border,
+              color: MAP_FALLBACK_COLORS.subtext,
+            }}
+            onClick={onRefresh}
+          >
+            Retry
+          </button>
+        }
+      />
+    );
+  }
+
+  if (state.domains.length === 0) {
+    return (
+      <MapMessagePanel
+        fill
+        title="The map has no domains yet"
+        subtext="Seed domains, contexts, and entities in docs/alexandria/map/map-state.json (the shape is documented in docs/alexandria/plans/map-tab/plan.md §1.3), then refresh."
+        action={
+          <button
+            type="button"
+            className="mt-2 border px-2 py-1 text-xs font-semibold"
+            style={{
+              backgroundColor: MAP_FALLBACK_COLORS.field,
+              borderColor: MAP_FALLBACK_COLORS.border,
+              color: MAP_FALLBACK_COLORS.subtext,
+            }}
+            onClick={onRefresh}
+          >
+            Refresh
+          </button>
+        }
+      />
+    );
+  }
+
+  const hudStats =
+    viewMode === "domain"
+      ? `${state.domains.length} domains · ${state.contexts.length} contexts · ` +
+        `${domainLayout?.tiles.length ?? 0} tiles`
+      : `${ownerLayout?.territories.length ?? 0} territories · ` +
+        `${ownerLayout?.seats.length ?? 0} locked seats`;
+
+  return (
+    <div className="relative h-full w-full" data-testid="map-tab">
+      <div
+        className="pointer-events-none absolute left-4 top-4 z-10 rounded border px-3 py-2"
+        style={{
+          backgroundColor: MAP_FALLBACK_COLORS.panel,
+          borderColor: MAP_FALLBACK_COLORS.border,
+        }}
+      >
+        <p className="text-xs font-semibold" style={{ color: MAP_FALLBACK_COLORS.heading }}>
+          Map — {VIEW_MODES.find(({ mode }) => mode === viewMode)!.label}
+        </p>
+        <p className="mt-0.5 text-[10px]" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+          {hudStats} — wheel zooms, arrow keys pan
+        </p>
+      </div>
+
+      <div className="absolute right-4 top-4 z-10 flex flex-col items-end gap-3">
+        <div className="flex items-stretch gap-2">
+          <div
+            className="flex overflow-hidden rounded border"
+            style={{
+              backgroundColor: MAP_FALLBACK_COLORS.panel,
+              borderColor: MAP_FALLBACK_COLORS.border,
+            }}
+            role="group"
+            aria-label="Map view mode"
+          >
+            {VIEW_MODES.map(({ mode, label }) => (
+              <PanelButton
+                key={mode}
+                active={viewMode === mode}
+                label={label}
+                onClick={() => {
+                  setViewMode(mode);
+                  cancelPlacement();
+                }}
+              />
+            ))}
+          </div>
+          <div
+            className="flex overflow-hidden rounded border"
+            style={{
+              backgroundColor: MAP_FALLBACK_COLORS.panel,
+              borderColor: MAP_FALLBACK_COLORS.border,
+            }}
+          >
+            <PanelButton disabled={loading || saving} label="Refresh" onClick={onRefresh} />
+          </div>
+        </div>
+
+        {viewMode === "domain" ? (
+          <PlacementPanel
+            contextNameById={contextNameById}
+            onRemove={removeFromMap}
+            onSelect={(entityId) =>
+              setPlacingEntityId((current) => (current === entityId ? null : entityId))
+            }
+            placingEntityId={placingEntityId}
+            placedEntities={placedEntities}
+            saving={saving}
+            unplacedEntities={unplacedEntities}
+          />
+        ) : null}
+      </div>
+
+      {/* Top-center notices: the fixed RavenBench bar owns the viewport
+          bottom, so feedback anchors under the stone bar instead. */}
+      {saveError != null ? (
+        <div
+          className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-3 rounded border px-3 py-2"
+          style={{
+            backgroundColor: MAP_FALLBACK_COLORS.panel,
+            borderColor: MAP_FALLBACK_COLORS.border,
+          }}
+          role="alert"
+        >
+          <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.heading }}>
+            {saveError.kind === "conflict" ? "The map changed — refresh. " : ""}
+            <span style={{ color: MAP_FALLBACK_COLORS.subtext }}>{saveError.message}</span>
+          </p>
+          {saveError.kind === "conflict" ? (
+            <button
+              type="button"
+              className="border px-2 py-1 text-xs font-semibold"
+              style={{
+                backgroundColor: MAP_FALLBACK_COLORS.field,
+                borderColor: MAP_FALLBACK_COLORS.border,
+                color: MAP_FALLBACK_COLORS.subtext,
+              }}
+              onClick={onRefresh}
+            >
+              Refresh
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {placingEntity != null && placeableKeys.size === 0 ? (
+        <div
+          className="absolute left-1/2 top-16 z-10 -translate-x-1/2 rounded border px-3 py-2"
+          style={{
+            backgroundColor: MAP_FALLBACK_COLORS.panel,
+            borderColor: MAP_FALLBACK_COLORS.border,
+          }}
+        >
+          <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+            No free hex in {contextNameById.get(placingEntity.contextId) ?? "this context"}&apos;s
+            patch — remove a tile or grow the domain first.
+          </p>
+        </div>
+      ) : null}
+
+      <MapScene
+        cells={cells}
+        cellTintByKey={
+          viewMode === "domain" ? domainLayout?.tintByCellKey : ownerLayout?.tintByCellKey
+        }
+        cellVisualStateByKey={viewMode === "domain" ? cellVisualStateByKey : undefined}
+        onCellClick={viewMode === "domain" ? handleCellClick : undefined}
+        onPointerMissed={placingEntityId == null ? undefined : cancelPlacement}
+      >
+        {viewMode === "domain" && domainLayout != null ? (
+          <DomainView layout={domainLayout} />
+        ) : viewMode === "owner" && ownerLayout != null ? (
+          <OwnerViewLayer layout={ownerLayout} />
+        ) : null}
+      </MapScene>
+    </div>
+  );
+}
+
+export default MapTabView;

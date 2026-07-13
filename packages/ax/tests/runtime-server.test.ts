@@ -4327,11 +4327,12 @@ exit 2
       const statePath = mapStatePathForWorkspacePath(workspacePath(cwd));
       const before = readFileSync(statePath, "utf8");
 
-      // A second entity on an occupied hex.
+      // A second entity on an occupied hex (the seed's first position).
       const duplicateHex = mapStateFixture();
+      const occupied = (duplicateHex.positions as Array<Record<string, unknown>>)[0]!;
       (duplicateHex.positions as unknown[]).push({
-        q: 1,
-        r: -1,
+        q: occupied.q,
+        r: occupied.r,
         entityType: "project",
         entityId: "prj-map-tab",
       });
@@ -4395,6 +4396,69 @@ exit 2
 
       // Every rejection left the on-disk file byte-identical.
       expect(readFileSync(statePath, "utf8")).toBe(before);
+    } finally {
+      await Effect.runPromise(server.stop);
+    }
+  });
+
+  test("guards concurrent map writes: ETag on reads, If-Match honored, stale writers get a structured 409", async () => {
+    const cwd = makeProjectDir();
+    initProject(cwd);
+    const server = await startApiServer(cwd);
+
+    try {
+      // Seed, then read the current revision from the GET ETag.
+      const seedResponse = await fetch(new URL("/api/map/state", server.url), {
+        body: JSON.stringify(mapStateFixture()),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      });
+      expect(seedResponse.status).toBe(200);
+      const getResponse = await fetch(new URL("/api/map/state", server.url));
+      const revision = getResponse.headers.get("etag");
+      expect(revision).toMatch(/^"[0-9a-f]{16}"$/);
+
+      // A conditional write with the current revision succeeds and returns
+      // the next revision.
+      const moved = mapStateFixture();
+      (moved.positions as Array<Record<string, unknown>>)[0] = {
+        q: 2,
+        r: -2,
+        entityType: "system",
+        entityId: "sys-raven-duty-loop",
+      };
+      const conditionalWrite = await fetch(new URL("/api/map/state", server.url), {
+        body: JSON.stringify(moved),
+        headers: { "content-type": "application/json", "if-match": revision! },
+        method: "POST",
+      });
+      expect(conditionalWrite.status).toBe(200);
+      const nextRevision = conditionalWrite.headers.get("etag");
+      expect(nextRevision).toMatch(/^"[0-9a-f]{16}"$/);
+      expect(nextRevision).not.toBe(revision);
+
+      // A writer still holding the old revision fails loudly with a
+      // structured 409 and leaves the file untouched.
+      const statePath = mapStatePathForWorkspacePath(workspacePath(cwd));
+      const before = readFileSync(statePath, "utf8");
+      const staleWrite = await fetch(new URL("/api/map/state", server.url), {
+        body: JSON.stringify(mapStateFixture()),
+        headers: { "content-type": "application/json", "if-match": revision! },
+        method: "POST",
+      });
+      expect(staleWrite.status).toBe(409);
+      const staleBody = (await staleWrite.json()) as RuntimeErrorBody;
+      expect(staleBody.error.code).toBe("map_state_conflict");
+      expect(staleBody.error.message).toContain("Refresh the map");
+      expect(readFileSync(statePath, "utf8")).toBe(before);
+
+      // An unconditional POST (curl/agent writers) stays last-write-wins.
+      const unconditional = await fetch(new URL("/api/map/state", server.url), {
+        body: JSON.stringify(mapStateFixture()),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      });
+      expect(unconditional.status).toBe(200);
     } finally {
       await Effect.runPromise(server.stop);
     }

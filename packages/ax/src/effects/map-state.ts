@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { Data, Effect } from "effect";
 import { mapStatePathForWorkspacePath } from "../domain/paths.js";
 import { FileSystem, isMissingFileError } from "./filesystem.js";
@@ -15,6 +16,13 @@ import { FileSystem, isMissingFileError } from "./filesystem.js";
  * entity), and one entity per hex. Landmark positions reference things that
  * are not entities in this file (e.g. `colleague:raven`), so their `entityId`
  * is a free non-empty string.
+ *
+ * Half convention (plan §1.3): the map grid's `work` half is the r < 0 side,
+ * the `personal` half the r > 0 side, and the r = 0 row stays neutral. A
+ * domain's `region.center` r-sign must therefore match its declared `half`
+ * (work → r < 0, personal → r > 0) — a wrong-side region would render as a
+ * ghost domain (label over bare parchment, no territory), so it fails loudly
+ * at write time instead.
  */
 
 export const MAP_DOMAIN_HALVES = ["work", "personal"] as const;
@@ -233,6 +241,16 @@ function validateDomains(value: unknown): MapDomain[] | MapStateValidationError 
 
     const region = rawDomain.region as Record<string, unknown>;
     const center = region.center as [number, number];
+    // Half/center r-sign consistency (see the module header): a work-half
+    // domain must sit on the r < 0 side, a personal-half domain on r > 0.
+    const half = rawDomain.half as MapDomainHalf;
+    const centerR = center[1];
+    if (half === "work" ? centerR >= 0 : centerR <= 0) {
+      return validationError(
+        `${ref} region center r must be ${half === "work" ? "negative" : "positive"} for a ` +
+          `${half}-half domain (work is the r < 0 side, personal the r > 0 side; r = 0 is neutral)`,
+      );
+    }
     domains.push({
       id: rawDomain.id as string,
       name: rawDomain.name as string,
@@ -530,6 +548,18 @@ function serializeMapState(state: MapState): string {
     positions: state.positions,
   };
   return `${JSON.stringify(ordered, null, 2)}\n`;
+}
+
+/**
+ * The document's revision: a content hash of its canonical serialized form.
+ * `GET /api/map/state` serves it as an `ETag`; a writer echoes it back via
+ * `If-Match` so a stale full-document POST fails with a structured 409
+ * instead of silently clobbering a concurrent write (the S1 concurrency
+ * guard — a cheap precondition chosen over read-merge because the document
+ * is replaced whole and already has one canonical serialization to hash).
+ */
+export function mapStateRevision(state: MapState): string {
+  return createHash("sha256").update(serializeMapState(state)).digest("hex").slice(0, 16);
 }
 
 /**

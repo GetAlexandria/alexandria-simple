@@ -29,6 +29,16 @@ const stoneTabs = [
     id: "ledger",
     label: "Ledger",
   },
+  // The fifth stone (Map tab plan §5 ruling 4): the parchment map inside
+  // the cave chrome. The theater stone is the unclaimed artwork in
+  // public/library-assets, standing in until a dedicated map stone lands.
+  {
+    active: "/library-assets/theater-stone-active.png",
+    disabled: false,
+    dormant: "/library-assets/theater-stone.png",
+    id: "map",
+    label: "Map",
+  },
 ] as const;
 
 interface StoneTopBarProps {
@@ -37,6 +47,7 @@ interface StoneTopBarProps {
   onInfo(): void;
   onLedger(): void;
   onLibrary(): void;
+  onMap(): void;
   onPlaybook(): void;
 }
 
@@ -46,6 +57,7 @@ export function StoneTopBar({
   onInfo,
   onLedger,
   onLibrary,
+  onMap,
   onPlaybook,
 }: StoneTopBarProps) {
   return (
@@ -65,20 +77,14 @@ export function StoneTopBar({
         role="tablist"
       >
         {stoneTabs.map((tab) => {
-          const isLibrary = tab.id === "library";
-          const isPlaybook = tab.id === "playbook";
-          const isInfo = tab.id === "info";
-          const isLedger = tab.id === "ledger";
           const isActive = activeTab === tab.id;
-          const onClick = isLibrary
-            ? onLibrary
-            : isPlaybook
-              ? onPlaybook
-              : isInfo
-                ? onInfo
-                : isLedger
-                  ? onLedger
-                  : undefined;
+          const onClick = {
+            info: onInfo,
+            ledger: onLedger,
+            library: onLibrary,
+            map: onMap,
+            playbook: onPlaybook,
+          }[tab.id];
 
           return (
             <button
