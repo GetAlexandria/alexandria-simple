@@ -23,7 +23,7 @@ import type { MapEntity, MapState } from "../../app/runtime/schemas";
 import type { MapStateSaveError } from "../library/hooks/useMapState";
 import { MAP_FALLBACK_COLORS } from "./colors";
 import { DomainView } from "./DomainView";
-import { createHex, generateHexGrid, hexToKey, type HexCoord } from "./hex";
+import { generateHexGrid, hexToKey, type HexCoord } from "./hex";
 import type { HexCellVisualState } from "./HexCell";
 import { computeDomainViewLayout } from "./layout/domain-view";
 import { buildOwnerViewLayout } from "./layout/owner-view";
@@ -31,14 +31,18 @@ import { mapStateGridRadius } from "./map-grid";
 import { MapMessagePanel } from "./MapMessagePanel";
 import { MapScene } from "./MapScene";
 import { OwnerViewLayer } from "./OwnerViewLayer";
+import { PanelButton, ParchmentActionButton } from "./panel-buttons";
+import {
+  occupiedHexKeys,
+  placeableHexKeys,
+  placedEntities as placedEntitiesFrom,
+  positionedEntityIds as positionedEntityIdsFrom,
+  unplacedEntities as unplacedEntitiesFrom,
+  withEntityPlaced,
+  withEntityRemoved,
+} from "./placement";
+import { type MapViewMode, VIEW_MODES } from "./view-mode";
 import { isWebGLForcedOff, supportsWebGL } from "./webgl";
-
-type MapViewMode = "domain" | "owner";
-
-const VIEW_MODES: { mode: MapViewMode; label: string }[] = [
-  { mode: "domain", label: "Domain view" },
-  { mode: "owner", label: "Owner view" },
-];
 
 export type MapTabViewProps = {
   error: string | null;
@@ -50,40 +54,6 @@ export type MapTabViewProps = {
   saving: boolean;
   state: MapState | null;
 };
-
-/** Parchment-styled panel button (HUD chrome floating over the canvas). */
-function PanelButton({
-  active = false,
-  disabled = false,
-  label,
-  onClick,
-}: {
-  active?: boolean;
-  disabled?: boolean;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      disabled={disabled}
-      onClick={onClick}
-      className="px-3 py-1.5 text-xs disabled:opacity-50"
-      style={
-        active
-          ? {
-              backgroundColor: MAP_FALLBACK_COLORS.border,
-              color: MAP_FALLBACK_COLORS.heading,
-              fontWeight: 600,
-            }
-          : { color: MAP_FALLBACK_COLORS.subtext }
-      }
-    >
-      {label}
-    </button>
-  );
-}
 
 function entityKindLabel(entity: MapEntity): string {
   return entity.kind === "project" ? "Project" : "System";
@@ -260,33 +230,20 @@ export function MapTabView({
   // Every stored position occupies its hex — entity tiles and landmark
   // hexes alike (landmark hexes are the reserved ones, plan §1.3).
   const occupiedKeys = useMemo(
-    () =>
-      new Set(
-        (state?.positions ?? []).map((position) => hexToKey(createHex(position.q, position.r))),
-      ),
+    () => (state == null ? new Set<string>() : occupiedHexKeys(state)),
     [state],
   );
   const positionedEntityIds = useMemo(
-    () =>
-      new Set(
-        (state?.positions ?? [])
-          .filter((position) => position.entityType !== "landmark")
-          .map((position) => position.entityId),
-      ),
+    () => (state == null ? new Set<string>() : positionedEntityIdsFrom(state)),
     [state],
   );
 
   const unplacedEntities = useMemo(
-    () =>
-      (state?.entities ?? []).filter(
-        (entity) =>
-          !positionedEntityIds.has(entity.id) &&
-          !(entity.kind === "system" && entity.lifecycle === "uprooted"),
-      ),
+    () => (state == null ? [] : unplacedEntitiesFrom(state, positionedEntityIds)),
     [state, positionedEntityIds],
   );
   const placedEntities = useMemo(
-    () => (state?.entities ?? []).filter((entity) => positionedEntityIds.has(entity.id)),
+    () => (state == null ? [] : placedEntitiesFrom(state, positionedEntityIds)),
     [state, positionedEntityIds],
   );
   const contextNameById = useMemo(
@@ -307,13 +264,7 @@ export function MapTabView({
     if (placingEntity == null || domainLayout == null) {
       return new Set<string>();
     }
-    const keys = new Set<string>();
-    for (const [key, contextId] of domainLayout.patchByCellKey) {
-      if (contextId === placingEntity.contextId && !occupiedKeys.has(key)) {
-        keys.add(key);
-      }
-    }
-    return keys;
+    return placeableHexKeys(domainLayout.patchByCellKey, placingEntity.contextId, occupiedKeys);
   }, [placingEntity, domainLayout, occupiedKeys]);
 
   const cellVisualStateByKey = useMemo(() => {
@@ -351,21 +302,7 @@ export function MapTabView({
       if (state == null || placingEntity == null) {
         return;
       }
-      const next: MapState = {
-        contexts: state.contexts,
-        domains: state.domains,
-        entities: state.entities,
-        positions: [
-          ...state.positions,
-          {
-            entityId: placingEntity.id,
-            entityType: placingEntity.kind,
-            q: coord.q,
-            r: coord.r,
-          },
-        ],
-      };
-      if (await onSave(next)) {
+      if (await onSave(withEntityPlaced(state, placingEntity, coord))) {
         setPlacingEntityId(null);
       }
     },
@@ -403,15 +340,7 @@ export function MapTabView({
       if (state == null || saving) {
         return;
       }
-      const next: MapState = {
-        contexts: state.contexts,
-        domains: state.domains,
-        entities: state.entities,
-        positions: state.positions.filter(
-          (position) => position.entityType === "landmark" || position.entityId !== entityId,
-        ),
-      };
-      void onSave(next);
+      void onSave(withEntityRemoved(state, entityId));
     },
     [state, saving, onSave],
   );
@@ -441,20 +370,7 @@ export function MapTabView({
         fill
         title="The map state couldn't load"
         subtext={error ?? "Unknown error."}
-        action={
-          <button
-            type="button"
-            className="mt-2 border px-2 py-1 text-xs font-semibold"
-            style={{
-              backgroundColor: MAP_FALLBACK_COLORS.field,
-              borderColor: MAP_FALLBACK_COLORS.border,
-              color: MAP_FALLBACK_COLORS.subtext,
-            }}
-            onClick={onRefresh}
-          >
-            Retry
-          </button>
-        }
+        action={<ParchmentActionButton className="mt-2" label="Retry" onClick={onRefresh} />}
       />
     );
   }
@@ -465,20 +381,7 @@ export function MapTabView({
         fill
         title="The map has no domains yet"
         subtext="Seed domains, contexts, and entities in docs/alexandria/map/map-state.json (the shape is documented in docs/alexandria/plans/map-tab/plan.md §1.3), then refresh."
-        action={
-          <button
-            type="button"
-            className="mt-2 border px-2 py-1 text-xs font-semibold"
-            style={{
-              backgroundColor: MAP_FALLBACK_COLORS.field,
-              borderColor: MAP_FALLBACK_COLORS.border,
-              color: MAP_FALLBACK_COLORS.subtext,
-            }}
-            onClick={onRefresh}
-          >
-            Refresh
-          </button>
-        }
+        action={<ParchmentActionButton className="mt-2" label="Refresh" onClick={onRefresh} />}
       />
     );
   }
@@ -572,18 +475,7 @@ export function MapTabView({
             <span style={{ color: MAP_FALLBACK_COLORS.subtext }}>{saveError.message}</span>
           </p>
           {saveError.kind === "conflict" ? (
-            <button
-              type="button"
-              className="border px-2 py-1 text-xs font-semibold"
-              style={{
-                backgroundColor: MAP_FALLBACK_COLORS.field,
-                borderColor: MAP_FALLBACK_COLORS.border,
-                color: MAP_FALLBACK_COLORS.subtext,
-              }}
-              onClick={onRefresh}
-            >
-              Refresh
-            </button>
+            <ParchmentActionButton label="Refresh" onClick={onRefresh} />
           ) : null}
         </div>
       ) : null}

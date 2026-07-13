@@ -69,8 +69,8 @@ import {
   type ViewerRoute,
 } from "./viewer-routes";
 import { VisionOnboardingView } from "./vision/VisionOnboardingView";
-import { MAP_FALLBACK_COLORS } from "../map/colors";
 import { MapMessagePanel } from "../map/MapMessagePanel";
+import { ParchmentActionButton } from "../map/panel-buttons";
 
 interface LibraryBrowserAppProps {
   initialCatalog?: LibraryCatalog;
@@ -139,18 +139,11 @@ class MapChunkErrorBoundary extends Component<
         title="Map failed to load"
         subtext="Reload to fetch the latest map code."
         action={
-          <button
-            type="button"
-            className="mt-2 border px-2 py-1 text-xs font-semibold"
-            style={{
-              backgroundColor: MAP_FALLBACK_COLORS.field,
-              borderColor: MAP_FALLBACK_COLORS.border,
-              color: MAP_FALLBACK_COLORS.subtext,
-            }}
+          <ParchmentActionButton
+            className="mt-2"
+            label="Reload"
             onClick={() => window.location.reload()}
-          >
-            Reload
-          </button>
+          />
         }
       />
     );
@@ -780,16 +773,7 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
     return (
       <MapChunkErrorBoundary>
         <Suspense
-          fallback={
-            <div
-              className="flex h-screen w-full items-center justify-center"
-              style={{ backgroundColor: MAP_FALLBACK_COLORS.field }}
-            >
-              <div className="text-sm font-semibold" style={{ color: MAP_FALLBACK_COLORS.text }}>
-                Loading map...
-              </div>
-            </div>
-          }
+          fallback={<MapMessagePanel title="Loading the map" subtext="Fetching the map code…" />}
         >
           <LazyMapDevView />
         </Suspense>
@@ -901,17 +885,7 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
           <MapChunkErrorBoundary fill>
             <Suspense
               fallback={
-                <div
-                  className="flex h-full w-full items-center justify-center"
-                  style={{ backgroundColor: MAP_FALLBACK_COLORS.field }}
-                >
-                  <div
-                    className="text-sm font-semibold"
-                    style={{ color: MAP_FALLBACK_COLORS.text }}
-                  >
-                    Loading map...
-                  </div>
-                </div>
+                <MapMessagePanel fill title="Loading the map" subtext="Fetching the map code…" />
               }
             >
               <LazyMapTabView

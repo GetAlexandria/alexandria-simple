@@ -78,22 +78,38 @@ const parseJson = Effect.fn("ViewerRuntimeClient.parseJson")(function* (response
   });
 });
 
+/**
+ * One fetch-and-decode pipeline: request, surface a network/HTTP/JSON
+ * failure as the corresponding ViewerRuntimeError, and hand back the
+ * decoded payload plus the raw Response for callers that need header
+ * access (map state's ETag/If-Match). Most callers only need the payload —
+ * see fetchJson below.
+ */
+const fetchJsonKeepingResponse = Effect.fn("ViewerRuntimeClient.fetchJsonKeepingResponse")(
+  function* (context: ViewerRuntimeRequestContext, path: string, init?: RequestInit) {
+    const response = yield* Effect.tryPromise({
+      catch: (cause) => new ViewerNetworkError(cause),
+      try: async (): Promise<Response> => context.fetcher(endpoint(path, context.baseUrl), init),
+    });
+
+    if (!response.ok) {
+      const body = yield* readErrorBody(response);
+      return yield* Effect.fail(new ViewerHttpError(response.status, response.statusText, body));
+    }
+
+    const payload = yield* parseJson(response);
+    return { payload, response };
+  },
+);
+
+/** fetchJsonKeepingResponse, discarding the Response — the common case. */
 const fetchJson = Effect.fn("ViewerRuntimeClient.fetchJson")(function* (
   context: ViewerRuntimeRequestContext,
   path: string,
   init?: RequestInit,
 ) {
-  const response = yield* Effect.tryPromise({
-    catch: (cause) => new ViewerNetworkError(cause),
-    try: async (): Promise<Response> => context.fetcher(endpoint(path, context.baseUrl), init),
-  });
-
-  if (!response.ok) {
-    const body = yield* readErrorBody(response);
-    return yield* Effect.fail(new ViewerHttpError(response.status, response.statusText, body));
-  }
-
-  return yield* parseJson(response);
+  const { payload } = yield* fetchJsonKeepingResponse(context, path, init);
+  return payload;
 });
 
 export interface LibraryCardRef {
@@ -254,24 +270,6 @@ export interface MapStateWithRevision {
   revision: string | null;
   state: MapState;
 }
-
-/** Like fetchJson, but also surfaces the Response for header access. */
-const fetchJsonKeepingResponse = Effect.fn("ViewerRuntimeClient.fetchJsonKeepingResponse")(
-  function* (context: ViewerRuntimeRequestContext, path: string, init?: RequestInit) {
-    const response = yield* Effect.tryPromise({
-      catch: (cause) => new ViewerNetworkError(cause),
-      try: async (): Promise<Response> => context.fetcher(endpoint(path, context.baseUrl), init),
-    });
-
-    if (!response.ok) {
-      const body = yield* readErrorBody(response);
-      return yield* Effect.fail(new ViewerHttpError(response.status, response.statusText, body));
-    }
-
-    const payload = yield* parseJson(response);
-    return { payload, response };
-  },
-);
 
 function revisionFromResponse(response: Response): string | null {
   const etag = response.headers.get("etag");
