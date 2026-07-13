@@ -11,11 +11,8 @@ import { useLoader } from "@react-three/fiber";
 import { useEffect } from "react";
 import { DoubleSide, SRGBColorSpace, TextureLoader } from "three";
 import { LANDMARK_SPRITE_COLORS } from "./colors";
-import { hexToWorld, type HexCoord } from "./hex";
-
-// Billboard tilt matching CameraRig's CAMERA_ELEVATION_DEGREES (31°) so
-// sprites face the orthographic camera head-on.
-const CAMERA_TILT_RADIANS = -Math.PI / 2 + (31 * Math.PI) / 180;
+import { HEX_SIZE, hexToWorld, type HexCoord } from "./hex";
+import { CAMERA_FACING_ROTATION_X } from "./MapLabel";
 
 type LandmarkSpriteProps = {
   coord: HexCoord;
@@ -39,7 +36,7 @@ export function LandmarkSprite({
   zOffset = 0.45,
 }: LandmarkSpriteProps) {
   const texture = useLoader(TextureLoader, textureUrl);
-  const [x, z] = hexToWorld(coord, 1);
+  const [x, z] = hexToWorld(coord, HEX_SIZE);
 
   useEffect(() => {
     // useLoader caches textures by URL, so the same instance is shared
@@ -54,7 +51,7 @@ export function LandmarkSprite({
   return (
     <mesh
       position={[x, elevation, z + zOffset]}
-      rotation={[CAMERA_TILT_RADIANS, 0, 0]}
+      rotation={[CAMERA_FACING_ROTATION_X, 0, 0]}
       raycast={() => null}
     >
       <planeGeometry args={[width, height]} />

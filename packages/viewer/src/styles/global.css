@@ -2,6 +2,9 @@
 @import "@fontsource/cormorant-garamond/400-italic.css";
 @import "@fontsource/cormorant-garamond/500.css";
 @import "@fontsource/cormorant-garamond/600.css";
+/* Map context labels render italic 600 on canvas (MapLabel); without this
+   face the browser synthesizes a faux-bold italic. */
+@import "@fontsource/cormorant-garamond/600-italic.css";
 @import "@fontsource/inter/400.css";
 @import "@fontsource/inter/500.css";
 @import "@fontsource/inter/600.css";
@@ -53,79 +56,175 @@
     --viewer-panel-bd: rgba(79, 184, 168, 0.28);
     --viewer-engine-type-bet-accent: #f0a6ff;
     --viewer-engine-type-bet-bg: rgba(162, 28, 175, 0.2);
-    --viewer-engine-type-bet-border: color-mix(in srgb, var(--viewer-engine-type-bet-accent) 46%, transparent);
+    --viewer-engine-type-bet-border: color-mix(
+      in srgb,
+      var(--viewer-engine-type-bet-accent) 46%,
+      transparent
+    );
     --viewer-engine-type-principle-accent: #9aa7ff;
     --viewer-engine-type-principle-bg: rgba(67, 56, 202, 0.2);
-    --viewer-engine-type-principle-border: color-mix(in srgb, var(--viewer-engine-type-principle-accent) 48%, transparent);
+    --viewer-engine-type-principle-border: color-mix(
+      in srgb,
+      var(--viewer-engine-type-principle-accent) 48%,
+      transparent
+    );
     --viewer-engine-type-research-accent: #75d8c8;
     --viewer-engine-type-research-bg: rgba(15, 118, 110, 0.22);
-    --viewer-engine-type-research-border: color-mix(in srgb, var(--viewer-engine-type-research-accent) 44%, transparent);
+    --viewer-engine-type-research-border: color-mix(
+      in srgb,
+      var(--viewer-engine-type-research-accent) 44%,
+      transparent
+    );
     --viewer-engine-type-experiment-accent: #c49bff;
     --viewer-engine-type-experiment-bg: rgba(109, 40, 217, 0.22);
-    --viewer-engine-type-experiment-border: color-mix(in srgb, var(--viewer-engine-type-experiment-accent) 46%, transparent);
+    --viewer-engine-type-experiment-border: color-mix(
+      in srgb,
+      var(--viewer-engine-type-experiment-accent) 46%,
+      transparent
+    );
     --viewer-engine-type-measure-accent: #b9df70;
     --viewer-engine-type-measure-bg: rgba(77, 124, 15, 0.24);
-    --viewer-engine-type-measure-border: color-mix(in srgb, var(--viewer-engine-type-measure-accent) 44%, transparent);
+    --viewer-engine-type-measure-border: color-mix(
+      in srgb,
+      var(--viewer-engine-type-measure-accent) 44%,
+      transparent
+    );
     --viewer-engine-type-arc-accent: #f0ca62;
     --viewer-engine-type-arc-bg: rgba(161, 98, 7, 0.24);
-    --viewer-engine-type-arc-border: color-mix(in srgb, var(--viewer-engine-type-arc-accent) 46%, transparent);
+    --viewer-engine-type-arc-border: color-mix(
+      in srgb,
+      var(--viewer-engine-type-arc-accent) 46%,
+      transparent
+    );
     --viewer-engine-type-role-accent: #f0a75d;
     --viewer-engine-type-role-bg: rgba(180, 83, 9, 0.22);
-    --viewer-engine-type-role-border: color-mix(in srgb, var(--viewer-engine-type-role-accent) 44%, transparent);
+    --viewer-engine-type-role-border: color-mix(
+      in srgb,
+      var(--viewer-engine-type-role-accent) 44%,
+      transparent
+    );
     --viewer-engine-type-domain-accent: #a9b7ca;
     --viewer-engine-type-domain-bg: rgba(71, 85, 105, 0.28);
-    --viewer-engine-type-domain-border: color-mix(in srgb, var(--viewer-engine-type-domain-accent) 40%, transparent);
+    --viewer-engine-type-domain-border: color-mix(
+      in srgb,
+      var(--viewer-engine-type-domain-accent) 40%,
+      transparent
+    );
     --viewer-engine-type-surface-accent: #7fb7ff;
     --viewer-engine-type-surface-bg: rgba(37, 99, 235, 0.2);
-    --viewer-engine-type-surface-border: color-mix(in srgb, var(--viewer-engine-type-surface-accent) 48%, transparent);
+    --viewer-engine-type-surface-border: color-mix(
+      in srgb,
+      var(--viewer-engine-type-surface-accent) 48%,
+      transparent
+    );
     --viewer-engine-type-entity-accent: #ff8eaa;
     --viewer-engine-type-entity-bg: rgba(190, 18, 60, 0.2);
-    --viewer-engine-type-entity-border: color-mix(in srgb, var(--viewer-engine-type-entity-accent) 46%, transparent);
+    --viewer-engine-type-entity-border: color-mix(
+      in srgb,
+      var(--viewer-engine-type-entity-accent) 46%,
+      transparent
+    );
     --viewer-engine-type-capability-accent: #7fd99d;
     --viewer-engine-type-capability-bg: rgba(4, 120, 87, 0.22);
-    --viewer-engine-type-capability-border: color-mix(in srgb, var(--viewer-engine-type-capability-accent) 44%, transparent);
+    --viewer-engine-type-capability-border: color-mix(
+      in srgb,
+      var(--viewer-engine-type-capability-accent) 44%,
+      transparent
+    );
     --viewer-engine-type-mechanism-accent: #f09a6c;
     --viewer-engine-type-mechanism-bg: rgba(194, 65, 12, 0.22);
-    --viewer-engine-type-mechanism-border: color-mix(in srgb, var(--viewer-engine-type-mechanism-accent) 44%, transparent);
+    --viewer-engine-type-mechanism-border: color-mix(
+      in srgb,
+      var(--viewer-engine-type-mechanism-accent) 44%,
+      transparent
+    );
     --viewer-engine-type-pattern-accent: #6fd7e8;
     --viewer-engine-type-pattern-bg: rgba(14, 116, 144, 0.22);
-    --viewer-engine-type-pattern-border: color-mix(in srgb, var(--viewer-engine-type-pattern-accent) 44%, transparent);
+    --viewer-engine-type-pattern-border: color-mix(
+      in srgb,
+      var(--viewer-engine-type-pattern-accent) 44%,
+      transparent
+    );
     --viewer-engine-type-economy-accent: #b7b7c4;
     --viewer-engine-type-economy-bg: rgba(82, 82, 91, 0.26);
-    --viewer-engine-type-economy-border: color-mix(in srgb, var(--viewer-engine-type-economy-accent) 40%, transparent);
+    --viewer-engine-type-economy-border: color-mix(
+      in srgb,
+      var(--viewer-engine-type-economy-accent) 40%,
+      transparent
+    );
     --viewer-engine-type-unknown-accent: #a99a86;
     --viewer-engine-type-unknown-bg: rgba(82, 72, 60, 0.28);
-    --viewer-engine-type-unknown-border: color-mix(in srgb, var(--viewer-engine-type-unknown-accent) 42%, transparent);
+    --viewer-engine-type-unknown-border: color-mix(
+      in srgb,
+      var(--viewer-engine-type-unknown-accent) 42%,
+      transparent
+    );
     --viewer-engine-zone-default-accent: #a99a86;
     --viewer-engine-zone-default-bg: rgba(30, 22, 14, 0.62);
     --viewer-engine-zone-default-border: rgba(212, 160, 82, 0.2);
     --viewer-engine-zone-library-accent: #7fb7ff;
     --viewer-engine-zone-library-bg: rgba(37, 99, 235, 0.18);
-    --viewer-engine-zone-library-border: color-mix(in srgb, var(--viewer-engine-zone-library-accent) 44%, transparent);
+    --viewer-engine-zone-library-border: color-mix(
+      in srgb,
+      var(--viewer-engine-zone-library-accent) 44%,
+      transparent
+    );
     --viewer-engine-zone-knowledge-organization-accent: #f0ca62;
     --viewer-engine-zone-knowledge-organization-bg: rgba(161, 98, 7, 0.2);
-    --viewer-engine-zone-knowledge-organization-border: color-mix(in srgb, var(--viewer-engine-zone-knowledge-organization-accent) 42%, transparent);
+    --viewer-engine-zone-knowledge-organization-border: color-mix(
+      in srgb,
+      var(--viewer-engine-zone-knowledge-organization-accent) 42%,
+      transparent
+    );
     --viewer-engine-zone-playbook-accent: #7fd99d;
     --viewer-engine-zone-playbook-bg: rgba(4, 120, 87, 0.2);
-    --viewer-engine-zone-playbook-border: color-mix(in srgb, var(--viewer-engine-zone-playbook-accent) 42%, transparent);
+    --viewer-engine-zone-playbook-border: color-mix(
+      in srgb,
+      var(--viewer-engine-zone-playbook-accent) 42%,
+      transparent
+    );
     --viewer-engine-zone-ledger-accent: #c49bff;
     --viewer-engine-zone-ledger-bg: rgba(109, 40, 217, 0.2);
-    --viewer-engine-zone-ledger-border: color-mix(in srgb, var(--viewer-engine-zone-ledger-accent) 44%, transparent);
+    --viewer-engine-zone-ledger-border: color-mix(
+      in srgb,
+      var(--viewer-engine-zone-ledger-accent) 44%,
+      transparent
+    );
     --viewer-engine-zone-studio-accent: #f0a75d;
     --viewer-engine-zone-studio-bg: rgba(180, 83, 9, 0.2);
-    --viewer-engine-zone-studio-border: color-mix(in srgb, var(--viewer-engine-zone-studio-accent) 42%, transparent);
+    --viewer-engine-zone-studio-border: color-mix(
+      in srgb,
+      var(--viewer-engine-zone-studio-accent) 42%,
+      transparent
+    );
     --viewer-engine-zone-runtime-accent: #6fd7e8;
     --viewer-engine-zone-runtime-bg: rgba(14, 116, 144, 0.2);
-    --viewer-engine-zone-runtime-border: color-mix(in srgb, var(--viewer-engine-zone-runtime-accent) 42%, transparent);
+    --viewer-engine-zone-runtime-border: color-mix(
+      in srgb,
+      var(--viewer-engine-zone-runtime-accent) 42%,
+      transparent
+    );
     --viewer-engine-zone-triggers-accent: #ff8eaa;
     --viewer-engine-zone-triggers-bg: rgba(190, 18, 60, 0.18);
-    --viewer-engine-zone-triggers-border: color-mix(in srgb, var(--viewer-engine-zone-triggers-accent) 44%, transparent);
+    --viewer-engine-zone-triggers-border: color-mix(
+      in srgb,
+      var(--viewer-engine-zone-triggers-accent) 44%,
+      transparent
+    );
     --viewer-engine-zone-viewer-accent: #9aa7ff;
     --viewer-engine-zone-viewer-bg: rgba(67, 56, 202, 0.18);
-    --viewer-engine-zone-viewer-border: color-mix(in srgb, var(--viewer-engine-zone-viewer-accent) 44%, transparent);
+    --viewer-engine-zone-viewer-border: color-mix(
+      in srgb,
+      var(--viewer-engine-zone-viewer-accent) 44%,
+      transparent
+    );
     --viewer-engine-zone-unfiled-accent: #b7b7c4;
     --viewer-engine-zone-unfiled-bg: rgba(82, 82, 91, 0.22);
-    --viewer-engine-zone-unfiled-border: color-mix(in srgb, var(--viewer-engine-zone-unfiled-accent) 38%, transparent);
+    --viewer-engine-zone-unfiled-border: color-mix(
+      in srgb,
+      var(--viewer-engine-zone-unfiled-accent) 38%,
+      transparent
+    );
     --viewer-engine-confidence-high-bg: color-mix(
       in srgb,
       var(--viewer-canvas-success) 28%,
@@ -170,12 +269,9 @@
       rgba(44, 32, 18, 0.98) 0%,
       rgba(28, 18, 8, 0.96) 100%
     );
-    --viewer-font-px:
-      "Cormorant Garamond", Georgia, "Times New Roman", serif;
-    --viewer-font-display:
-      "Cormorant Garamond", Georgia, "Times New Roman", serif;
-    --viewer-font-ui:
-      "Inter", "Avenir Next", "Segoe UI", "Noto Sans", system-ui, sans-serif;
+    --viewer-font-px: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    --viewer-font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    --viewer-font-ui: "Inter", "Avenir Next", "Segoe UI", "Noto Sans", system-ui, sans-serif;
   }
 
   html {
@@ -191,11 +287,7 @@
         hsla(var(--viewer-bed-hue), 24%, 52%, 0.16),
         transparent 42%
       ),
-      radial-gradient(
-        circle at 14% 18%,
-        rgba(232, 184, 109, 0.08),
-        transparent 26%
-      ),
+      radial-gradient(circle at 14% 18%, rgba(232, 184, 109, 0.08), transparent 26%),
       linear-gradient(
         180deg,
         hsl(
@@ -222,8 +314,7 @@
   }
 
   body::before {
-    background:
-      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
     background-size: 240px 240px;
     content: "";
     inset: 0;
@@ -249,12 +340,7 @@
         rgba(255, 230, 180, 0.028) 75%,
         transparent calc(75% + 1px)
       ),
-      radial-gradient(
-        ellipse at center,
-        transparent 0%,
-        transparent 50%,
-        rgba(0, 0, 0, 0.38) 100%
-      );
+      radial-gradient(ellipse at center, transparent 0%, transparent 50%, rgba(0, 0, 0, 0.38) 100%);
     content: "";
     inset: 0;
     pointer-events: none;
@@ -279,8 +365,7 @@
 @layer components {
   .viewer-shell {
     min-height: calc(
-      100vh - var(--viewer-nav-h) - var(--viewer-agent-bench-h) -
-        var(--viewer-agent-tray-h)
+      100vh - var(--viewer-nav-h) - var(--viewer-agent-bench-h) - var(--viewer-agent-tray-h)
     );
   }
 
@@ -386,8 +471,7 @@
     border-radius: 4px;
     box-shadow:
       inset 0 3px 5px rgba(0, 0, 0, calc(var(--viewer-socket-depth) * 0.55)),
-      inset 0 -1px 2px
-        rgba(255, 230, 200, calc(var(--viewer-socket-depth) * 0.1));
+      inset 0 -1px 2px rgba(255, 230, 200, calc(var(--viewer-socket-depth) * 0.1));
     content: "";
     inset: 2px;
     pointer-events: none;
@@ -399,9 +483,7 @@
   }
 
   .viewer-stone-art {
-    filter:
-      drop-shadow(0 2px 1px rgba(0, 0, 0, 0.55))
-      drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+    filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.55)) drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
     height: calc(100% - 8px);
     inset: 4px;
     object-fit: cover;
@@ -425,9 +507,7 @@
   }
 
   .viewer-tab-stone:hover:not(.viewer-tab-locked) .viewer-stone-art-active {
-    filter:
-      drop-shadow(0 3px 2px rgba(0, 0, 0, 0.5))
-      drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45))
+    filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.5)) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45))
       drop-shadow(0 0 10px rgba(170, 220, 255, 0.4));
     opacity: 1;
   }
@@ -440,8 +520,7 @@
     background: rgba(0, 0, 0, calc(var(--viewer-socket-depth) * 0.32));
     box-shadow:
       inset 0 5px 9px rgba(0, 0, 0, calc(var(--viewer-socket-depth) * 0.75)),
-      inset 0 -1px 1px
-        rgba(255, 230, 200, calc(var(--viewer-socket-depth) * 0.04));
+      inset 0 -1px 1px rgba(255, 230, 200, calc(var(--viewer-socket-depth) * 0.04));
   }
 
   .viewer-tab-active .viewer-stone-art {
@@ -449,11 +528,8 @@
   }
 
   .viewer-tab-active .viewer-stone-art-active {
-    filter:
-      brightness(0.85) saturate(0.95)
-      drop-shadow(0 1px 1px rgba(0, 0, 0, 0.55))
-      drop-shadow(0 0 6px rgba(212, 160, 82, 0.65))
-      drop-shadow(0 0 14px rgba(212, 160, 82, 0.35));
+    filter: brightness(0.85) saturate(0.95) drop-shadow(0 1px 1px rgba(0, 0, 0, 0.55))
+      drop-shadow(0 0 6px rgba(212, 160, 82, 0.65)) drop-shadow(0 0 14px rgba(212, 160, 82, 0.35));
     opacity: 1;
   }
 
@@ -579,8 +655,7 @@
 
   .viewer-main {
     min-height: calc(
-      100vh - var(--viewer-nav-h) - var(--viewer-agent-bench-h) -
-        var(--viewer-agent-tray-h)
+      100vh - var(--viewer-nav-h) - var(--viewer-agent-bench-h) - var(--viewer-agent-tray-h)
     );
   }
 
@@ -683,11 +758,7 @@
 
   .agent-bench {
     align-items: stretch;
-    background: linear-gradient(
-      0deg,
-      rgba(28, 18, 8, 0.92) 0%,
-      rgba(44, 32, 20, 0.8) 100%
-    );
+    background: linear-gradient(0deg, rgba(28, 18, 8, 0.92) 0%, rgba(44, 32, 20, 0.8) 100%);
     border-top: 1px solid rgba(212, 160, 82, 0.22);
     bottom: 0;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.55);
@@ -715,13 +786,12 @@
 
   .agent-plinth {
     align-items: flex-end;
-    background:
-      linear-gradient(
-        180deg,
-        rgba(28, 18, 8, 0) 0%,
-        rgba(28, 18, 8, 0.35) 40%,
-        rgba(14, 9, 4, 0.65) 100%
-      );
+    background: linear-gradient(
+      180deg,
+      rgba(28, 18, 8, 0) 0%,
+      rgba(28, 18, 8, 0.35) 40%,
+      rgba(14, 9, 4, 0.65) 100%
+    );
     border-top: 2px solid rgba(80, 52, 24, 0.75);
     box-shadow:
       inset 0 3px 10px rgba(0, 0, 0, 0.55),
@@ -784,11 +854,7 @@
 
   .agent-coin-slot {
     background:
-      radial-gradient(
-        circle at 30% 28%,
-        rgba(255, 222, 180, 0.16) 0%,
-        transparent 45%
-      ),
+      radial-gradient(circle at 30% 28%, rgba(255, 222, 180, 0.16) 0%, transparent 45%),
       radial-gradient(circle at 72% 78%, rgba(20, 10, 4, 0.55) 0%, transparent 50%),
       linear-gradient(135deg, #4a3520 0%, #2e1f10 55%, #15100a 100%);
     border-radius: 50%;
@@ -999,11 +1065,7 @@
 
   .agent-minimize-btn {
     align-items: center;
-    background: linear-gradient(
-      180deg,
-      rgba(58, 40, 20, 0.55) 0%,
-      rgba(36, 26, 16, 0.55) 100%
-    );
+    background: linear-gradient(180deg, rgba(58, 40, 20, 0.55) 0%, rgba(36, 26, 16, 0.55) 100%);
     border: 1px solid rgba(212, 160, 82, 0.45);
     border-radius: 3px;
     box-shadow:
@@ -1033,11 +1095,7 @@
 
   .agent-minimize-btn:hover,
   .agent-minimize-btn:focus-visible {
-    background: linear-gradient(
-      180deg,
-      rgba(74, 52, 28, 0.65) 0%,
-      rgba(48, 34, 20, 0.65) 100%
-    );
+    background: linear-gradient(180deg, rgba(74, 52, 28, 0.65) 0%, rgba(48, 34, 20, 0.65) 100%);
     border-color: rgba(164, 112, 38, 0.95);
     box-shadow:
       inset 0 1px 0 rgba(255, 220, 180, 0.18),
@@ -1059,16 +1117,8 @@
 
   .raven-canvas-section {
     background:
-      radial-gradient(
-        ellipse at 50% 0%,
-        rgba(212, 160, 82, 0.06) 0%,
-        transparent 60%
-      ),
-      radial-gradient(
-        circle at 74% 16%,
-        rgba(232, 184, 109, 0.08),
-        transparent 24%
-      ),
+      radial-gradient(ellipse at 50% 0%, rgba(212, 160, 82, 0.06) 0%, transparent 60%),
+      radial-gradient(circle at 74% 16%, rgba(232, 184, 109, 0.08), transparent 24%),
       linear-gradient(
         180deg,
         rgba(42, 31, 21, 0.98) 0%,
@@ -1256,11 +1306,7 @@
 
   .raven-home-coin {
     background:
-      radial-gradient(
-        circle at 30% 28%,
-        rgba(255, 222, 180, 0.16) 0%,
-        transparent 45%
-      ),
+      radial-gradient(circle at 30% 28%, rgba(255, 222, 180, 0.16) 0%, transparent 45%),
       radial-gradient(circle at 72% 78%, rgba(20, 10, 4, 0.55) 0%, transparent 50%),
       linear-gradient(135deg, #4a3520 0%, #2e1f10 55%, #15100a 100%);
     border: 1px solid rgba(60, 36, 14, 0.65);
@@ -1436,11 +1482,7 @@
 
   .raven-kb-header {
     align-items: center;
-    background: linear-gradient(
-      180deg,
-      rgba(58, 44, 28, 0.7) 0%,
-      rgba(44, 32, 20, 0.6) 100%
-    );
+    background: linear-gradient(180deg, rgba(58, 44, 28, 0.7) 0%, rgba(44, 32, 20, 0.6) 100%);
     border: 1px solid rgba(212, 160, 82, 0.22);
     border-radius: 4px;
     box-shadow:
@@ -1592,11 +1634,7 @@
   }
 
   .raven-kb-band {
-    background: linear-gradient(
-      180deg,
-      rgba(58, 44, 28, 0.45) 0%,
-      rgba(44, 32, 20, 0.4) 100%
-    );
+    background: linear-gradient(180deg, rgba(58, 44, 28, 0.45) 0%, rgba(44, 32, 20, 0.4) 100%);
     border: 1px solid rgba(212, 160, 82, 0.16);
     border-radius: 4px;
     box-shadow:
@@ -1875,11 +1913,7 @@
 
   .raven-kb-side-plate {
     align-self: start;
-    background: linear-gradient(
-      180deg,
-      rgba(58, 44, 28, 0.55) 0%,
-      rgba(44, 32, 20, 0.45) 100%
-    );
+    background: linear-gradient(180deg, rgba(58, 44, 28, 0.55) 0%, rgba(44, 32, 20, 0.45) 100%);
     border: 1px solid rgba(212, 160, 82, 0.22);
     border-radius: 4px;
     box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.4);
@@ -2603,11 +2637,7 @@
   }
 
   .vision-source-panel {
-    background: linear-gradient(
-      180deg,
-      rgba(58, 44, 28, 0.45),
-      rgba(40, 28, 18, 0.4)
-    );
+    background: linear-gradient(180deg, rgba(58, 44, 28, 0.45), rgba(40, 28, 18, 0.4));
     border: 1px solid rgba(212, 165, 116, 0.32);
     border-radius: 8px;
     box-shadow:

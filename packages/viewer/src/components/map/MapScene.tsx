@@ -1,25 +1,50 @@
-// Fresh P1 container (not a promotion): the minimal render stack over the
-// promoted pieces — Canvas + lights + CameraRig + BackgroundPlane + one
-// HexCell per grid cell. Lifebuild's HexMap.tsx container was placement- and
-// panel-heavy (see quarantine rewrite references); the map's real container
-// gets written fresh against our schema in later flights.
+// The map's container (the promoted HexMap altitude, written fresh in P1):
+// Canvas + lights + CameraRig + BackgroundPlane + the promoted HexGrid.
+// Lifebuild's HexMap.tsx container was placement- and panel-heavy (see
+// quarantine rewrite references); those flows return in S2 against our
+// schema. V1 additions are strictly additive so V2's Owner view can compose
+// against the same surface: an optional Domain-view tint map for the grid,
+// and children rendered inside the Canvas (tiles, borders, labels, piles).
+//
+// Only the children sit under Suspense + an error boundary: the parchment
+// grid paints immediately (the P1 behavior) while sprite textures resolve,
+// and a failed sprite fetch drops the decoration layer instead of killing
+// the whole route.
 
 import { Canvas } from "@react-three/fiber";
-import type { ReactNode } from "react";
-import { MAP_SCENE_COLORS } from "./colors";
+import { Component, Suspense, type ReactNode } from "react";
+import { MAP_SCENE_COLORS, type HexTint } from "./colors";
 import type { HexGridCell } from "./hex";
-import { HexCell } from "./HexCell";
+import { HexGrid } from "./HexGrid";
 import { BackgroundPlane } from "./BackgroundPlane";
 import { CameraRig } from "./CameraRig";
+
+/**
+ * Render-null boundary around texture-loading scene children (drei/r3f
+ * loaders throw on fetch failure). Mirrors the V2 Owner-view boundary.
+ */
+class SpriteErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  override state = { hasError: false };
+
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true };
+  }
+
+  override render(): ReactNode {
+    return this.state.hasError ? null : this.props.children;
+  }
+}
 
 type MapSceneProps = {
   cells: readonly HexGridCell[];
   parchmentSeed?: number;
+  /** Per-view territory wash for the ground grid (Domain or Owner look). */
+  cellTintByKey?: ReadonlyMap<string, HexTint>;
   /** View-specific layers rendered above the ground grid (V1/V2 looks). */
   children?: ReactNode;
 };
 
-export function MapScene({ cells, parchmentSeed = 0, children }: MapSceneProps) {
+export function MapScene({ cells, parchmentSeed = 0, cellTintByKey, children }: MapSceneProps) {
   return (
     <Canvas
       orthographic
@@ -44,10 +69,10 @@ export function MapScene({ cells, parchmentSeed = 0, children }: MapSceneProps) 
 
       <CameraRig />
       <BackgroundPlane parchmentSeed={parchmentSeed} />
-      {cells.map((cell) => (
-        <HexCell key={cell.key} coord={cell.coord} parchmentSeed={parchmentSeed} />
-      ))}
-      {children}
+      <HexGrid cells={cells} parchmentSeed={parchmentSeed} cellTintByKey={cellTintByKey} />
+      <SpriteErrorBoundary>
+        <Suspense fallback={null}>{children}</Suspense>
+      </SpriteErrorBoundary>
     </Canvas>
   );
 }

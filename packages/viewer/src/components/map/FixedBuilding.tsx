@@ -6,7 +6,7 @@
 // workshop; tints consolidated into ./colors tokens; the sprite-debug
 // origin/scale props, campfire ember, and Html activation button dropped
 // (activation overlays are L2). Sprites are served from
-// /map-sprites/*.png, copied from
+// /map/sprites/*.png, copied from
 // quarantine/lifebuild-map/packages/hex-grid-prototype/public/sprites/
 // (provenance: quarantine MANIFEST.md, lifebuild @ bf183a3).
 
@@ -26,25 +26,25 @@ type SpriteSource = {
 // stable hash of the colleague id so each colleague keeps the same house
 // across renders and new colleagues get one without configuration.
 const COLLEAGUE_SPRITES: SpriteSource[] = [
-  { textureUrl: "/map-sprites/house1.png", textureAspect: 320 / 339 },
-  { textureUrl: "/map-sprites/house2.png", textureAspect: 310 / 329 },
-  { textureUrl: "/map-sprites/house3.png", textureAspect: 344 / 326 },
+  { textureUrl: "/map/sprites/house1.png", textureAspect: 320 / 339 },
+  { textureUrl: "/map/sprites/house2.png", textureAspect: 310 / 329 },
+  { textureUrl: "/map/sprites/house3.png", textureAspect: 344 / 326 },
 ];
 
 const STATUE_SPRITE: SpriteSource = {
-  textureUrl: "/map-sprites/statue.png",
+  textureUrl: "/map/sprites/statue.png",
   textureAspect: 285 / 427,
 };
 
 const VACANT_PLOT_SPRITE: SpriteSource = {
-  textureUrl: "/map-sprites/crop-plot1.png",
+  textureUrl: "/map/sprites/crop-plot1.png",
   textureAspect: 331 / 224,
 };
 
 // The locked seat is Lifebuild's sanctuary — the colleague landmark —
 // ghosted: a future colleague's building, not yet raised.
 const LOCKED_SEAT_SPRITE: SpriteSource = {
-  textureUrl: "/map-sprites/sanctuary.png",
+  textureUrl: "/map/sprites/sanctuary.png",
   textureAspect: 539 / 516,
 };
 

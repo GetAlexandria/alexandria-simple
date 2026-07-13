@@ -9,26 +9,17 @@
 // (the locked future bench seats) are view-independent and pass through.
 //
 // Sibling file note: V1's Domain-view layout lives beside this module as
-// layout/domain-view.ts on its own branch; keep the two independent.
+// layout/domain-view.ts; the two stay independent but share conventions —
+// in particular, territory washes render through MapScene's cellTintByKey
+// (the parchment shader tint), not overlay meshes, so the ground grid stays
+// one draw pass and the hover highlight keeps working over tinted cells.
 
 import type { MapDomain, MapEntity, MapState } from "../../../app/runtime/schemas";
-import { createHex, generateHexGrid, hexAdd, type HexCoord } from "../hex";
+import { OWNER_VIEW_TERRITORY_TINTS, type HexTint } from "../colors";
+import { createHex, generateHexGrid, hexAdd, hexToKey, type HexCoord } from "../hex";
+import { parseDomainOwner, parseLandmarkId, type DomainOwnership } from "../vocabulary";
 
-/** Landmark-position id prefix for the locked future-seat plots. */
-export const LOCKED_SEAT_PREFIX = "seat:";
-
-const COLLEAGUE_OWNER_PREFIX = "colleague:";
-const HUMAN_OWNER_PREFIX = "human:";
-
-export type DomainOwnerKind = "colleague" | "human";
-
-export type DomainOwner = {
-  kind: DomainOwnerKind;
-  /** Bare owner id without the kind prefix, e.g. "raven". */
-  id: string;
-  /** Display name derived from the id. */
-  name: string;
-};
+export type { DomainOwner, DomainOwnerKind, DomainOwnership } from "../vocabulary";
 
 /** A positioned project/system rendered inside its owner's territory. */
 export type OwnerWorkMarker = {
@@ -38,8 +29,11 @@ export type OwnerWorkMarker = {
 
 export type OwnerTerritory = {
   domain: MapDomain;
-  /** Undefined = unclaimed: dimmed territory + vacant-plot marker (a demand signal, not an error). */
-  owner: DomainOwner | undefined;
+  /**
+   * Owned, unclaimed (dimmed territory + vacant plot — a demand signal, not
+   * an error), or malformed (the unclaimed treatment plus a warning chip).
+   */
+  ownership: DomainOwnership;
   /** Region center; the owner landmark (or vacant-plot marker) renders here. */
   anchor: HexCoord;
   /** Every hex inside the domain's region. */
@@ -56,34 +50,14 @@ export type LockedSeat = {
 export type OwnerViewLayout = {
   territories: OwnerTerritory[];
   seats: LockedSeat[];
+  /**
+   * Parchment wash per grid-cell key for MapScene's cellTintByKey: claimed
+   * territories take the warm wash, unclaimed/malformed the muted dim.
+   * Overlapping region discs resolve toward earlier domains in the state
+   * file (the Domain-view tie-break convention).
+   */
+  tintByCellKey: ReadonlyMap<string, HexTint>;
 };
-
-const capitalize = (value: string): string =>
-  value.length === 0 ? value : value.charAt(0).toUpperCase() + value.slice(1);
-
-/**
- * Parse a domain's `owner` field ("colleague:raven" | "human:danvers").
- * Absent owner → undefined (the unclaimed case). A value outside the known
- * vocabulary is treated as a human owner rather than silently rendering the
- * domain unclaimed.
- */
-export function parseDomainOwner(owner: string | undefined): DomainOwner | undefined {
-  if (owner === undefined || owner.length === 0) {
-    return undefined;
-  }
-
-  if (owner.startsWith(COLLEAGUE_OWNER_PREFIX) && owner.length > COLLEAGUE_OWNER_PREFIX.length) {
-    const id = owner.slice(COLLEAGUE_OWNER_PREFIX.length);
-    return { kind: "colleague", id, name: capitalize(id) };
-  }
-
-  if (owner.startsWith(HUMAN_OWNER_PREFIX) && owner.length > HUMAN_OWNER_PREFIX.length) {
-    const id = owner.slice(HUMAN_OWNER_PREFIX.length);
-    return { kind: "human", id, name: capitalize(id) };
-  }
-
-  return { kind: "human", id: owner, name: capitalize(owner) };
-}
 
 /** Every hex within `radius` of `center` (the domain's territory patch). */
 const hexesWithin = (center: HexCoord, radius: number): HexCoord[] =>
@@ -105,7 +79,7 @@ export function buildOwnerViewLayout(state: MapState): OwnerViewLayout {
 
   for (const position of state.positions) {
     if (position.entityType === "landmark") {
-      if (position.entityId.startsWith(LOCKED_SEAT_PREFIX)) {
+      if (parseLandmarkId(position.entityId).kind === "seat") {
         seats.push({ id: position.entityId, coord: createHex(position.q, position.r) });
       }
       continue;
@@ -132,12 +106,26 @@ export function buildOwnerViewLayout(state: MapState): OwnerViewLayout {
 
     return {
       domain,
-      owner: parseDomainOwner(domain.owner),
+      ownership: parseDomainOwner(domain.owner),
       anchor,
       cells: hexesWithin(anchor, domain.region.radius),
       work: workByDomainId.get(domain.id) ?? [],
     };
   });
 
-  return { territories, seats };
+  const tintByCellKey = new Map<string, HexTint>();
+  for (const territory of territories) {
+    const tint =
+      territory.ownership.status === "owned"
+        ? OWNER_VIEW_TERRITORY_TINTS.claimed
+        : OWNER_VIEW_TERRITORY_TINTS.unclaimed;
+    for (const cell of territory.cells) {
+      const key = hexToKey(cell);
+      if (!tintByCellKey.has(key)) {
+        tintByCellKey.set(key, tint);
+      }
+    }
+  }
+
+  return { territories, seats, tintByCellKey };
 }

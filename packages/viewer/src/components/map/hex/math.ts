@@ -3,6 +3,14 @@
 
 import type { HexCoord } from "./types";
 
+/**
+ * The map's hex radius in world units. Lives here (not in materials.ts)
+ * because layout/domain-view.ts is deliberately Three.js-free so it can
+ * unit-test under bun; materials.ts re-exports this for its Three.js
+ * geometry callers so both derive world coordinates from one value.
+ */
+export const HEX_SIZE = 1;
+
 const SQRT3 = Math.sqrt(3);
 
 // Six neighbor direction vectors in cube coordinates (pointy-top).
