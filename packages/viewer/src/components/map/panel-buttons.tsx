@@ -41,23 +41,33 @@ export function PanelButton({
 
 /**
  * Parchment-styled bordered action button — MapTabView's Retry / Refresh /
- * conflict-banner Refresh all share this exact look (field background,
- * border, semibold subtext). `className` carries only layout (e.g. `mt-2`
- * inside a panel) so the shared visual style can't drift between callers.
+ * conflict-banner Refresh and the entity form's submit all share this exact
+ * look (field background, border, semibold subtext). `className` carries only
+ * layout (e.g. `mt-2` inside a panel) so the shared visual style can't drift
+ * between callers. `type="submit"` (with `disabled`) covers a form's primary
+ * action; `onClick` is optional then since the form's onSubmit fires.
  */
 export function ParchmentActionButton({
   className = "",
+  disabled = false,
   label,
   onClick,
+  testId,
+  type = "button",
 }: {
   className?: string;
+  disabled?: boolean;
   label: string;
-  onClick: () => void;
+  onClick?: () => void;
+  testId?: string;
+  type?: "button" | "submit";
 }) {
   return (
     <button
-      type="button"
-      className={`border px-2 py-1 text-xs font-semibold ${className}`.trim()}
+      type={type}
+      data-testid={testId}
+      disabled={disabled}
+      className={`border px-2 py-1 text-xs font-semibold disabled:opacity-50 ${className}`.trim()}
       style={{
         backgroundColor: MAP_FALLBACK_COLORS.field,
         borderColor: MAP_FALLBACK_COLORS.border,

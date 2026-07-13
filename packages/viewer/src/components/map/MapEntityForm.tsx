@@ -107,7 +107,7 @@ export function MapEntityForm({
             style={inputStyle}
             value={lifecycle}
           >
-            {lifecyclesForKind(entity?.kind ?? kind).map((option) => (
+            {lifecyclesForKind(kind).map((option) => (
               <option key={option} value={option}>
                 {option}
               </option>
@@ -133,7 +133,7 @@ export function MapEntityForm({
         </select>
       </label>
 
-      {(entity?.kind ?? kind) === "system" ? (
+      {kind === "system" ? (
         <div className="flex gap-2">
           <label className={`${FIELD_LABEL_CLASS} flex-1`} style={labelStyle}>
             Colleague
@@ -161,19 +161,12 @@ export function MapEntityForm({
       ) : null}
 
       <div className="flex items-center gap-2">
-        <button
-          className="border px-2 py-1 text-xs font-semibold disabled:opacity-50"
-          data-testid="map-entity-form-submit"
+        <ParchmentActionButton
           disabled={saving || formError != null}
-          style={{
-            backgroundColor: MAP_FALLBACK_COLORS.field,
-            borderColor: MAP_FALLBACK_COLORS.border,
-            color: MAP_FALLBACK_COLORS.heading,
-          }}
+          label={entity == null ? "Create entity" : "Save entity"}
+          testId="map-entity-form-submit"
           type="submit"
-        >
-          {entity == null ? "Create entity" : "Save entity"}
-        </button>
+        />
         <ParchmentActionButton label="Cancel" onClick={onCancel} />
       </div>
       {formError != null ? (

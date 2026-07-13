@@ -4,6 +4,7 @@ import { createHex } from "./hex";
 import {
   cardsJoinedToEntity,
   entityIdForDraft,
+  entityKindLabel,
   isStrayCard,
   looseCardsForContext,
   occupiedHexKeys,
@@ -12,6 +13,7 @@ import {
   positionedEntityIds,
   promotionDraftFromCard,
   strayCardCountsByContext,
+  strayCountsEqual,
   unplacedEntities,
   withCardJoin,
   withEntityCreated,
@@ -364,5 +366,22 @@ describe("promotionDraftFromCard", () => {
     expect(promotionDraftFromCard(cardFixture({ id: "wo-x", title: "  " }), "ctx-a").name).toBe(
       "wo-x",
     );
+  });
+});
+
+describe("entityKindLabel", () => {
+  it("labels each kind", () => {
+    expect(entityKindLabel("project")).toBe("Project");
+    expect(entityKindLabel("system")).toBe("System");
+  });
+});
+
+describe("strayCountsEqual", () => {
+  it("is true only when the same ids carry the same counts", () => {
+    expect(strayCountsEqual({}, {})).toBe(true);
+    expect(strayCountsEqual({ "ctx-a": 2, "ctx-b": 1 }, { "ctx-b": 1, "ctx-a": 2 })).toBe(true);
+    expect(strayCountsEqual({ "ctx-a": 2 }, { "ctx-a": 3 })).toBe(false);
+    expect(strayCountsEqual({ "ctx-a": 1 }, { "ctx-a": 1, "ctx-b": 1 })).toBe(false);
+    expect(strayCountsEqual({ "ctx-a": 1 }, { "ctx-b": 1 })).toBe(false);
   });
 });

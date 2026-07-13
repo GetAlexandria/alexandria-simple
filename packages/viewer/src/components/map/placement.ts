@@ -6,6 +6,7 @@
 // values for the existing Info Hub board save path.
 
 import type { InfoHubCard, MapEntity, MapEntityKind, MapState } from "../../app/runtime/schemas";
+import { slugify, uniqueId } from "../id-slug";
 import { isTerminalStatus } from "../library/infohub/boardModel";
 import { createHex, hexToKey, type HexCoord } from "./hex";
 
@@ -19,6 +20,11 @@ export const SYSTEM_LIFECYCLES = ["planted", "hibernating", "uprooted"] as const
 
 export function lifecyclesForKind(kind: MapEntityKind): readonly string[] {
   return kind === "project" ? PROJECT_LIFECYCLES : SYSTEM_LIFECYCLES;
+}
+
+/** Display label for an entity kind — "Project" / "System" (the map's entity vocabulary). */
+export function entityKindLabel(kind: MapEntityKind): string {
+  return kind === "project" ? "Project" : "System";
 }
 
 /**
@@ -119,14 +125,6 @@ export const ENTITY_ID_PREFIX_BY_KIND: Readonly<Record<MapEntityKind, string>> =
   system: "sys-",
 };
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-}
-
 /**
  * Id generation scheme for new entities: `prj-`/`sys-` (kind prefix, the
  * seed's convention) + the slugified name, with a `-2`, `-3`, … suffix when
@@ -138,14 +136,7 @@ export function entityIdForDraft(
   name: string,
   existingIds: ReadonlySet<string>,
 ): string {
-  const base = `${ENTITY_ID_PREFIX_BY_KIND[kind]}${slugify(name) || kind}`;
-  let id = base;
-  let suffix = 2;
-  while (existingIds.has(id)) {
-    id = `${base}-${suffix}`;
-    suffix += 1;
-  }
-  return id;
+  return uniqueId(`${ENTITY_ID_PREFIX_BY_KIND[kind]}${slugify(name) || kind}`, existingIds);
 }
 
 /** A canonical entity from a form draft: trimmed, optional fields omitted (never ""). */
@@ -230,6 +221,21 @@ export function strayCardCountsByContext(
     }
   }
   return counts;
+}
+
+/**
+ * Value-equality of two stray-count maps — same context ids, same counts.
+ * The Map tab keys its domain-layout memo on this (not on board object
+ * identity) so a board write that leaves every pile count unchanged — e.g.
+ * toggling a checklist item on a card already joined to an entity — doesn't
+ * re-run the whole territory/pile assignment.
+ */
+export function strayCountsEqual(
+  a: Readonly<Record<string, number>>,
+  b: Readonly<Record<string, number>>,
+): boolean {
+  const aKeys = Object.keys(a);
+  return aKeys.length === Object.keys(b).length && aKeys.every((key) => a[key] === b[key]);
 }
 
 /** The cards joined to one entity (any status — the overlay shows the full run of work). */

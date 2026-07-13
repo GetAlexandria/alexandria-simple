@@ -3,10 +3,17 @@ import {
   INFO_HUB_CARD_STATUSES,
   type InfoHubBoard,
   type InfoHubCard,
+  type MapContext,
   type MapState,
 } from "../../../app/runtime/schemas";
 import type { MapStateSaveError } from "../hooks/useMapState";
-import { promotionDraftFromCard, withCardJoin, withEntityCreated } from "../../map/placement";
+import { slugify, uniqueId } from "../../id-slug";
+import {
+  entityKindLabel,
+  promotionDraftFromCard,
+  withCardJoin,
+  withEntityCreated,
+} from "../../map/placement";
 import {
   activeWorkOrderLane,
   archiveDateForTerminalCard,
@@ -16,6 +23,7 @@ import {
   isTerminalStatus,
   passesPrioritySift,
   sortCardsByPriority,
+  withChecklistItemToggled,
   withStatus,
   withoutArchiveOverride,
   type ActiveWorkOrderStatus,
@@ -57,14 +65,6 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 70);
-}
-
 function createCardId(
   type: WorkOrderType,
   area: string,
@@ -72,13 +72,24 @@ function createCardId(
   existingIds: ReadonlySet<string>,
 ): string {
   const base = `wo-${slugify(area || "general")}-${slugify(type)}-${slugify(title || "card") || "card"}`;
-  let id = base;
-  let suffix = 2;
-  while (existingIds.has(id)) {
-    id = `${base}-${suffix}`;
-    suffix += 1;
-  }
-  return id;
+  return uniqueId(base, existingIds);
+}
+
+/**
+ * The context `<option>`s shared by the promote picker and the card join
+ * form — each select renders its own leading "no context" placeholder, then
+ * these. The two lists must stay identical, so they live in one place.
+ */
+function ContextOptions({ contexts }: { contexts: readonly MapContext[] }) {
+  return (
+    <>
+      {contexts.map((context) => (
+        <option key={context.id} value={context.id}>
+          {context.name}
+        </option>
+      ))}
+    </>
+  );
 }
 
 function parseChecklist(text: string): NonNullable<InfoHubCard["checklist"]> {
@@ -532,10 +543,7 @@ export function InfoHubBoardView({
       if (target?.checklist == null) {
         return;
       }
-      const nextChecklist = target.checklist.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, done: !item.done } : item,
-      );
-      const nextCard: InfoHubCard = { ...target, checklist: nextChecklist };
+      const nextCard = withChecklistItemToggled(target, index);
       void onSaveCards(cards.map((card) => (card.id === cardId ? nextCard : card)));
       setDetailCard(nextCard);
     },
@@ -844,11 +852,7 @@ export function InfoHubBoardView({
                         value={promoteContextId}
                       >
                         <option value="">Pick a context…</option>
-                        {mapContexts.map((context) => (
-                          <option key={context.id} value={context.id}>
-                            {context.name}
-                          </option>
-                        ))}
+                        <ContextOptions contexts={mapContexts} />
                       </select>
                     </label>
                     <div className="info-hub-form-actions">
@@ -997,11 +1001,7 @@ export function InfoHubBoardView({
                   value={effectiveCardContextId}
                 >
                   <option value="">No context</option>
-                  {mapContexts.map((context) => (
-                    <option key={context.id} value={context.id}>
-                      {context.name}
-                    </option>
-                  ))}
+                  <ContextOptions contexts={mapContexts} />
                 </select>
               </label>
               <label className="info-hub-form-field">
@@ -1026,7 +1026,7 @@ export function InfoHubBoardView({
                   <option value="">Loose (stray pile when a context is set)</option>
                   {entityOptions.map((entity) => (
                     <option key={entity.id} value={entity.id}>
-                      {entity.name} · {entity.kind === "project" ? "Project" : "System"}
+                      {entity.name} · {entityKindLabel(entity.kind)}
                     </option>
                   ))}
                 </select>

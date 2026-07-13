@@ -18,9 +18,9 @@ import {
   WorkOrderDetailModal,
   WorkOrderStatusActions,
 } from "../library/infohub/WorkOrderCard";
-import { MAP_FALLBACK_COLORS } from "./colors";
+import { MAP_FALLBACK_COLORS, MAP_OVERLAY_SCRIM_INK, withAlpha } from "./colors";
 import { ParchmentActionButton } from "./panel-buttons";
-import { cardsJoinedToEntity, looseCardsForContext } from "./placement";
+import { cardsJoinedToEntity, entityKindLabel, looseCardsForContext } from "./placement";
 
 export type MapOverlayTarget =
   | { kind: "entity"; entityId: string }
@@ -46,7 +46,7 @@ function entityMetaLine(
   lifecycle: string,
   contextName: string,
 ): string {
-  return `${kind === "project" ? "Project" : "System"} · ${lifecycle} · ${contextName}`;
+  return `${entityKindLabel(kind)} · ${lifecycle} · ${contextName}`;
 }
 
 export function MapOverlay({
@@ -120,7 +120,7 @@ export function MapOverlay({
       onClick={onClose}
       role="presentation"
       // The map stays mounted and visible behind this dim.
-      style={{ backgroundColor: "rgba(28, 23, 18, 0.55)" }}
+      style={{ backgroundColor: withAlpha(MAP_OVERLAY_SCRIM_INK, 0.55) }}
     >
       <div
         className="flex max-h-full w-full max-w-xl flex-col overflow-hidden rounded border"

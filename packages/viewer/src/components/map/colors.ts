@@ -16,7 +16,7 @@ import type { HexCellVisualState } from "./HexCell";
 export type HexTint = { color: string; strength: number };
 
 /** Converts a 6-digit hex color into an rgba() string with the given alpha. */
-function withAlpha(hex: string, alpha: number): string {
+export function withAlpha(hex: string, alpha: number): string {
   const red = parseInt(hex.slice(1, 3), 16);
   const green = parseInt(hex.slice(3, 5), 16);
   const blue = parseInt(hex.slice(5, 7), 16);
@@ -81,6 +81,13 @@ export const MAP_FALLBACK_COLORS = {
   text: "#6f5b44",
   subtext: "#7f6952",
 } as const;
+
+/**
+ * Dim ink washed behind the tile/pile work overlay (MapOverlay), applied
+ * through `withAlpha`. Kept here so no map color literal lives outside this
+ * module — the map surface's single scrim.
+ */
+export const MAP_OVERLAY_SCRIM_INK = "#1c1712";
 
 /** Per-visual-state cylinder materials: top rim and side wall tints. */
 export const HEX_CELL_MATERIAL_COLORS: Record<HexCellVisualState, { rim: string; side: string }> = {

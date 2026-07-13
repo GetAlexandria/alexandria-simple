@@ -21,7 +21,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { InfoHubBoard, InfoHubCard, MapEntity, MapState } from "../../app/runtime/schemas";
 import type { MapStateSaveError } from "../library/hooks/useMapState";
-import { withStatus, type WorkOrderStatus } from "../library/infohub/boardModel";
+import {
+  withChecklistItemToggled,
+  withStatus,
+  type WorkOrderStatus,
+} from "../library/infohub/boardModel";
 import { MAP_FALLBACK_COLORS } from "./colors";
 import { DomainView } from "./DomainView";
 import { generateHexGrid, hexToKey, type HexCoord } from "./hex";
@@ -36,11 +40,13 @@ import { MapScene } from "./MapScene";
 import { OwnerViewLayer } from "./OwnerViewLayer";
 import { PanelButton, ParchmentActionButton } from "./panel-buttons";
 import {
+  entityKindLabel,
   occupiedHexKeys,
   placeableHexKeys,
   placedEntities as placedEntitiesFrom,
   positionedEntityIds as positionedEntityIdsFrom,
   strayCardCountsByContext,
+  strayCountsEqual,
   unplacedEntities as unplacedEntitiesFrom,
   withEntityCreated,
   withEntityEdited,
@@ -76,10 +82,6 @@ export type MapTabViewProps = {
 
 /** The entity form's open state: create, or edit a specific entity. */
 type EntityFormState = { entityId: string | null };
-
-function entityKindLabel(entity: MapEntity): string {
-  return entity.kind === "project" ? "Project" : "System";
-}
 
 /** Small bordered per-row action button (Edit / Remove) in the panel lists. */
 function PanelRowButton({
@@ -201,7 +203,7 @@ function PlacementPanel({
                 >
                   {entity.name}
                   <span className="ml-1 opacity-70">
-                    · {entityKindLabel(entity)} ·{" "}
+                    · {entityKindLabel(entity.kind)} ·{" "}
                     {contextNameById.get(entity.contextId) ?? entity.contextId}
                   </span>
                 </button>
@@ -300,7 +302,22 @@ export function MapTabView({
   );
   // The real board-derived stray counts (S2, plan §1.3): cards with a
   // contextId, no entityId, and a non-terminal status, per context.
-  const strayCardCounts = useMemo(() => strayCardCountsByContext(board?.cards ?? []), [board]);
+  //
+  // Held at a stable identity across board writes that don't change any pile
+  // count: every card write (checklist toggle, status move) mints a new board
+  // object, but only a change to the actual stray counts should re-run the
+  // expensive domain-view layout below. Reuse the previous value whenever the
+  // recomputed counts are value-equal so `domainLayout`'s memo stays warm.
+  const strayCountsRef = useRef<Readonly<Record<string, number>> | null>(null);
+  const strayCardCounts = useMemo(() => {
+    const next = strayCardCountsByContext(board?.cards ?? []);
+    const previous = strayCountsRef.current;
+    if (previous != null && strayCountsEqual(previous, next)) {
+      return previous;
+    }
+    strayCountsRef.current = next;
+    return next;
+  }, [board]);
   const domainLayout = useMemo(
     () => (state == null ? null : computeDomainViewLayout(state, cells, { strayCardCounts })),
     [state, cells, strayCardCounts],
@@ -479,26 +496,17 @@ export function MapTabView({
     setOverlayTarget(null);
   }, []);
 
-  // --- Tile/pile overlay (S2): during placement a tile click is just
-  // click-away (cancel); otherwise it opens the entity's work overlay.
-  const handleTileClick = useCallback(
-    (entity: MapEntity) => {
+  // --- Tile/pile overlay (S2): a tile or pile click opens that target's work
+  // overlay. During placement a tile click is instead click-away (cancel);
+  // piles are raycast-inert while placing (onPileClick is withheld below), so
+  // only tile clicks reach this cancel path.
+  const openOverlay = useCallback(
+    (target: MapOverlayTarget) => {
       if (placingEntityId != null) {
         cancelPlacement();
         return;
       }
-      setOverlayTarget({ kind: "entity", entityId: entity.id });
-    },
-    [placingEntityId, cancelPlacement],
-  );
-
-  const handlePileClick = useCallback(
-    (contextId: string) => {
-      if (placingEntityId != null) {
-        cancelPlacement();
-        return;
-      }
-      setOverlayTarget({ kind: "pile", contextId });
+      setOverlayTarget(target);
     },
     [placingEntityId, cancelPlacement],
   );
@@ -523,14 +531,8 @@ export function MapTabView({
       if (board == null || target?.checklist == null) {
         return;
       }
-      const nextChecklist = target.checklist.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, done: !item.done } : item,
-      );
-      void onSaveCards(
-        board.cards.map((card) =>
-          card.id === cardId ? { ...card, checklist: nextChecklist } : card,
-        ),
-      );
+      const nextCard = withChecklistItemToggled(target, index);
+      void onSaveCards(board.cards.map((card) => (card.id === cardId ? nextCard : card)));
     },
     [board, onSaveCards],
   );
@@ -695,7 +697,7 @@ export function MapTabView({
                   <button
                     type="button"
                     className="w-full rounded border px-2 py-1 text-left text-[11px]"
-                    onClick={() => handlePileClick(pile.contextId)}
+                    onClick={() => openOverlay({ kind: "pile", contextId: pile.contextId })}
                     style={{
                       borderColor: MAP_FALLBACK_COLORS.border,
                       color: MAP_FALLBACK_COLORS.text,
@@ -778,13 +780,17 @@ export function MapTabView({
         {viewMode === "domain" && domainLayout != null ? (
           <DomainView
             layout={domainLayout}
-            onTileClick={handleTileClick}
+            onTileClick={(entity) => openOverlay({ kind: "entity", entityId: entity.id })}
             // Undefined during placement: a pile by construction sits on a
             // free (placeable) patch cell, and a clickable sprite would
             // swallow the placement click (stopPropagation) and cancel the
             // mode. With no onClick the sprite reverts to raycast-inert, so
             // clicks and hover pass through to the cell (PR #20 gate).
-            onPileClick={placingEntityId == null ? handlePileClick : undefined}
+            onPileClick={
+              placingEntityId == null
+                ? (contextId) => openOverlay({ kind: "pile", contextId })
+                : undefined
+            }
           />
         ) : viewMode === "owner" && ownerLayout != null ? (
           <OwnerViewLayer layout={ownerLayout} />
