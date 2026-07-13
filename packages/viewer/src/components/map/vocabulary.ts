@@ -40,7 +40,8 @@ export type DomainOwnership =
   | { status: "unclaimed" }
   | { status: "malformed"; raw: string };
 
-const capitalize = (value: string): string =>
+/** Uppercase the first character; the map's id-to-display-name convention. */
+export const capitalize = (value: string): string =>
   value.length === 0 ? value : value.charAt(0).toUpperCase() + value.slice(1);
 
 /**

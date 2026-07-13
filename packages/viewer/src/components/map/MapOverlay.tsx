@@ -18,7 +18,8 @@ import {
   WorkOrderDetailModal,
   WorkOrderStatusActions,
 } from "../library/infohub/WorkOrderCard";
-import { MAP_FALLBACK_COLORS, MAP_OVERLAY_SCRIM_INK, withAlpha } from "./colors";
+import { MAP_FALLBACK_COLORS } from "./colors";
+import { MapScrimPanel } from "./MapScrimPanel";
 import { ParchmentActionButton } from "./panel-buttons";
 import { cardsJoinedToEntity, entityKindLabel, looseCardsForContext } from "./placement";
 
@@ -114,120 +115,105 @@ export function MapOverlay({
       : `Cards in ${context?.name ?? target.contextId} joined to no project or system — the stray pile.`;
 
   return (
-    <div
-      className="absolute inset-0 z-20 flex items-center justify-center p-6"
-      data-testid="map-overlay"
-      onClick={onClose}
-      role="presentation"
-      // The map stays mounted and visible behind this dim.
-      style={{ backgroundColor: withAlpha(MAP_OVERLAY_SCRIM_INK, 0.55) }}
-    >
-      <div
-        className="flex max-h-full w-full max-w-xl flex-col overflow-hidden rounded border"
-        onClick={(event) => event.stopPropagation()}
-        style={{
-          backgroundColor: MAP_FALLBACK_COLORS.panel,
-          borderColor: MAP_FALLBACK_COLORS.border,
-        }}
-      >
-        <div
-          className="flex items-start justify-between gap-3 border-b px-4 py-3"
-          style={{ borderColor: MAP_FALLBACK_COLORS.border }}
-        >
-          <div>
+    <MapScrimPanel
+      testId="map-overlay"
+      maxWidthClass="max-w-xl"
+      onClose={onClose}
+      title={
+        <div>
+          <p
+            className="text-sm font-semibold"
+            data-testid="map-overlay-title"
+            style={{ color: MAP_FALLBACK_COLORS.heading }}
+          >
+            {title}
+          </p>
+          <p className="mt-0.5 text-[11px]" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+            {subtitle}
+          </p>
+          {readOnly ? (
             <p
-              className="text-sm font-semibold"
-              data-testid="map-overlay-title"
-              style={{ color: MAP_FALLBACK_COLORS.heading }}
+              className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide"
+              data-testid="map-overlay-readonly"
+              style={{ color: MAP_FALLBACK_COLORS.subtext }}
             >
-              {title}
-            </p>
-            <p className="mt-0.5 text-[11px]" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
-              {subtitle}
-            </p>
-            {readOnly ? (
-              <p
-                className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide"
-                data-testid="map-overlay-readonly"
-                style={{ color: MAP_FALLBACK_COLORS.subtext }}
-              >
-                Completed — read-only, victories stay visible
-              </p>
-            ) : null}
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            {entity != null && !readOnly ? (
-              <ParchmentActionButton label="Edit entity" onClick={() => onEditEntity(entity.id)} />
-            ) : null}
-            <ParchmentActionButton label="Close" onClick={onClose} />
-          </div>
-        </div>
-
-        <div className="overflow-y-auto px-4 py-3">
-          {boardSaveError != null ? (
-            // Same failure the board surface banners; a status/checklist
-            // click from the overlay must not fail silently (PR #20 gate).
-            <p
-              className="mb-3 text-xs font-semibold"
-              data-testid="map-overlay-save-error"
-              role="alert"
-              style={{ color: MAP_FALLBACK_COLORS.heading }}
-            >
-              The card change didn&apos;t save:{" "}
-              <span className="font-normal" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
-                {boardSaveError}
-              </span>
+              Completed — read-only, victories stay visible
             </p>
           ) : null}
-          {cards == null ? (
-            <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
-              {boardError ?? "Loading the Info Hub board…"}
-            </p>
-          ) : overlayCards.length === 0 ? (
-            <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
-              {target.kind === "entity"
-                ? "No board cards are joined to this tile yet — join one from the Info Hub card form."
-                : "No loose cards left in this context."}
-            </p>
-          ) : (
-            <div className="flex flex-col gap-3" data-testid="map-overlay-cards">
-              {overlayCards.map((card) => (
-                <article
-                  className="info-hub-card"
-                  data-testid={`map-overlay-card-${card.id}`}
-                  data-type={card.type}
-                  key={card.id}
-                >
-                  <WorkOrderCardFace card={card} onOpen={() => setDetailCardId(card.id)} />
-                  {readOnly ? null : (
-                    <div className="info-hub-card-actions">
-                      <WorkOrderStatusActions
-                        card={card}
-                        onMoveStatus={onMoveStatus}
-                        saving={boardSaving}
-                      />
-                    </div>
-                  )}
-                </article>
-              ))}
-            </div>
-          )}
         </div>
-      </div>
-
-      {detailCard != null ? (
-        // The modal's fixed backdrop sits inside the overlay's click-away
-        // root; stop propagation so closing the card detail (or clicking
-        // inside it) never also closes the overlay underneath.
-        <div onClick={(event) => event.stopPropagation()} role="presentation">
-          <WorkOrderDetailModal
-            card={detailCard}
-            onClose={() => setDetailCardId(null)}
-            onToggleChecklistItem={onToggleChecklistItem}
-            readOnly={readOnly}
-          />
+      }
+      headerActions={
+        <div className="flex shrink-0 items-center gap-2">
+          {entity != null && !readOnly ? (
+            <ParchmentActionButton label="Edit entity" onClick={() => onEditEntity(entity.id)} />
+          ) : null}
+          <ParchmentActionButton label="Close" onClick={onClose} />
         </div>
+      }
+      afterPanel={
+        detailCard != null ? (
+          // The modal's fixed backdrop sits inside the overlay's click-away
+          // root; stop propagation so closing the card detail (or clicking
+          // inside it) never also closes the overlay underneath.
+          <div onClick={(event) => event.stopPropagation()} role="presentation">
+            <WorkOrderDetailModal
+              card={detailCard}
+              onClose={() => setDetailCardId(null)}
+              onToggleChecklistItem={onToggleChecklistItem}
+              readOnly={readOnly}
+            />
+          </div>
+        ) : null
+      }
+    >
+      {boardSaveError != null ? (
+        // Same failure the board surface banners; a status/checklist
+        // click from the overlay must not fail silently (PR #20 gate).
+        <p
+          className="mb-3 text-xs font-semibold"
+          data-testid="map-overlay-save-error"
+          role="alert"
+          style={{ color: MAP_FALLBACK_COLORS.heading }}
+        >
+          The card change didn&apos;t save:{" "}
+          <span className="font-normal" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+            {boardSaveError}
+          </span>
+        </p>
       ) : null}
-    </div>
+      {cards == null ? (
+        <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+          {boardError ?? "Loading the Info Hub board…"}
+        </p>
+      ) : overlayCards.length === 0 ? (
+        <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+          {target.kind === "entity"
+            ? "No board cards are joined to this tile yet — join one from the Info Hub card form."
+            : "No loose cards left in this context."}
+        </p>
+      ) : (
+        <div className="flex flex-col gap-3" data-testid="map-overlay-cards">
+          {overlayCards.map((card) => (
+            <article
+              className="info-hub-card"
+              data-testid={`map-overlay-card-${card.id}`}
+              data-type={card.type}
+              key={card.id}
+            >
+              <WorkOrderCardFace card={card} onOpen={() => setDetailCardId(card.id)} />
+              {readOnly ? null : (
+                <div className="info-hub-card-actions">
+                  <WorkOrderStatusActions
+                    card={card}
+                    onMoveStatus={onMoveStatus}
+                    saving={boardSaving}
+                  />
+                </div>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
+    </MapScrimPanel>
   );
 }

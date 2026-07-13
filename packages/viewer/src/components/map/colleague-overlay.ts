@@ -4,6 +4,7 @@
 // overlay component (ColleagueOverlay) is the only renderer of these.
 
 import type { InfoHubCard, MapState, RuntimeAgent } from "../../app/runtime/schemas";
+import { capitalize } from "./vocabulary";
 
 /** The colleague's name/role line, resolved from the agent roster. */
 export interface ColleagueIdentity {
@@ -12,9 +13,6 @@ export interface ColleagueIdentity {
   /** The roster jobTitle, or null when the colleague has no roster entry. */
   role: string | null;
 }
-
-const capitalize = (value: string): string =>
-  value.length === 0 ? value : value.charAt(0).toUpperCase() + value.slice(1);
 
 /**
  * The name/role line for a colleague landmark, sourced from the agent

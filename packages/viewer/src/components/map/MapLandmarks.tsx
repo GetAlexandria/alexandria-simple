@@ -16,9 +16,7 @@ import { FixedBuilding } from "./FixedBuilding";
 import type { HexCoord } from "./hex";
 import { LandmarkTooltip } from "./LandmarkTooltip";
 import type { MapLandmark } from "./landmarks";
-
-const capitalize = (value: string): string =>
-  value.length === 0 ? value : value.charAt(0).toUpperCase() + value.slice(1);
+import { capitalize } from "./vocabulary";
 
 /** A colleague's building: clickable (→ overlay), with a name tooltip on hover. */
 function ColleagueLandmark({

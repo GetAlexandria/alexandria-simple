@@ -15,20 +15,17 @@
 // tile names. The drei-Html OwnerChip below is for DOM-overlay chips —
 // owner name cards, the unclaimed/malformed notices, work-marker captions.
 
-import { Html } from "@react-three/drei";
 import type { CSSProperties, ReactNode } from "react";
 import * as THREE from "three";
 import { OWNER_VIEW_COLORS } from "./colors";
 import { FixedBuilding } from "./FixedBuilding";
 import { HEX_SIZE, hexToWorld, type HexCoord } from "./hex";
+import { HexHtmlChip } from "./HexHtmlChip";
 import { HEX_CELL_HEIGHT } from "./materials";
 import type { OwnerTerritory, OwnerViewLayout, OwnerWorkMarker } from "./layout/owner-view";
 
 // Work markers float just above the ground-cell tops.
 const WORK_MARKER_Y = HEX_CELL_HEIGHT + 0.08;
-
-// Keep floating chips below MapDevView's z-10 HUD chrome.
-const CHIP_Z_INDEX_RANGE: [number, number] = [5, 0];
 
 const CHIP_STYLE: CSSProperties = {
   backgroundColor: OWNER_VIEW_COLORS.label.background,
@@ -60,9 +57,10 @@ type OwnerChipProps = {
 };
 
 /**
- * A pointer-transparent DOM chip floating at a hex's south edge (drei Html).
- * For in-scene world-space text use ./MapLabel instead — see the label-split
- * note in this file's header.
+ * A hex-anchored parchment chip (owner card, work-marker caption, vacant-plot
+ * notice) on the shared pointer-transparent HexHtmlChip. For in-scene
+ * world-space text use ./MapLabel instead — see the label-split note in this
+ * file's header.
  */
 function OwnerChip({
   coord,
@@ -71,23 +69,17 @@ function OwnerChip({
   className,
   children,
 }: OwnerChipProps) {
-  const [x, z] = hexToWorld(coord, HEX_SIZE);
   const variantClasses = CHIP_VARIANT_CLASSES[variant];
 
   return (
-    <Html
-      position={[x, 0.1, z + 0.85]}
-      center
-      zIndexRange={CHIP_Z_INDEX_RANGE}
-      style={{ pointerEvents: "none" }}
-    >
+    <HexHtmlChip coord={coord} elevation={0.1} zOffset={0.85}>
       <span
         className={className ? `${variantClasses} ${className}` : variantClasses}
         style={muted ? MUTED_CHIP_STYLE : CHIP_STYLE}
       >
         {children}
       </span>
-    </Html>
+    </HexHtmlChip>
   );
 }
 

@@ -1,14 +1,13 @@
-// A small caption anchored at a landmark's hex (drei Html, pointer-transparent
-// so it never blocks the sprite underneath). Used by the colleague building
-// (its name on hover) and the locked seat (a quiet persistent "Locked seat"
-// marker at rest, its fuller "future teammate" caption on hover). Kept below
-// MapDevView's z-10 HUD chrome, like OwnerViewLayer's OwnerChip; shared across
-// both view modes.
+// A small caption anchored at a landmark's hex, built on the shared
+// pointer-transparent HexHtmlChip (like OwnerViewLayer's OwnerChip). Used by
+// the colleague building (its name on hover) and the locked seat (a quiet
+// persistent "Locked seat" marker at rest, its fuller "future teammate"
+// caption on hover). Shared across both view modes.
 
-import { Html } from "@react-three/drei";
 import type { CSSProperties, ReactNode } from "react";
 import { MAP_FALLBACK_COLORS, MAP_SCENE_COLORS, withAlpha } from "./colors";
-import { HEX_SIZE, hexToWorld, type HexCoord } from "./hex";
+import type { HexCoord } from "./hex";
+import { HexHtmlChip } from "./HexHtmlChip";
 
 const TOOLTIP_STYLE: CSSProperties = {
   backgroundColor: withAlpha(MAP_SCENE_COLORS.background, 0.94),
@@ -36,14 +35,8 @@ export function LandmarkTooltip({
   muted?: boolean;
   children: ReactNode;
 }) {
-  const [x, z] = hexToWorld(coord, HEX_SIZE);
   return (
-    <Html
-      position={[x, 0.95, z + 0.6]}
-      center
-      zIndexRange={[5, 0]}
-      style={{ pointerEvents: "none" }}
-    >
+    <HexHtmlChip coord={coord} elevation={0.95} zOffset={0.6}>
       <span
         className={`whitespace-nowrap rounded border px-1.5 py-0.5 text-[9px] font-semibold${
           italic ? " italic" : ""
@@ -52,6 +45,6 @@ export function LandmarkTooltip({
       >
         {children}
       </span>
-    </Html>
+    </HexHtmlChip>
   );
 }
