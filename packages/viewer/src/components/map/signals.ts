@@ -30,6 +30,7 @@
 
 import type { ColleagueJournal, InfoHubCard, MapEntity } from "../../app/runtime/schemas";
 import { dateOnlyUtcMs } from "../library/infohub/boardModel";
+import { cardsJoinedToEntity } from "./placement";
 
 // --- Threshold constants (tunable, in one place) ---------------------------
 // The one module the L1 signal thresholds live in (issue spec: "tunable, not
@@ -189,9 +190,37 @@ export type TileSignals = {
   healthKnown: boolean;
 };
 
+/**
+ * Cards bucketed by entityId, in ONE pass over the full list — mirrors
+ * placement.ts's `strayCardCountsByContext`, which buckets by contextId for
+ * the same reason. `deriveTileSignalsByEntity` reads each entity's bucket
+ * from this instead of rescanning every card once per entity, so the whole
+ * needs-human/staleness pass is O(entities + cards), not O(entities × cards).
+ */
+function cardsByEntityId(cards: readonly InfoHubCard[]): ReadonlyMap<string, InfoHubCard[]> {
+  const buckets = new Map<string, InfoHubCard[]>();
+  for (const card of cards) {
+    if (card.entityId == null) {
+      continue;
+    }
+    const bucket = buckets.get(card.entityId);
+    if (bucket == null) {
+      buckets.set(card.entityId, [card]);
+    } else {
+      bucket.push(card);
+    }
+  }
+  return buckets;
+}
+
+/** Needs-a-human within an already-joined bucket of cards (no entityId check). */
+function needsHumanAmong(cards: readonly InfoHubCard[]): boolean {
+  return cards.some((card) => card.status === "needs-a-human");
+}
+
 /** Needs-a-human: any card joined to this entity is in `needs-a-human`. */
 export function entityNeedsHuman(cards: readonly InfoHubCard[], entityId: string): boolean {
-  return cards.some((card) => card.entityId === entityId && card.status === "needs-a-human");
+  return needsHumanAmong(cardsJoinedToEntity(cards, entityId));
 }
 
 /**
@@ -219,21 +248,32 @@ export function entityIsStale(options: {
   nowMs: number;
   thresholdDays?: number;
 }): boolean {
+  return isStaleFromMostRecentTouch(
+    mostRecentTouchMs(cardsJoinedToEntity(options.cards, options.entityId)),
+    options.nowMs,
+    options.thresholdDays ?? STALENESS_THRESHOLD_DAYS,
+  );
+}
+
+/** Most recent touch across an already-joined bucket of cards, or null if none parse. */
+function mostRecentTouchMs(cards: readonly InfoHubCard[]): number | null {
   let mostRecent: number | null = null;
-  for (const card of options.cards) {
-    if (card.entityId !== options.entityId) {
-      continue;
-    }
+  for (const card of cards) {
     const touched = cardLastTouchedMs(card);
     if (touched != null && (mostRecent == null || touched > mostRecent)) {
       mostRecent = touched;
     }
   }
-  if (mostRecent == null) {
-    return false;
-  }
-  const days = (options.nowMs - mostRecent) / MS_PER_DAY;
-  return days >= (options.thresholdDays ?? STALENESS_THRESHOLD_DAYS);
+  return mostRecent;
+}
+
+/** Stale from an already-computed most-recent touch, against a threshold. */
+function isStaleFromMostRecentTouch(
+  mostRecent: number | null,
+  nowMs: number,
+  thresholdDays: number,
+): boolean {
+  return mostRecent != null && (nowMs - mostRecent) / MS_PER_DAY >= thresholdDays;
 }
 
 /** Filled health-dot count for a most-recent-entry recency, in windows. */
@@ -331,16 +371,26 @@ export function deriveTileSignalsByEntity(options: {
     entriesByColleague.set(journal.colleague, parsed);
   }
 
+  // One pass to bucket cards by entityId (see cardsByEntityId) instead of one
+  // full rescan per entity below — O(entities + cards), not O(entities × cards).
+  const cardBuckets = cardsByEntityId(options.cards);
+
   const signalsByEntity = new Map<string, TileSignals>();
   for (const entity of options.entities) {
-    const needsHuman = entityNeedsHuman(options.cards, entity.id);
+    const bucket = cardBuckets.get(entity.id) ?? [];
+    const needsHuman = needsHumanAmong(bucket);
     const stale =
       isStaleEligible(entity) &&
-      entityIsStale({ cards: options.cards, entityId: entity.id, nowMs: options.nowMs });
+      isStaleFromMostRecentTouch(
+        mostRecentTouchMs(bucket),
+        options.nowMs,
+        STALENESS_THRESHOLD_DAYS,
+      );
     let health: SystemHealthSignal;
     if (entity.kind !== "system") {
-      // Projects never render dots — value is inert.
-      health = { filledDots: 3, overdue: false, known: true };
+      // Projects never render dots — value is inert (same shape as UNKNOWN_HEALTH,
+      // but "known" so nothing downstream mistakes it for an unmeasured system).
+      health = { ...UNKNOWN_HEALTH, known: true };
     } else if (!journalsAvailable) {
       health = UNKNOWN_HEALTH;
     } else {
@@ -360,6 +410,37 @@ export function deriveTileSignalsByEntity(options: {
     });
   }
   return signalsByEntity;
+}
+
+/**
+ * Value-equality of two per-entity signal maps: same entity ids, same
+ * TileSignals field values. Mirrors placement.ts's `strayCountsEqual` —
+ * MapTabView keys its signals memo on this (not board/state/journals object
+ * identity), so a signal-irrelevant write (e.g. a checklist toggle on a card
+ * that changes no tile's needs-human or staleness reading) reuses the
+ * previous signals map instead of handing every tile a new one.
+ */
+export function tileSignalsByEntityEqual(
+  a: ReadonlyMap<string, TileSignals>,
+  b: ReadonlyMap<string, TileSignals>,
+): boolean {
+  if (a.size !== b.size) {
+    return false;
+  }
+  for (const [entityId, signals] of a) {
+    const other = b.get(entityId);
+    if (
+      other == null ||
+      other.needsHuman !== signals.needsHuman ||
+      other.stale !== signals.stale ||
+      other.filledDots !== signals.filledDots ||
+      other.overdue !== signals.overdue ||
+      other.healthKnown !== signals.healthKnown
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /** The neutral fallback for a tile whose signals have not resolved. */

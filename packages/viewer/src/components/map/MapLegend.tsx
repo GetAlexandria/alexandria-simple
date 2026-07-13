@@ -2,13 +2,14 @@
 // that names the four ambient states (plan §1.4) — needs-a-human glow, system
 // health dots, staleness sepia, overdue candle flicker — so the treatments are
 // legible without a badge or count on any tile. DOM overlay (like the HUD),
-// three.js-free; reuses the map's panel chrome (MAP_FALLBACK_COLORS,
-// PanelButton) and the same signal color tokens the tiles render from, so the
-// swatches can never drift from the map.
+// three.js-free; reuses the map's panel chrome (Panel/PanelHeader,
+// PanelButton) and the same signal color tokens/thresholds the tiles render
+// from, so the swatches and copy can never drift from the map.
 
 import { type ReactNode, useState } from "react";
 import { MAP_FALLBACK_COLORS, MAP_SIGNAL_COLORS, SYSTEM_TILE_COLORS } from "./colors";
-import { PanelButton } from "./panel-buttons";
+import { Panel, PanelButton, PanelHeader } from "./panel-buttons";
+import { STALENESS_THRESHOLD_DAYS } from "./signals";
 
 /** A small square swatch in a signal's treatment color. */
 function Swatch({ color }: { color: string }) {
@@ -59,7 +60,7 @@ const LEGEND_ROWS: LegendRow[] = [
   },
   {
     label: "Stale",
-    description: "No joined card touched in 14+ days — the tile fades to sepia.",
+    description: `No joined card touched in ${STALENESS_THRESHOLD_DAYS}+ days — the tile fades to sepia.`,
     swatch: <Swatch color={MAP_SIGNAL_COLORS.sepiaTarget} />,
   },
   {
@@ -75,33 +76,23 @@ export function MapLegend() {
   return (
     <div className="pointer-events-auto absolute bottom-4 left-4 z-10 flex flex-col items-start gap-2">
       {open ? (
-        <div
-          className="w-64 overflow-hidden rounded border"
-          data-testid="map-legend-panel"
-          style={{
-            backgroundColor: MAP_FALLBACK_COLORS.panel,
-            borderColor: MAP_FALLBACK_COLORS.border,
-          }}
-        >
-          <div
-            className="flex items-center justify-between gap-2 border-b px-3 py-2"
-            style={{ borderColor: MAP_FALLBACK_COLORS.border }}
-          >
-            <p className="text-xs font-semibold" style={{ color: MAP_FALLBACK_COLORS.heading }}>
-              Signals
-            </p>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="rounded border px-1.5 py-0.5 text-[10px]"
-              style={{
-                borderColor: MAP_FALLBACK_COLORS.border,
-                color: MAP_FALLBACK_COLORS.subtext,
-              }}
-            >
-              Hide
-            </button>
-          </div>
+        <Panel className="w-64 overflow-hidden" testId="map-legend-panel">
+          <PanelHeader
+            title="Signals"
+            action={
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded border px-1.5 py-0.5 text-[10px]"
+                style={{
+                  borderColor: MAP_FALLBACK_COLORS.border,
+                  color: MAP_FALLBACK_COLORS.subtext,
+                }}
+              >
+                Hide
+              </button>
+            }
+          />
           <ul className="space-y-2 px-3 py-2">
             {LEGEND_ROWS.map((row) => (
               <li key={row.label} className="flex items-start gap-2">
@@ -129,17 +120,11 @@ export function MapLegend() {
           >
             Ambient, not alarming — states, not alerts.
           </p>
-        </div>
+        </Panel>
       ) : (
-        <div
-          className="overflow-hidden rounded border"
-          style={{
-            backgroundColor: MAP_FALLBACK_COLORS.panel,
-            borderColor: MAP_FALLBACK_COLORS.border,
-          }}
-        >
+        <Panel className="overflow-hidden">
           <PanelButton label="Legend" onClick={() => setOpen(true)} />
-        </div>
+        </Panel>
       )}
     </div>
   );

@@ -1,9 +1,69 @@
-// Shared parchment-styled button chrome for the map surfaces (MapDevView,
-// MapTabView): a toggle-style button for HUD button groups (view-mode
-// toggle, Refresh) and a bordered action button for MapMessagePanel's
-// `action` slot and inline banners (Retry / Refresh / conflict Refresh).
+// Shared parchment-styled chrome for the map surfaces (MapDevView,
+// MapTabView): the Panel/PanelHeader box shell every HUD box, side panel,
+// and inline notice wraps its content in, a toggle-style button for HUD
+// button groups (view-mode toggle, Refresh), and a bordered action button
+// for MapMessagePanel's `action` slot and inline banners (Retry / Refresh /
+// conflict Refresh).
 
+import type { ReactNode } from "react";
 import { MAP_FALLBACK_COLORS } from "./colors";
+
+/**
+ * The map surfaces' shared panel-box shell: rounded parchment border +
+ * background. `className` carries layout only (width, flex, position,
+ * padding) so the chrome itself can't drift between callers; `role`/
+ * `ariaLabel`/`testId` cover the handful of attributes panels need on the
+ * shell (alert/group roles, e2e hooks).
+ */
+export function Panel({
+  ariaLabel,
+  children,
+  className = "",
+  role,
+  testId,
+}: {
+  ariaLabel?: string;
+  children?: ReactNode;
+  className?: string;
+  role?: string;
+  testId?: string;
+}) {
+  return (
+    <div
+      aria-label={ariaLabel}
+      className={`rounded border ${className}`.trim()}
+      data-testid={testId}
+      role={role}
+      style={{
+        backgroundColor: MAP_FALLBACK_COLORS.panel,
+        borderColor: MAP_FALLBACK_COLORS.border,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * A Panel's title row: a heading on the left, an optional single control on
+ * the right (e.g. a dismiss button), with the bottom border that separates
+ * it from the panel's body. For a panel with a closable/named section
+ * (MapLegend's open state) — most map panels have no header, or a bespoke
+ * title+subtext block that doesn't fit this shape (PlacementPanel's).
+ */
+export function PanelHeader({ action, title }: { action?: ReactNode; title: string }) {
+  return (
+    <div
+      className="flex items-center justify-between gap-2 border-b px-3 py-2"
+      style={{ borderColor: MAP_FALLBACK_COLORS.border }}
+    >
+      <p className="text-xs font-semibold" style={{ color: MAP_FALLBACK_COLORS.heading }}>
+        {title}
+      </p>
+      {action}
+    </div>
+  );
+}
 
 /** Parchment-styled toggle button for HUD button groups. */
 export function PanelButton({
