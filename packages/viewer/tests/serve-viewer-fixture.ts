@@ -2036,6 +2036,10 @@ function fixtureMapStateResponse(): Response {
   });
 }
 
+// Raven's fixture journal (L2): four dated entries, newest first, so the
+// colleague overlay's "top ~3" slice is exercised through the real UI (the
+// fourth entry must not render). A colleague with no journal returns empty
+// entries — the server's missing-file→empty behavior.
 async function fixtureMapStateWrite(request: Request): Promise<Response> {
   const ifMatch = request.headers.get("if-match");
   if (ifMatch != null) {
@@ -2078,14 +2082,34 @@ async function fixtureInfoHubBoardWrite(request: Request): Promise<Response> {
 }
 
 function fixtureColleagueJournalsResponse(): Response {
-  // The L1 journals data path (/api/journals) the Map tab's system-health dots
-  // and overdue flicker read. A recent Raven entry so the fixture duty-loop
-  // reads healthy (full dots, no flicker) regardless of when the suite runs:
-  // signals aren't asserted in the map-tab spec, and a non-overdue baseline
-  // keeps the always-on canvas render loop free of an extra flicker useFrame.
+  // The shared journals data path (/api/journals): L1's system-health dots +
+  // overdue flicker read the newest entry's timestamp, and L2's colleague
+  // overlay reads the top ~3 entries' title/body. The newest entry stays
+  // `recent` so the fixture duty-loop reads healthy (full dots, no flicker,
+  // no extra useFrame — signals aren't asserted in the map-tab spec); three
+  // older entries below it exercise the overlay's top-3 slice (the fourth,
+  // "oldest beat", must not render). Every entry carries a body (schema-required).
   const recent = new Date(Date.now() - 5 * 60_000).toISOString().slice(0, 16).replace("T", " ");
   return Response.json({
-    journals: [{ colleague: "raven", entries: [{ timestamp: recent, title: "duty-loop beat" }] }],
+    journals: [
+      {
+        colleague: "raven",
+        entries: [
+          { timestamp: recent, title: "duty-loop beat", body: "Checked the board and journals." },
+          {
+            timestamp: "2026-07-11",
+            title: "earlier beat",
+            body: "Placed the reserved landmark hexes.",
+          },
+          {
+            timestamp: "2026-07-10",
+            title: "older still",
+            body: "Sketched the bench and the hearth.",
+          },
+          { timestamp: "2026-07-09", title: "oldest beat", body: "Beyond the top three." },
+        ],
+      },
+    ],
   });
 }
 

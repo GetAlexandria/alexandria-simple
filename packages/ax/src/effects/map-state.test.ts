@@ -54,10 +54,11 @@ function runWrite(state: MapState, workspacePath: string) {
 
 const seedPath = join(import.meta.dir, "../../../..", "docs/alexandria/map/map-state.json");
 
-// The checked-in S1 seed world — two work-half domains (Software, New
-// Media), three contexts, the two duty-loop systems plus the Map tab
-// project, three entity positions and two colleague landmark positions —
-// loaded from the seed file so it stays the single source of truth.
+// The checked-in seed world — two work-half domains (Software, New Media),
+// three contexts, the two duty-loop systems plus the Map tab project, three
+// entity positions, and the L2 landmark bench (two colleague landmarks, the
+// campfire, and four locked future-seat plots) — loaded from the seed file so
+// it stays the single source of truth.
 // Each call parses fresh, so tests that mutate the returned document stay
 // independent.
 function baseState(): Record<string, unknown> {
@@ -75,7 +76,9 @@ describe("validateMapState", () => {
       "prj-map-tab",
       "sys-damien-duty-loop",
     ]);
-    expect(state.positions).toHaveLength(5);
+    // Three entity positions + the L2 landmark bench (2 colleagues, 1 campfire,
+    // 4 locked seats).
+    expect(state.positions).toHaveLength(10);
   });
 
   test("accepts an empty document", () => {

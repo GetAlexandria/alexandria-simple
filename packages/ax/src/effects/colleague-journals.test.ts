@@ -66,8 +66,29 @@ describe("parseJournalEntries", () => {
 
   test("accepts a hyphen separator and a header with no title", () => {
     const entries = parseJournalEntries(["## 2026-07-01 - hyphen sep", "## 2026-07-02"].join("\n"));
-    expect(entries[0]).toEqual({ timestamp: "2026-07-01", title: "hyphen sep" });
-    expect(entries[1]).toEqual({ timestamp: "2026-07-02", title: "" });
+    expect(entries[0]).toEqual({ timestamp: "2026-07-01", title: "hyphen sep", body: "" });
+    expect(entries[1]).toEqual({ timestamp: "2026-07-02", title: "", body: "" });
+  });
+
+  test("captures each entry's body (lines up to the next dated header), trimmed", () => {
+    const entries = parseJournalEntries(
+      [
+        "# Preamble",
+        "not an entry",
+        "",
+        "## 2026-07-02 — newer",
+        "",
+        "the newer body",
+        "second line",
+        "",
+        "## 2026-07-01 — older",
+        "the older body",
+      ].join("\n"),
+    );
+    expect(entries).toEqual([
+      { timestamp: "2026-07-02", title: "newer", body: "the newer body\nsecond line" },
+      { timestamp: "2026-07-01", title: "older", body: "the older body" },
+    ]);
   });
 });
 

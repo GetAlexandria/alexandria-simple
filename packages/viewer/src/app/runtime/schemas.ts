@@ -1177,11 +1177,14 @@ export type InfoHubBoard = Schema.Schema.Type<typeof InfoHubBoardSchema>;
 // `docs/alexandria/journal/<name>.md` that the Map tab's system-health dots
 // and overdue candle flicker derive from. The ax twin
 // (packages/ax/src/effects/colleague-journals.ts) parses each duty-loop
-// entry's header timestamp; this schema only decodes what the server already
-// extracted. Read-only: L1 adds no journal writes and no stored signal state.
+// entry's header timestamp (for L1's health/overdue signals) and its body (for
+// L2's colleague overlay); this schema only decodes what the server extracted.
+// Read-only: neither L1 nor L2 writes journals or stores signal state.
 export const JournalEntrySchema = Schema.Struct({
   timestamp: Schema.String,
   title: Schema.String,
+  /** The entry's body prose (L2 colleague overlay); "" when the entry is header-only. */
+  body: Schema.String,
 });
 
 export type JournalEntry = Schema.Schema.Type<typeof JournalEntrySchema>;

@@ -15,25 +15,17 @@
 // tile names. The drei-Html OwnerChip below is for DOM-overlay chips —
 // owner name cards, the unclaimed/malformed notices, work-marker captions.
 
-import { Html } from "@react-three/drei";
 import type { CSSProperties, ReactNode } from "react";
 import * as THREE from "three";
 import { OWNER_VIEW_COLORS } from "./colors";
 import { FixedBuilding } from "./FixedBuilding";
 import { HEX_SIZE, hexToWorld, type HexCoord } from "./hex";
+import { HexHtmlChip } from "./HexHtmlChip";
 import { HEX_CELL_HEIGHT } from "./materials";
-import type {
-  LockedSeat,
-  OwnerTerritory,
-  OwnerViewLayout,
-  OwnerWorkMarker,
-} from "./layout/owner-view";
+import type { OwnerTerritory, OwnerViewLayout, OwnerWorkMarker } from "./layout/owner-view";
 
 // Work markers float just above the ground-cell tops.
 const WORK_MARKER_Y = HEX_CELL_HEIGHT + 0.08;
-
-// Keep floating chips below MapDevView's z-10 HUD chrome.
-const CHIP_Z_INDEX_RANGE: [number, number] = [5, 0];
 
 const CHIP_STYLE: CSSProperties = {
   backgroundColor: OWNER_VIEW_COLORS.label.background,
@@ -65,9 +57,10 @@ type OwnerChipProps = {
 };
 
 /**
- * A pointer-transparent DOM chip floating at a hex's south edge (drei Html).
- * For in-scene world-space text use ./MapLabel instead — see the label-split
- * note in this file's header.
+ * A hex-anchored parchment chip (owner card, work-marker caption, vacant-plot
+ * notice) on the shared pointer-transparent HexHtmlChip. For in-scene
+ * world-space text use ./MapLabel instead — see the label-split note in this
+ * file's header.
  */
 function OwnerChip({
   coord,
@@ -76,23 +69,17 @@ function OwnerChip({
   className,
   children,
 }: OwnerChipProps) {
-  const [x, z] = hexToWorld(coord, HEX_SIZE);
   const variantClasses = CHIP_VARIANT_CLASSES[variant];
 
   return (
-    <Html
-      position={[x, 0.1, z + 0.85]}
-      center
-      zIndexRange={CHIP_Z_INDEX_RANGE}
-      style={{ pointerEvents: "none" }}
-    >
+    <HexHtmlChip coord={coord} elevation={0.1} zOffset={0.85}>
       <span
         className={className ? `${variantClasses} ${className}` : variantClasses}
         style={muted ? MUTED_CHIP_STYLE : CHIP_STYLE}
       >
         {children}
       </span>
-    </Html>
+    </HexHtmlChip>
   );
 }
 
@@ -137,7 +124,13 @@ function WorkMarker({ marker }: { marker: OwnerWorkMarker }) {
 }
 
 /** The domain anchor: owner building, human statue, or vacant plot. */
-function TerritoryAnchor({ territory }: { territory: OwnerTerritory }) {
+function TerritoryAnchor({
+  territory,
+  onColleagueClick,
+}: {
+  territory: OwnerTerritory;
+  onColleagueClick: (colleagueId: string) => void;
+}) {
   const { ownership, anchor, domain } = territory;
 
   if (ownership.status !== "owned") {
@@ -170,6 +163,10 @@ function TerritoryAnchor({ territory }: { territory: OwnerTerritory }) {
         kind={owner.kind === "colleague" ? "colleague" : "human"}
         coord={anchor}
         ownerId={owner.id}
+        // A colleague anchor opens the same colleague overlay a Domain-view
+        // bench building does; a human statue is not a colleague, so it stays
+        // inert.
+        onClick={owner.kind === "colleague" ? () => onColleagueClick(owner.id) : undefined}
       />
       <OwnerChip coord={anchor} variant="card">
         <span className="block text-[11px] font-semibold">{owner.name}</span>
@@ -181,34 +178,26 @@ function TerritoryAnchor({ territory }: { territory: OwnerTerritory }) {
   );
 }
 
-function LockedSeatPlot({ seat }: { seat: LockedSeat }) {
-  return (
-    <>
-      <FixedBuilding kind="locked-seat" coord={seat.coord} />
-      <OwnerChip coord={seat.coord} muted className="italic">
-        Locked seat
-      </OwnerChip>
-    </>
-  );
-}
-
 type OwnerViewLayerProps = {
   layout: OwnerViewLayout;
+  /** Opens the colleague overlay from a colleague anchor (L2). */
+  onColleagueClick: (colleagueId: string) => void;
 };
 
-export function OwnerViewLayer({ layout }: OwnerViewLayerProps) {
+export function OwnerViewLayer({ layout, onColleagueClick }: OwnerViewLayerProps) {
+  // Locked seats are NOT rendered here: they are view-independent landmarks,
+  // owned by the MapLandmarks layer mounted beside this one in both view modes
+  // (rendering them here too would double-draw every seat in Owner view).
+  // `layout.seats` still feeds the HUD's locked-seat count.
   return (
     <>
       {layout.territories.map((territory) => (
         <group key={territory.domain.id}>
-          <TerritoryAnchor territory={territory} />
+          <TerritoryAnchor territory={territory} onColleagueClick={onColleagueClick} />
           {territory.work.map((marker) => (
             <WorkMarker key={marker.entity.id} marker={marker} />
           ))}
         </group>
-      ))}
-      {layout.seats.map((seat) => (
-        <LockedSeatPlot key={seat.id} seat={seat} />
       ))}
     </>
   );

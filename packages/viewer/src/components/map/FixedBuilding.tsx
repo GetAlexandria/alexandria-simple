@@ -90,9 +90,19 @@ type FixedBuildingProps = {
   coord: HexCoord;
   /** Bare owner id (e.g. "raven"); picks the colleague house sprite. */
   ownerId?: string;
+  /** L2 activation: a colleague building opens the colleague overlay. */
+  onClick?: () => void;
+  /** L2 hover (locked-seat tooltip); independent of clickability. */
+  onHoverChange?: (hovered: boolean) => void;
 };
 
-export function FixedBuilding({ kind, coord, ownerId }: FixedBuildingProps) {
+export function FixedBuilding({
+  kind,
+  coord,
+  ownerId,
+  onClick,
+  onHoverChange,
+}: FixedBuildingProps) {
   const theme = landmarkThemeFor(kind, ownerId);
 
   return (
@@ -104,6 +114,8 @@ export function FixedBuilding({ kind, coord, ownerId }: FixedBuildingProps) {
       tint={theme.tint}
       opacity={theme.opacity}
       elevation={theme.elevation}
+      onClick={onClick}
+      onHoverChange={onHoverChange}
     />
   );
 }

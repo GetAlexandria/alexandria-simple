@@ -262,7 +262,7 @@ describe("deriveTileSignalsByEntity", () => {
     const cards = [card({ id: "needs", entityId: "prj-map", status: "needs-a-human" })];
     // The real seed: a single date-only entry dated today.
     const journals: ColleagueJournal[] = [
-      { colleague: "raven", entries: [{ timestamp: "2026-07-13", title: "beat" }] },
+      { colleague: "raven", entries: [{ timestamp: "2026-07-13", title: "beat", body: "" }] },
     ];
 
     const signals = deriveTileSignalsByEntity({ entities, cards, journals, nowMs: NOW });

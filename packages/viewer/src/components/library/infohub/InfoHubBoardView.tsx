@@ -139,6 +139,12 @@ export interface InfoHubBoardViewProps {
   /** Refresh remedy for a promote that hit a stale map revision (409). */
   onRefreshMapState?: () => void;
   mapSaving?: boolean;
+  /**
+   * Initial status-lane filter, from the route (e.g. the Map tab's colleague
+   * overlay jumps here with `?status=needs-a-human`). Applied once on mount;
+   * an unrecognized value is ignored. The user can still change or clear it.
+   */
+  initialStatusFilter?: string;
 }
 
 /**
@@ -169,10 +175,16 @@ export function InfoHubBoardView({
   onSaveMapState,
   onRefreshMapState,
   mapSaving = false,
+  initialStatusFilter,
 }: InfoHubBoardViewProps) {
   const [detailCard, setDetailCard] = useState<InfoHubCard | null>(null);
   const [typeFilter, setTypeFilter] = useState<"" | WorkOrderType>("");
-  const [statusFilter, setStatusFilter] = useState<"" | WorkOrderStatus>("");
+  const [statusFilter, setStatusFilter] = useState<"" | WorkOrderStatus>(() =>
+    initialStatusFilter != null &&
+    (WORK_ORDER_STATUSES as readonly string[]).includes(initialStatusFilter)
+      ? (initialStatusFilter as WorkOrderStatus)
+      : "",
+  );
   const [areaFilter, setAreaFilter] = useState("");
   const [prioritySort, setPrioritySort] = useState<PrioritySortDirection>("urgent-first");
   const [maxPriority, setMaxPriority] = useState("");

@@ -25,3 +25,9 @@ export const STRAY_PILE_ELEVATION = 0.42;
 
 /** Stray-pile sprite forward (+z) offset from its hex center (StrayPile). */
 export const STRAY_PILE_Z_OFFSET = 0.18;
+
+/** Landmark sprite default center height above the ground plane (LandmarkSprite, L2). */
+export const LANDMARK_SPRITE_ELEVATION = 0.58;
+
+/** Landmark sprite forward (+z) nudge toward the camera from its hex (LandmarkSprite, L2). */
+export const LANDMARK_SPRITE_Z_OFFSET = 0.45;

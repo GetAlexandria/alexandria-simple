@@ -16,15 +16,22 @@ import { useMemo, useState } from "react";
 import { MAP_FALLBACK_COLORS } from "./colors";
 import { DEV_MAP_FIXTURE, DEV_MAP_STRAY_CARD_COUNTS, devMapGridRadius } from "./dev-map-fixture";
 import { DomainView } from "./DomainView";
+import { mapLandmarks, ownerAnchoredColleagueIds } from "./landmarks";
 import { computeDomainViewLayout } from "./layout/domain-view";
 import { generateHexGrid } from "./hex";
 import { buildOwnerViewLayout } from "./layout/owner-view";
+import { MapLandmarks } from "./MapLandmarks";
 import { MapMessagePanel } from "./MapMessagePanel";
 import { MapScene } from "./MapScene";
 import { OwnerViewLayer } from "./OwnerViewLayer";
 import { PanelButton } from "./panel-buttons";
 import { type MapViewMode, VIEW_MODES } from "./view-mode";
 import { isWebGLForcedOff, supportsWebGL } from "./webgl";
+
+// The dev harness proves landmark RENDERING (both looks); the click-to-open
+// colleague overlay is wired only in the real Map tab (it needs the journal
+// read path + agent roster the fixture route has no runtime for).
+const noopColleagueClick = (): void => {};
 
 export function MapDevView() {
   const [hasWebGLSupport] = useState(
@@ -40,6 +47,8 @@ export function MapDevView() {
     [cells],
   );
   const ownerLayout = useMemo(() => buildOwnerViewLayout(DEV_MAP_FIXTURE), []);
+  const landmarks = useMemo(() => mapLandmarks(DEV_MAP_FIXTURE), []);
+  const anchoredColleagueIds = useMemo(() => ownerAnchoredColleagueIds(DEV_MAP_FIXTURE), []);
 
   if (!hasWebGLSupport) {
     return (
@@ -100,9 +109,19 @@ export function MapDevView() {
         }
       >
         {viewMode === "domain" ? (
-          <DomainView layout={domainLayout} />
+          <>
+            <DomainView layout={domainLayout} />
+            <MapLandmarks landmarks={landmarks} onColleagueClick={noopColleagueClick} />
+          </>
         ) : (
-          <OwnerViewLayer layout={ownerLayout} />
+          <>
+            <OwnerViewLayer layout={ownerLayout} onColleagueClick={noopColleagueClick} />
+            <MapLandmarks
+              landmarks={landmarks}
+              onColleagueClick={noopColleagueClick}
+              skipColleagueIds={anchoredColleagueIds}
+            />
+          </>
         )}
       </MapScene>
     </div>

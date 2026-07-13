@@ -183,6 +183,8 @@ export const DEV_MAP_FIXTURE = {
     { q: 3, r: 3, entityType: "project", entityId: "prj-dinner-party" },
     { q: 4, r: -2, entityType: "project", entityId: "prj-demo-video" },
     { q: 0, r: 0, entityType: "landmark", entityId: "colleague:raven" },
+    // The campfire (L2) — a gratuitous animated hearth on the neutral row.
+    { q: 1, r: 0, entityType: "landmark", entityId: "campfire:hearth" },
     // The four locked future-seat plots, benched along the eastern rim.
     { q: 5, r: -3, entityType: "landmark", entityId: "seat:bench-1" },
     { q: 5, r: -2, entityType: "landmark", entityId: "seat:bench-2" },

@@ -894,6 +894,10 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
               void mapState.refresh();
             }}
             mapSaving={mapState.saving}
+            // Seeded by the Map tab's colleague overlay "needs a human" jump.
+            initialStatusFilter={
+              route.surface === "info" ? (route.searchParams.get("status") ?? undefined) : undefined
+            }
           />
         )
       ) : activeView === "ledger" ? (
@@ -928,6 +932,18 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
                 boardSaveError={infoHubBoard.saveError}
                 boardSaving={infoHubBoard.saving}
                 onSaveCards={infoHubBoard.saveCards}
+                agents={projectState.agents}
+                // Opens the board's needs-a-human lane for everyone (cards
+                // carry no colleague field to filter by; the overlay shows the
+                // colleague-scoped count separately).
+                onOpenNeedsHumanBoard={() =>
+                  navigate({
+                    surface: "info",
+                    searchParams: new URLSearchParams({ status: "needs-a-human" }),
+                  })
+                }
+                // The bench quick-bar link: the colleague's per-agent page.
+                onOpenAgentPage={(colleagueId) => navigate(agentRoute(colleagueId))}
                 journals={colleagueJournals.journals}
               />
             </Suspense>

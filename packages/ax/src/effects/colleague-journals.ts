@@ -18,7 +18,7 @@ import { type DirectoryEntry, FileSystem, isMissingFileError } from "./filesyste
  * health derivation stays a pure, separately-tested viewer function.
  */
 
-/** One parsed journal entry header: its timestamp and the rest of the title. */
+/** One parsed journal entry: its timestamp, title, and body prose. */
 export interface JournalEntry {
   /**
    * The entry timestamp exactly as written in the header (e.g. `2026-07-12`
@@ -28,6 +28,12 @@ export interface JournalEntry {
   timestamp: string;
   /** The header text after the timestamp (and any `—`/`-` separator). */
   title: string;
+  /**
+   * The entry's body (the lines under its header up to the next entry),
+   * trimmed. Empty for a header-only beat. L1's signals ignore it; L2's
+   * colleague overlay renders it.
+   */
+  body: string;
 }
 
 export interface ColleagueJournal {
@@ -47,17 +53,38 @@ const ENTRY_HEADER =
 /**
  * Parses a journal markdown file into its entries (newest-first, as written).
  * Pure and total: a missing/blank file yields no entries; only `##` headers
- * that lead with a date are counted, so prose between entries is ignored.
+ * that lead with a date open an entry, so a stray heading or the file preamble
+ * never becomes its own beat. Each entry's body is the lines under its header
+ * up to the next dated header (trimmed) — carried for L2's colleague overlay.
  */
 export function parseJournalEntries(markdown: string): JournalEntry[] {
   const entries: JournalEntry[] = [];
+  let current: { timestamp: string; title: string; bodyLines: string[] } | null = null;
+
+  const flush = (): void => {
+    if (current == null) {
+      return;
+    }
+    entries.push({
+      timestamp: current.timestamp,
+      title: current.title,
+      body: current.bodyLines.join("\n").trim(),
+    });
+    current = null;
+  };
+
   for (const rawLine of markdown.split("\n")) {
     const match = ENTRY_HEADER.exec(rawLine.trim());
-    if (match == null) {
-      continue;
+    if (match != null) {
+      flush();
+      current = { timestamp: match[1]!, title: match[2]!.trim(), bodyLines: [] };
+    } else if (current != null) {
+      current.bodyLines.push(rawLine);
     }
-    entries.push({ timestamp: match[1]!, title: match[2]!.trim() });
+    // Lines before the first dated header are the file preamble — not an entry.
   }
+  flush();
+
   return entries;
 }
 

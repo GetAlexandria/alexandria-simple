@@ -16,6 +16,9 @@ export const LOCKED_SEAT_PREFIX = "seat:";
 /** Landmark-position id prefix for colleague landmarks (M1 vocabulary). */
 export const COLLEAGUE_LANDMARK_PREFIX = COLLEAGUE_OWNER_PREFIX;
 
+/** Landmark-position id prefix for the decorative campfire (L2 — one hearth). */
+export const CAMPFIRE_LANDMARK_PREFIX = "campfire:";
+
 export type DomainOwnerKind = "colleague" | "human";
 
 export type DomainOwner = {
@@ -37,7 +40,8 @@ export type DomainOwnership =
   | { status: "unclaimed" }
   | { status: "malformed"; raw: string };
 
-const capitalize = (value: string): string =>
+/** Uppercase the first character; the map's id-to-display-name convention. */
+export const capitalize = (value: string): string =>
   value.length === 0 ? value : value.charAt(0).toUpperCase() + value.slice(1);
 
 /**
@@ -80,9 +84,14 @@ export function parseDomainOwner(owner: string | undefined): DomainOwnership {
 export type ParsedLandmarkId =
   | { kind: "colleague"; id: string }
   | { kind: "seat"; id: string }
+  | { kind: "campfire"; id: string }
   | { kind: "unknown"; raw: string };
 
-/** Parse a landmark position's entityId ("colleague:raven" | "seat:bench-1"). */
+/**
+ * Parse a landmark position's entityId ("colleague:raven" | "seat:bench-1" |
+ * "campfire:hearth"). The prefixes are disjoint, so the check order does not
+ * matter; an empty id after any known prefix falls through to "unknown".
+ */
 export function parseLandmarkId(entityId: string): ParsedLandmarkId {
   if (entityId.startsWith(COLLEAGUE_LANDMARK_PREFIX)) {
     const id = entityId.slice(COLLEAGUE_LANDMARK_PREFIX.length);
@@ -94,6 +103,12 @@ export function parseLandmarkId(entityId: string): ParsedLandmarkId {
     const id = entityId.slice(LOCKED_SEAT_PREFIX.length);
     if (id.length > 0) {
       return { kind: "seat", id };
+    }
+  }
+  if (entityId.startsWith(CAMPFIRE_LANDMARK_PREFIX)) {
+    const id = entityId.slice(CAMPFIRE_LANDMARK_PREFIX.length);
+    if (id.length > 0) {
+      return { kind: "campfire", id };
     }
   }
   return { kind: "unknown", raw: entityId };
