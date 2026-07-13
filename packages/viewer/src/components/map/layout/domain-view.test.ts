@@ -143,7 +143,7 @@ describe("computeDomainViewLayout washes and borders", () => {
     }
   });
 
-  it("assigns distinct wash colors to the fixture's four domains", () => {
+  it("assigns distinct wash colors to every fixture domain", () => {
     const colors = new Set(layout.domainColorById.values());
     expect(colors.size).toBe(DEV_MAP_FIXTURE.domains.length);
   });

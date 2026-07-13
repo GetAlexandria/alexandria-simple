@@ -38,7 +38,9 @@ class SpriteErrorBoundary extends Component<{ children: ReactNode }, { hasError:
 type MapSceneProps = {
   cells: readonly HexGridCell[];
   parchmentSeed?: number;
+  /** Per-view territory wash for the ground grid (Domain or Owner look). */
   cellTintByKey?: ReadonlyMap<string, HexTint>;
+  /** View-specific layers rendered above the ground grid (V1/V2 looks). */
   children?: ReactNode;
 };
 

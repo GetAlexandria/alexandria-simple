@@ -6,6 +6,11 @@
 // canvas using the viewer's own font stack (Cormorant Garamond is already a
 // viewer dependency, with a system-serif fallback) — zero network, zero new
 // assets.
+//
+// Label systems, deliberately split: this MapLabel is canonical for
+// in-scene world-space text (region/context/half names, tile names). The
+// Owner view's drei-Html OwnerChip (OwnerViewLayer.tsx) is the DOM-overlay
+// chip system — owner name cards, warning chips — and stays separate.
 
 import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
