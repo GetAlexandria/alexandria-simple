@@ -249,4 +249,96 @@ describe("computeDomainViewLayout tiles, piles, labels", () => {
     });
     expect(again).toEqual(layout);
   });
+
+  it("reports no unplaced piles for the fixture (every pile found a hex)", () => {
+    expect(layout.unplacedPiles).toHaveLength(0);
+  });
+});
+
+describe("computeDomainViewLayout full-patch pile fallback (issue #9 carry-over)", () => {
+  it("moves a pile to a free territory cell when every claimed patch cell holds a tile", () => {
+    // Context b's only patch cell is its entity's hex: its seed at (2,-5) is
+    // walled in by context a's entity seeds on every in-territory neighbor,
+    // so BFS growth stops immediately and the patch is fully occupied. The
+    // pile must fall back to a free cell of the domain territory instead of
+    // silently vanishing (the pre-S2 behavior).
+    const state: MapState = {
+      domains: [{ id: "d", name: "D", half: "work", region: { center: [0, -3], radius: 2 } }],
+      contexts: [
+        { id: "a", name: "A", domainId: "d" },
+        { id: "b", name: "B", domainId: "d" },
+      ],
+      entities: [
+        { id: "prj-a1", kind: "project", name: "A1", contextId: "a", lifecycle: "active" },
+        { id: "prj-a2", kind: "project", name: "A2", contextId: "a", lifecycle: "active" },
+        { id: "prj-a3", kind: "project", name: "A3", contextId: "a", lifecycle: "active" },
+        { id: "prj-b1", kind: "project", name: "B1", contextId: "b", lifecycle: "active" },
+      ],
+      positions: [
+        { q: 1, r: -5, entityType: "project", entityId: "prj-a1" },
+        { q: 2, r: -4, entityType: "project", entityId: "prj-a2" },
+        { q: 1, r: -4, entityType: "project", entityId: "prj-a3" },
+        { q: 2, r: -5, entityType: "project", entityId: "prj-b1" },
+      ],
+    };
+    const fallbackLayout = computeDomainViewLayoutInternal(state, cells, {
+      strayCardCounts: { b: 4 },
+    });
+
+    // b's patch really is just its occupied entity cell (the setup holds).
+    const bPatchKeys = [...fallbackLayout.patchByCellKey]
+      .filter(([, owner]) => owner === "b")
+      .map(([key]) => key);
+    expect(bPatchKeys).toEqual([hexToKey(createHex(2, -5))]);
+
+    const pile = fallbackLayout.piles.find((candidate) => candidate.contextId === "b");
+    expect(pile).toBeDefined();
+    expect(pile!.cardCount).toBe(4);
+    const pileKey = hexToKey(pile!.coord);
+    // On free ground inside the domain's territory, not on any entity hex.
+    expect(fallbackLayout.territoryByCellKey.get(pileKey)).toBe("d");
+    const entityKeys = new Set(
+      state.positions.map((position) => hexToKey(createHex(position.q, position.r))),
+    );
+    expect(entityKeys.has(pileKey)).toBe(false);
+    // The preference order avoids other contexts' patches while unpatched
+    // territory remains (it does here).
+    expect(fallbackLayout.patchByCellKey.get(pileKey)).toBeUndefined();
+    expect(fallbackLayout.unplacedPiles).toHaveLength(0);
+  });
+
+  it("reports an unplaced pile when the whole domain territory is occupied", () => {
+    // A radius-1 domain has exactly 7 territory cells; 7 placed entities
+    // fill them all, so the stray pile has nowhere to stand and must
+    // surface as an annotation instead of disappearing.
+    const coords: [number, number][] = [
+      [0, -2],
+      [1, -2],
+      [-1, -2],
+      [0, -1],
+      [0, -3],
+      [1, -3],
+      [-1, -1],
+    ];
+    const state: MapState = {
+      domains: [{ id: "d", name: "D", half: "work", region: { center: [0, -2], radius: 1 } }],
+      contexts: [{ id: "c", name: "C", domainId: "d" }],
+      entities: coords.map((_, index) => ({
+        id: `prj-${index}`,
+        kind: "project" as const,
+        name: `P${index}`,
+        contextId: "c",
+        lifecycle: "active",
+      })),
+      positions: coords.map(([q, r], index) => ({
+        q,
+        r,
+        entityType: "project" as const,
+        entityId: `prj-${index}`,
+      })),
+    };
+    const fullLayout = computeDomainViewLayout(state, cells, { strayCardCounts: { c: 2 } });
+    expect(fullLayout.piles).toHaveLength(0);
+    expect(fullLayout.unplacedPiles).toEqual([{ contextId: "c", cardCount: 2 }]);
+  });
 });

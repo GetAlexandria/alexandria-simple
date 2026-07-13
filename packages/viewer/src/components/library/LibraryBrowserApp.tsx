@@ -438,10 +438,18 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
     runtimeClient,
     projectState.refresh,
   );
-  const infoHubBoard = useInfoHubBoard(runtimeClient, route.surface === "info");
+  // Since S2 the board and the map are two lenses over joined state: the
+  // Map tab derives stray piles and the tile overlay from the board, and
+  // the board's card form joins cards to map contexts/entities (and can
+  // promote a card to a project — one map write). Both stores load on
+  // either surface; each surface degrades gracefully when the other file
+  // is unavailable.
+  const boardOrMapOpen = route.surface === "info" || route.surface === "map";
+  const infoHubBoard = useInfoHubBoard(runtimeClient, boardOrMapOpen);
   // The Map tab's state store (S1): fetch-once + manual refresh like the
-  // Info Hub, plus the revision-guarded full-document save placement uses.
-  const mapState = useMapState(runtimeClient, route.surface === "map");
+  // Info Hub, plus the revision-guarded full-document save that placement,
+  // entity create/edit, and promote-to-project all share.
+  const mapState = useMapState(runtimeClient, boardOrMapOpen);
   const {
     connectionState: ravenConnectionState,
     disconnectConnection: disconnectRavenConnection,
@@ -874,6 +882,12 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
             onSaveCards={infoHubBoard.saveCards}
             saveError={infoHubBoard.saveError}
             saving={infoHubBoard.saving}
+            mapState={mapState.state}
+            onSaveMapState={mapState.saveState}
+            onRefreshMapState={() => {
+              void mapState.refresh();
+            }}
+            mapSaving={mapState.saving}
           />
         )
       ) : activeView === "ledger" ? (
@@ -892,12 +906,19 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
                 error={mapState.error}
                 loading={mapState.loading}
                 onRefresh={() => {
+                  // The tab shows joined state, so Refresh re-reads both
+                  // files (map document + board cards behind the piles).
                   void mapState.refresh();
+                  void infoHubBoard.refresh();
                 }}
                 onSave={mapState.saveState}
                 saveError={mapState.saveError}
                 saving={mapState.saving}
                 state={mapState.state}
+                board={infoHubBoard.board}
+                boardError={infoHubBoard.error}
+                boardSaving={infoHubBoard.saving}
+                onSaveCards={infoHubBoard.saveCards}
               />
             </Suspense>
           </MapChunkErrorBoundary>

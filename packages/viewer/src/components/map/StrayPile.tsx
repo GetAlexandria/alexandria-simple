@@ -3,8 +3,8 @@
 // no project/system (plan §1.1). The three crop-plot growth stages from
 // Lifebuild's prototype sprites (quarantine MANIFEST: asset) step with the
 // context's stray card count, and the sprite scales up a notch per stage.
-// Card counts are fixture-fed in V1; S1 derives them from the Info Hub
-// board.
+// Card counts were fixture-fed in V1; since S2 the Map tab derives them
+// from the Info Hub board (placement.ts strayCardCountsByContext).
 
 import { MapSprite } from "./MapSprite";
 import type { HexCoord } from "./hex";
@@ -28,9 +28,11 @@ export function strayPileStage(cardCount: number): 1 | 2 | 3 {
 type StrayPileProps = {
   coord: HexCoord;
   cardCount: number;
+  /** S2: pile click opens the context's loose-cards overlay. */
+  onClick?: () => void;
 };
 
-export function StrayPile({ coord, cardCount }: StrayPileProps) {
+export function StrayPile({ coord, cardCount, onClick }: StrayPileProps) {
   const stage = strayPileStage(cardCount);
   const height = BASE_HEIGHT + HEIGHT_STEP * (stage - 1);
 
@@ -42,6 +44,7 @@ export function StrayPile({ coord, cardCount }: StrayPileProps) {
       height={height}
       elevation={0.42}
       zOffset={0.18}
+      onClick={onClick}
     />
   );
 }

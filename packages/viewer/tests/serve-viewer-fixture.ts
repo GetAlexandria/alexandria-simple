@@ -21,11 +21,14 @@ import {
   PMS_LIBRARY_ROOT,
 } from "../src/components/library/library-mode-config";
 import type {
+  InfoHubCard,
   LibraryCatalog,
   LibraryCatalogGate,
   LibraryConfirmationEdit,
+  MapState,
   RuntimeEvent,
 } from "../src/app/runtime/schemas";
+import { initialFixtureInfoHubCards, initialFixtureMapState } from "./map-board-fixture";
 
 const distRoot = resolve(import.meta.dir, "../dist");
 const encoder = new TextEncoder();
@@ -2013,6 +2016,67 @@ function cardDetailResponse(cardId: string, url: URL): Response {
   });
 }
 
+// --- Map tab fixtures (S2): /api/map/state + /api/info-hub/board -----------
+// In-memory stand-ins for the ax runtime's two joined state files, just
+// enough for the Playwright map-tab suite: the map GET/POST carries the
+// content-hash ETag / If-Match revision guard (409 on mismatch), and the
+// board POST merges by id like packages/ax/src/effects/info-hub-board.ts
+// (posted cards replace, unlisted on-disk cards are preserved).
+
+let fixtureMapState = initialFixtureMapState();
+let fixtureInfoHubCards = initialFixtureInfoHubCards();
+
+function fixtureMapRevision(): string {
+  return createHash("sha256").update(JSON.stringify(fixtureMapState)).digest("hex").slice(0, 16);
+}
+
+function fixtureMapStateResponse(): Response {
+  return Response.json(fixtureMapState, {
+    headers: { etag: `"${fixtureMapRevision()}"` },
+  });
+}
+
+async function fixtureMapStateWrite(request: Request): Promise<Response> {
+  const ifMatch = request.headers.get("if-match");
+  if (ifMatch != null) {
+    const expected = ifMatch.trim().replace(/^W\//, "").replace(/^"|"$/g, "");
+    if (expected !== fixtureMapRevision()) {
+      return Response.json(
+        { error: { message: "map state changed since this document was loaded" } },
+        { status: 409 },
+      );
+    }
+  }
+  fixtureMapState = (await request.json()) as MapState;
+  return fixtureMapStateResponse();
+}
+
+function fixtureInfoHubBoardResponse(): Response {
+  return Response.json({
+    comment: "fixture board",
+    updated: "2026-07-01",
+    cards: fixtureInfoHubCards,
+  });
+}
+
+async function fixtureInfoHubBoardWrite(request: Request): Promise<Response> {
+  const body = (await request.json()) as { cards?: InfoHubCard[] };
+  const posted = body.cards ?? [];
+  const byId = new Map(fixtureInfoHubCards.map((card) => [card.id, card]));
+  const order = fixtureInfoHubCards.map((card) => card.id);
+  for (const card of posted) {
+    byId.set(card.id, card);
+    if (!order.includes(card.id)) {
+      order.push(card.id);
+    }
+  }
+  fixtureInfoHubCards = order.flatMap((id) => {
+    const card = byId.get(id);
+    return card == null ? [] : [card];
+  });
+  return fixtureInfoHubBoardResponse();
+}
+
 async function staticResponse(url: URL): Promise<Response> {
   const decodedPath = decodeURIComponent(url.pathname);
   const requestedPath = decodedPath === "/" ? "/index.html" : decodedPath;
@@ -2309,6 +2373,28 @@ Bun.serve({
         decodeURIComponent(url.pathname.slice("/api/library/cards/".length)),
         url,
       );
+    }
+
+    if (url.pathname === "/api/map/state" && request.method === "GET") {
+      return fixtureMapStateResponse();
+    }
+
+    if (url.pathname === "/api/map/state" && request.method === "POST") {
+      return fixtureMapStateWrite(request);
+    }
+
+    if (url.pathname === "/api/info-hub/board" && request.method === "GET") {
+      return fixtureInfoHubBoardResponse();
+    }
+
+    if (url.pathname === "/api/info-hub/board" && request.method === "POST") {
+      return fixtureInfoHubBoardWrite(request);
+    }
+
+    if (url.pathname === "/__fixture/reset-map-board" && request.method === "POST") {
+      fixtureMapState = initialFixtureMapState();
+      fixtureInfoHubCards = initialFixtureInfoHubCards();
+      return Response.json({ ok: true });
     }
 
     return staticResponse(url);
