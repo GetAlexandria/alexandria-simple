@@ -1,10 +1,31 @@
-// Placement domain logic for the Map tab (S1 plan §1.1), pulled out of
-// MapTabView so it is three.js- and React-free and unit-tests under bun —
-// S2 grows exactly this logic (entity create/edit, card joins), so it needs
-// a seam that doesn't drag the view layer along with it.
+// Placement and entity/card-join domain logic for the Map tab (S1 placement,
+// S2 entity create/edit + card joins; plan §1.1), pulled out of MapTabView so
+// it is three.js- and React-free and unit-tests under bun. Every map write
+// goes through a `withX` function here that returns the next full document
+// for useMapState's revision-guarded save; board-card joins return next-card
+// values for the existing Info Hub board save path.
 
-import type { MapEntity, MapState } from "../../app/runtime/schemas";
+import type { InfoHubCard, MapEntity, MapEntityKind, MapState } from "../../app/runtime/schemas";
+import { slugify, uniqueId } from "../id-slug";
+import { isTerminalStatus } from "../library/infohub/boardModel";
 import { createHex, hexToKey, type HexCoord } from "./hex";
+
+// Viewer twins of the per-kind lifecycle vocabularies in
+// packages/ax/src/effects/map-state.ts (MAP_PROJECT_LIFECYCLES /
+// MAP_SYSTEM_LIFECYCLES) — ax owns validation server-side and cannot be
+// imported from the browser bundle, so the entity form declares the same
+// vocabulary here; the two must match.
+export const PROJECT_LIFECYCLES = ["active", "completed"] as const;
+export const SYSTEM_LIFECYCLES = ["planted", "hibernating", "uprooted"] as const;
+
+export function lifecyclesForKind(kind: MapEntityKind): readonly string[] {
+  return kind === "project" ? PROJECT_LIFECYCLES : SYSTEM_LIFECYCLES;
+}
+
+/** Display label for an entity kind — "Project" / "System" (the map's entity vocabulary). */
+export function entityKindLabel(kind: MapEntityKind): string {
+  return kind === "project" ? "Project" : "System";
+}
 
 /**
  * Every stored position occupies its hex — entity tiles and landmark hexes
@@ -79,5 +100,192 @@ export function withEntityRemoved(state: MapState, entityId: string): MapState {
     positions: state.positions.filter(
       (position) => position.entityType === "landmark" || position.entityId !== entityId,
     ),
+  };
+}
+
+// --- Entity create/edit (S2) -----------------------------------------------
+
+/**
+ * Everything the entity form captures. `kind` is create-only: an entity's
+ * id carries its kind prefix and its stored position carries its
+ * entityType, so edits keep the kind fixed rather than rewriting identity.
+ */
+export type MapEntityDraft = {
+  cadence?: string;
+  colleague?: string;
+  contextId: string;
+  kind: MapEntityKind;
+  lifecycle: string;
+  name: string;
+};
+
+/** Entity-id prefix per kind — the seed file's scheme (`prj-map-tab`, `sys-raven-duty-loop`). */
+export const ENTITY_ID_PREFIX_BY_KIND: Readonly<Record<MapEntityKind, string>> = {
+  project: "prj-",
+  system: "sys-",
+};
+
+/**
+ * Id generation scheme for new entities: `prj-`/`sys-` (kind prefix, the
+ * seed's convention) + the slugified name, with a `-2`, `-3`, … suffix when
+ * the base id is already taken. Ids are permanent — renaming an entity does
+ * not rewrite its id (board cards join by `entityId`).
+ */
+export function entityIdForDraft(
+  kind: MapEntityKind,
+  name: string,
+  existingIds: ReadonlySet<string>,
+): string {
+  return uniqueId(`${ENTITY_ID_PREFIX_BY_KIND[kind]}${slugify(name) || kind}`, existingIds);
+}
+
+/** A canonical entity from a form draft: trimmed, optional fields omitted (never ""). */
+function entityFromDraft(id: string, draft: MapEntityDraft): MapEntity {
+  const cadence = draft.cadence?.trim() ?? "";
+  const colleague = draft.colleague?.trim() ?? "";
+  return {
+    id,
+    kind: draft.kind,
+    name: draft.name.trim(),
+    contextId: draft.contextId,
+    // cadence/colleague belong to systems only (the ax validator rejects
+    // them on projects) and are omitted entirely when blank — the schema
+    // twins reject empty strings.
+    ...(draft.kind === "system" && colleague.length > 0 ? { colleague } : {}),
+    ...(draft.kind === "system" && cadence.length > 0 ? { cadence } : {}),
+    lifecycle: draft.lifecycle,
+  };
+}
+
+/**
+ * The next full document with a new entity appended (id generated from the
+ * draft, see `entityIdForDraft`). The entity starts unplaced — it appears in
+ * the placement panel's Unplaced list until the director places it.
+ */
+export function withEntityCreated(
+  state: MapState,
+  draft: MapEntityDraft,
+): { next: MapState; entity: MapEntity } {
+  const entity = entityFromDraft(
+    entityIdForDraft(draft.kind, draft.name, new Set(state.entities.map((e) => e.id))),
+    draft,
+  );
+  return { next: { ...state, entities: [...state.entities, entity] }, entity };
+}
+
+/**
+ * The next full document with `entityId` rewritten from the draft (kind kept
+ * from the existing entity — see MapEntityDraft). When a system's lifecycle
+ * becomes `uprooted` its stored position is removed through the same filter
+ * as the placement panel's Remove (plan §1.3: uprooted systems leave the
+ * map); a completed project keeps its position ("victories stay visible").
+ */
+export function withEntityEdited(
+  state: MapState,
+  entityId: string,
+  draft: MapEntityDraft,
+): MapState {
+  const existing = state.entities.find((entity) => entity.id === entityId);
+  if (existing == null) {
+    return state;
+  }
+  const edited = entityFromDraft(entityId, { ...draft, kind: existing.kind });
+  const next = {
+    ...state,
+    entities: state.entities.map((entity) => (entity.id === entityId ? edited : entity)),
+  };
+  return existing.kind === "system" && edited.lifecycle === "uprooted"
+    ? withEntityRemoved(next, entityId)
+    : next;
+}
+
+// --- Board-card joins and stray piles (S2, plan §1.1/§1.3) ------------------
+
+/**
+ * A card is stray when it belongs to a map context but to no project/system
+ * and is still live: `contextId` set, no `entityId`, status not terminal
+ * (done/wont-do). Piles derive from this at read time — never stored.
+ */
+export function isStrayCard(card: InfoHubCard): boolean {
+  return card.contextId != null && card.entityId == null && !isTerminalStatus(card.status);
+}
+
+/** Stray-card counts per context id — the Domain-view layout's pile input. */
+export function strayCardCountsByContext(
+  cards: readonly InfoHubCard[],
+): Readonly<Record<string, number>> {
+  const counts: Record<string, number> = {};
+  for (const card of cards) {
+    if (isStrayCard(card)) {
+      counts[card.contextId!] = (counts[card.contextId!] ?? 0) + 1;
+    }
+  }
+  return counts;
+}
+
+/**
+ * Value-equality of two stray-count maps — same context ids, same counts.
+ * The Map tab keys its domain-layout memo on this (not on board object
+ * identity) so a board write that leaves every pile count unchanged — e.g.
+ * toggling a checklist item on a card already joined to an entity — doesn't
+ * re-run the whole territory/pile assignment.
+ */
+export function strayCountsEqual(
+  a: Readonly<Record<string, number>>,
+  b: Readonly<Record<string, number>>,
+): boolean {
+  const aKeys = Object.keys(a);
+  return aKeys.length === Object.keys(b).length && aKeys.every((key) => a[key] === b[key]);
+}
+
+/** The cards joined to one entity (any status — the overlay shows the full run of work). */
+export function cardsJoinedToEntity(
+  cards: readonly InfoHubCard[],
+  entityId: string,
+): InfoHubCard[] {
+  return cards.filter((card) => card.entityId === entityId);
+}
+
+/** One context's loose cards — exactly the cards its stray pile counts. */
+export function looseCardsForContext(
+  cards: readonly InfoHubCard[],
+  contextId: string,
+): InfoHubCard[] {
+  return cards.filter((card) => isStrayCard(card) && card.contextId === contextId);
+}
+
+/**
+ * The next card value with its map join rewritten. Blank/undefined ids
+ * remove the field entirely — the M1 validators (viewer schema twin and the
+ * ax board contract) reject empty strings, so "" is never written.
+ */
+export function withCardJoin(
+  card: InfoHubCard,
+  join: { contextId?: string; entityId?: string },
+): InfoHubCard {
+  const { contextId, entityId, ...rest } = card;
+  void contextId;
+  void entityId;
+  return {
+    ...rest,
+    ...(join.contextId != null && join.contextId.length > 0 ? { contextId: join.contextId } : {}),
+    ...(join.entityId != null && join.entityId.length > 0 ? { entityId: join.entityId } : {}),
+  };
+}
+
+/**
+ * "Promote card to project" (plan §1.1): the draft for a new project built
+ * from a card's title. The caller creates the entity via `withEntityCreated`
+ * (map save), then joins the card via `withCardJoin` (board save); the
+ * entity starts unplaced and active. The card's detail stays on the card —
+ * entities carry no prose.
+ */
+export function promotionDraftFromCard(card: InfoHubCard, contextId: string): MapEntityDraft {
+  const title = card.title?.trim() ?? "";
+  return {
+    contextId,
+    kind: "project",
+    lifecycle: "active",
+    name: title.length > 0 ? title : card.id,
   };
 }

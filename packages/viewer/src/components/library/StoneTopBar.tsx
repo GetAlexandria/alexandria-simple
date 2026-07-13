@@ -32,6 +32,9 @@ const stoneTabs = [
   // The fifth stone (Map tab plan §5 ruling 4): the parchment map inside
   // the cave chrome. The theater stone is the unclaimed artwork in
   // public/library-assets, standing in until a dedicated map stone lands.
+  // Decision of record (S2, issue #9 carry-over): commissioning artwork
+  // that matches the hand-drawn stone set is polish, not state wiring —
+  // the dedicated map stone is punted to L3.
   {
     active: "/library-assets/theater-stone-active.png",
     disabled: false,

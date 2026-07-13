@@ -1,9 +1,19 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   INFO_HUB_CARD_STATUSES,
   type InfoHubBoard,
   type InfoHubCard,
+  type MapContext,
+  type MapState,
 } from "../../../app/runtime/schemas";
+import type { MapStateSaveError } from "../hooks/useMapState";
+import { slugify, uniqueId } from "../../id-slug";
+import {
+  entityKindLabel,
+  promotionDraftFromCard,
+  withCardJoin,
+  withEntityCreated,
+} from "../../map/placement";
 import {
   activeWorkOrderLane,
   archiveDateForTerminalCard,
@@ -12,8 +22,8 @@ import {
   isAgeArchived,
   isTerminalStatus,
   passesPrioritySift,
-  priorityLabel,
   sortCardsByPriority,
+  withChecklistItemToggled,
   withStatus,
   withoutArchiveOverride,
   type ActiveWorkOrderStatus,
@@ -21,6 +31,15 @@ import {
   type WorkOrderStatus,
   type WorkOrderType,
 } from "./boardModel";
+import {
+  cardScopeLabel,
+  cardTitleLabel,
+  WORK_ORDER_STATUS_LABELS,
+  WORK_ORDER_TYPE_LABELS,
+  WorkOrderCardFace,
+  WorkOrderDetailModal,
+  WorkOrderStatusActions,
+} from "./WorkOrderCard";
 
 /**
  * Info Hub work-order board surface (Info Hub kanban plan, Lane B) — the
@@ -42,31 +61,8 @@ const WORK_ORDER_STATUSES: ActiveWorkOrderStatus[] = INFO_HUB_CARD_STATUSES.filt
   (status): status is ActiveWorkOrderStatus => status !== "wont-do",
 );
 
-const WORK_ORDER_TYPE_LABELS: Readonly<Record<WorkOrderType, string>> = {
-  bug: "Bug",
-  improvement: "Improvement",
-  task: "Task",
-  testing: "Testing",
-};
-
-const WORK_ORDER_STATUS_LABELS: Readonly<Record<WorkOrderStatus, string>> = {
-  done: "Done",
-  "in-progress": "In Progress",
-  "needs-a-human": "Needs a Human",
-  open: "Open",
-  "wont-do": "Won't Do",
-};
-
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
-}
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 70);
 }
 
 function createCardId(
@@ -76,13 +72,24 @@ function createCardId(
   existingIds: ReadonlySet<string>,
 ): string {
   const base = `wo-${slugify(area || "general")}-${slugify(type)}-${slugify(title || "card") || "card"}`;
-  let id = base;
-  let suffix = 2;
-  while (existingIds.has(id)) {
-    id = `${base}-${suffix}`;
-    suffix += 1;
-  }
-  return id;
+  return uniqueId(base, existingIds);
+}
+
+/**
+ * The context `<option>`s shared by the promote picker and the card join
+ * form — each select renders its own leading "no context" placeholder, then
+ * these. The two lists must stay identical, so they live in one place.
+ */
+function ContextOptions({ contexts }: { contexts: readonly MapContext[] }) {
+  return (
+    <>
+      {contexts.map((context) => (
+        <option key={context.id} value={context.id}>
+          {context.name}
+        </option>
+      ))}
+    </>
+  );
 }
 
 function parseChecklist(text: string): NonNullable<InfoHubCard["checklist"]> {
@@ -103,10 +110,6 @@ function checklistToText(checklist: InfoHubCard["checklist"]): string {
   return (checklist ?? []).map((item) => `[${item.done ? "x" : " "}] ${item.text}`).join("\n");
 }
 
-function cardScopeLabel(card: InfoHubCard): string {
-  return card.area != null && card.area.trim().length > 0 ? card.area : "General";
-}
-
 interface ArchiveEntry {
   card: InfoHubCard;
   date: string | null;
@@ -118,9 +121,55 @@ export interface InfoHubBoardViewProps {
   onSaveCards: (cards: readonly InfoHubCard[]) => Promise<InfoHubBoard | null>;
   saveError: string | null;
   saving: boolean;
+  /**
+   * Map state for the card join pickers and promote-to-project (S2). The
+   * board only reads it — context/entity names and ids come from here, and
+   * card writes still flow through `onSaveCards`. Null/undefined (loading,
+   * fetch failed, or map empty) hides the join UI; the board never blocks
+   * on the map.
+   */
+  mapState?: MapState | null;
+  /**
+   * Promote-to-project's one map write: useMapState's revision-guarded
+   * full-document save (the shared path for ALL map writes; resolves null
+   * on success, the structured save error otherwise — the promote flow
+   * branches conflict-vs-error on it). Absent → promote is hidden.
+   */
+  onSaveMapState?: (next: MapState) => Promise<MapStateSaveError | null>;
+  /** Refresh remedy for a promote that hit a stale map revision (409). */
+  onRefreshMapState?: () => void;
+  mapSaving?: boolean;
 }
 
-export function InfoHubBoardView({ board, onSaveCards, saveError, saving }: InfoHubBoardViewProps) {
+/**
+ * A promote whose map half landed (the project exists) but whose board join
+ * hasn't yet: retrying skips entity creation and only re-attempts the join,
+ * so a flaky board save can never mint duplicate orphan projects
+ * (PR #20 review gate).
+ */
+type PendingPromotion = {
+  cardId: string;
+  contextId: string;
+  entityId: string;
+  entityName: string;
+};
+
+type PromoteFailure = {
+  /** conflict → offer "Refresh map data"; error/join → message only. */
+  kind: "conflict" | "error" | "join";
+  message: string;
+};
+
+export function InfoHubBoardView({
+  board,
+  onSaveCards,
+  saveError,
+  saving,
+  mapState,
+  onSaveMapState,
+  onRefreshMapState,
+  mapSaving = false,
+}: InfoHubBoardViewProps) {
   const [detailCard, setDetailCard] = useState<InfoHubCard | null>(null);
   const [typeFilter, setTypeFilter] = useState<"" | WorkOrderType>("");
   const [statusFilter, setStatusFilter] = useState<"" | WorkOrderStatus>("");
@@ -137,8 +186,53 @@ export function InfoHubBoardView({ board, onSaveCards, saveError, saving }: Info
   const [cardTitle, setCardTitle] = useState("");
   const [cardDetail, setCardDetail] = useState("");
   const [cardChecklist, setCardChecklist] = useState("");
+  // Map join pickers (S2): the ids the form writes as contextId/entityId.
+  // "" means "no join" — the fields are omitted from the card, never
+  // written as empty strings (the M1 validators reject "").
+  const [cardContextId, setCardContextId] = useState("");
+  const [cardEntityId, setCardEntityId] = useState("");
+  // Promote-to-project state (detail modal footer).
+  const [promoteContextId, setPromoteContextId] = useState("");
+  const [promoteError, setPromoteError] = useState<PromoteFailure | null>(null);
+  const [promoting, setPromoting] = useState(false);
+  const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
   const titleInputRef = useRef<HTMLInputElement | null>(null);
+
+  const mapContexts = useMemo(() => mapState?.contexts ?? [], [mapState]);
+  const mapEntities = useMemo(() => mapState?.entities ?? [], [mapState]);
+  const joinUiAvailable = mapState != null && mapContexts.length > 0;
+  // Stored joins are reconciled against the live map (PR #20 gate): an id
+  // whose context/entity no longer exists (or whose entity moved contexts)
+  // renders as unselected, and the SAVE writes exactly what the form shows —
+  // never a stale join back.
+  const effectiveCardContextId = mapContexts.some((context) => context.id === cardContextId)
+    ? cardContextId
+    : "";
+  // The entity picker narrows to the picked context; without a context it
+  // offers every entity (picking one adopts its context, below).
+  const entityOptions = useMemo(
+    () =>
+      effectiveCardContextId.length === 0
+        ? mapEntities
+        : mapEntities.filter((entity) => entity.contextId === effectiveCardContextId),
+    [mapEntities, effectiveCardContextId],
+  );
+  const effectiveCardEntityId = entityOptions.some((entity) => entity.id === cardEntityId)
+    ? cardEntityId
+    : "";
+
+  // Seed the promote picker whenever the detail modal lands on a new card:
+  // its own context when that context still exists on the map, otherwise
+  // "pick one" (with a dead-context hint rendered in the footer).
+  const detailCardId = detailCard?.id ?? null;
+  const detailCardContextId = detailCard?.contextId ?? "";
+  useEffect(() => {
+    setPromoteContextId(
+      mapContexts.some((context) => context.id === detailCardContextId) ? detailCardContextId : "",
+    );
+    setPromoteError(null);
+  }, [detailCardId, detailCardContextId, mapContexts]);
 
   const cards = useMemo(() => sortCardsByPriority(board.cards), [board.cards]);
   // Refreshed whenever the board reloads so derived archive membership can
@@ -235,6 +329,8 @@ export function InfoHubBoardView({ board, onSaveCards, saveError, saving }: Info
     setCardTitle("");
     setCardDetail("");
     setCardChecklist("");
+    setCardContextId("");
+    setCardEntityId("");
   }, []);
 
   const formError = useMemo(() => {
@@ -250,23 +346,46 @@ export function InfoHubBoardView({ board, onSaveCards, saveError, saving }: Info
       const area = cardArea.trim();
       const title = cardTitle.trim() || WORK_ORDER_TYPE_LABELS[cardType];
       const checklist = parseChecklist(cardChecklist);
-      return {
-        ...(existing?.archived == null ? {} : { archived: existing.archived }),
-        ...(area.length > 0 ? { area } : {}),
-        ...(checklist.length > 0 ? { checklist } : {}),
-        created: existing?.created ?? todayIso(),
-        detail: cardDetail,
-        id: existing?.id ?? createCardId(cardType, area, title, new Set(cards.map((c) => c.id))),
-        ...(existing?.pinned == null ? {} : { pinned: existing.pinned }),
-        priority: Number.parseInt(cardPriority, 10),
-        source: existing?.source ?? "board:director",
-        status: existing?.status ?? "open",
-        ...(existing?.terminalAt == null ? {} : { terminalAt: existing.terminalAt }),
-        title,
-        type: cardType,
-      };
+      // Join fields ride through withCardJoin so ""/absent means "omit the
+      // field" — never an empty string on disk. With the join UI visible the
+      // RECONCILED ids are written (what the pickers display); without map
+      // state the stored ids pass through untouched, so editing a card while
+      // the map is unavailable never strips its joins.
+      return withCardJoin(
+        {
+          ...(existing?.archived == null ? {} : { archived: existing.archived }),
+          ...(area.length > 0 ? { area } : {}),
+          ...(checklist.length > 0 ? { checklist } : {}),
+          created: existing?.created ?? todayIso(),
+          detail: cardDetail,
+          id: existing?.id ?? createCardId(cardType, area, title, new Set(cards.map((c) => c.id))),
+          ...(existing?.pinned == null ? {} : { pinned: existing.pinned }),
+          priority: Number.parseInt(cardPriority, 10),
+          source: existing?.source ?? "board:director",
+          status: existing?.status ?? "open",
+          ...(existing?.terminalAt == null ? {} : { terminalAt: existing.terminalAt }),
+          title,
+          type: cardType,
+        },
+        joinUiAvailable
+          ? { contextId: effectiveCardContextId, entityId: effectiveCardEntityId }
+          : { contextId: cardContextId, entityId: cardEntityId },
+      );
     },
-    [cardArea, cardChecklist, cardDetail, cardPriority, cardTitle, cardType, cards],
+    [
+      cardArea,
+      cardChecklist,
+      cardContextId,
+      cardDetail,
+      cardEntityId,
+      cardPriority,
+      cardTitle,
+      cardType,
+      cards,
+      effectiveCardContextId,
+      effectiveCardEntityId,
+      joinUiAvailable,
+    ],
   );
 
   const editCard = useCallback((card: InfoHubCard) => {
@@ -278,11 +397,79 @@ export function InfoHubBoardView({ board, onSaveCards, saveError, saving }: Info
     setCardTitle(card.title ?? "");
     setCardDetail(card.detail ?? "");
     setCardChecklist(checklistToText(card.checklist));
+    setCardContextId(card.contextId ?? "");
+    setCardEntityId(card.entityId ?? "");
     window.requestAnimationFrame(() => {
       formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       titleInputRef.current?.focus();
     });
   }, []);
+
+  /**
+   * Promote a card to a project (plan §1.1): one revision-guarded map save
+   * creating the (unplaced) entity, then the card joins it through the
+   * existing board save path. A map failure leaves the card untouched and
+   * branches conflict-vs-error copy; a board-join failure parks the created
+   * entity as a PendingPromotion so retrying only re-attempts the join.
+   */
+  const promoteCard = useCallback(
+    async (card: InfoHubCard, contextId: string) => {
+      if (mapState == null || onSaveMapState == null) {
+        return;
+      }
+      setPromoting(true);
+      setPromoteError(null);
+      let created = pendingPromotion?.cardId === card.id ? pendingPromotion : null;
+      if (created == null) {
+        if (contextId.length === 0) {
+          setPromoting(false);
+          return;
+        }
+        const { next, entity } = withEntityCreated(
+          mapState,
+          promotionDraftFromCard(card, contextId),
+        );
+        const failure = await onSaveMapState(next);
+        if (failure != null) {
+          setPromoteError(
+            failure.kind === "conflict"
+              ? {
+                  kind: "conflict",
+                  message: "The map changed since it loaded here — refresh the map data and retry.",
+                }
+              : {
+                  kind: "error",
+                  message: `Couldn't add the project to the map: ${failure.message}`,
+                },
+          );
+          setPromoting(false);
+          return;
+        }
+        created = { cardId: card.id, contextId, entityId: entity.id, entityName: entity.name };
+        setPendingPromotion(created);
+      }
+      const joined = withCardJoin(card, {
+        contextId: created.contextId,
+        entityId: created.entityId,
+      });
+      const result = await onSaveCards(
+        cards.map((candidate) => (candidate.id === card.id ? joined : candidate)),
+      );
+      setPromoting(false);
+      if (result == null) {
+        setPromoteError({
+          kind: "join",
+          message:
+            `The project "${created.entityName}" is on the map, but joining the card failed — ` +
+            "retry the join.",
+        });
+        return;
+      }
+      setPendingPromotion(null);
+      setDetailCard(joined);
+    },
+    [cards, mapState, onSaveCards, onSaveMapState, pendingPromotion],
+  );
 
   const handleSubmit = useCallback(
     async (event: React.SyntheticEvent<HTMLFormElement>) => {
@@ -356,10 +543,7 @@ export function InfoHubBoardView({ board, onSaveCards, saveError, saving }: Info
       if (target?.checklist == null) {
         return;
       }
-      const nextChecklist = target.checklist.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, done: !item.done } : item,
-      );
-      const nextCard: InfoHubCard = { ...target, checklist: nextChecklist };
+      const nextCard = withChecklistItemToggled(target, index);
       void onSaveCards(cards.map((card) => (card.id === cardId ? nextCard : card)));
       setDetailCard(nextCard);
     },
@@ -509,89 +693,15 @@ export function InfoHubBoardView({ board, onSaveCards, saveError, saving }: Info
                         data-type={card.type}
                         key={card.id}
                       >
-                        <div
-                          className="info-hub-card-face"
-                          onClick={() => setDetailCard(card)}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter" || event.key === " ") {
-                              event.preventDefault();
-                              setDetailCard(card);
-                            }
-                          }}
-                          role="button"
-                          tabIndex={0}
-                          title="Open work-order details"
-                        >
-                          <div className="info-hub-card-head">
-                            <span className="info-hub-card-tag">
-                              {WORK_ORDER_TYPE_LABELS[card.type]}
-                            </span>
-                            <span
-                              className="info-hub-card-priority"
-                              title="Lower priority number is more urgent"
-                            >
-                              {priorityLabel(card)}
-                            </span>
-                          </div>
-                          <h3 className="info-hub-card-title">
-                            {card.title ?? WORK_ORDER_TYPE_LABELS[card.type]}
-                          </h3>
-                          <div className="info-hub-card-status">
-                            {WORK_ORDER_STATUS_LABELS[card.status]}
-                          </div>
-                          <p className="info-hub-card-scope">{cardScopeLabel(card)}</p>
-                          {card.checklist != null && card.checklist.length > 0 ? (
-                            <p className="info-hub-card-checklist-progress">
-                              ✓ {card.checklist.filter((item) => item.done).length}/
-                              {card.checklist.length} steps
-                            </p>
-                          ) : null}
-                        </div>
+                        <WorkOrderCardFace card={card} onOpen={() => setDetailCard(card)} />
                         <div className="info-hub-card-actions">
-                          {card.status === "open" ? (
-                            <button
-                              className="info-hub-action-btn"
-                              data-variant="positive"
-                              disabled={saving}
-                              onClick={() => moveCardStatus(card.id, "in-progress")}
-                              type="button"
-                            >
-                              Start
-                            </button>
-                          ) : null}
-                          {card.status !== "done" ? (
-                            <button
-                              className="info-hub-action-btn"
-                              data-variant="positive"
-                              disabled={saving}
-                              onClick={() => moveCardStatus(card.id, "done")}
-                              type="button"
-                            >
-                              Close
-                            </button>
-                          ) : null}
-                          {card.status !== "wont-do" ? (
-                            <button
-                              className="info-hub-action-btn"
-                              data-variant="danger"
-                              disabled={saving}
-                              onClick={() => moveCardStatus(card.id, "wont-do")}
-                              type="button"
-                            >
-                              Won&apos;t do
-                            </button>
-                          ) : null}
+                          <WorkOrderStatusActions
+                            card={card}
+                            onMoveStatus={moveCardStatus}
+                            saving={saving}
+                          />
                           {isTerminalStatus(card.status) ? (
                             <>
-                              <button
-                                className="info-hub-action-btn"
-                                data-variant="positive"
-                                disabled={saving}
-                                onClick={() => moveCardStatus(card.id, "in-progress")}
-                                type="button"
-                              >
-                                Reopen
-                              </button>
                               <button
                                 className="info-hub-action-btn"
                                 data-variant="primary"
@@ -687,9 +797,7 @@ export function InfoHubBoardView({ board, onSaveCards, saveError, saving }: Info
                         {WORK_ORDER_STATUS_LABELS[entry.disposition]}
                       </span>
                     </div>
-                    <h3 className="info-hub-card-title">
-                      {entry.card.title ?? WORK_ORDER_TYPE_LABELS[entry.card.type]}
-                    </h3>
+                    <h3 className="info-hub-card-title">{cardTitleLabel(entry.card)}</h3>
                     <p className="info-hub-card-scope">{cardScopeLabel(entry.card)}</p>
                     {entry.date != null ? (
                       <p className="info-hub-card-checklist-progress">{entry.date}</p>
@@ -722,81 +830,87 @@ export function InfoHubBoardView({ board, onSaveCards, saveError, saving }: Info
         ) : null}
 
         {detailCard != null ? (
-          <div
-            className="info-hub-modal-backdrop"
-            onClick={() => setDetailCard(null)}
-            role="presentation"
-          >
-            <div className="info-hub-modal" onClick={(event) => event.stopPropagation()}>
-              <div className="info-hub-card-head">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="info-hub-card-tag">
-                    {WORK_ORDER_TYPE_LABELS[detailCard.type]}
-                  </span>
-                  <span
-                    className="info-hub-card-priority"
-                    title="Lower priority number is more urgent"
-                  >
-                    {priorityLabel(detailCard)}
-                  </span>
-                  <span className="info-hub-card-status">
-                    {WORK_ORDER_STATUS_LABELS[detailCard.status]}
-                  </span>
-                </div>
-                <button
-                  className="info-hub-action-btn"
-                  onClick={() => setDetailCard(null)}
-                  title="Close"
-                  type="button"
+          <WorkOrderDetailModal
+            card={detailCard}
+            onClose={() => setDetailCard(null)}
+            onToggleChecklistItem={toggleChecklistItem}
+            footer={
+              joinUiAvailable && onSaveMapState != null && detailCard.entityId == null ? (
+                <div
+                  className="mt-3 border-t border-[color:var(--viewer-canvas-rule)] pt-3"
+                  data-testid="promote-card-section"
                 >
-                  ×
-                </button>
-              </div>
-              <h3 className="info-hub-card-title mt-3 text-[18px]">
-                {detailCard.title ?? WORK_ORDER_TYPE_LABELS[detailCard.type]}
-              </h3>
-              <p className="info-hub-card-scope">{cardScopeLabel(detailCard)}</p>
-              {detailCard.detail != null && detailCard.detail.length > 0 ? (
-                <p className="info-hub-card-scope mt-3 whitespace-pre-wrap">{detailCard.detail}</p>
-              ) : null}
-              {detailCard.checklist != null && detailCard.checklist.length > 0 ? (
-                <ul className="info-hub-modal-checklist" data-testid="info-hub-checklist">
-                  {detailCard.checklist.map((item, index) => (
-                    <li key={`detail-${detailCard.id}-check-${index}`}>
+                  <div className="info-hub-form-row">
+                    <label className="info-hub-filter-field">
+                      Map context
+                      <select
+                        aria-label="Promote target context"
+                        // Once the project exists (a parked join retry), the
+                        // context is settled — only the join is left.
+                        disabled={pendingPromotion?.cardId === detailCard.id}
+                        onChange={(event) => setPromoteContextId(event.target.value)}
+                        value={promoteContextId}
+                      >
+                        <option value="">Pick a context…</option>
+                        <ContextOptions contexts={mapContexts} />
+                      </select>
+                    </label>
+                    <div className="info-hub-form-actions">
                       <button
-                        className="info-hub-modal-checklist-item"
-                        data-done={item.done}
-                        onClick={() => toggleChecklistItem(detailCard.id, index)}
+                        className="info-hub-action-btn"
+                        data-variant="positive"
+                        data-testid="promote-card-button"
+                        disabled={
+                          saving ||
+                          mapSaving ||
+                          promoting ||
+                          (pendingPromotion?.cardId !== detailCard.id &&
+                            promoteContextId.length === 0)
+                        }
+                        onClick={() => void promoteCard(detailCard, promoteContextId)}
+                        title="Create an unplaced project on the map from this card and join the card to it"
                         type="button"
                       >
-                        <span aria-hidden>{item.done ? "☑" : "☐"}</span>
-                        {item.text}
+                        {promoting
+                          ? "Promoting…"
+                          : pendingPromotion?.cardId === detailCard.id
+                            ? "Retry join"
+                            : "Promote to project"}
                       </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              <dl className="info-hub-form-row mt-4 border-t border-[color:var(--viewer-canvas-rule)] pt-3">
-                <div className="info-hub-filter-field">
-                  Source
-                  <span className="info-hub-card-scope">{detailCard.source}</span>
+                    </div>
+                  </div>
+                  {detailCard.contextId != null &&
+                  !mapContexts.some((context) => context.id === detailCard.contextId) ? (
+                    <p className="info-hub-card-scope mt-2" data-testid="promote-context-gone">
+                      This card&apos;s stored context (&quot;{detailCard.contextId}&quot;) no longer
+                      exists on the map — pick one.
+                    </p>
+                  ) : null}
+                  {promoteError != null ? (
+                    <p className="info-hub-form-error mt-2" data-testid="promote-card-error">
+                      {promoteError.message}
+                      {promoteError.kind === "conflict" && onRefreshMapState != null ? (
+                        <button
+                          className="info-hub-action-btn ml-2"
+                          onClick={onRefreshMapState}
+                          type="button"
+                        >
+                          Refresh map data
+                        </button>
+                      ) : null}
+                    </p>
+                  ) : null}
                 </div>
-                <div className="info-hub-filter-field">
-                  Created
-                  <span className="info-hub-card-scope">{detailCard.created}</span>
-                </div>
-              </dl>
-              <div className="info-hub-form-actions justify-end">
-                <button
-                  className="info-hub-action-btn"
-                  onClick={() => setDetailCard(null)}
-                  type="button"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
+              ) : detailCard.entityId != null ? (
+                <p className="info-hub-card-scope mt-3" data-testid="card-join-note">
+                  Joined to{" "}
+                  {mapEntities.find((entity) => entity.id === detailCard.entityId)?.name ??
+                    detailCard.entityId}{" "}
+                  on the map.
+                </p>
+              ) : null
+            }
+          />
         ) : null}
 
         <form className="info-hub-form" onSubmit={handleSubmit} ref={formRef}>
@@ -862,6 +976,63 @@ export function InfoHubBoardView({ board, onSaveCards, saveError, saving }: Info
               />
             </label>
           </div>
+          {joinUiAvailable ? (
+            <div className="info-hub-form-row mt-2" data-testid="card-join-pickers">
+              <label className="info-hub-form-field">
+                Map context (optional)
+                <select
+                  aria-label="Card map context"
+                  onChange={(event) => {
+                    const nextContextId = event.target.value;
+                    setCardContextId(nextContextId);
+                    // A picked entity that lives elsewhere no longer fits.
+                    const entity = mapEntities.find((candidate) => candidate.id === cardEntityId);
+                    if (
+                      entity != null &&
+                      nextContextId.length > 0 &&
+                      entity.contextId !== nextContextId
+                    ) {
+                      setCardEntityId("");
+                    }
+                  }}
+                  // The RECONCILED id: a stored context that left the map
+                  // renders (and saves) as "No context", never silently
+                  // written back stale.
+                  value={effectiveCardContextId}
+                >
+                  <option value="">No context</option>
+                  <ContextOptions contexts={mapContexts} />
+                </select>
+              </label>
+              <label className="info-hub-form-field">
+                Project / System (optional)
+                <select
+                  aria-label="Card map entity"
+                  onChange={(event) => {
+                    const nextEntityId = event.target.value;
+                    setCardEntityId(nextEntityId);
+                    // Joining an entity adopts its context, so the stored
+                    // card always carries a consistent contextId pair.
+                    const entity = mapEntities.find((candidate) => candidate.id === nextEntityId);
+                    if (entity != null) {
+                      setCardContextId(entity.contextId);
+                    }
+                  }}
+                  // The RECONCILED id: a stored entity that left the map (or
+                  // moved contexts) renders (and saves) as Loose — the write
+                  // always matches the display.
+                  value={effectiveCardEntityId}
+                >
+                  <option value="">Loose (stray pile when a context is set)</option>
+                  {entityOptions.map((entity) => (
+                    <option key={entity.id} value={entity.id}>
+                      {entity.name} · {entityKindLabel(entity.kind)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          ) : null}
           <label className="info-hub-form-field mt-2" style={{ flex: "1 1 100%" }}>
             Checklist (one step per line, optionally &quot;[x] done step&quot;)
             <textarea

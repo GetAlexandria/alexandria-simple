@@ -1,12 +1,13 @@
 {
   "comment": "Info Hub work board (Info Hub kanban plan, Lane B). Agents edit this file directly; the Info Hub board page persists here. Git-tracked shared state — treat it like source, not per-machine runtime state.",
-  "updated": "2026-07-12",
+  "updated": "2026-07-13",
   "cards": [
     {
       "id": "wo-viewer-light-theme-remnants",
       "type": "improvement",
       "status": "open",
       "area": "viewer",
+      "contextId": "viewer",
       "priority": 20,
       "source": "seed:info-hub-prototype",
       "created": "2026-07-02",
@@ -69,6 +70,7 @@
       "type": "improvement",
       "status": "in-progress",
       "area": "viewer",
+      "contextId": "viewer",
       "priority": 20,
       "source": "seed:info-hub-prototype",
       "created": "2026-07-08",
@@ -115,10 +117,10 @@
       "id": "wo-runtime-task-authenticate-duty-loop-connectors",
       "type": "task",
       "status": "needs-a-human",
+      "area": "runtime",
       "priority": 15,
       "source": "alexandria-simple-setup",
       "created": "2026-07-12",
-      "area": "runtime",
       "title": "Authenticate Gmail/Calendar connectors for the duty loop",
       "detail": "The duty loop's inbox checks (duty-loop skill, step 2) degrade to no-ops until the Gmail and Google Calendar MCP connectors are authenticated for the account the cron runs as (claude.ai connector settings). A human has to do the OAuth dance — first real resident of this lane."
     }

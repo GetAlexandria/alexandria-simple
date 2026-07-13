@@ -8,6 +8,7 @@
 
 import { Line } from "@react-three/drei";
 import { useMemo } from "react";
+import type { MapEntity } from "../../app/runtime/schemas";
 import { MAP_BORDER_COLORS, MAP_LABEL_COLORS } from "./colors";
 import { HexTile, type HexTileLifecycle } from "./HexTile";
 import { MapLabel } from "./MapLabel";
@@ -27,9 +28,13 @@ function toSegmentPoints(segments: readonly DomainViewBorderSegment[]): [number,
 
 type DomainViewProps = {
   layout: DomainViewLayout;
+  /** S2: tile click opens the entity's work overlay (completed tiles too). */
+  onTileClick?: (entity: MapEntity) => void;
+  /** S2: pile click opens the context's loose-cards overlay. */
+  onPileClick?: (contextId: string) => void;
 };
 
-export function DomainView({ layout }: DomainViewProps) {
+export function DomainView({ layout, onTileClick, onPileClick }: DomainViewProps) {
   const domainBorderPoints = useMemo(
     () => toSegmentPoints(layout.domainBorders),
     [layout.domainBorders],
@@ -119,6 +124,9 @@ export function DomainView({ layout }: DomainViewProps) {
                 ? "completed"
                 : ("active" satisfies HexTileLifecycle)
             }
+            // Completed projects stay clickable ("victories stay visible" —
+            // the overlay opens read-only upstream).
+            onClick={onTileClick == null ? undefined : () => onTileClick(tile.entity)}
           />
         ) : (
           <SystemHexTile
@@ -131,12 +139,18 @@ export function DomainView({ layout }: DomainViewProps) {
                 ? "hibernating"
                 : ("planted" satisfies SystemHexTileLifecycle)
             }
+            onClick={onTileClick == null ? undefined : () => onTileClick(tile.entity)}
           />
         ),
       )}
 
       {layout.piles.map((pile) => (
-        <StrayPile key={pile.contextId} coord={pile.coord} cardCount={pile.cardCount} />
+        <StrayPile
+          key={pile.contextId}
+          coord={pile.coord}
+          cardCount={pile.cardCount}
+          onClick={onPileClick == null ? undefined : () => onPileClick(pile.contextId)}
+        />
       ))}
     </group>
   );

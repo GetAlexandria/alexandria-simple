@@ -127,4 +127,58 @@ describe("InfoHubBoardView", () => {
 
     expect(markup).toContain("No work-order cards here.");
   });
+
+  test("hides the map join pickers when no map state is provided (board never blocks on the map)", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(InfoHubBoardView, {
+        board: fixtureBoard,
+        onSaveCards: noopSave,
+        saveError: null,
+        saving: false,
+      }),
+    );
+
+    expect(markup).not.toContain('data-testid="card-join-pickers"');
+  });
+
+  test("renders the context and entity pickers from map state (S2 card join UI)", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(InfoHubBoardView, {
+        board: fixtureBoard,
+        onSaveCards: noopSave,
+        saveError: null,
+        saving: false,
+        mapState: {
+          domains: [
+            {
+              id: "software",
+              name: "Software",
+              half: "work",
+              region: { center: [0, -3], radius: 2 },
+            },
+          ],
+          contexts: [{ id: "viewer", name: "Viewer", domainId: "software" }],
+          entities: [
+            {
+              id: "prj-map-tab",
+              kind: "project",
+              name: "Map tab",
+              contextId: "viewer",
+              lifecycle: "active",
+            },
+          ],
+          positions: [],
+        },
+        onSaveMapState: async () => null,
+        mapSaving: false,
+      }),
+    );
+
+    expect(markup).toContain('data-testid="card-join-pickers"');
+    expect(markup).toContain("Viewer");
+    expect(markup).toContain("Map tab · Project");
+    // "" is the no-join option — the field is omitted on save, never written.
+    expect(markup).toContain("No context");
+    expect(markup).toContain("Loose (stray pile when a context is set)");
+  });
 });

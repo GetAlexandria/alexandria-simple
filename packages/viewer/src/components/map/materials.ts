@@ -15,16 +15,17 @@
 
 import * as THREE from "three";
 import { HEX_SIZE } from "./hex";
+import { HEX_CELL_HEIGHT, TILE_HEIGHT } from "./scene-constants";
 import { createParchmentMaterial, applyParchmentUniforms } from "./shaders/parchmentShader";
 import { DEFAULT_PARCHMENT_PARAMS } from "./shaders/parchmentShader";
 
 // Re-exported so this module stays the one-stop import for the map's shared
-// GPU resources; the value itself is owned by ./hex (three-free).
+// GPU resources; the values themselves are owned by three-free modules
+// (./hex, ./scene-constants) so the e2e projection math can share them.
 export { HEX_SIZE };
-export const HEX_CELL_HEIGHT = 0.22;
+export { HEX_CELL_HEIGHT, TILE_HEIGHT };
 
 export const TILE_RADIUS = 0.68;
-export const TILE_HEIGHT = 0.22;
 export const TILE_INNER_TOP_RADIUS = TILE_RADIUS * 0.82;
 export const TILE_INNER_TOP_HEIGHT = 0.035;
 export const HEALTH_DOT_RADIUS = 0.03;

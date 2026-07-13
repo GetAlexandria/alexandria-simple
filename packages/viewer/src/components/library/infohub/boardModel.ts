@@ -112,6 +112,24 @@ export function withStatus(card: InfoHubCard, status: WorkOrderStatus): InfoHubC
 }
 
 /**
+ * The next card value with checklist item `index` toggled done/undone. A card
+ * with no checklist is returned unchanged (callers skip the save in that
+ * case). Shared so the Info Hub board and the Map tab overlay write the
+ * checklist identically.
+ */
+export function withChecklistItemToggled(card: InfoHubCard, index: number): InfoHubCard {
+  if (card.checklist == null) {
+    return card;
+  }
+  return {
+    ...card,
+    checklist: card.checklist.map((item, itemIndex) =>
+      itemIndex === index ? { ...item, done: !item.done } : item,
+    ),
+  };
+}
+
+/**
  * Priority is a stored number where **lower = more urgent** (top of a lane is the
  * most-urgent card — the existing list-position semantics). The schema requires a
  * number, but readers treat a missing/non-finite value as the least-urgent rank so

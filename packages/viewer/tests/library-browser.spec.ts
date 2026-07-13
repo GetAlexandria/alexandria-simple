@@ -296,7 +296,9 @@ test("Viewer routes direct loads, navigation clicks, and history", async ({ page
 
   await page.getByRole("tab", { name: "Info Hub" }).click();
   await expect(page).toHaveURL(/\/info$/);
-  await expect(page.getByRole("heading", { name: "Info Hub" })).toBeVisible();
+  // Since S2 the fixture server serves a real board, so the Info Hub stone
+  // lands on the Work Board surface instead of the unavailable panel.
+  await expect(page.getByRole("heading", { name: /Work Board/ })).toBeVisible();
 
   await page.getByRole("tab", { name: "Ledger" }).click();
   await expect(page).toHaveURL(/\/ledger$/);
@@ -312,7 +314,7 @@ test("Viewer routes direct loads, navigation clicks, and history", async ({ page
 
   await page.goBack();
   await expect(page).toHaveURL(/\/info$/);
-  await expect(page.getByRole("heading", { name: "Info Hub" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Work Board/ })).toBeVisible();
 
   await page.goBack();
   await expect(page).toHaveURL(/\/library\/viewer\/index$/);
@@ -320,7 +322,7 @@ test("Viewer routes direct loads, navigation clicks, and history", async ({ page
 
   await page.goForward();
   await expect(page).toHaveURL(/\/info$/);
-  await expect(page.getByRole("heading", { name: "Info Hub" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Work Board/ })).toBeVisible();
 });
 
 test("Ledger lists seeded events newest first with readable actor, time, and payload", async ({

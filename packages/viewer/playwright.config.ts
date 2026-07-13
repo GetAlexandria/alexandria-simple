@@ -9,6 +9,16 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
+        // Pin the projection inputs the map-tab specs depend on so local and
+        // CI compute identical world → screen points (PR #20 review gate).
+        deviceScaleFactor: 1,
+        launchOptions: {
+          // Force software WebGL (ANGLE → SwiftShader) so the map-tab canvas
+          // specs render in headless CI runners with no GPU; without this the
+          // context probe fails and MapTabView shows its no-WebGL panel
+          // (PR #20 review gate). Harmless where a real GPU exists.
+          args: ["--use-gl=angle", "--use-angle=swiftshader-webgl"],
+        },
         viewport: { height: 900, width: 1280 },
       },
     },

@@ -19,8 +19,13 @@
 // three.js) is only loaded through React.lazy in LibraryBrowserApp.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { MapEntity, MapState } from "../../app/runtime/schemas";
+import type { InfoHubBoard, InfoHubCard, MapEntity, MapState } from "../../app/runtime/schemas";
 import type { MapStateSaveError } from "../library/hooks/useMapState";
+import {
+  withChecklistItemToggled,
+  withStatus,
+  type WorkOrderStatus,
+} from "../library/infohub/boardModel";
 import { MAP_FALLBACK_COLORS } from "./colors";
 import { DomainView } from "./DomainView";
 import { generateHexGrid, hexToKey, type HexCoord } from "./hex";
@@ -28,18 +33,26 @@ import type { HexCellVisualState } from "./HexCell";
 import { computeDomainViewLayout } from "./layout/domain-view";
 import { buildOwnerViewLayout } from "./layout/owner-view";
 import { mapStateGridRadius } from "./map-grid";
+import { MapEntityForm } from "./MapEntityForm";
 import { MapMessagePanel } from "./MapMessagePanel";
+import { MapOverlay, type MapOverlayTarget } from "./MapOverlay";
 import { MapScene } from "./MapScene";
 import { OwnerViewLayer } from "./OwnerViewLayer";
 import { PanelButton, ParchmentActionButton } from "./panel-buttons";
 import {
+  entityKindLabel,
   occupiedHexKeys,
   placeableHexKeys,
   placedEntities as placedEntitiesFrom,
   positionedEntityIds as positionedEntityIdsFrom,
+  strayCardCountsByContext,
+  strayCountsEqual,
   unplacedEntities as unplacedEntitiesFrom,
+  withEntityCreated,
+  withEntityEdited,
   withEntityPlaced,
   withEntityRemoved,
+  type MapEntityDraft,
 } from "./placement";
 import { type MapViewMode, VIEW_MODES } from "./view-mode";
 import { isWebGLForcedOff, supportsWebGL } from "./webgl";
@@ -48,24 +61,66 @@ export type MapTabViewProps = {
   error: string | null;
   loading: boolean;
   onRefresh: () => void;
-  /** Full-document save through the loaded revision; true on success. */
-  onSave: (next: MapState) => Promise<boolean>;
+  /** Full-document save through the loaded revision; null on success. */
+  onSave: (next: MapState) => Promise<MapStateSaveError | null>;
   saveError: MapStateSaveError | null;
   saving: boolean;
   state: MapState | null;
+  /**
+   * The Info Hub board (S2): stray piles derive from its cards and the tile
+   * overlay lists/edits them. Null while loading or unavailable — the map
+   * renders without piles rather than blocking on the board.
+   */
+  board: InfoHubBoard | null;
+  boardError: string | null;
+  /** Last board WRITE failure (useInfoHubBoard.saveError) — the overlay renders it. */
+  boardSaveError: string | null;
+  boardSaving: boolean;
+  /** The EXISTING board save path (useInfoHubBoard.saveCards) — overlay card writes go here. */
+  onSaveCards: (cards: readonly InfoHubCard[]) => Promise<InfoHubBoard | null>;
 };
 
-function entityKindLabel(entity: MapEntity): string {
-  return entity.kind === "project" ? "Project" : "System";
+/** The entity form's open state: create, or edit a specific entity. */
+type EntityFormState = { entityId: string | null };
+
+/** Small bordered per-row action button (Edit / Remove) in the panel lists. */
+function PanelRowButton({
+  disabled,
+  label,
+  onClick,
+  testId,
+}: {
+  disabled: boolean;
+  label: string;
+  onClick: () => void;
+  testId?: string;
+}) {
+  return (
+    <button
+      type="button"
+      data-testid={testId}
+      disabled={disabled}
+      onClick={onClick}
+      className="shrink-0 rounded border px-1.5 py-0.5 text-[10px] disabled:opacity-50"
+      style={{
+        borderColor: MAP_FALLBACK_COLORS.border,
+        color: MAP_FALLBACK_COLORS.subtext,
+      }}
+    >
+      {label}
+    </button>
+  );
 }
 
 /**
  * The placement side panel (Domain view only): unplaced entities to select
- * for placement, placed tiles with remove-from-map, grouped copy kept
- * minimal — S2 adds entity create/edit and card joins.
+ * for placement, placed tiles with remove-from-map, and the S2 entity
+ * create/edit entry points (New entity, per-row Edit).
  */
 function PlacementPanel({
   contextNameById,
+  onCreate,
+  onEdit,
   onRemove,
   onSelect,
   placingEntityId,
@@ -74,6 +129,8 @@ function PlacementPanel({
   unplacedEntities,
 }: {
   contextNameById: ReadonlyMap<string, string>;
+  onCreate: () => void;
+  onEdit: (entityId: string) => void;
   onRemove: (entityId: string) => void;
   onSelect: (entityId: string) => void;
   placingEntityId: string | null;
@@ -90,15 +147,23 @@ function PlacementPanel({
       }}
       data-testid="map-placement-panel"
     >
-      <div className="px-3 py-2">
-        <p className="text-xs font-semibold" style={{ color: MAP_FALLBACK_COLORS.heading }}>
-          Placement
-        </p>
-        <p className="mt-0.5 text-[10px]" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
-          {placingEntityId == null
-            ? "Pick an unplaced entity, then click a highlighted hex."
-            : "Click a highlighted hex to place — Esc or click away to cancel."}
-        </p>
+      <div className="flex items-start justify-between gap-2 px-3 py-2">
+        <div>
+          <p className="text-xs font-semibold" style={{ color: MAP_FALLBACK_COLORS.heading }}>
+            Placement
+          </p>
+          <p className="mt-0.5 text-[10px]" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+            {placingEntityId == null
+              ? "Pick an unplaced entity, then click a highlighted hex."
+              : "Click a highlighted hex to place — Esc or click away to cancel."}
+          </p>
+        </div>
+        <PanelRowButton
+          disabled={saving}
+          label="New entity"
+          onClick={onCreate}
+          testId="map-new-entity"
+        />
       </div>
 
       <div className="border-t px-3 py-2" style={{ borderColor: MAP_FALLBACK_COLORS.border }}>
@@ -115,13 +180,13 @@ function PlacementPanel({
         ) : (
           <ul className="mt-1 space-y-1">
             {unplacedEntities.map((entity) => (
-              <li key={entity.id}>
+              <li key={entity.id} className="flex items-center gap-1">
                 <button
                   type="button"
                   aria-pressed={placingEntityId === entity.id}
                   disabled={saving}
                   onClick={() => onSelect(entity.id)}
-                  className="w-full rounded border px-2 py-1 text-left text-[11px] disabled:opacity-50"
+                  className="min-w-0 flex-1 rounded border px-2 py-1 text-left text-[11px] disabled:opacity-50"
                   style={
                     placingEntityId === entity.id
                       ? {
@@ -138,10 +203,16 @@ function PlacementPanel({
                 >
                   {entity.name}
                   <span className="ml-1 opacity-70">
-                    · {entityKindLabel(entity)} ·{" "}
+                    · {entityKindLabel(entity.kind)} ·{" "}
                     {contextNameById.get(entity.contextId) ?? entity.contextId}
                   </span>
                 </button>
+                <PanelRowButton
+                  disabled={saving}
+                  label="Edit"
+                  onClick={() => onEdit(entity.id)}
+                  testId={`map-edit-entity-${entity.id}`}
+                />
               </li>
             ))}
           </ul>
@@ -177,18 +248,19 @@ function PlacementPanel({
                     <span className="opacity-70"> · uprooted — not rendered</span>
                   ) : null}
                 </span>
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => onRemove(entity.id)}
-                  className="shrink-0 rounded border px-1.5 py-0.5 text-[10px] disabled:opacity-50"
-                  style={{
-                    borderColor: MAP_FALLBACK_COLORS.border,
-                    color: MAP_FALLBACK_COLORS.subtext,
-                  }}
-                >
-                  Remove
-                </button>
+                <span className="flex shrink-0 items-center gap-1">
+                  <PanelRowButton
+                    disabled={saving}
+                    label="Edit"
+                    onClick={() => onEdit(entity.id)}
+                    testId={`map-edit-entity-${entity.id}`}
+                  />
+                  <PanelRowButton
+                    disabled={saving}
+                    label="Remove"
+                    onClick={() => onRemove(entity.id)}
+                  />
+                </span>
               </li>
             ))}
           </ul>
@@ -206,12 +278,19 @@ export function MapTabView({
   saveError,
   saving,
   state,
+  board,
+  boardError,
+  boardSaveError,
+  boardSaving,
+  onSaveCards,
 }: MapTabViewProps) {
   const [hasWebGLSupport] = useState(
     () => supportsWebGL() && !isWebGLForcedOff(window.location.search),
   );
   const [viewMode, setViewMode] = useState<MapViewMode>("domain");
   const [placingEntityId, setPlacingEntityId] = useState<string | null>(null);
+  const [entityForm, setEntityForm] = useState<EntityFormState | null>(null);
+  const [overlayTarget, setOverlayTarget] = useState<MapOverlayTarget | null>(null);
 
   // Key the grid memo on the derived radius NUMBER, not the state object:
   // every save/refresh produces a new state identity, and regenerating the
@@ -221,9 +300,27 @@ export function MapTabView({
     () => (gridRadius == null ? [] : generateHexGrid(gridRadius)),
     [gridRadius],
   );
+  // The real board-derived stray counts (S2, plan §1.3): cards with a
+  // contextId, no entityId, and a non-terminal status, per context.
+  //
+  // Held at a stable identity across board writes that don't change any pile
+  // count: every card write (checklist toggle, status move) mints a new board
+  // object, but only a change to the actual stray counts should re-run the
+  // expensive domain-view layout below. Reuse the previous value whenever the
+  // recomputed counts are value-equal so `domainLayout`'s memo stays warm.
+  const strayCountsRef = useRef<Readonly<Record<string, number>> | null>(null);
+  const strayCardCounts = useMemo(() => {
+    const next = strayCardCountsByContext(board?.cards ?? []);
+    const previous = strayCountsRef.current;
+    if (previous != null && strayCountsEqual(previous, next)) {
+      return previous;
+    }
+    strayCountsRef.current = next;
+    return next;
+  }, [board]);
   const domainLayout = useMemo(
-    () => (state == null ? null : computeDomainViewLayout(state, cells)),
-    [state, cells],
+    () => (state == null ? null : computeDomainViewLayout(state, cells, { strayCardCounts })),
+    [state, cells, strayCardCounts],
   );
   const ownerLayout = useMemo(() => (state == null ? null : buildOwnerViewLayout(state)), [state]);
 
@@ -302,7 +399,7 @@ export function MapTabView({
       if (state == null || placingEntity == null) {
         return;
       }
-      if (await onSave(withEntityPlaced(state, placingEntity, coord))) {
+      if ((await onSave(withEntityPlaced(state, placingEntity, coord))) == null) {
         setPlacingEntityId(null);
       }
     },
@@ -343,6 +440,101 @@ export function MapTabView({
       void onSave(withEntityRemoved(state, entityId));
     },
     [state, saving, onSave],
+  );
+
+  // --- Entity create/edit (S2): document construction in placement.ts,
+  // saved through the same revision-guarded onSave as placement.
+  const editingEntity = useMemo(
+    () =>
+      entityForm?.entityId == null
+        ? null
+        : (state?.entities.find((entity) => entity.id === entityForm.entityId) ?? null),
+    [entityForm, state],
+  );
+
+  // If the edited entity vanishes from the loaded state while the form is
+  // open (e.g. a refresh after an external delete), close the form with a
+  // notice instead of letting a submit route to a silent no-op edit
+  // (PR #20 review gate).
+  const [entityGoneNotice, setEntityGoneNotice] = useState<string | null>(null);
+  useEffect(() => {
+    if (state != null && entityForm?.entityId != null && editingEntity == null) {
+      setEntityForm(null);
+      setEntityGoneNotice(
+        `Entity "${entityForm.entityId}" is no longer in the map state — it may have been removed elsewhere.`,
+      );
+    }
+  }, [state, entityForm, editingEntity]);
+
+  const submitEntityForm = useCallback(
+    async (draft: MapEntityDraft): Promise<boolean> => {
+      if (state == null) {
+        return false;
+      }
+      if (entityForm?.entityId != null && editingEntity == null) {
+        // Belt and braces alongside the effect above: never submit an edit
+        // for an entity the loaded document no longer contains.
+        return false;
+      }
+      const next =
+        entityForm?.entityId == null
+          ? withEntityCreated(state, draft).next
+          : withEntityEdited(state, entityForm.entityId, draft);
+      if ((await onSave(next)) != null) {
+        return false;
+      }
+      setEntityForm(null);
+      return true;
+    },
+    [state, entityForm, editingEntity, onSave],
+  );
+
+  const openEntityForm = useCallback((entityId: string | null) => {
+    setEntityForm({ entityId });
+    setEntityGoneNotice(null);
+    setPlacingEntityId(null);
+    setOverlayTarget(null);
+  }, []);
+
+  // --- Tile/pile overlay (S2): a tile or pile click opens that target's work
+  // overlay. During placement a tile click is instead click-away (cancel);
+  // piles are raycast-inert while placing (onPileClick is withheld below), so
+  // only tile clicks reach this cancel path.
+  const openOverlay = useCallback(
+    (target: MapOverlayTarget) => {
+      if (placingEntityId != null) {
+        cancelPlacement();
+        return;
+      }
+      setOverlayTarget(target);
+    },
+    [placingEntityId, cancelPlacement],
+  );
+
+  // --- Overlay card writes: the EXISTING board save path (the same
+  // full-known-set POST the Info Hub board makes; the server merges by id).
+  const moveCardStatus = useCallback(
+    (cardId: string, status: WorkOrderStatus) => {
+      if (board == null) {
+        return;
+      }
+      void onSaveCards(
+        board.cards.map((card) => (card.id === cardId ? withStatus(card, status) : card)),
+      );
+    },
+    [board, onSaveCards],
+  );
+
+  const toggleChecklistItem = useCallback(
+    (cardId: string, index: number) => {
+      const target = board?.cards.find((card) => card.id === cardId);
+      if (board == null || target?.checklist == null) {
+        return;
+      }
+      const nextCard = withChecklistItemToggled(target, index);
+      void onSaveCards(board.cards.map((card) => (card.id === cardId ? nextCard : card)));
+    },
+    [board, onSaveCards],
   );
 
   if (!hasWebGLSupport) {
@@ -445,17 +637,79 @@ export function MapTabView({
         </div>
 
         {viewMode === "domain" ? (
-          <PlacementPanel
-            contextNameById={contextNameById}
-            onRemove={removeFromMap}
-            onSelect={(entityId) =>
-              setPlacingEntityId((current) => (current === entityId ? null : entityId))
-            }
-            placingEntityId={placingEntityId}
-            placedEntities={placedEntities}
-            saving={saving}
-            unplacedEntities={unplacedEntities}
-          />
+          entityForm != null ? (
+            <div
+              className="pointer-events-auto w-64 overflow-hidden rounded border"
+              style={{
+                backgroundColor: MAP_FALLBACK_COLORS.panel,
+                borderColor: MAP_FALLBACK_COLORS.border,
+              }}
+            >
+              <MapEntityForm
+                // Remount per target so field state never leaks between
+                // "create" and different edited entities.
+                key={entityForm.entityId ?? "create"}
+                contexts={state.contexts}
+                entity={editingEntity}
+                onCancel={() => setEntityForm(null)}
+                onSubmit={submitEntityForm}
+                saving={saving}
+              />
+            </div>
+          ) : (
+            <PlacementPanel
+              contextNameById={contextNameById}
+              onCreate={() => openEntityForm(null)}
+              onEdit={(entityId) => openEntityForm(entityId)}
+              onRemove={removeFromMap}
+              onSelect={(entityId) =>
+                setPlacingEntityId((current) => (current === entityId ? null : entityId))
+              }
+              placingEntityId={placingEntityId}
+              placedEntities={placedEntities}
+              saving={saving}
+              unplacedEntities={unplacedEntities}
+            />
+          )
+        ) : null}
+
+        {/* Full-map fallback of the pile fallback chain: a context whose
+            whole domain territory is occupied still shows its stray count
+            here instead of silently dropping it (issue #9 carry-over). */}
+        {viewMode === "domain" && (domainLayout?.unplacedPiles.length ?? 0) > 0 ? (
+          <div
+            className="pointer-events-auto w-64 rounded border px-3 py-2"
+            data-testid="map-unplaced-piles"
+            style={{
+              backgroundColor: MAP_FALLBACK_COLORS.panel,
+              borderColor: MAP_FALLBACK_COLORS.border,
+            }}
+          >
+            <p
+              className="text-[10px] font-semibold uppercase tracking-wide"
+              style={{ color: MAP_FALLBACK_COLORS.subtext }}
+            >
+              Piles without a hex
+            </p>
+            <ul className="mt-1 space-y-1">
+              {domainLayout!.unplacedPiles.map((pile) => (
+                <li key={pile.contextId}>
+                  <button
+                    type="button"
+                    className="w-full rounded border px-2 py-1 text-left text-[11px]"
+                    onClick={() => openOverlay({ kind: "pile", contextId: pile.contextId })}
+                    style={{
+                      borderColor: MAP_FALLBACK_COLORS.border,
+                      color: MAP_FALLBACK_COLORS.text,
+                    }}
+                  >
+                    {contextNameById.get(pile.contextId) ?? pile.contextId} · {pile.cardCount} loose{" "}
+                    {pile.cardCount === 1 ? "card" : "cards"} — no free hex
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : null}
       </div>
 
@@ -477,6 +731,23 @@ export function MapTabView({
           {saveError.kind === "conflict" ? (
             <ParchmentActionButton label="Refresh" onClick={onRefresh} />
           ) : null}
+        </div>
+      ) : null}
+
+      {entityGoneNotice != null ? (
+        <div
+          className="absolute left-1/2 top-16 z-10 flex -translate-x-1/2 items-center gap-3 rounded border px-3 py-2"
+          style={{
+            backgroundColor: MAP_FALLBACK_COLORS.panel,
+            borderColor: MAP_FALLBACK_COLORS.border,
+          }}
+          role="alert"
+          data-testid="map-entity-gone-notice"
+        >
+          <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+            {entityGoneNotice}
+          </p>
+          <ParchmentActionButton label="Dismiss" onClick={() => setEntityGoneNotice(null)} />
         </div>
       ) : null}
 
@@ -507,11 +778,39 @@ export function MapTabView({
         onPointerMissed={placingEntityId == null ? undefined : cancelPlacement}
       >
         {viewMode === "domain" && domainLayout != null ? (
-          <DomainView layout={domainLayout} />
+          <DomainView
+            layout={domainLayout}
+            onTileClick={(entity) => openOverlay({ kind: "entity", entityId: entity.id })}
+            // Undefined during placement: a pile by construction sits on a
+            // free (placeable) patch cell, and a clickable sprite would
+            // swallow the placement click (stopPropagation) and cancel the
+            // mode. With no onClick the sprite reverts to raycast-inert, so
+            // clicks and hover pass through to the cell (PR #20 gate).
+            onPileClick={
+              placingEntityId == null
+                ? (contextId) => openOverlay({ kind: "pile", contextId })
+                : undefined
+            }
+          />
         ) : viewMode === "owner" && ownerLayout != null ? (
           <OwnerViewLayer layout={ownerLayout} />
         ) : null}
       </MapScene>
+
+      {overlayTarget != null ? (
+        <MapOverlay
+          target={overlayTarget}
+          state={state}
+          cards={board?.cards ?? null}
+          boardError={boardError}
+          boardSaveError={boardSaveError}
+          boardSaving={boardSaving}
+          onMoveStatus={moveCardStatus}
+          onToggleChecklistItem={toggleChecklistItem}
+          onEditEntity={(entityId) => openEntityForm(entityId)}
+          onClose={() => setOverlayTarget(null)}
+        />
+      ) : null}
     </div>
   );
 }

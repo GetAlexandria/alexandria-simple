@@ -61,6 +61,18 @@ export type DomainViewPile = {
   cardCount: number;
 };
 
+/**
+ * A stray pile with no hex to stand on: every claimed patch cell holds an
+ * entity tile AND the whole domain territory is occupied. The pile still
+ * must not vanish — real board counts land here exactly when a context is
+ * busiest — so the container renders these as a DOM badge instead of a
+ * sprite (S2 full-patch fallback, issue #9 carry-over).
+ */
+export type DomainViewUnplacedPile = {
+  contextId: string;
+  cardCount: number;
+};
+
 export type DomainViewLayout = {
   /** Parchment wash per grid-cell key (territory + deeper patch washes). */
   tintByCellKey: ReadonlyMap<string, HexTint>;
@@ -71,6 +83,8 @@ export type DomainViewLayout = {
   labels: readonly DomainViewLabel[];
   tiles: readonly DomainViewTile[];
   piles: readonly DomainViewPile[];
+  /** Piles that found no free hex anywhere in their domain (see the type). */
+  unplacedPiles: readonly DomainViewUnplacedPile[];
   /**
    * Context patch assignment per cell key (a subset of territory cells).
    * Public since S1: the Map tab's placement mode reads it to highlight the
@@ -409,16 +423,52 @@ export function computeDomainViewLayoutInternal(
   }
 
   // --- 6. Stray piles: one per context with stray cards, on the first
-  // claimed patch cell that holds no entity tile.
+  // claimed patch cell that holds no entity tile. Full-patch fallback (S2,
+  // issue #9 carry-over): when every claimed patch cell is occupied, the
+  // pile takes the nearest free cell of the domain's territory — preferring
+  // cells outside every other context's patch, then by hex distance from the
+  // patch's seed cell, then by cell key so hand-edits stay deterministic.
+  // Only when the whole territory is occupied does the pile fall through to
+  // `unplacedPiles` (rendered as a DOM badge, never dropped).
   const piles: DomainViewPile[] = [];
+  const unplacedPiles: DomainViewUnplacedPile[] = [];
   for (const context of state.contexts) {
     const cardCount = strayCardCounts[context.id] ?? 0;
     if (cardCount <= 0) {
       continue;
     }
     const claimed = patchCellKeysInClaimOrder.get(context.id) ?? [];
-    const pileKey = claimed.find((key) => !occupiedCellKeys.has(key));
-    if (!pileKey) {
+    let pileKey = claimed.find((key) => !occupiedCellKeys.has(key));
+    if (pileKey == null) {
+      const anchor =
+        claimed.length > 0
+          ? cellByKey.get(claimed[0]!)!.coord
+          : (domainCenters.get(context.domainId) ?? createHex(0, 0));
+      let best: { key: string; inForeignPatch: boolean; distance: number } | null = null;
+      for (const cell of territoryCellsByDomainId.get(context.domainId) ?? []) {
+        if (occupiedCellKeys.has(cell.key)) {
+          continue;
+        }
+        const patchOwner = patchByCellKey.get(cell.key);
+        const candidate = {
+          key: cell.key,
+          inForeignPatch: patchOwner != null && patchOwner !== context.id,
+          distance: hexDistance(cell.coord, anchor),
+        };
+        const better =
+          best == null ||
+          (candidate.inForeignPatch ? 1 : 0) - (best.inForeignPatch ? 1 : 0) < 0 ||
+          (candidate.inForeignPatch === best.inForeignPatch &&
+            (candidate.distance < best.distance ||
+              (candidate.distance === best.distance && candidate.key < best.key)));
+        if (better) {
+          best = candidate;
+        }
+      }
+      pileKey = best?.key;
+    }
+    if (pileKey == null) {
+      unplacedPiles.push({ contextId: context.id, cardCount });
       continue;
     }
     occupiedCellKeys.add(pileKey);
@@ -503,6 +553,7 @@ export function computeDomainViewLayoutInternal(
     labels,
     tiles,
     piles,
+    unplacedPiles,
     territoryByCellKey,
     patchByCellKey,
     domainColorById,
@@ -521,7 +572,24 @@ export function computeDomainViewLayout(
   cells: readonly HexGridCell[],
   options: DomainViewLayoutOptions = {},
 ): DomainViewLayout {
-  const { tintByCellKey, domainBorders, patchBorders, labels, tiles, piles, patchByCellKey } =
-    computeDomainViewLayoutInternal(state, cells, options);
-  return { tintByCellKey, domainBorders, patchBorders, labels, tiles, piles, patchByCellKey };
+  const {
+    tintByCellKey,
+    domainBorders,
+    patchBorders,
+    labels,
+    tiles,
+    piles,
+    unplacedPiles,
+    patchByCellKey,
+  } = computeDomainViewLayoutInternal(state, cells, options);
+  return {
+    tintByCellKey,
+    domainBorders,
+    patchBorders,
+    labels,
+    tiles,
+    piles,
+    unplacedPiles,
+    patchByCellKey,
+  };
 }
