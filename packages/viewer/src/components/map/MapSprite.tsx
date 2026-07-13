@@ -1,5 +1,5 @@
 // Promoted from
-// quarantine/lifebuild-map/packages/web/src/components/hex-map/LandmarkSprite.tsx
+// packages/web/src/components/hex-map/LandmarkSprite.tsx
 // (lifebuild @ bf183a3), renamed MapSprite: a camera-facing textured plane
 // anchored to a hex — Lifebuild used it for trees/landmarks, V1 uses it for
 // the stray-pile crop plots (colleague landmark buildings arrive in L2).

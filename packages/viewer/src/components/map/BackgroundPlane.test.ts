@@ -1,5 +1,5 @@
 // Promoted from
-// quarantine/lifebuild-map/packages/web/src/components/hex-map/BackgroundPlane.test.ts
+// packages/web/src/components/hex-map/BackgroundPlane.test.ts
 // (lifebuild @ bf183a3), adapted from vitest to bun:test. Pure camera math:
 // no DOM or renderer needed.
 

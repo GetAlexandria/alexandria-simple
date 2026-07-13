@@ -1,4 +1,4 @@
-// Promoted from quarantine/lifebuild-map/packages/shared/src/hex/math.ts
+// Promoted from packages/shared/src/hex/math.ts
 // (lifebuild @ bf183a3). Pure cube-coordinate hex math, pointy-top layout.
 
 import type { HexCoord } from "./types";

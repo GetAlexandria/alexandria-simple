@@ -1,5 +1,5 @@
 // Promoted from
-// quarantine/lifebuild-map/packages/web/src/components/hex-map/BackgroundPlane.tsx
+// packages/web/src/components/hex-map/BackgroundPlane.tsx
 // (lifebuild @ bf183a3). Full-viewport parchment ground plane that tracks
 // orthographic camera coverage each frame. React.FC dropped in favor of a
 // plain function component (house style / React 19 era).

@@ -282,8 +282,8 @@ export const SYSTEM_TILE_COLORS = {
 
 /**
  * The LOOK of the four derived map signals (the WHEN lives in ./signals).
- * Promoted from Lifebuild's smoke-signal components (quarantine
- * `HexTile.r3-e4918c9.tsx` / `SystemHexTile.r3-e4918c9.tsx`), which carried
+ * Promoted from Lifebuild's smoke-signal components (lifebuild @ e4918c9,
+ * `HexTile.tsx` / `SystemHexTile.tsx`), which carried
  * these as inline hex literals per component — Gate 3 consolidates them here
  * as the single palette for the map surface. Philosophy (ported verbatim):
  * ambient, not alarming; warm treatments, no badges or counts.

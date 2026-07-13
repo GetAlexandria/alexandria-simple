@@ -1,5 +1,5 @@
-// Promoted-in-spirit from Lifebuild's hex-map labelUtils (not vendored in
-// quarantine; reconstructed at V1): tile-name truncation shared by HexTile
+// Promoted-in-spirit from Lifebuild's hex-map labelUtils (not vendored;
+// reconstructed at V1): tile-name truncation shared by HexTile
 // and SystemHexTile. Kept three.js/React-free so it unit-tests under bun.
 
 export const MAX_TILE_LABEL_LENGTH = 24;

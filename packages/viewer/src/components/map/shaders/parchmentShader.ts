@@ -1,5 +1,5 @@
 // Promoted from
-// quarantine/lifebuild-map/packages/web/src/components/hex-map/shaders/parchmentShader.ts
+// packages/web/src/components/hex-map/shaders/parchmentShader.ts
 // (lifebuild @ bf183a3). Dependency-free watercolor/parchment ShaderMaterial:
 // GLSL strings, tuned default params, and uniform plumbing. The default
 // params were Lifebuild's hand-tuned "Jess preference" values; renamed to

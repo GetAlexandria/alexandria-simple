@@ -1,6 +1,6 @@
 // Promoted from the `CandleFlicker` helper defined inside
-// quarantine/lifebuild-map/packages/web/src/components/hex-map/SystemHexTile.r3-e4918c9.tsx
-// and HexTile.r3-e4918c9.tsx (lifebuild `ralph/r3-planting-season` @ e4918c9,
+// packages/web/src/components/hex-map/SystemHexTile.tsx
+// and HexTile.tsx (lifebuild `ralph/r3-planting-season` @ e4918c9,
 // the plan-named "smoke signals" state). The overdue signal (plan §1.4): a
 // system past its cadence windows with no journal entry pulses a warm candle
 // glow on its tile's top cap.

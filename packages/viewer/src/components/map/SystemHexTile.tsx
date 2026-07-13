@@ -1,5 +1,5 @@
 // Promoted from
-// quarantine/lifebuild-map/packages/web/src/components/hex-map/SystemHexTile.r3-eeaf23c.tsx
+// packages/web/src/components/hex-map/SystemHexTile.tsx
 // (lifebuild `ralph/r3-planting-season` @ eeaf23c, the plan-named "system
 // hex tile" state): the system tile — desaturated accent ring, loop glyph,
 // three health dots, hibernating dim. Adapted to M1's types at promotion:

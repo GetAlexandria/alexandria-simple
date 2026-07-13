@@ -1,5 +1,5 @@
 // Promoted from
-// quarantine/lifebuild-map/packages/web/src/components/hex-map/LandmarkSprite.tsx
+// packages/web/src/components/hex-map/LandmarkSprite.tsx
 // (lifebuild @ bf183a3). Era-modernization at promotion: hex math imported
 // from the house module instead of `@lifebuild/shared`, `React.FC` dropped
 // for a plain function component, and the click/cursor plumbing removed.

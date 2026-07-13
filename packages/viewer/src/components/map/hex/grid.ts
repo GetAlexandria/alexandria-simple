@@ -1,4 +1,4 @@
-// Promoted from quarantine/lifebuild-map/packages/shared/src/hex/grid.ts
+// Promoted from packages/shared/src/hex/grid.ts
 // (lifebuild @ bf183a3).
 
 import { createHex, hexToKey } from "./math";
