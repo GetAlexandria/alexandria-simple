@@ -168,6 +168,146 @@
           "text": "Tile-level Needs-a-Human glow still renders on the work tile (L1 unchanged)"
         }
       ]
+    },
+    {
+      "id": "wo-unify-map-board-data-model",
+      "type": "improvement",
+      "status": "open",
+      "area": "viewer",
+      "contextId": "viewer",
+      "entityId": "prj-map-glow-up",
+      "priority": 15,
+      "source": "board:director",
+      "created": "2026-07-13",
+      "title": "Unify and de-cruft the Map and Work Board data models onto one taxonomy spine",
+      "detail": "The Map (docs/alexandria/map/map-state.json) and the Work Board (docs/alexandria/info-hub/board-state.json) grew up separately and now describe the same work with three colliding vocabularies: the Map uses domain/context as work-geography, the Board uses a flat `area` (viewer/library/runtime/ops) that matches no Map context, and the library's knowledge-organization cards use domain/context/plane for card storage. 'Alexandria' is overloaded too — it names the whole org's knowledge system AND one product domain. Goal: one authoritative taxonomy spine both surfaces read, so a work item's home is the same word on the Board and on the Map.\n\nDecisions (director, 2026-07-13):\n- Organization = SocioTechnica. Give the org and the product domain distinct ids (org `sociotechnica`, domain `alexandria`) so one noun never means two levels.\n- Domains are the Map's single organizing level and the shared join key across Map, Board, and library. New set: Alexandria (Raven), Skillmaker.Studio (William), New Media (Damien), Business Development (Rob). Supersedes the old Software/New Media pair and the library's stale Operations/Product/Sales & Marketing/Software Development.\n- Planes and Contexts stay library-side (information organization). The Map organizes by Domain only; Planes never touch the Map. Context is deferred: keep it as an optional, nullable tag but do not render or organize by it yet — 'model it, don't render it.'\n- Projects and Systems are flat tags placed on a Domain, not a nesting hierarchy. Stray work (no project, no system) is a first-class case.\n- One spine, both surfaces: retire the Board's `area` field for the shared Domain id; systematize the optional contextId/entityId tags that already exist on some Board cards.\n\nScope:\n- This is the parent. The concrete migrations are the child cards: reset the Map domain model, retire the Board `area` field, and stray-task placement v1.\n- Write the taxonomy down once (org → domain → {project | system | stray}, context as a latent tag) as the shape both map-state.json and board-state.json conform to.\n\nOut of scope (on the 'other things discussed' list, not here):\n- Library updates for the pivot (Entity - Domain, colleague cards for William & Rob, rename Playmaker→Skillmaker, card the Board entities).\n- Map 'filling up' visualization (piles/aging/stomp).\n- Rebuilding plays to run Fabro-less.\n- Subsume vs federate: is the Board a permanent peer surface or a way-station until the Map absorbs it? Named, not decided.",
+      "checklist": [
+        {
+          "done": false,
+          "text": "Shared taxonomy spine written down once (org → domain → {project|system|stray}; context as an optional latent tag) as the contract both state files conform to"
+        },
+        {
+          "done": false,
+          "text": "Map reset lands (child card): post-pivot domains, org level, distinct ids"
+        },
+        {
+          "done": false,
+          "text": "Board `area` retired for domainId (child card); existing cards migrated"
+        },
+        {
+          "done": false,
+          "text": "Stray-task placement v1 lands (child card)"
+        },
+        {
+          "done": false,
+          "text": "Decide whether this initiative parents under Map Glow Up or becomes its own project"
+        }
+      ]
+    },
+    {
+      "id": "wo-map-reset-domain-model",
+      "type": "task",
+      "status": "open",
+      "area": "viewer",
+      "contextId": "viewer",
+      "entityId": "prj-map-glow-up",
+      "priority": 15,
+      "source": "board:director",
+      "created": "2026-07-13",
+      "title": "Reset the Map's domain model to the post-pivot org",
+      "detail": "map-state.json still carries the pre-pivot shape: two domains (Software owned by human:danvers, New Media owned by colleague:damien), contexts (Viewer, Colleagues, Demos) acting as containers, and entities nested inside a context by contextId. Bring it to the decided model. Child of wo-unify-map-board-data-model.\n\nDecisions (director, 2026-07-13):\n- Add the organization level `sociotechnica`, kept distinct from the `alexandria` domain id.\n- Domains (the only Map organizing level): `alexandria`, `skillmaker-studio`, `new-media`, `business-development`. Retire `software`.\n- Proposed owners follow the New-Media=Damien pattern — each domain owned by its colleague: alexandria→colleague:raven, skillmaker-studio→colleague:william, new-media→colleague:damien, business-development→colleague:rob. Confirm before applying (director-as-owner vs colleague-as-owner is a real choice).\n- Projects and Systems become flat tags carrying `domainId` directly; they no longer nest inside a Context.\n- Context stops being a container. Keep `contextId` as an optional, nullable tag for the future experiment, but nothing organizes or renders by it.\n- Multi-domain entity placement: lands in the owner's domain, ideally rendered at the border with the other domain it touches. A System must have an owner.\n\nScope:\n- map-state.json: introduce the org level; replace the domains array; assign owners and hex regions for the four domains; retag entities with domainId; relax the context-as-container assumption.\n- Migrate existing entities (sys-raven-duty-loop, sys-damien-duty-loop, the three prj-* projects) onto the new domains without loss.\n\nOut of scope:\n- Board changes (wo-board-retire-area-field). Pile/stray visualization (wo-map-stray-tasks-and-placement-v1).",
+      "checklist": [
+        {
+          "done": false,
+          "text": "Org level `sociotechnica` added, distinct from domain `alexandria`"
+        },
+        {
+          "done": false,
+          "text": "Domains replaced with alexandria / skillmaker-studio / new-media / business-development; `software` retired"
+        },
+        {
+          "done": false,
+          "text": "Owner assignments confirmed with the director and applied"
+        },
+        {
+          "done": false,
+          "text": "Projects & Systems carry `domainId` as a flat tag (no context nesting)"
+        },
+        {
+          "done": false,
+          "text": "`contextId` demoted to an optional nullable tag; nothing organizes by it"
+        },
+        {
+          "done": false,
+          "text": "Existing entities migrated onto the new domains without loss"
+        }
+      ]
+    },
+    {
+      "id": "wo-board-retire-area-field",
+      "type": "task",
+      "status": "open",
+      "area": "viewer",
+      "contextId": "viewer",
+      "entityId": "prj-map-glow-up",
+      "priority": 15,
+      "source": "board:director",
+      "created": "2026-07-13",
+      "title": "Retire the Work Board's `area` field; tag work items by domain",
+      "detail": "Every Board card carries an `area` (viewer / library / runtime / ops) that predates the Map and matches no Map domain or context — a parallel, ad-hoc taxonomy. Replace it with the shared spine so a card's home is the same word the Map uses. Child of wo-unify-map-board-data-model.\n\nDecisions (director, 2026-07-13):\n- Every work item carries a `domainId` from the shared domain set (its primary home).\n- `contextId` and `entityId` stay optional (a card may point at a Map project/system, or be a stray with neither) — the same fields two Board cards already use; make them consistent rather than ad-hoc.\n- Retire `area`. Today's values are all really Alexandria sub-areas: viewer/library/runtime/ops → domain `alexandria`. Any finer within-domain split is a Context concern, which stays latent for now.\n\nScope:\n- board-state.json: add `domainId` to the card shape; migrate all existing cards (today's mapping: viewer/library/runtime/ops → alexandria; re-home any that are truly another domain); drop `area`.\n- Keep contextId/entityId optional; leave stray cards with neither.\n- Coordinate with the open card 'Wire GET/POST /api/info-hub/board' so the board validator learns domainId and forgets area.\n\nOut of scope:\n- Map-side changes (wo-map-reset-domain-model). Deciding the finer within-domain split (Context) — deferred.",
+      "checklist": [
+        {
+          "done": false,
+          "text": "Card shape gains `domainId` (required) and keeps optional contextId/entityId"
+        },
+        {
+          "done": false,
+          "text": "All existing cards migrated off `area` onto `domainId`"
+        },
+        {
+          "done": false,
+          "text": "`area` removed from board-state.json and any reader/validator"
+        },
+        {
+          "done": false,
+          "text": "Stray cards (no project/system) validate with just a domainId"
+        }
+      ]
+    },
+    {
+      "id": "wo-map-stray-tasks-and-placement-v1",
+      "type": "task",
+      "status": "open",
+      "area": "viewer",
+      "contextId": "viewer",
+      "entityId": "prj-map-glow-up",
+      "priority": 15,
+      "source": "board:director",
+      "created": "2026-07-13",
+      "title": "Stray tasks v1 + entity placement rules on the Map",
+      "detail": "With Projects and Systems as flat Domain tags, a work item can have neither — a 'stray.' The director isn't yet confident how strays should behave and expects to iterate; this is a deliberately simple v1 to start, not the final answer. Child of wo-unify-map-board-data-model.\n\nDecisions (director, 2026-07-13):\n- Stray = a task with no project and no system.\n- v1 placement: a stray piles in its owner's Domain. A stray with no domain at all piles in an 'unclaimed' zone, rendered visibly unclaimed as a demand signal (reuse the owner-less-region concept from wo-map-declutter-colleagues-to-tray).\n- Multi-domain entity (a sprint-like Project or a shared System touching several domains): lands and displays in the owner's Domain, ideally at the border with the other domain it touches. A System must have an owner.\n\nScope:\n- Data: represent a stray (project=null, system=null) with an optional domainId.\n- Map render: a per-domain stray pile, plus an unclaimed pile for domain-less strays.\n- Placement rule for multi-domain entities (owner's domain, border-preferred).\n\nExplicitly experimental:\n- Expect this to change with real use. The bigger visualization question — piles vs vertical stacks, how work shows aging/problematic, whether you stomp a pile to clear it — is tracked separately, governed by the command-center test (act on the pile where you see it).",
+      "checklist": [
+        {
+          "done": false,
+          "text": "Data model represents a stray (no project, no system) with optional domainId"
+        },
+        {
+          "done": false,
+          "text": "Strays pile in their owner's domain on the Map"
+        },
+        {
+          "done": false,
+          "text": "Domain-less strays pile in a visibly-unclaimed zone (demand signal)"
+        },
+        {
+          "done": false,
+          "text": "Multi-domain entity places in the owner's domain, border-preferred; System requires an owner"
+        },
+        {
+          "done": false,
+          "text": "Revisit after real use — v1 is expected to change"
+        }
+      ]
     }
   ]
 }
