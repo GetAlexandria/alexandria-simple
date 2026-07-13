@@ -158,6 +158,7 @@ export function DomainView({
             needsHuman={signals.needsHuman}
             stale={signals.stale}
             filledDots={signals.filledDots}
+            healthKnown={signals.healthKnown}
             overdue={signals.overdue}
             onClick={onTileClick == null ? undefined : () => onTileClick(tile.entity)}
           />

@@ -311,6 +311,13 @@ export const MAP_SIGNAL_COLORS = {
   sepiaWeight: 0.4,
   /** Drained (unlit) health dot on a degraded system tile. */
   healthDotEmpty: "#c7bba7",
+  /**
+   * Dim "unknown" health dot: a system with no measurable journal beat (no
+   * colleague, no journal file / no readable entry, or the journals endpoint
+   * unavailable). Reads as unmeasured/calm — distinct from the drained dots of
+   * a lapsed loop, and never paired with a flicker.
+   */
+  healthDotUnknown: "#b4ab9b",
   /** Overdue candle flicker warm emissive (ported from R3 e4918c9). */
   candleEmissive: "#e8a954",
   /** Candle flicker: baseline emissive intensity the sine oscillates around. */

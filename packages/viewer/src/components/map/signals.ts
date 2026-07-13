@@ -15,9 +15,18 @@
 //     health is the recency of the most recent entry, in cadence-window
 //     multiples.
 //
+// Two philosophy guards, both to avoid a false alarm on the shipped seed:
+//   • A DATE-ONLY journal header can't be resolved below a day, so under a
+//     sub-day cadence (e.g. "30m") a beat journaled today/yesterday reads
+//     on-rhythm — not overdue. Health is measured at day resolution for
+//     date-only stamps; only a precise datetime is measured at the cadence.
+//   • A colleague with NO readable journal beat (no file, empty file) reads
+//     UNKNOWN (dim dots, no flicker) — "never journaled yet" ≠ "stalled". Only
+//     a colleague who HAS beaten and then lapsed goes overdue.
+//
 // The visual treatments these booleans/counts drive (glow color, sepia mix,
-// candle flicker) live as tokens in ./colors and ./CandleFlicker — this module
-// owns the WHEN, those own the LOOK.
+// candle flicker, dim/drained dots) live as tokens in ./colors and
+// ./CandleFlicker — this module owns the WHEN, those own the LOOK.
 
 import type { ColleagueJournal, InfoHubCard, MapEntity } from "../../app/runtime/schemas";
 import { dateOnlyUtcMs } from "../library/infohub/boardModel";
@@ -30,9 +39,10 @@ import { dateOnlyUtcMs } from "../library/infohub/boardModel";
 /**
  * Staleness threshold, in days. A tile's joined cards read as stale when NONE
  * has been touched within this many days — where "touched" is the most recent
- * of a card's `created` and (for a closed card) `terminalAt`, the only
- * timestamps a work order carries. Tiles with no joined cards carry no
- * staleness signal (there is nothing to measure).
+ * of a card's `created` and (for a closed card) a non-empty `terminalAt`, the
+ * only timestamps a work order carries. Tiles with no joined cards carry no
+ * staleness signal (there is nothing to measure), and sepia is for aging
+ * ACTIVE work only (completed projects and dormant systems are excluded).
  */
 export const STALENESS_THRESHOLD_DAYS = 14;
 
@@ -52,7 +62,7 @@ export const HEALTH_DOT_WINDOW_THRESHOLDS: readonly [number, number, number] = [
 
 /**
  * Overdue (candle flicker) threshold, in cadence windows: a system whose
- * colleague has not journaled within this many windows is past due — its duty
+ * colleague has beaten but not within this many windows is past due — its duty
  * loop has gone quiet. Set to the zero-dot threshold so the flicker lights
  * exactly as the last health dot goes out ("dots drop, then flicker"), but
  * tunable independently.
@@ -92,17 +102,26 @@ export function parseCadenceToMs(cadence: string | undefined): number | null {
   return amount * unitMs;
 }
 
+/** A parsed journal entry timestamp plus whether the header carried a time. */
+export type JournalEntryTime = {
+  ms: number;
+  /** True for a bare `YYYY-MM-DD` header — no intra-day resolution. */
+  dateOnly: boolean;
+};
+
 /**
- * Parses a journal entry header timestamp to epoch ms. Accepts a date-only
- * header (`2026-07-12`, read as UTC midnight, matching the board's date-only
- * convention) and a date-time header (`2026-07-12 14:30`, `2026-07-12T14:30:00Z`)
- * with an optional seconds field and timezone; a naive time is read as UTC.
- * Returns null for anything it can't parse.
+ * Parses a journal entry header timestamp. A date-only header (`2026-07-12`,
+ * read as UTC midnight, matching the board's date-only convention) is flagged
+ * `dateOnly` so health can be measured at day resolution — a sub-day cadence
+ * can't be judged from a bare date. A date-time header (`2026-07-12 14:30`,
+ * `2026-07-12T14:30:00Z`, optional seconds/timezone, naive read as UTC) is
+ * exact. Returns null for anything it can't parse.
  */
-export function parseJournalTimestampMs(timestamp: string): number | null {
+export function parseJournalTimestamp(timestamp: string): JournalEntryTime | null {
   const trimmed = timestamp.trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-    return dateOnlyUtcMs(trimmed);
+    const ms = dateOnlyUtcMs(trimmed);
+    return ms == null ? null : { ms, dateOnly: true };
   }
   const match = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}(?::\d{2})?)(Z|[+-]\d{2}:?\d{2})?$/.exec(
     trimmed,
@@ -111,16 +130,27 @@ export function parseJournalTimestampMs(timestamp: string): number | null {
     return null;
   }
   const ms = Date.parse(`${match[1]}T${match[2]}${match[3] ?? "Z"}`);
-  return Number.isFinite(ms) ? ms : null;
+  return Number.isFinite(ms) ? { ms, dateOnly: false } : null;
 }
+
+/** Convenience over parseJournalTimestamp: just the epoch ms (or null). */
+export function parseJournalTimestampMs(timestamp: string): number | null {
+  return parseJournalTimestamp(timestamp)?.ms ?? null;
+}
+
+/** Last ms of the UTC day a midnight-anchored date-only stamp falls on. */
+const endOfUtcDayMs = (midnightMs: number): number => midnightMs + MS_PER_DAY - 1;
 
 /**
  * A card's most recent touch, in epoch ms: its `terminalAt` if closed, else
- * its `created` date. Accepts a date-only or full-ISO value; null when neither
- * parses.
+ * its `created` date. `terminalAt` is optional AND may be an empty string
+ * (schema-valid, hand-editable), so a blank one must not shadow a real
+ * `created` — hence the length check, not just `??`. Accepts a date-only or
+ * full-ISO value; null when neither parses.
  */
 export function cardLastTouchedMs(card: InfoHubCard): number | null {
-  const source = card.terminalAt ?? card.created;
+  const source =
+    card.terminalAt != null && card.terminalAt.length > 0 ? card.terminalAt : card.created;
   const dateOnly = dateOnlyUtcMs(source);
   if (dateOnly != null) {
     return dateOnly;
@@ -137,18 +167,26 @@ export type HealthDotCount = 0 | 1 | 2 | 3;
 export type SystemHealthSignal = {
   filledDots: HealthDotCount;
   overdue: boolean;
+  /**
+   * False when there is no journal beat to measure (no colleague, no readable
+   * entry, or an unmeasurable cadence): the tile shows dim "unknown" dots and
+   * never flickers, distinct from a colleague who beat and then lapsed.
+   */
+  known: boolean;
 };
 
 /** The full ambient signal set for one entity tile. */
 export type TileSignals = {
   /** A joined card is in `needs-a-human` → emissive glow. */
   needsHuman: boolean;
-  /** No joined card touched within STALENESS_THRESHOLD_DAYS → sepia. */
+  /** No joined ACTIVE-work card touched within STALENESS_THRESHOLD_DAYS → sepia. */
   stale: boolean;
-  /** Filled health dots (systems; projects carry a neutral 3). */
+  /** Filled health dots (systems; ignored when `healthKnown` is false). */
   filledDots: HealthDotCount;
-  /** System past its cadence windows with no recent journal → flicker. */
+  /** System past its cadence windows after a real beat → flicker. */
   overdue: boolean;
+  /** False → dim "unknown" health dots (no measurable beat); systems only. */
+  healthKnown: boolean;
 };
 
 /** Needs-a-human: any card joined to this entity is in `needs-a-human`. */
@@ -157,9 +195,23 @@ export function entityNeedsHuman(cards: readonly InfoHubCard[], entityId: string
 }
 
 /**
+ * Whether an entity's aging is a staleness signal at all. Sepia marks aging
+ * ACTIVE work; a completed project keeps its "victories stay visible" grey
+ * (never sepia), and a hibernating/uprooted system is deliberately dormant,
+ * not neglected.
+ */
+export function isStaleEligible(entity: MapEntity): boolean {
+  return entity.kind === "project"
+    ? entity.lifecycle !== "completed"
+    : entity.lifecycle === "planted";
+}
+
+/**
  * Staleness: the entity's joined cards are all untouched for ≥ thresholdDays.
  * A tile with no joined cards (or none with a parseable date) is not stale —
  * there is no activity to measure, and the philosophy is ambient, not alarming.
+ * Lifecycle eligibility (completed/dormant) is applied by the caller
+ * (deriveTileSignalsByEntity / isStaleEligible), not here.
  */
 export function entityIsStale(options: {
   cards: readonly InfoHubCard[];
@@ -199,54 +251,66 @@ export function healthDotsForElapsedWindows(elapsedWindows: number): HealthDotCo
   return 0;
 }
 
+/** The unknown/unmeasurable health reading — dim dots, never overdue. */
+const UNKNOWN_HEALTH: SystemHealthSignal = { filledDots: 3, overdue: false, known: false };
+
 /**
- * System health + overdue from a colleague's journal entry timestamps and the
- * system's cadence. Neutral (full dots, never overdue) when there is nothing
- * to monitor — no colleague, or an unparseable cadence — so the map stays calm
- * rather than alarming on data it cannot read. A monitored loop (colleague +
- * cadence) with no journal entry at all has never beaten: zero dots, overdue.
+ * System health + overdue from a colleague's parsed journal entries and the
+ * system's cadence.
+ *
+ * Unknown (dim dots, never overdue) when there is no beat to measure: no
+ * colleague, an unparseable cadence, or no readable entry at all (no journal
+ * file, or an empty one). A DATE-ONLY latest entry is measured at day
+ * resolution — the beat is treated as sometime that day (end of day, clamped
+ * to now) and the window widened to at least a day — so a daily journal under
+ * a sub-day cadence reads on-rhythm instead of false-flickering. A precise
+ * datetime is measured at the declared cadence.
  */
 export function systemHealthSignal(options: {
   colleague: string | undefined;
   cadence: string | undefined;
-  entryTimestampsMs: readonly number[];
+  entries: readonly JournalEntryTime[];
   nowMs: number;
 }): SystemHealthSignal {
   if (options.colleague == null || options.colleague.length === 0) {
-    return { filledDots: 3, overdue: false };
+    return UNKNOWN_HEALTH;
   }
   const cadenceMs = parseCadenceToMs(options.cadence);
   if (cadenceMs == null) {
-    return { filledDots: 3, overdue: false };
+    return UNKNOWN_HEALTH;
   }
-  let latestMs: number | null = null;
-  for (const ms of options.entryTimestampsMs) {
-    if (latestMs == null || ms > latestMs) {
-      latestMs = ms;
+  let latest: JournalEntryTime | null = null;
+  for (const entry of options.entries) {
+    if (latest == null || entry.ms > latest.ms) {
+      latest = entry;
     }
   }
-  if (latestMs == null) {
-    return { filledDots: 0, overdue: true };
+  if (latest == null) {
+    // A colleague with no readable beat has never journaled — unknown, not
+    // stalled (the map must not false-flicker on the shipped seed).
+    return UNKNOWN_HEALTH;
   }
-  const elapsedWindows = (options.nowMs - latestMs) / cadenceMs;
+  const effectiveMs = latest.dateOnly
+    ? Math.min(endOfUtcDayMs(latest.ms), options.nowMs)
+    : latest.ms;
+  const windowMs = latest.dateOnly ? Math.max(cadenceMs, MS_PER_DAY) : cadenceMs;
+  const elapsedWindows = (options.nowMs - effectiveMs) / windowMs;
   return {
     filledDots: healthDotsForElapsedWindows(elapsedWindows),
     overdue: elapsedWindows >= OVERDUE_CADENCE_WINDOWS,
+    known: true,
   };
 }
 
 /**
  * The per-entity signal map the Map tab renders from — every entity's four
  * signals, derived once from the map entities, the board cards, and the
- * colleague journals. Projects carry a neutral health (systems only journal),
- * so a project tile never shows dots or a flicker.
+ * colleague journals. Projects carry a neutral (never-rendered) health; only
+ * systems show dots or a flicker.
  *
  * `journals == null` means the journal data path is unavailable (still loading,
- * or the endpoint failed) — NOT that every loop has gone quiet. That case reads
- * as neutral health for all systems (ambient, not alarming: no data ≠ a false
- * flicker on every colleague). A LOADED journal list that simply omits a
- * colleague DOES read as overdue for that colleague — the endpoint worked and
- * there is genuinely no entry.
+ * or the endpoint failed) — that reads UNKNOWN (dim dots, no flicker) for every
+ * system, ambient rather than a false all-clear or a false flicker.
  */
 export function deriveTileSignalsByEntity(options: {
   entities: readonly MapEntity[];
@@ -255,50 +319,54 @@ export function deriveTileSignalsByEntity(options: {
   nowMs: number;
 }): Map<string, TileSignals> {
   const journalsAvailable = options.journals != null;
-  const entryMsByColleague = new Map<string, number[]>();
+  const entriesByColleague = new Map<string, JournalEntryTime[]>();
   for (const journal of options.journals ?? []) {
-    const timestamps: number[] = [];
+    const parsed: JournalEntryTime[] = [];
     for (const entry of journal.entries) {
-      const ms = parseJournalTimestampMs(entry.timestamp);
-      if (ms != null) {
-        timestamps.push(ms);
+      const time = parseJournalTimestamp(entry.timestamp);
+      if (time != null) {
+        parsed.push(time);
       }
     }
-    entryMsByColleague.set(journal.colleague, timestamps);
+    entriesByColleague.set(journal.colleague, parsed);
   }
 
   const signalsByEntity = new Map<string, TileSignals>();
   for (const entity of options.entities) {
     const needsHuman = entityNeedsHuman(options.cards, entity.id);
-    const stale = entityIsStale({
-      cards: options.cards,
-      entityId: entity.id,
-      nowMs: options.nowMs,
-    });
-    const health: SystemHealthSignal =
-      entity.kind === "system" && journalsAvailable
-        ? systemHealthSignal({
-            colleague: entity.colleague,
-            cadence: entity.cadence,
-            entryTimestampsMs:
-              entity.colleague == null ? [] : (entryMsByColleague.get(entity.colleague) ?? []),
-            nowMs: options.nowMs,
-          })
-        : { filledDots: 3, overdue: false };
+    const stale =
+      isStaleEligible(entity) &&
+      entityIsStale({ cards: options.cards, entityId: entity.id, nowMs: options.nowMs });
+    let health: SystemHealthSignal;
+    if (entity.kind !== "system") {
+      // Projects never render dots — value is inert.
+      health = { filledDots: 3, overdue: false, known: true };
+    } else if (!journalsAvailable) {
+      health = UNKNOWN_HEALTH;
+    } else {
+      health = systemHealthSignal({
+        colleague: entity.colleague,
+        cadence: entity.cadence,
+        entries: entity.colleague == null ? [] : (entriesByColleague.get(entity.colleague) ?? []),
+        nowMs: options.nowMs,
+      });
+    }
     signalsByEntity.set(entity.id, {
       needsHuman,
       stale,
       filledDots: health.filledDots,
       overdue: health.overdue,
+      healthKnown: health.known,
     });
   }
   return signalsByEntity;
 }
 
-/** The neutral signal set for a tile with no derived signals (e.g. no data). */
+/** The neutral fallback for a tile whose signals have not resolved. */
 export const NEUTRAL_TILE_SIGNALS: TileSignals = {
   needsHuman: false,
   stale: false,
   filledDots: 3,
   overdue: false,
+  healthKnown: false,
 };

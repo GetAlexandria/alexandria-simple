@@ -831,10 +831,11 @@ export function MapTabView({
         ) : null}
       </MapScene>
 
-      {/* Signal legend (L1): small, collapsed by default, present in both view
-          modes — names the four ambient states so the treatments read without
-          any badge or count on a tile. */}
-      <MapLegend />
+      {/* Signal legend (L1): small, collapsed by default. Scoped to Domain
+          view — that is where the signals ride the tiles; Owner view renders
+          work markers beside colleague landmarks (L2) and carries none of the
+          four treatments, so the legend would claim states nothing shows. */}
+      {viewMode === "domain" ? <MapLegend /> : null}
 
       {overlayTarget != null ? (
         <MapOverlay

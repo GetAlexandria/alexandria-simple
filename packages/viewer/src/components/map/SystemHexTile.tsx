@@ -45,6 +45,13 @@ type SystemHexTileProps = {
   stale?: boolean;
   /** L1: filled health dots (0–3), derived from the colleague's journal. */
   filledDots?: HealthDotCount;
+  /**
+   * L1: whether health is measurable at all. False → dim "unknown" dots (no
+   * colleague, no readable journal beat, or journals unavailable); the tile
+   * never flickers in that case. Defaults true so callers that only care about
+   * dot count keep the lit/drained treatment.
+   */
+  healthKnown?: boolean;
   /** L1: system past its cadence windows with no journal entry → candle flicker. */
   overdue?: boolean;
   onClick?: () => void;
@@ -58,6 +65,7 @@ export function SystemHexTile({
   needsHuman = false,
   stale = false,
   filledDots = HEALTH_DOT_COUNT,
+  healthKnown = true,
   overdue = false,
   onClick,
 }: SystemHexTileProps) {
@@ -88,9 +96,9 @@ export function SystemHexTile({
   }, [accentColor, isHibernating, stale]);
 
   // A deliberately dormant (hibernating) system is expected to be quiet, so it
-  // never reads as overdue — the flicker is only for a planted loop that has
-  // unexpectedly gone silent.
-  const showFlicker = overdue && !needsHuman && !isHibernating;
+  // never reads as overdue — the flicker is only for a planted loop with a
+  // measurable, lapsed beat (healthKnown), that has unexpectedly gone silent.
+  const showFlicker = overdue && healthKnown && !needsHuman && !isHibernating;
 
   // Emissive channel precedence on the top cap: needs-a-human's steady glow
   // (the explicit human-attention signal) wins over the overdue flicker so it
@@ -180,9 +188,10 @@ export function SystemHexTile({
         opacity={groupOpacity}
       />
 
-      {/* Health dots (L1): the first `filledDots` are lit; the rest read
-          drained. A hibernating system keeps its uniform dimmed dots — its
-          quiet is deliberate, not a health reading. */}
+      {/* Health dots (L1): the first `filledDots` are lit and the rest drained
+          when health is KNOWN; a system with no measurable beat shows uniform
+          dim "unknown" dots; a hibernating system keeps its uniform dimmed dots
+          — its quiet is deliberate, not a health reading. */}
       {healthDotPositions.map((dotX, index) => (
         <mesh
           key={index}
@@ -195,12 +204,14 @@ export function SystemHexTile({
             color={
               isHibernating
                 ? SYSTEM_TILE_COLORS.healthDotHibernating
-                : index < filledDots
-                  ? SYSTEM_TILE_COLORS.healthDot
-                  : MAP_SIGNAL_COLORS.healthDotEmpty
+                : !healthKnown
+                  ? MAP_SIGNAL_COLORS.healthDotUnknown
+                  : index < filledDots
+                    ? SYSTEM_TILE_COLORS.healthDot
+                    : MAP_SIGNAL_COLORS.healthDotEmpty
             }
-            transparent={isHibernating}
-            opacity={isHibernating ? 0.5 : 1}
+            transparent={isHibernating || !healthKnown}
+            opacity={isHibernating ? 0.5 : !healthKnown ? 0.5 : 1}
           />
         </mesh>
       ))}
