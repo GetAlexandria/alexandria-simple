@@ -14,6 +14,11 @@ import { LANDMARK_SPRITE_COLORS } from "./colors";
 import { HEX_SIZE, hexToWorld, type HexCoord } from "./hex";
 import { CAMERA_FACING_ROTATION_X } from "./MapLabel";
 
+// Southward nudge toward the camera; no caller varies it, so it stays a
+// constant rather than a threaded prop (same call MapSprite made for its
+// fixed opacity).
+const SPRITE_Z_OFFSET = 0.45;
+
 type LandmarkSpriteProps = {
   coord: HexCoord;
   textureUrl: string;
@@ -22,7 +27,6 @@ type LandmarkSpriteProps = {
   tint?: string;
   opacity?: number;
   elevation?: number;
-  zOffset?: number;
 };
 
 export function LandmarkSprite({
@@ -33,7 +37,6 @@ export function LandmarkSprite({
   tint = LANDMARK_SPRITE_COLORS.colleague.tint,
   opacity = 0.95,
   elevation = 0.58,
-  zOffset = 0.45,
 }: LandmarkSpriteProps) {
   const texture = useLoader(TextureLoader, textureUrl);
   const [x, z] = hexToWorld(coord, HEX_SIZE);
@@ -50,7 +53,7 @@ export function LandmarkSprite({
 
   return (
     <mesh
-      position={[x, elevation, z + zOffset]}
+      position={[x, elevation, z + SPRITE_Z_OFFSET]}
       rotation={[CAMERA_FACING_ROTATION_X, 0, 0]}
       raycast={() => null}
     >

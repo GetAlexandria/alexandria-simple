@@ -72,7 +72,7 @@ export function MapDevView() {
         }}
       >
         <p className="text-xs font-semibold" style={{ color: MAP_FALLBACK_COLORS.heading }}>
-          Map dev harness — {viewMode === "domain" ? "Domain view" : "Owner view"}
+          Map dev harness — {VIEW_MODES.find(({ mode }) => mode === viewMode)!.label}
         </p>
         <p className="mt-0.5 text-[10px]" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
           {hudStats} — wheel zooms, arrow keys pan

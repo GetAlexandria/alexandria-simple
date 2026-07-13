@@ -19,8 +19,6 @@ import { OWNER_VIEW_TERRITORY_TINTS, type HexTint } from "../colors";
 import { createHex, generateHexGrid, hexAdd, hexToKey, type HexCoord } from "../hex";
 import { parseDomainOwner, parseLandmarkId, type DomainOwnership } from "../vocabulary";
 
-export type { DomainOwner, DomainOwnerKind, DomainOwnership } from "../vocabulary";
-
 /** A positioned project/system rendered inside its owner's territory. */
 export type OwnerWorkMarker = {
   entity: MapEntity;

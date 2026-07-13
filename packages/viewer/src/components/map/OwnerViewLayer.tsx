@@ -47,8 +47,20 @@ const MUTED_CHIP_STYLE: CSSProperties = {
   color: OWNER_VIEW_COLORS.label.mutedText,
 };
 
+// The two chip silhouettes: a compact one-line caption (work markers,
+// locked seats) and a block title/subtext card (territory anchors).
+const CHIP_VARIANT_CLASSES = {
+  compact: "whitespace-nowrap rounded border px-1.5 py-0.5 text-[9px]",
+  card: "block whitespace-nowrap rounded border px-2 py-1 text-center",
+} as const;
+
 type OwnerChipProps = {
   coord: HexCoord;
+  variant?: keyof typeof CHIP_VARIANT_CLASSES;
+  /** Muted treatment for the vacant-plot and locked-seat chips. */
+  muted?: boolean;
+  /** Extra classes appended to the chip span (e.g. "italic"). */
+  className?: string;
   children: ReactNode;
 };
 
@@ -57,8 +69,15 @@ type OwnerChipProps = {
  * For in-scene world-space text use ./MapLabel instead — see the label-split
  * note in this file's header.
  */
-function OwnerChip({ coord, children }: OwnerChipProps) {
+function OwnerChip({
+  coord,
+  variant = "compact",
+  muted = false,
+  className,
+  children,
+}: OwnerChipProps) {
   const [x, z] = hexToWorld(coord, HEX_SIZE);
+  const variantClasses = CHIP_VARIANT_CLASSES[variant];
 
   return (
     <Html
@@ -67,7 +86,12 @@ function OwnerChip({ coord, children }: OwnerChipProps) {
       zIndexRange={CHIP_Z_INDEX_RANGE}
       style={{ pointerEvents: "none" }}
     >
-      {children}
+      <span
+        className={className ? `${variantClasses} ${className}` : variantClasses}
+        style={muted ? MUTED_CHIP_STYLE : CHIP_STYLE}
+      >
+        {children}
+      </span>
     </Html>
   );
 }
@@ -107,14 +131,7 @@ function WorkMarker({ marker }: { marker: OwnerWorkMarker }) {
         material={getWorkMarkerMaterial(marker.entity.kind)}
         raycast={() => null}
       />
-      <OwnerChip coord={marker.coord}>
-        <span
-          className="whitespace-nowrap rounded border px-1.5 py-0.5 text-[9px]"
-          style={CHIP_STYLE}
-        >
-          {marker.entity.name}
-        </span>
-      </OwnerChip>
+      <OwnerChip coord={marker.coord}>{marker.entity.name}</OwnerChip>
     </>
   );
 }
@@ -130,22 +147,17 @@ function TerritoryAnchor({ territory }: { territory: OwnerTerritory }) {
     return (
       <>
         <FixedBuilding kind="vacant-plot" coord={anchor} />
-        <OwnerChip coord={anchor}>
-          <span
-            className="block whitespace-nowrap rounded border px-2 py-1 text-center"
-            style={MUTED_CHIP_STYLE}
-          >
-            <span className="block text-[11px] font-semibold">{domain.name}</span>
-            <span className="block text-[9px] italic">unclaimed — wants an owner</span>
-            {ownership.status === "malformed" && (
-              <span
-                className="block text-[9px] font-semibold"
-                style={{ color: OWNER_VIEW_COLORS.label.warningText }}
-              >
-                ⚠ malformed owner “{ownership.raw}”
-              </span>
-            )}
-          </span>
+        <OwnerChip coord={anchor} variant="card" muted>
+          <span className="block text-[11px] font-semibold">{domain.name}</span>
+          <span className="block text-[9px] italic">unclaimed — wants an owner</span>
+          {ownership.status === "malformed" && (
+            <span
+              className="block text-[9px] font-semibold"
+              style={{ color: OWNER_VIEW_COLORS.label.warningText }}
+            >
+              ⚠ malformed owner “{ownership.raw}”
+            </span>
+          )}
         </OwnerChip>
       </>
     );
@@ -159,15 +171,10 @@ function TerritoryAnchor({ territory }: { territory: OwnerTerritory }) {
         coord={anchor}
         ownerId={owner.id}
       />
-      <OwnerChip coord={anchor}>
-        <span
-          className="block whitespace-nowrap rounded border px-2 py-1 text-center"
-          style={CHIP_STYLE}
-        >
-          <span className="block text-[11px] font-semibold">{owner.name}</span>
-          <span className="block text-[9px]" style={{ color: OWNER_VIEW_COLORS.label.subtext }}>
-            {domain.name}
-          </span>
+      <OwnerChip coord={anchor} variant="card">
+        <span className="block text-[11px] font-semibold">{owner.name}</span>
+        <span className="block text-[9px]" style={{ color: OWNER_VIEW_COLORS.label.subtext }}>
+          {domain.name}
         </span>
       </OwnerChip>
     </>
@@ -178,13 +185,8 @@ function LockedSeatPlot({ seat }: { seat: LockedSeat }) {
   return (
     <>
       <FixedBuilding kind="locked-seat" coord={seat.coord} />
-      <OwnerChip coord={seat.coord}>
-        <span
-          className="whitespace-nowrap rounded border px-1.5 py-0.5 text-[9px] italic"
-          style={MUTED_CHIP_STYLE}
-        >
-          Locked seat
-        </span>
+      <OwnerChip coord={seat.coord} muted className="italic">
+        Locked seat
       </OwnerChip>
     </>
   );
