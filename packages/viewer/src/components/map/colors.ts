@@ -93,7 +93,7 @@ export const MAP_OVERLAY_SCRIM_INK = "#1c1712";
 export const HEX_CELL_MATERIAL_COLORS: Record<HexCellVisualState, { rim: string; side: string }> = {
   default: { rim: "#ab8f72", side: "#cfb693" },
   hover: { rim: "#b89b7d", side: "#dcc8a8" },
-  placeable: { rim: "#c19f7c", side: "#e3cbab" },
+  placeable: { rim: "#d9a860", side: "#f0d9a8" },
   targeted: { rim: "#cf9158", side: "#e8c39b" },
   blocked: { rim: "#8f7d69", side: "#b8a58b" },
 };
@@ -103,8 +103,8 @@ export const HEX_CELL_HIGHLIGHTS: Record<HexCellVisualState, { color: string; st
   {
     default: { color: "#000000", strength: 0 },
     hover: { color: "#e7c39a", strength: 0.12 },
-    placeable: { color: "#dfb98d", strength: 0.08 },
-    targeted: { color: "#de9654", strength: 0.24 },
+    placeable: { color: "#efc067", strength: 0.22 },
+    targeted: { color: "#de9654", strength: 0.34 },
     blocked: { color: "#918270", strength: 0.2 },
   };
 

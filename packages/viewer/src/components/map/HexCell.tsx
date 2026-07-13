@@ -74,7 +74,11 @@ export const HexCell = memo(function HexCell({
   const visualState = visualStateOverride ?? (isPointerHovering ? "hover" : "default");
 
   const lift =
-    visualState === "targeted" ? HOVER_LIFT + 0.03 : visualState === "hover" ? HOVER_LIFT : 0;
+    visualState === "targeted"
+      ? HOVER_LIFT + 0.03
+      : visualState === "hover" || visualState === "placeable"
+        ? HOVER_LIFT
+        : 0;
 
   const materialColors = HEX_CELL_MATERIAL_COLORS[visualState];
   const rimColor = tint
