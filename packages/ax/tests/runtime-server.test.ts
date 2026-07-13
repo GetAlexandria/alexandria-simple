@@ -652,8 +652,8 @@ async function bankVision(server: StartedAlexandriaRuntimeServer) {
   };
 }
 
-// The Map tab plan §1.3 fixture shape, as a POST body for /api/map/state —
-// loaded from the checked-in seed so the seed is the single source of truth.
+// The checked-in S1 seed world, as a POST body for /api/map/state —
+// loaded from the seed file so it stays the single source of truth.
 // Each call parses fresh, so tests that mutate the returned document stay
 // independent.
 function mapStateFixture(): Record<string, unknown> {
@@ -4459,6 +4459,40 @@ exit 2
         method: "POST",
       });
       expect(unconditional.status).toBe(200);
+      const currentRevision = unconditional.headers.get("etag")!;
+
+      // `If-Match: *` is RFC 9110 match-anything, never a literal revision:
+      // the write proceeds.
+      const star = await fetch(new URL("/api/map/state", server.url), {
+        body: JSON.stringify(mapStateFixture()),
+        headers: { "content-type": "application/json", "if-match": "*" },
+        method: "POST",
+      });
+      expect(star.status).toBe(200);
+
+      // A comma list passes when ANY tag matches the current revision
+      // (weak markers and quotes stripped per tag)...
+      const listMatch = await fetch(new URL("/api/map/state", server.url), {
+        body: JSON.stringify(mapStateFixture()),
+        headers: {
+          "content-type": "application/json",
+          "if-match": `"deadbeefdeadbeef", W/${currentRevision}`,
+        },
+        method: "POST",
+      });
+      expect(listMatch.status).toBe(200);
+
+      // ...and 409s when none do.
+      const listMiss = await fetch(new URL("/api/map/state", server.url), {
+        body: JSON.stringify(mapStateFixture()),
+        headers: {
+          "content-type": "application/json",
+          "if-match": '"deadbeefdeadbeef", "0123456789abcdef"',
+        },
+        method: "POST",
+      });
+      expect(listMiss.status).toBe(409);
+      expect(((await listMiss.json()) as RuntimeErrorBody).error.code).toBe("map_state_conflict");
     } finally {
       await Effect.runPromise(server.stop);
     }

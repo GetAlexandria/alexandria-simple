@@ -1,6 +1,7 @@
 // Full-screen message panel for the map surface's non-canvas states: the
-// WebGL-unsupported fallback (MapDevView) and the lazy-chunk load error
-// (LibraryBrowserApp's MapDevErrorBoundary). Like ./colors, this module is
+// WebGL-unsupported fallback (MapDevView/MapTabView) and the lazy-chunk load
+// error (LibraryBrowserApp's MapChunkErrorBoundary). Like ./colors, this
+// module is
 // deliberately three.js-free so LibraryBrowserApp can import it statically
 // without defeating the lazy map chunk split.
 

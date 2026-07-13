@@ -18,14 +18,14 @@
 // Like MapDevView, this module (and everything it imports, including
 // three.js) is only loaded through React.lazy in LibraryBrowserApp.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MapEntity, MapState } from "../../app/runtime/schemas";
 import type { MapStateSaveError } from "../library/hooks/useMapState";
 import { MAP_FALLBACK_COLORS } from "./colors";
 import { DomainView } from "./DomainView";
 import { createHex, generateHexGrid, hexToKey, type HexCoord } from "./hex";
 import type { HexCellVisualState } from "./HexCell";
-import { computeDomainViewLayoutInternal } from "./layout/domain-view";
+import { computeDomainViewLayout } from "./layout/domain-view";
 import { buildOwnerViewLayout } from "./layout/owner-view";
 import { mapStateGridRadius } from "./map-grid";
 import { MapMessagePanel } from "./MapMessagePanel";
@@ -168,7 +168,8 @@ function PlacementPanel({
                 >
                   {entity.name}
                   <span className="ml-1 opacity-70">
-                    · {entityKindLabel(entity)} · {contextNameById.get(entity.contextId) ?? entity.contextId}
+                    · {entityKindLabel(entity)} ·{" "}
+                    {contextNameById.get(entity.contextId) ?? entity.contextId}
                   </span>
                 </button>
               </li>
@@ -196,7 +197,16 @@ function PlacementPanel({
                 className="flex items-center justify-between gap-2 text-[11px]"
                 style={{ color: MAP_FALLBACK_COLORS.text }}
               >
-                <span className="truncate">{entity.name}</span>
+                <span className="truncate">
+                  {entity.name}
+                  {entity.kind === "system" && entity.lifecycle === "uprooted" ? (
+                    // A hand-edited/unconditional write can leave an
+                    // uprooted system with a stored position: it renders no
+                    // tile but still occupies its hex. Name the dead spot so
+                    // Remove is the visible remedy.
+                    <span className="opacity-70"> · uprooted — not rendered</span>
+                  ) : null}
+                </span>
                 <button
                   type="button"
                   disabled={saving}
@@ -233,12 +243,16 @@ export function MapTabView({
   const [viewMode, setViewMode] = useState<MapViewMode>("domain");
   const [placingEntityId, setPlacingEntityId] = useState<string | null>(null);
 
+  // Key the grid memo on the derived radius NUMBER, not the state object:
+  // every save/refresh produces a new state identity, and regenerating the
+  // grid would hand every memoized HexCell a fresh coord identity.
+  const gridRadius = state == null ? null : mapStateGridRadius(state);
   const cells = useMemo(
-    () => (state == null ? [] : generateHexGrid(mapStateGridRadius(state))),
-    [state],
+    () => (gridRadius == null ? [] : generateHexGrid(gridRadius)),
+    [gridRadius],
   );
   const domainLayout = useMemo(
-    () => (state == null ? null : computeDomainViewLayoutInternal(state, cells)),
+    () => (state == null ? null : computeDomainViewLayout(state, cells)),
     [state, cells],
   );
   const ownerLayout = useMemo(() => (state == null ? null : buildOwnerViewLayout(state)), [state]);
@@ -358,19 +372,30 @@ export function MapTabView({
     [state, placingEntity, onSave],
   );
 
+  // Stable identity: this handler reaches every memoized HexCell, so it
+  // reads the live placement inputs through a ref instead of re-binding
+  // (and re-rendering the whole grid) on each selection/saving flip.
+  const placementClickInputs = useRef({ placingEntityId, saving, placeableKeys, placeAt });
+  placementClickInputs.current = { placingEntityId, saving, placeableKeys, placeAt };
   const handleCellClick = useCallback(
     (coord: HexCoord) => {
-      if (placingEntityId == null) {
+      const current = placementClickInputs.current;
+      if (current.placingEntityId == null) {
         return;
       }
-      if (!saving && placeableKeys.has(hexToKey(coord))) {
-        void placeAt(coord);
+      if (current.saving) {
+        // Mid-save (e.g. a double-click): ignore the click rather than
+        // cancel — the selection and highlights survive a slow POST or 409.
+        return;
+      }
+      if (current.placeableKeys.has(hexToKey(coord))) {
+        void current.placeAt(coord);
         return;
       }
       // Clicking any non-placeable ground cancels (spec: click-away).
       cancelPlacement();
     },
-    [placingEntityId, saving, placeableKeys, placeAt, cancelPlacement],
+    [cancelPlacement],
   );
 
   const removeFromMap = useCallback(
@@ -404,7 +429,11 @@ export function MapTabView({
   if (state == null) {
     if (loading) {
       return (
-        <MapMessagePanel fill title="Loading the map" subtext="Reading docs/alexandria/map/map-state.json…" />
+        <MapMessagePanel
+          fill
+          title="Loading the map"
+          subtext="Reading docs/alexandria/map/map-state.json…"
+        />
       );
     }
     return (
@@ -580,7 +609,9 @@ export function MapTabView({
           viewMode === "domain" ? domainLayout?.tintByCellKey : ownerLayout?.tintByCellKey
         }
         cellVisualStateByKey={viewMode === "domain" ? cellVisualStateByKey : undefined}
-        onCellClick={viewMode === "domain" ? handleCellClick : undefined}
+        // Only wired while placing: HexCell shows a pointer cursor for any
+        // onClick, and the ground is not clickable outside placement mode.
+        onCellClick={viewMode === "domain" && placingEntityId != null ? handleCellClick : undefined}
         onPointerMissed={placingEntityId == null ? undefined : cancelPlacement}
       >
         {viewMode === "domain" && domainLayout != null ? (

@@ -696,7 +696,13 @@ describe("viewer runtime client map state endpoints", () => {
     ],
     contexts: [{ id: "viewer", name: "Viewer", domainId: "software" }],
     entities: [
-      { id: "prj-map-tab", kind: "project", name: "Map tab", contextId: "viewer", lifecycle: "active" },
+      {
+        id: "prj-map-tab",
+        kind: "project",
+        name: "Map tab",
+        contextId: "viewer",
+        lifecycle: "active",
+      },
     ],
     positions: [{ q: 1, r: -3, entityType: "project", entityId: "prj-map-tab" }],
   };
@@ -750,8 +756,7 @@ describe("viewer runtime client map state endpoints", () => {
       },
     });
     const client = makeViewerRuntimeClient({
-      fetcher: async () =>
-        new Response(conflictBody, { status: 409, statusText: "Conflict" }),
+      fetcher: async () => new Response(conflictBody, { status: 409, statusText: "Conflict" }),
     });
 
     const error = await Effect.runPromise(

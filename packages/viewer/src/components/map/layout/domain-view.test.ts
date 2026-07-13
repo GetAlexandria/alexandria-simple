@@ -11,8 +11,9 @@ import {
 } from "./domain-view";
 
 const cells = generateHexGrid(devMapGridRadius(DEV_MAP_FIXTURE));
-// The internal variant exposes territory/patch assignment maps that only
-// this test file reads; computeDomainViewLayout is the renderer-facing API.
+// The internal variant additionally exposes the territory/color assignment
+// maps that only this test file reads (patchByCellKey is public since S1);
+// computeDomainViewLayout is the renderer-facing API.
 const layout = computeDomainViewLayoutInternal(DEV_MAP_FIXTURE, cells, {
   strayCardCounts: DEV_MAP_STRAY_CARD_COUNTS,
 });

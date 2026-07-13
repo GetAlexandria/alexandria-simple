@@ -54,9 +54,10 @@ function runWrite(state: MapState, workspacePath: string) {
 
 const seedPath = join(import.meta.dir, "../../../..", "docs/alexandria/map/map-state.json");
 
-// The plan §1.3 fixture shape — one domain, one context, a system and a
-// project entity, a system position and a colleague landmark position —
-// loaded from the checked-in seed so the seed is the single source of truth.
+// The checked-in S1 seed world — two work-half domains (Software, New
+// Media), three contexts, the two duty-loop systems plus the Map tab
+// project, three entity positions and two colleague landmark positions —
+// loaded from the seed file so it stays the single source of truth.
 // Each call parses fresh, so tests that mutate the returned document stay
 // independent.
 function baseState(): Record<string, unknown> {

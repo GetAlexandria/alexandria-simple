@@ -28,7 +28,10 @@ describe("domainWashColors", () => {
   });
 
   it("still yields a pigment when there are more domains than palette entries", () => {
-    const ids = Array.from({ length: MAP_DOMAIN_TINTS.length + 3 }, (_, index) => `domain-${index}`);
+    const ids = Array.from(
+      { length: MAP_DOMAIN_TINTS.length + 3 },
+      (_, index) => `domain-${index}`,
+    );
     const colors = domainWashColors(ids);
     expect(colors.size).toBe(ids.length);
     for (const color of colors.values()) {

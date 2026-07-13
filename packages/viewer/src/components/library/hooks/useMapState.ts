@@ -24,26 +24,38 @@ export interface MapStateStore {
   state: MapState | null;
 }
 
-function conflictMessageFromBody(body: string): string {
+/** The server's structured `{ error: { message } }` body, if it is one. */
+function messageFromErrorBody(body: string): string | null {
   try {
     const parsed = JSON.parse(body) as { error?: { message?: string } };
     if (typeof parsed.error?.message === "string" && parsed.error.message.length > 0) {
       return parsed.error.message;
     }
   } catch {
-    // Fall through to the generic copy.
+    // Not a structured runtime error body (e.g. proxy HTML).
   }
-  return "The map changed since it was loaded here. Refresh the map and retry.";
+  return null;
 }
 
-function saveErrorFromRuntimeError(error: ViewerRuntimeError): MapStateSaveError {
+/** Exported for direct unit tests of the copy routing; not a hook API. */
+export function saveErrorFromRuntimeError(error: ViewerRuntimeError): MapStateSaveError {
+  // Conflict copy belongs to the 409 branch exclusively: a 500/502 with an
+  // unparseable body must never read as "the map changed — refresh".
   if (error._tag === "ViewerHttpError" && error.status === 409) {
-    return { kind: "conflict", message: conflictMessageFromBody(error.body) };
+    return {
+      kind: "conflict",
+      message:
+        messageFromErrorBody(error.body) ??
+        "The map changed since it was loaded here. Refresh the map and retry.",
+    };
   }
-  if (error._tag === "ViewerHttpError" && error.body.length > 0) {
+  if (error._tag === "ViewerHttpError") {
     // Surface the server's structured message (e.g. a 400 validation
-    // rejection) rather than the bare status line.
-    return { kind: "error", message: conflictMessageFromBody(error.body) };
+    // rejection) when there is one; otherwise the generic runtime copy.
+    const message = messageFromErrorBody(error.body);
+    if (message != null) {
+      return { kind: "error", message };
+    }
   }
   return { kind: "error", message: libraryRuntimeErrorMessage("map", error) };
 }
@@ -118,6 +130,14 @@ export function useMapState(runtimeClient: ViewerRuntimeClient, enabled = true):
 
   const saveState = useCallback(
     async (next: MapState): Promise<boolean> => {
+      // A save supersedes any in-flight load. Without this abort, a stale
+      // GET resolving after the POST would roll state and revisionRef back:
+      // the placed tile vanishes from the UI (though it is on disk) and the
+      // next save spuriously 409s. The aborted load's finally block skips
+      // setLoading(false), so clear it here — the save's response is the
+      // fresh state.
+      activeController.current?.abort();
+      setLoading(false);
       setSaving(true);
       setSaveError(null);
       const result = await Effect.runPromise(

@@ -22,7 +22,7 @@ import { FileSystem, isMissingFileError } from "./filesystem.js";
  * domain's `region.center` r-sign must therefore match its declared `half`
  * (work → r < 0, personal → r > 0) — a wrong-side region would render as a
  * ghost domain (label over bare parchment, no territory), so it fails loudly
- * at write time instead.
+ * at validation time (both reads and writes run this validator) instead.
  */
 
 export const MAP_DOMAIN_HALVES = ["work", "personal"] as const;

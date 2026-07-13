@@ -71,19 +71,24 @@ export type DomainViewLayout = {
   labels: readonly DomainViewLabel[];
   tiles: readonly DomainViewTile[];
   piles: readonly DomainViewPile[];
+  /**
+   * Context patch assignment per cell key (a subset of territory cells).
+   * Public since S1: the Map tab's placement mode reads it to highlight the
+   * free hexes of the placing entity's context patch.
+   */
+  patchByCellKey: ReadonlyMap<string, string>;
 };
 
 /**
  * Intermediate assignment maps behind a DomainViewLayout — which domain
- * owns each territory cell, which context patch owns a cell (a subset of
- * territory cells), and each domain's wash pigment. No renderer reads these
- * directly (MapScene/DomainView only need the derived tint/border/label/pile
- * output), but the layout algorithm's own tests assert on them directly to
- * pin down territory/patch assignment; see computeDomainViewLayoutInternal.
+ * owns each territory cell, and each domain's wash pigment. No renderer
+ * reads these directly (MapScene/DomainView only need the derived
+ * tint/border/label/pile/patch output), but the layout algorithm's own
+ * tests assert on them directly to pin down territory assignment; see
+ * computeDomainViewLayoutInternal.
  */
 export type DomainViewLayoutInternals = {
   territoryByCellKey: ReadonlyMap<string, string>;
-  patchByCellKey: ReadonlyMap<string, string>;
   domainColorById: ReadonlyMap<string, string>;
 };
 
@@ -506,8 +511,9 @@ export function computeDomainViewLayoutInternal(
 
 /**
  * Domain-view layout for renderers: territory/patch washes, painted
- * borders, labels, tiles, and stray piles. Drops the intermediate
- * territory/patch assignment maps that only this module's tests read; use
+ * borders, labels, tiles, stray piles, and the patch assignment map (which
+ * the Map tab's placement mode reads). Drops the intermediate territory/
+ * color maps that only this module's tests read; use
  * `computeDomainViewLayoutInternal` if you need those.
  */
 export function computeDomainViewLayout(
@@ -515,7 +521,7 @@ export function computeDomainViewLayout(
   cells: readonly HexGridCell[],
   options: DomainViewLayoutOptions = {},
 ): DomainViewLayout {
-  const { tintByCellKey, domainBorders, patchBorders, labels, tiles, piles } =
+  const { tintByCellKey, domainBorders, patchBorders, labels, tiles, piles, patchByCellKey } =
     computeDomainViewLayoutInternal(state, cells, options);
-  return { tintByCellKey, domainBorders, patchBorders, labels, tiles, piles };
+  return { tintByCellKey, domainBorders, patchBorders, labels, tiles, piles, patchByCellKey };
 }
