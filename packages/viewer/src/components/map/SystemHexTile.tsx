@@ -11,12 +11,15 @@
 // ./colors; geometries and the hover/click chassis are shared via
 // ./TileBase (issue #6 + /simplify review gate).
 
-import { useMemo } from "react";
-import { SYSTEM_TILE_COLORS, mixHexColors } from "./colors";
+import { useMemo, useRef } from "react";
+import type { MeshStandardMaterial } from "three";
+import { CandleFlicker } from "./CandleFlicker";
+import { MAP_SIGNAL_COLORS, SYSTEM_TILE_COLORS, mixHexColors, sepiaMix } from "./colors";
 import { hexToWorld, type HexCoord } from "./hex";
 import { truncateTileLabel } from "./label-utils";
 import { MapLabel } from "./MapLabel";
 import { HEX_SIZE, TILE_HEIGHT, getSharedMapGeometries } from "./materials";
+import type { HealthDotCount } from "./signals";
 import { HOVER_LIFT, TILE_LIFT, TileChassis, TileHoverLabel, useTileInteraction } from "./TileBase";
 
 const HEALTH_DOT_COUNT = 3;
@@ -36,6 +39,14 @@ type SystemHexTileProps = {
   /** Domain accent color (Domain view: the territory's wash pigment). */
   accentColor: string;
   lifecycle?: SystemHexTileLifecycle;
+  /** L1: a joined card is in `needs-a-human` → steady brand glow. */
+  needsHuman?: boolean;
+  /** L1: joined cards untouched ≥ 14 days → sepia the tile pigments. */
+  stale?: boolean;
+  /** L1: filled health dots (0–3), derived from the colleague's journal. */
+  filledDots?: HealthDotCount;
+  /** L1: system past its cadence windows with no journal entry → candle flicker. */
+  overdue?: boolean;
   onClick?: () => void;
 };
 
@@ -44,6 +55,10 @@ export function SystemHexTile({
   name,
   accentColor,
   lifecycle = "planted",
+  needsHuman = false,
+  stale = false,
+  filledDots = HEALTH_DOT_COUNT,
+  overdue = false,
   onClick,
 }: SystemHexTileProps) {
   const [x, z] = useMemo(() => hexToWorld(coord, HEX_SIZE), [coord]);
@@ -51,6 +66,12 @@ export function SystemHexTile({
   const label = useMemo(() => truncateTileLabel(name), [name]);
   const { isHovered, groupProps } = useTileInteraction(onClick);
   const geometries = getSharedMapGeometries();
+  // The top-cap material the overdue flicker animates (its own instance).
+  const topMaterialRef = useRef<MeshStandardMaterial>(null);
+
+  // Staleness sepia mixes the tile's base pigments toward the sepia target;
+  // it composes with the emissive treatments (color vs emissive are separate).
+  const tint = (color: string): string => (stale ? sepiaMix(color) : color);
 
   // Systems read calmer than projects: the accent is mixed toward grey, and
   // hibernating systems desaturate a second time on top of the dim.
@@ -60,17 +81,42 @@ export function SystemHexTile({
       SYSTEM_TILE_COLORS.desaturationTarget,
       DESATURATION_WEIGHT,
     );
-    return isHibernating
+    const base = isHibernating
       ? mixHexColors(desaturated, SYSTEM_TILE_COLORS.desaturationTarget, DESATURATION_WEIGHT)
       : desaturated;
-  }, [accentColor, isHibernating]);
+    return stale ? sepiaMix(base) : base;
+  }, [accentColor, isHibernating, stale]);
 
-  const emissiveIntensity = isHovered ? 0.2 : 0.08;
-  const innerTopColor = isHibernating
-    ? SYSTEM_TILE_COLORS.innerTopHibernating
-    : isHovered
-      ? SYSTEM_TILE_COLORS.innerTopHighlighted
-      : SYSTEM_TILE_COLORS.innerTop;
+  // A deliberately dormant (hibernating) system is expected to be quiet, so it
+  // never reads as overdue — the flicker is only for a planted loop that has
+  // unexpectedly gone silent.
+  const showFlicker = overdue && !needsHuman && !isHibernating;
+
+  // Emissive channel precedence on the top cap: needs-a-human's steady glow
+  // (the explicit human-attention signal) wins over the overdue flicker so it
+  // is never masked; the flicker still shows the loop is stalled via zero
+  // health dots. Otherwise the overdue candle base (animated below), then the
+  // ordinary hover/idle emissive.
+  const topEmissive = needsHuman
+    ? MAP_SIGNAL_COLORS.needsHumanGlow
+    : showFlicker
+      ? MAP_SIGNAL_COLORS.candleEmissive
+      : accentColor;
+  const topEmissiveIntensity = needsHuman
+    ? MAP_SIGNAL_COLORS.needsHumanGlowIntensity
+    : showFlicker
+      ? MAP_SIGNAL_COLORS.candleBaseIntensity
+      : isHovered
+        ? 0.2
+        : 0.08;
+
+  const innerTopColor = tint(
+    isHibernating
+      ? SYSTEM_TILE_COLORS.innerTopHibernating
+      : isHovered
+        ? SYSTEM_TILE_COLORS.innerTopHighlighted
+        : SYSTEM_TILE_COLORS.innerTop,
+  );
   const groupOpacity = isHibernating ? HIBERNATING_OPACITY : 1;
 
   // Health dot positions: centered row below the loop glyph.
@@ -85,6 +131,7 @@ export function SystemHexTile({
   return (
     <group position={[x, TILE_LIFT + (isHovered ? HOVER_LIFT : 0), z]} {...groupProps}>
       <TileChassis
+        topMaterialRef={topMaterialRef}
         side={{
           color: edgeColor,
           roughness: 0.62,
@@ -94,15 +141,17 @@ export function SystemHexTile({
         }}
         top={{
           color: edgeColor,
-          emissive: accentColor,
-          emissiveIntensity,
+          emissive: topEmissive,
+          emissiveIntensity: topEmissiveIntensity,
           roughness: 0.9,
           metalness: 0.03,
           transparent: isHibernating,
           opacity: groupOpacity,
         }}
         bottom={{
-          color: isHibernating ? SYSTEM_TILE_COLORS.bottomHibernating : SYSTEM_TILE_COLORS.bottom,
+          color: tint(
+            isHibernating ? SYSTEM_TILE_COLORS.bottomHibernating : SYSTEM_TILE_COLORS.bottom,
+          ),
           roughness: 0.85,
           metalness: 0.02,
           transparent: isHibernating,
@@ -110,8 +159,8 @@ export function SystemHexTile({
         }}
         innerTop={{
           color: innerTopColor,
-          emissive: accentColor,
-          emissiveIntensity: 0.04,
+          emissive: needsHuman ? MAP_SIGNAL_COLORS.needsHumanGlow : accentColor,
+          emissiveIntensity: needsHuman ? MAP_SIGNAL_COLORS.needsHumanInnerGlowIntensity : 0.04,
           roughness: 0.9,
           metalness: 0.03,
           transparent: isHibernating,
@@ -131,7 +180,9 @@ export function SystemHexTile({
         opacity={groupOpacity}
       />
 
-      {/* Health dots: static three-filled until L1 derives them from journals. */}
+      {/* Health dots (L1): the first `filledDots` are lit; the rest read
+          drained. A hibernating system keeps its uniform dimmed dots — its
+          quiet is deliberate, not a health reading. */}
       {healthDotPositions.map((dotX, index) => (
         <mesh
           key={index}
@@ -142,13 +193,19 @@ export function SystemHexTile({
         >
           <meshStandardMaterial
             color={
-              isHibernating ? SYSTEM_TILE_COLORS.healthDotHibernating : SYSTEM_TILE_COLORS.healthDot
+              isHibernating
+                ? SYSTEM_TILE_COLORS.healthDotHibernating
+                : index < filledDots
+                  ? SYSTEM_TILE_COLORS.healthDot
+                  : MAP_SIGNAL_COLORS.healthDotEmpty
             }
             transparent={isHibernating}
             opacity={isHibernating ? 0.5 : 1}
           />
         </mesh>
       ))}
+
+      {showFlicker ? <CandleFlicker materialRef={topMaterialRef} /> : null}
 
       <TileHoverLabel isHovered={isHovered} text={label} />
     </group>

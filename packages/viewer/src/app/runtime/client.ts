@@ -6,6 +6,7 @@ import {
   type ViewerRuntimeError,
 } from "./errors";
 import {
+  decodeColleagueJournals,
   decodeError,
   decodeInfoHubBoard,
   decodeMapState,
@@ -21,6 +22,7 @@ import {
   decodeRuntimeRavenVisionBankResult,
   decodeRuntimeRavenVisionProjection,
   decodeRuntimeSourceCreateResult,
+  type ColleagueJournals,
   type InfoHubBoard,
   type InfoHubCard,
   type LibraryCardDetail,
@@ -244,6 +246,15 @@ const getInfoHubBoard = Effect.fn("ViewerRuntimeClient.getInfoHubBoard")(functio
   const payload = yield* fetchJson(context, "/api/info-hub/board");
   return yield* decodeInfoHubBoard(payload).pipe(
     Effect.mapError((cause) => decodeError("info hub board", cause)),
+  );
+});
+
+const getColleagueJournals = Effect.fn("ViewerRuntimeClient.getColleagueJournals")(function* (
+  context: ViewerRuntimeRequestContext,
+) {
+  const payload = yield* fetchJson(context, "/api/journals");
+  return yield* decodeColleagueJournals(payload).pipe(
+    Effect.mapError((cause) => decodeError("colleague journals", cause)),
   );
 });
 
@@ -602,6 +613,7 @@ export interface ViewerRuntimeClient {
   disconnectConnection: (
     connectionId: string,
   ) => Effect.Effect<RuntimeConnectionSummary, ViewerRuntimeError>;
+  getColleagueJournals: Effect.Effect<ColleagueJournals, ViewerRuntimeError>;
   getConnections: Effect.Effect<RuntimeConnectionSummary, ViewerRuntimeError>;
   getHealth: Effect.Effect<RuntimeHealth, ViewerRuntimeError>;
   getInfoHubBoard: Effect.Effect<InfoHubBoard, ViewerRuntimeError>;
@@ -659,6 +671,7 @@ export function makeViewerRuntimeClient(
     createNoteSource: (input) => createRuntimeNoteSource(context, input),
     createUrlSource: (input) => createRuntimeUrlSource(context, input),
     disconnectConnection: (connectionId) => disconnectRuntimeConnection(context, connectionId),
+    getColleagueJournals: getColleagueJournals(context),
     getConnections: getRuntimeConnections(context),
     getHealth: getRuntimeHealth(context),
     getInfoHubBoard: getInfoHubBoard(context),

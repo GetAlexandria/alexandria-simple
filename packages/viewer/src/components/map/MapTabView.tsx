@@ -19,7 +19,13 @@
 // three.js) is only loaded through React.lazy in LibraryBrowserApp.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { InfoHubBoard, InfoHubCard, MapEntity, MapState } from "../../app/runtime/schemas";
+import type {
+  ColleagueJournal,
+  InfoHubBoard,
+  InfoHubCard,
+  MapEntity,
+  MapState,
+} from "../../app/runtime/schemas";
 import type { MapStateSaveError } from "../library/hooks/useMapState";
 import {
   withChecklistItemToggled,
@@ -35,6 +41,7 @@ import { buildOwnerViewLayout } from "./layout/owner-view";
 import { mapStateGridRadius } from "./map-grid";
 import { MapEntityForm } from "./MapEntityForm";
 import { MapMessagePanel } from "./MapMessagePanel";
+import { MapLegend } from "./MapLegend";
 import { MapOverlay, type MapOverlayTarget } from "./MapOverlay";
 import { MapScene } from "./MapScene";
 import { OwnerViewLayer } from "./OwnerViewLayer";
@@ -54,6 +61,7 @@ import {
   withEntityRemoved,
   type MapEntityDraft,
 } from "./placement";
+import { deriveTileSignalsByEntity } from "./signals";
 import { type MapViewMode, VIEW_MODES } from "./view-mode";
 import { isWebGLForcedOff, supportsWebGL } from "./webgl";
 
@@ -78,6 +86,13 @@ export type MapTabViewProps = {
   boardSaving: boolean;
   /** The EXISTING board save path (useInfoHubBoard.saveCards) — overlay card writes go here. */
   onSaveCards: (cards: readonly InfoHubCard[]) => Promise<InfoHubBoard | null>;
+  /**
+   * Colleague duty-loop journals (L1): the read-only data path the system
+   * health dots and overdue candle flicker derive from. Null while loading or
+   * unavailable — systems fall back to a neutral health reading (no false
+   * flicker), same graceful-degrade posture as the board behind the piles.
+   */
+  journals: readonly ColleagueJournal[] | null;
 };
 
 /** The entity form's open state: create, or edit a specific entity. */
@@ -283,6 +298,7 @@ export function MapTabView({
   boardSaveError,
   boardSaving,
   onSaveCards,
+  journals,
 }: MapTabViewProps) {
   const [hasWebGLSupport] = useState(
     () => supportsWebGL() && !isWebGLForcedOff(window.location.search),
@@ -323,6 +339,23 @@ export function MapTabView({
     [state, cells, strayCardCounts],
   );
   const ownerLayout = useMemo(() => (state == null ? null : buildOwnerViewLayout(state)), [state]);
+
+  // The four ambient signals (L1, plan §1.4), derived at read time — never
+  // stored. needs-a-human and staleness read the board cards already fetched;
+  // system health and overdue read the colleague journals. `Date.now()` at
+  // derivation is the reference for the day/cadence-window math (fetch-once, so
+  // "now" at load is the read time the plan specifies). Recomputed whenever the
+  // map state, board, or journals change; empty until state loads.
+  const signalsByEntityId = useMemo(
+    () =>
+      deriveTileSignalsByEntity({
+        entities: state?.entities ?? [],
+        cards: board?.cards ?? [],
+        journals,
+        nowMs: Date.now(),
+      }),
+    [state, board, journals],
+  );
 
   // Every stored position occupies its hex — entity tiles and landmark
   // hexes alike (landmark hexes are the reserved ones, plan §1.3).
@@ -780,6 +813,7 @@ export function MapTabView({
         {viewMode === "domain" && domainLayout != null ? (
           <DomainView
             layout={domainLayout}
+            signalsByEntityId={signalsByEntityId}
             onTileClick={(entity) => openOverlay({ kind: "entity", entityId: entity.id })}
             // Undefined during placement: a pile by construction sits on a
             // free (placeable) patch cell, and a clickable sprite would
@@ -796,6 +830,11 @@ export function MapTabView({
           <OwnerViewLayer layout={ownerLayout} />
         ) : null}
       </MapScene>
+
+      {/* Signal legend (L1): small, collapsed by default, present in both view
+          modes — names the four ambient states so the treatments read without
+          any badge or count on a tile. */}
+      <MapLegend />
 
       {overlayTarget != null ? (
         <MapOverlay

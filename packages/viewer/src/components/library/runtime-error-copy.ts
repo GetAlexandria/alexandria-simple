@@ -3,6 +3,7 @@ export type LibraryRuntimeErrorSurface =
   | "catalog"
   | "graph"
   | "info-hub"
+  | "journals"
   | "ledger"
   | "map";
 export type TrackerRuntimeErrorSurface = "run-events" | "studio-runs";
@@ -24,6 +25,7 @@ const SURFACE_LABELS: Readonly<Record<LibraryRuntimeErrorSurface, string>> = {
   catalog: "library catalog",
   graph: "library graph",
   "info-hub": "Info Hub board",
+  journals: "colleague journals",
   ledger: "ledger",
   map: "map state",
 };

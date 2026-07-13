@@ -2077,6 +2077,18 @@ async function fixtureInfoHubBoardWrite(request: Request): Promise<Response> {
   return fixtureInfoHubBoardResponse();
 }
 
+function fixtureColleagueJournalsResponse(): Response {
+  // The L1 journals data path (/api/journals) the Map tab's system-health dots
+  // and overdue flicker read. A recent Raven entry so the fixture duty-loop
+  // reads healthy (full dots, no flicker) regardless of when the suite runs:
+  // signals aren't asserted in the map-tab spec, and a non-overdue baseline
+  // keeps the always-on canvas render loop free of an extra flicker useFrame.
+  const recent = new Date(Date.now() - 5 * 60_000).toISOString().slice(0, 16).replace("T", " ");
+  return Response.json({
+    journals: [{ colleague: "raven", entries: [{ timestamp: recent, title: "duty-loop beat" }] }],
+  });
+}
+
 async function staticResponse(url: URL): Promise<Response> {
   const decodedPath = decodeURIComponent(url.pathname);
   const requestedPath = decodedPath === "/" ? "/index.html" : decodedPath;
@@ -2381,6 +2393,10 @@ Bun.serve({
 
     if (url.pathname === "/api/map/state" && request.method === "POST") {
       return fixtureMapStateWrite(request);
+    }
+
+    if (url.pathname === "/api/journals" && request.method === "GET") {
+      return fixtureColleagueJournalsResponse();
     }
 
     if (url.pathname === "/api/info-hub/board" && request.method === "GET") {
