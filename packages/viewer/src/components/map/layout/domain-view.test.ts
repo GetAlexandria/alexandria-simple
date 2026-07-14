@@ -1,13 +1,17 @@
 import { describe, expect, it } from "bun:test";
-import type { MapState } from "../../../app/runtime/schemas";
+import type { MapDomain, MapState } from "../../../app/runtime/schemas";
 import { DEV_MAP_FIXTURE, DEV_MAP_STRAY_CARD_COUNTS, devMapGridRadius } from "../dev-map-fixture";
 import { createHex, generateHexGrid, getNeighbors, hexDistance, hexToKey } from "../hex";
 import {
+  UNCLAIMED_OWNER_LABEL,
   cellHalf,
   computeDomainViewLayout,
   computeDomainViewLayoutInternal,
+  ownerLabelForDomain,
+  relabelDomainLabelsByOwner,
   roundBorderCoordinate,
   type DomainViewBorderSegment,
+  type DomainViewLabel,
 } from "./domain-view";
 
 const cells = generateHexGrid(devMapGridRadius(DEV_MAP_FIXTURE));
@@ -388,5 +392,92 @@ describe("computeDomainViewLayout domain-pile placement (strays v1)", () => {
     });
     expect(unknownLayout.piles.map((pile) => pile.domainId)).toEqual(["d"]);
     expect(unknownLayout.unplacedPiles).toHaveLength(0);
+  });
+});
+
+describe("ownerLabelForDomain (Owner-view relabel)", () => {
+  const domainWithOwner = (owner: string): MapDomain => ({
+    id: "d",
+    name: "D",
+    half: "work",
+    owner,
+    region: { center: [0, -2], radius: 1 },
+  });
+
+  it("returns the colleague owner's display name", () => {
+    expect(ownerLabelForDomain(domainWithOwner("colleague:raven"))).toBe("Raven");
+  });
+
+  it("returns the human owner's display name", () => {
+    expect(ownerLabelForDomain(domainWithOwner("human:danvers"))).toBe("Danvers");
+  });
+
+  it("treats a bare name as a human owner (hand-written state fallback)", () => {
+    expect(ownerLabelForDomain(domainWithOwner("zed"))).toBe("Zed");
+  });
+
+  it("returns the unclaimed marker for an absent owner", () => {
+    // owner omitted (exactOptionalPropertyTypes: never written undefined).
+    const ownerless: MapDomain = {
+      id: "d",
+      name: "D",
+      half: "work",
+      region: { center: [0, -2], radius: 1 },
+    };
+    expect(ownerLabelForDomain(ownerless)).toBe(UNCLAIMED_OWNER_LABEL);
+  });
+
+  it("returns the unclaimed marker for a malformed owner (never a fake owner)", () => {
+    // A known prefix with an empty id, and an unknown "kind:" prefix.
+    expect(ownerLabelForDomain(domainWithOwner("colleague:"))).toBe(UNCLAIMED_OWNER_LABEL);
+    expect(ownerLabelForDomain(domainWithOwner("robot:zed"))).toBe(UNCLAIMED_OWNER_LABEL);
+  });
+});
+
+describe("relabelDomainLabelsByOwner (Owner-view relabel)", () => {
+  const domainsById = new Map(DEV_MAP_FIXTURE.domains.map((domain) => [domain.id, domain]));
+  const relabeled = relabelDomainLabelsByOwner(layout.labels, domainsById);
+  const textById = new Map(relabeled.map((label) => [label.id, label.text]));
+
+  it("relabels owned domains by their owner name", () => {
+    expect(textById.get("domain:software")).toBe("Raven");
+    expect(textById.get("domain:marketing")).toBe("Damien");
+    expect(textById.get("domain:chores")).toBe("Danvers");
+  });
+
+  it("relabels owner-less domains with the unclaimed marker (never dropped)", () => {
+    expect(textById.get("domain:social")).toBe(UNCLAIMED_OWNER_LABEL);
+    expect(textById.get("domain:outreach")).toBe(UNCLAIMED_OWNER_LABEL);
+  });
+
+  it("passes context and half labels through untouched", () => {
+    for (const label of layout.labels) {
+      if (label.kind === "domain") {
+        continue;
+      }
+      expect(relabeled.find((next) => next.id === label.id)).toEqual(label);
+    }
+  });
+
+  it("passes a domain label through unchanged when its id is not a current domain", () => {
+    const orphan: DomainViewLabel = {
+      id: "domain:ghost",
+      kind: "domain",
+      text: "Ghost",
+      x: 1,
+      z: 2,
+    };
+    expect(relabelDomainLabelsByOwner([orphan], domainsById)).toEqual([orphan]);
+  });
+
+  it("returns a new array without mutating the inputs", () => {
+    const input: DomainViewLabel[] = [
+      { id: "domain:software", kind: "domain", text: "Software", x: 0, z: 0 },
+    ];
+    const result = relabelDomainLabelsByOwner(input, domainsById);
+    expect(result).not.toBe(input);
+    expect(result[0]).not.toBe(input[0]);
+    expect(input[0]!.text).toBe("Software");
+    expect(result[0]!.text).toBe("Raven");
   });
 });
