@@ -54,8 +54,10 @@ function runWrite(state: MapState, workspacePath: string) {
 
 const seedPath = join(import.meta.dir, "../../../..", "docs/alexandria/map/map-state.json");
 
-// The checked-in seed world — four work-half domains (Alexandria,
-// Skillmaker.Studio, New Media, Business Development) under the SocioTechnica
+// The checked-in seed world — five work-half domains (Alexandria,
+// Skillmaker.Studio, New Media, Business Development, and the unowned
+// Operations — its unclaimed nameplate is the admin-colleague demand signal)
+// under the SocioTechnica
 // org, three contexts, the two duty-loop systems plus three projects (Map tab,
 // the Gmail/Calendar connectors, Map Glow Up), and the L2 landmark bench (two
 // colleague landmarks, the campfire, and four locked future-seat plots) —
@@ -77,7 +79,11 @@ describe("validateMapState", () => {
       "skillmaker-studio",
       "new-media",
       "business-development",
+      "operations",
     ]);
+    // Operations is deliberately unowned (demand signal for the future
+    // back-office colleague).
+    expect(state.domains.find((domain) => domain.id === "operations")?.owner).toBeUndefined();
     expect(state.entities.map((entity) => entity.id)).toEqual([
       "sys-raven-duty-loop",
       "prj-map-tab",
