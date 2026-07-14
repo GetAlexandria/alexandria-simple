@@ -659,12 +659,15 @@ function validateEntities(
 
   // `upgrades` referential check (like position→entity checks): deferred
   // until every entity is known, since an upgrade project may be declared
-  // before or after the system it names.
+  // before or after the system it names. Same O(1)-lookup idiom as
+  // validatePositions' entityKindById below, built once rather than
+  // rescanning `entities` per entity.
+  const entityById = new Map(entities.map((entity) => [entity.id, entity]));
   for (const entity of entities) {
     if (entity.upgrades == null) {
       continue;
     }
-    const target = entities.find((candidate) => candidate.id === entity.upgrades);
+    const target = entityById.get(entity.upgrades);
     if (target == null) {
       return validationError(
         `entity ${entity.id} upgrades references unknown entity id ${entity.upgrades}`,
