@@ -364,7 +364,7 @@ test("entity create writes through the revision-guarded save and lands in the Un
   await page.getByLabel("Entity name").fill("Night watch");
   await page.getByLabel("Entity kind").selectOption("system");
   await page.getByLabel("Entity context").selectOption("colleagues");
-  await page.getByLabel("System colleague").fill("raven");
+  await page.getByLabel("System assignee").fill("raven");
   await page.getByLabel("System cadence").fill("45m");
   await page.getByTestId("map-entity-form-submit").click();
 
