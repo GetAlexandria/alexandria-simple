@@ -3,7 +3,7 @@
 Source material, 2026-07-14. Authored by Raven from director rulings
 (Danvers, in conversation, 2026-07-13 → 2026-07-14), with the Lifebuild
 "Projects vs Systems" presentation as primary input
-(`life-build-book` repo, `quartz/static/apps/projects-vs-systems.html`).
+(`docs/alexandria/sources/systems-vs-projects.html`, captured 2026-07-14).
 
 This document is frozen provenance for future library card work. The build
 plan derived from it lives at `docs/alexandria/plans/work-system/plan.md`.

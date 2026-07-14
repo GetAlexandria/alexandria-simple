@@ -5,7 +5,13 @@
 // for useMapState's revision-guarded save; board-card joins return next-card
 // values for the existing Info Hub board save path.
 
-import type { InfoHubCard, MapEntity, MapEntityKind, MapState } from "../../app/runtime/schemas";
+import type {
+  InfoHubCard,
+  MapEntity,
+  MapEntityKind,
+  MapPatternRule,
+  MapState,
+} from "../../app/runtime/schemas";
 import { slugify, uniqueId } from "../id-slug";
 import { isTerminalStatus } from "../library/infohub/boardModel";
 import { createHex, hexToKey, type HexCoord } from "./hex";
@@ -113,6 +119,18 @@ export function withEntityRemoved(state: MapState, entityId: string): MapState {
 // --- Entity create/edit (S2) -----------------------------------------------
 
 /**
+ * One PATTERN-editor row before ids are derived (work-system plan §1): the
+ * rule's title and cadence, and an optional rule-level assignee. `id` is
+ * never typed by the director — entityFromDraft slugs it from `title`,
+ * de-duped within the entity (see patternRulesFromDraft).
+ */
+export type MapEntityPatternRuleDraft = {
+  assignee?: string;
+  every: string;
+  title: string;
+};
+
+/**
  * Everything the entity form captures. `kind` is create-only: an entity's
  * id carries its kind prefix and its stored position carries its
  * entityType, so edits keep the kind fixed rather than rewriting identity.
@@ -120,6 +138,10 @@ export function withEntityRemoved(state: MapState, entityId: string): MapState {
  * `colleague` is the form's bare-id colleague input (systems only); it folds
  * into the entity's `assignee` as `colleague:<id>` in entityFromDraft. The
  * full assignee picker (humans + colleagues, projects too) is a later PR.
+ *
+ * `pattern` (systems only) and `upgrades` (projects only) are the work-system
+ * plan §1 additions — gated by kind the same way cadence/colleague already
+ * are, regardless of which kind is currently selected in the form.
  */
 export type MapEntityDraft = {
   cadence?: string;
@@ -131,6 +153,12 @@ export type MapEntityDraft = {
   kind: MapEntityKind;
   lifecycle: string;
   name: string;
+  /** PATTERN rows (system kind only) — see MapEntityPatternRuleDraft. */
+  pattern?: MapEntityPatternRuleDraft[];
+  /** PURPOSE (system kind only, work-system plan §1): one-sentence description. */
+  purpose?: string;
+  /** The system id this project upgrades (project kind only, work-system plan §1). */
+  upgrades?: string;
 };
 
 /** Entity-id prefix per kind — the seed file's scheme (`prj-map-tab`, `sys-raven-duty-loop`). */
@@ -153,11 +181,50 @@ export function entityIdForDraft(
   return uniqueId(`${ENTITY_ID_PREFIX_BY_KIND[kind]}${slugify(name) || kind}`, existingIds);
 }
 
+/**
+ * PATTERN rows → canonical rules (work-system plan §1): blank rows (no
+ * title or no cadence typed) are dropped rather than rejected — the form
+ * lets a director add a row and fill it in without a premature validation
+ * error. `id` is slugified from `title`, de-duped within the entity via
+ * `uniqueId` (the same scheme entityIdForDraft uses for entity ids); the
+ * director never types one. Returns `undefined` when no row survives, so
+ * `entityFromDraft` can omit `pattern` entirely (absent means none).
+ */
+function patternRulesFromDraft(
+  rows: readonly MapEntityPatternRuleDraft[] | undefined,
+): MapPatternRule[] | undefined {
+  if (rows == null) {
+    return undefined;
+  }
+  const usedIds = new Set<string>();
+  const rules: MapPatternRule[] = [];
+  for (const row of rows) {
+    const title = row.title.trim();
+    const every = row.every.trim();
+    if (title.length === 0 || every.length === 0) {
+      continue;
+    }
+    const assignee = row.assignee?.trim() ?? "";
+    const id = uniqueId(slugify(title) || "rule", usedIds);
+    usedIds.add(id);
+    rules.push({
+      id,
+      title,
+      every,
+      ...(assignee.length > 0 ? { assignee } : {}),
+    });
+  }
+  return rules.length > 0 ? rules : undefined;
+}
+
 /** A canonical entity from a form draft: trimmed, optional fields omitted (never ""). */
 function entityFromDraft(id: string, draft: MapEntityDraft): MapEntity {
   const cadence = draft.cadence?.trim() ?? "";
   const colleague = draft.colleague?.trim() ?? "";
   const contextId = draft.contextId?.trim() ?? "";
+  const purpose = draft.purpose?.trim() ?? "";
+  const upgrades = draft.upgrades?.trim() ?? "";
+  const pattern = draft.kind === "system" ? patternRulesFromDraft(draft.pattern) : undefined;
   return {
     id,
     kind: draft.kind,
@@ -177,6 +244,14 @@ function entityFromDraft(id: string, draft: MapEntityDraft): MapEntity {
       ? { assignee: `${COLLEAGUE_OWNER_PREFIX}${colleague}` }
       : {}),
     ...(draft.kind === "system" && cadence.length > 0 ? { cadence } : {}),
+    // PURPOSE/PATTERN (system kind only) and UPGRADES (project kind only) —
+    // work-system plan §1. Gated by kind regardless of what the draft
+    // carries, matching cadence/colleague above; omitted entirely when
+    // blank/empty, since the ax validator rejects "" and an empty pattern
+    // list alike.
+    ...(draft.kind === "system" && purpose.length > 0 ? { purpose } : {}),
+    ...(pattern != null ? { pattern } : {}),
+    ...(draft.kind === "project" && upgrades.length > 0 ? { upgrades } : {}),
     lifecycle: draft.lifecycle,
   };
 }

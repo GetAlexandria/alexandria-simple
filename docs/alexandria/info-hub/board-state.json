@@ -439,6 +439,79 @@
           "text": "Missed-cadence semantics defined and wired to the existing escalation glow"
         }
       ]
+    },
+    {
+      "id": "wo-ws1-data-model",
+      "type": "task",
+      "status": "done",
+      "domainId": "alexandria",
+      "entityId": "prj-work-system-v1",
+      "priority": 15,
+      "source": "board:director",
+      "created": "2026-07-14",
+      "title": "WS1 — work-system data model: purpose/pattern/upgrades/generatedBy",
+      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md §6 (WS1). Adds purpose/pattern/upgrades on map entities and generatedBy on board cards through the ax validator, viewer schemas, and entity forms — no generation logic, no room UI beyond forms. Status: delivered in this PR.",
+      "terminalAt": "2026-07-14"
+    },
+    {
+      "id": "wo-ws2-materialize-on-read",
+      "type": "task",
+      "status": "open",
+      "domainId": "alexandria",
+      "entityId": "prj-work-system-v1",
+      "priority": 15,
+      "source": "board:director",
+      "created": "2026-07-14",
+      "title": "WS2 — materialize-on-read generation",
+      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md §2. Materialize-on-read card generation in the ax runtime: idempotent by (systemId, ruleId, window), no backfill, gated by system lifecycle (hibernating generates nothing, uprooted never again). Holds on plan ruling #1 (materialize-on-read as the generation mechanism) being confirmed."
+    },
+    {
+      "id": "wo-ws3-system-room-v2",
+      "type": "task",
+      "status": "open",
+      "domainId": "alexandria",
+      "entityId": "prj-work-system-v1",
+      "priority": 15,
+      "source": "board:director",
+      "created": "2026-07-14",
+      "title": "WS3 — system room v2: controls, history, upgrade queue",
+      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md §3. Builds the system room's health/performance view — on-time % and streak per rule, next due, the PATTERN section, THIS WEEK's open generated cards, HISTORY, and the UPGRADE QUEUE of linked upgrade projects."
+    },
+    {
+      "id": "wo-ws4-map-health-wiring",
+      "type": "task",
+      "status": "open",
+      "domainId": "alexandria",
+      "entityId": "prj-work-system-v1",
+      "priority": 15,
+      "source": "board:director",
+      "created": "2026-07-14",
+      "title": "WS4 — map health wiring: pattern-driven dots, overdue escalation",
+      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md §4. Wires system tiles that carry a pattern to read health from generated-card controls; pattern-less colleague systems keep the journal-cadence heuristic, and overdue systems keep the existing flicker + coin glow."
+    },
+    {
+      "id": "wo-ws5-pilot-system",
+      "type": "task",
+      "status": "open",
+      "domainId": "alexandria",
+      "entityId": "prj-work-system-v1",
+      "priority": 15,
+      "source": "board:director",
+      "created": "2026-07-14",
+      "title": "WS5 — pilot system: seed, place, first real cards",
+      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md §5. Seeds one real system with a real pattern as the first generator (recommendation: an operating loop from the director's actual week, over synthetic duty-loop tasks), the director places it on the map, and its first cards materialize."
+    },
+    {
+      "id": "wo-ws6-library-mission",
+      "type": "task",
+      "status": "open",
+      "domainId": "alexandria",
+      "entityId": "prj-work-system-v1",
+      "priority": 15,
+      "source": "board:director",
+      "created": "2026-07-14",
+      "title": "WS6 — library mission: atomize the work-systems source",
+      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md §6 (WS6), source §7. Atomizes docs/alexandria/sources/2026-07-14-work-systems-and-map-first-inversion.md into library cards once the work-systems capability ships — the Work System anatomy, the Work Project, the Work Board, the systems-generate/projects-contain pattern, and multi-level ownership."
     }
   ]
 }

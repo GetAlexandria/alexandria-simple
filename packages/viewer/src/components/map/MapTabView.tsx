@@ -777,6 +777,7 @@ export function MapTabView({
                 contexts={state.contexts}
                 domains={state.domains}
                 entity={editingEntity}
+                entities={state.entities}
                 onCancel={() => setEntityForm(null)}
                 onSubmit={submitEntityForm}
                 saving={saving}

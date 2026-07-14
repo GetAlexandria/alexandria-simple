@@ -7,13 +7,23 @@
 // placement.ts (withEntityCreated / withEntityEdited) and saves it through
 // useMapState's revision-guarded POST. Kind is create-only (see
 // MapEntityDraft); editing shows it fixed.
+//
+// Work-system plan §1 additions (WS1 — data model only, no room UI): systems
+// gain PURPOSE and a minimal PATTERN editor; projects gain an "Upgrades
+// system" picker. Both are gated by kind in placement.ts's entityFromDraft,
+// so switching kind mid-edit can't leak a system-only or project-only field
+// onto the wrong entity.
 
 import { useState } from "react";
 import type { MapContext, MapDomain, MapEntity, MapEntityKind } from "../../app/runtime/schemas";
 import { MAP_FALLBACK_COLORS } from "./colors";
 import { ParchmentActionButton } from "./panel-buttons";
-import { lifecyclesForKind, type MapEntityDraft } from "./placement";
-import { assigneeColleagueId } from "./vocabulary";
+import {
+  lifecyclesForKind,
+  type MapEntityDraft,
+  type MapEntityPatternRuleDraft,
+} from "./placement";
+import { ASSIGNEE_OPTIONS, assigneeColleagueId } from "./vocabulary";
 
 const FIELD_LABEL_CLASS = "flex flex-col gap-0.5 text-[10px] font-semibold uppercase tracking-wide";
 // w-full + min-w-0 keep side-by-side inputs from overflowing the w-64 panel
@@ -21,12 +31,20 @@ const FIELD_LABEL_CLASS = "flex flex-col gap-0.5 text-[10px] font-semibold upper
 const INPUT_CLASS =
   "w-full min-w-0 rounded border px-2 py-1 text-[11px] font-normal normal-case tracking-normal";
 
+/** An empty PATTERN row — what "Add rule" appends. */
+const EMPTY_PATTERN_ROW: MapEntityPatternRuleDraft = { title: "", every: "", assignee: "" };
+
 type MapEntityFormProps = {
   contexts: readonly MapContext[];
   /** Required domain picker's options — the shared Map/Board spine every entity carries. */
   domains: readonly MapDomain[];
   /** Null → create form; an entity → edit form (kind fixed). */
   entity: MapEntity | null;
+  /**
+   * The map's full entity set — sourced for the "Upgrades system" picker
+   * (project kind: every system entity on the map, work-system plan §1).
+   */
+  entities: readonly MapEntity[];
   /**
    * Create-only initial kind (board-project-rooms: the Board's separate "New
    * project" / "New system" entry points preset this rather than always
@@ -44,6 +62,7 @@ export function MapEntityForm({
   contexts,
   domains,
   entity,
+  entities,
   defaultKind,
   onCancel,
   onSubmit,
@@ -64,6 +83,25 @@ export function MapEntityForm({
   // Prefill the bare colleague id from the entity's assignee when it is
   // colleague-kind (the fold's read side); a human-assigned system shows blank.
   const [colleague, setColleague] = useState(assigneeColleagueId(entity?.assignee) ?? "");
+  // System-only (work-system plan §1): PURPOSE and the PATTERN rows. A rule
+  // starts with an empty row on create so the panel isn't a bare "Add rule"
+  // button; editing prefills one row per existing rule.
+  const [purpose, setPurpose] = useState(entity?.purpose ?? "");
+  const [patternRows, setPatternRows] = useState<MapEntityPatternRuleDraft[]>(
+    entity?.pattern?.map((rule) => ({
+      title: rule.title,
+      every: rule.every,
+      assignee: rule.assignee ?? "",
+    })) ?? [],
+  );
+  // Project-only (work-system plan §1): the system this project upgrades.
+  const [upgrades, setUpgrades] = useState(entity?.upgrades ?? "");
+
+  const systemOptions = entities.filter((candidate) => candidate.kind === "system");
+
+  function updatePatternRow(index: number, next: Partial<MapEntityPatternRuleDraft>) {
+    setPatternRows((rows) => rows.map((row, i) => (i === index ? { ...row, ...next } : row)));
+  }
 
   const nameError = name.trim().length === 0 ? "Name is required." : null;
   const domainError = domainId.length === 0 ? "Pick a domain." : null;
@@ -85,7 +123,18 @@ export function MapEntityForm({
         if (formError != null || saving) {
           return;
         }
-        void onSubmit({ cadence, colleague, contextId, domainId, kind, lifecycle, name });
+        void onSubmit({
+          cadence,
+          colleague,
+          contextId,
+          domainId,
+          kind,
+          lifecycle,
+          name,
+          pattern: patternRows,
+          purpose,
+          upgrades,
+        });
       }}
     >
       <p className="text-xs font-semibold" style={{ color: MAP_FALLBACK_COLORS.heading }}>
@@ -199,30 +248,121 @@ export function MapEntityForm({
       </div>
 
       {kind === "system" ? (
-        <div className="flex gap-2">
-          <label className={`${FIELD_LABEL_CLASS} flex-1`} style={labelStyle}>
-            Colleague
+        <>
+          <div className="flex gap-2">
+            {/* Entity-level assignee: labeled "Owner" here (work-system plan
+                §1, ruling #4 — the field stays `assignee` everywhere; only
+                the label changes for a system's owner). */}
+            <label className={`${FIELD_LABEL_CLASS} flex-1`} style={labelStyle}>
+              Owner
+              <input
+                aria-label="System owner"
+                className={INPUT_CLASS}
+                onChange={(event) => setColleague(event.target.value)}
+                placeholder="raven, damien…"
+                style={inputStyle}
+                value={colleague}
+              />
+            </label>
+            <label className={`${FIELD_LABEL_CLASS} flex-1`} style={labelStyle}>
+              Cadence
+              <input
+                aria-label="System cadence"
+                className={INPUT_CLASS}
+                onChange={(event) => setCadence(event.target.value)}
+                placeholder="30m, weekly…"
+                style={inputStyle}
+                value={cadence}
+              />
+            </label>
+          </div>
+
+          <label className={FIELD_LABEL_CLASS} style={labelStyle}>
+            Purpose (optional)
             <input
-              aria-label="System colleague"
+              aria-label="System purpose"
               className={INPUT_CLASS}
-              onChange={(event) => setColleague(event.target.value)}
-              placeholder="raven, damien…"
+              onChange={(event) => setPurpose(event.target.value)}
+              placeholder="What does this system maintain?"
               style={inputStyle}
-              value={colleague}
+              value={purpose}
             />
           </label>
-          <label className={`${FIELD_LABEL_CLASS} flex-1`} style={labelStyle}>
-            Cadence
-            <input
-              aria-label="System cadence"
-              className={INPUT_CLASS}
-              onChange={(event) => setCadence(event.target.value)}
-              placeholder="30m, weekly…"
-              style={inputStyle}
-              value={cadence}
+
+          <div className="flex flex-col gap-1">
+            <p className={FIELD_LABEL_CLASS} style={labelStyle}>
+              Pattern (optional)
+            </p>
+            {patternRows.map((row, index) => (
+              <div
+                className="flex flex-col gap-1 rounded border p-1.5"
+                key={index}
+                style={inputStyle}
+              >
+                <input
+                  aria-label={`Pattern rule ${index + 1} title`}
+                  className={INPUT_CLASS}
+                  onChange={(event) => updatePatternRow(index, { title: event.target.value })}
+                  placeholder="Rule title"
+                  style={inputStyle}
+                  value={row.title}
+                />
+                <div className="flex gap-1">
+                  <input
+                    aria-label={`Pattern rule ${index + 1} every`}
+                    className={INPUT_CLASS}
+                    onChange={(event) => updatePatternRow(index, { every: event.target.value })}
+                    placeholder="6h / 1d / 1w"
+                    style={inputStyle}
+                    value={row.every}
+                  />
+                  <select
+                    aria-label={`Pattern rule ${index + 1} assignee`}
+                    className={INPUT_CLASS}
+                    onChange={(event) => updatePatternRow(index, { assignee: event.target.value })}
+                    style={inputStyle}
+                    value={row.assignee ?? ""}
+                  >
+                    <option value="">System owner</option>
+                    {ASSIGNEE_OPTIONS.map((option) => (
+                      <option key={option.ref} value={option.ref}>
+                        {option.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <ParchmentActionButton
+                  label="Remove rule"
+                  onClick={() => setPatternRows((rows) => rows.filter((_, i) => i !== index))}
+                />
+              </div>
+            ))}
+            <ParchmentActionButton
+              label="Add rule"
+              onClick={() => setPatternRows((rows) => [...rows, { ...EMPTY_PATTERN_ROW }])}
             />
-          </label>
-        </div>
+          </div>
+        </>
+      ) : null}
+
+      {kind === "project" ? (
+        <label className={FIELD_LABEL_CLASS} style={labelStyle}>
+          Upgrades system (optional)
+          <select
+            aria-label="Project upgrades system"
+            className={INPUT_CLASS}
+            onChange={(event) => setUpgrades(event.target.value)}
+            style={inputStyle}
+            value={upgrades}
+          >
+            <option value="">None</option>
+            {systemOptions.map((system) => (
+              <option key={system.id} value={system.id}>
+                {system.name}
+              </option>
+            ))}
+          </select>
+        </label>
       ) : null}
 
       <div className="flex items-center gap-2">

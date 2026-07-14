@@ -788,6 +788,7 @@ export function InfoHubBoardView({
               defaultKind={entityFormKind}
               domains={mapDomains}
               entity={null}
+              entities={mapEntities}
               key={entityFormKind}
               onCancel={() => {
                 setEntityFormKind(null);

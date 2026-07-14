@@ -203,6 +203,94 @@ describe("validateInfoHubCards", () => {
     expect((result as InfoHubBoardValidationError).message).toContain("missing fields");
   });
 
+  test("accepts an optional generatedBy provenance object", () => {
+    const result = validateInfoHubCards([
+      baseCard({
+        generatedBy: {
+          systemId: "sys-raven-duty-loop",
+          ruleId: "check-email",
+          window: "2026-07-14T00:00:00.000Z",
+        },
+      }),
+    ]);
+    expect(result).not.toBeInstanceOf(InfoHubBoardValidationError);
+    const card = (result as InfoHubCard[])[0];
+    expect(card?.generatedBy).toEqual({
+      systemId: "sys-raven-duty-loop",
+      ruleId: "check-email",
+      window: "2026-07-14T00:00:00.000Z",
+    });
+  });
+
+  test("keeps cards without generatedBy valid (unassigned = no field)", () => {
+    const result = validateInfoHubCards([baseCard()]);
+    expect((result as InfoHubCard[])[0]?.generatedBy).toBeUndefined();
+  });
+
+  test("rejects generatedBy with a missing or empty field", () => {
+    const missingRuleId = validateInfoHubCards([
+      baseCard({
+        generatedBy: {
+          systemId: "sys-raven-duty-loop",
+          window: "2026-07-14T00:00:00.000Z",
+        } as never,
+      }),
+    ]);
+    expect(missingRuleId).toBeInstanceOf(InfoHubBoardValidationError);
+    expect((missingRuleId as InfoHubBoardValidationError).message).toContain(
+      "generatedBy ruleId must be a non-empty string",
+    );
+
+    const emptySystemId = validateInfoHubCards([
+      baseCard({
+        generatedBy: { systemId: "", ruleId: "check-email", window: "2026-07-14T00:00:00.000Z" },
+      }),
+    ]);
+    expect(emptySystemId).toBeInstanceOf(InfoHubBoardValidationError);
+    expect((emptySystemId as InfoHubBoardValidationError).message).toContain(
+      "generatedBy systemId must be a non-empty string",
+    );
+  });
+
+  test("rejects generatedBy with an unparseable window", () => {
+    const result = validateInfoHubCards([
+      baseCard({
+        generatedBy: {
+          systemId: "sys-raven-duty-loop",
+          ruleId: "check-email",
+          window: "not-a-date",
+        },
+      }),
+    ]);
+    expect(result).toBeInstanceOf(InfoHubBoardValidationError);
+    expect((result as InfoHubBoardValidationError).message).toContain(
+      "generatedBy window must be an ISO date-time",
+    );
+  });
+
+  test("rejects generatedBy with unknown fields", () => {
+    const result = validateInfoHubCards([
+      baseCard({
+        generatedBy: {
+          systemId: "sys-raven-duty-loop",
+          ruleId: "check-email",
+          window: "2026-07-14T00:00:00.000Z",
+          extra: true,
+        } as never,
+      }),
+    ]);
+    expect(result).toBeInstanceOf(InfoHubBoardValidationError);
+    expect((result as InfoHubBoardValidationError).message).toContain("unknown fields");
+  });
+
+  test("rejects a non-object generatedBy", () => {
+    const result = validateInfoHubCards([baseCard({ generatedBy: "nope" as never })]);
+    expect(result).toBeInstanceOf(InfoHubBoardValidationError);
+    expect((result as InfoHubBoardValidationError).message).toContain(
+      "generatedBy must be an object",
+    );
+  });
+
   test("rejects checklist items with unknown fields", () => {
     const result = validateInfoHubCards([
       baseCard({ checklist: [{ done: false, text: "x", extra: true } as never] }),

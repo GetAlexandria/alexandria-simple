@@ -338,6 +338,198 @@ describe("validateMapState", () => {
     expect((colleagueResult as MapStateValidationError).message).toContain("unknown fields");
   });
 
+  test("accepts purpose on any kind (systems mainly, harmless on a project)", () => {
+    const onSystem = baseState();
+    ((onSystem.entities as Record<string, unknown>[])[0] as Record<string, unknown>).purpose =
+      "Keep the duty loop honest.";
+    const systemResult = validateMapState(onSystem);
+    expect(systemResult).not.toBeInstanceOf(MapStateValidationError);
+    expect(
+      (systemResult as MapState).entities.find((entity) => entity.id === "sys-raven-duty-loop")
+        ?.purpose,
+    ).toBe("Keep the duty loop honest.");
+
+    const onProject = baseState();
+    ((onProject.entities as Record<string, unknown>[])[1] as Record<string, unknown>).purpose =
+      "Ship the map tab.";
+    expect(validateMapState(onProject)).not.toBeInstanceOf(MapStateValidationError);
+  });
+
+  test("rejects an empty-string purpose", () => {
+    const state = baseState();
+    ((state.entities as Record<string, unknown>[])[0] as Record<string, unknown>).purpose = "";
+    const result = validateMapState(state);
+    expect(result).toBeInstanceOf(MapStateValidationError);
+    expect((result as MapStateValidationError).message).toContain(
+      "purpose must be a non-empty string",
+    );
+  });
+
+  test("accepts a system with one or more valid pattern rules", () => {
+    const state = baseState();
+    ((state.entities as Record<string, unknown>[])[0] as Record<string, unknown>).pattern = [
+      {
+        id: "check-email",
+        title: "Check and respond to customer emails",
+        every: "6h",
+        assignee: "colleague:raven",
+        detail: "optional card body text",
+      },
+      { id: "weekly-review", title: "Weekly review", every: "1w" },
+    ];
+    const result = validateMapState(state);
+    expect(result).not.toBeInstanceOf(MapStateValidationError);
+    const entity = (result as MapState).entities.find(
+      (candidate) => candidate.id === "sys-raven-duty-loop",
+    );
+    expect(entity?.pattern).toEqual([
+      {
+        id: "check-email",
+        title: "Check and respond to customer emails",
+        every: "6h",
+        assignee: "colleague:raven",
+        detail: "optional card body text",
+      },
+      { id: "weekly-review", title: "Weekly review", every: "1w" },
+    ]);
+  });
+
+  test("rejects pattern on a project entity (system-only, like cadence)", () => {
+    const state = baseState();
+    ((state.entities as Record<string, unknown>[])[1] as Record<string, unknown>).pattern = [
+      { id: "r1", title: "Rule", every: "1d" },
+    ];
+    const result = validateMapState(state);
+    expect(result).toBeInstanceOf(MapStateValidationError);
+    expect((result as MapStateValidationError).message).toContain(
+      "pattern is only allowed on system entities",
+    );
+  });
+
+  test("rejects an empty pattern array (absent means none, not an empty list)", () => {
+    const state = baseState();
+    ((state.entities as Record<string, unknown>[])[0] as Record<string, unknown>).pattern = [];
+    const result = validateMapState(state);
+    expect(result).toBeInstanceOf(MapStateValidationError);
+    expect((result as MapStateValidationError).message).toContain(
+      "pattern must not be an empty list",
+    );
+  });
+
+  test("rejects a pattern rule with a malformed every duration", () => {
+    const state = baseState();
+    ((state.entities as Record<string, unknown>[])[0] as Record<string, unknown>).pattern = [
+      { id: "r1", title: "Rule", every: "6 hours" },
+    ];
+    const result = validateMapState(state);
+    expect(result).toBeInstanceOf(MapStateValidationError);
+    expect((result as MapStateValidationError).message).toContain("every must be a duration");
+
+    const monthly = baseState();
+    ((monthly.entities as Record<string, unknown>[])[0] as Record<string, unknown>).pattern = [
+      { id: "r1", title: "Rule", every: "1m" },
+    ];
+    expect(validateMapState(monthly)).toBeInstanceOf(MapStateValidationError);
+  });
+
+  test("rejects duplicate pattern rule ids within one entity", () => {
+    const state = baseState();
+    ((state.entities as Record<string, unknown>[])[0] as Record<string, unknown>).pattern = [
+      { id: "r1", title: "Rule one", every: "6h" },
+      { id: "r1", title: "Rule two", every: "1d" },
+    ];
+    const result = validateMapState(state);
+    expect(result).toBeInstanceOf(MapStateValidationError);
+    expect((result as MapStateValidationError).message).toContain("duplicate pattern rule id");
+  });
+
+  test("rejects unknown fields on a pattern rule", () => {
+    const state = baseState();
+    ((state.entities as Record<string, unknown>[])[0] as Record<string, unknown>).pattern = [
+      { id: "r1", title: "Rule", every: "6h", kind: "time" },
+    ];
+    const result = validateMapState(state);
+    expect(result).toBeInstanceOf(MapStateValidationError);
+    expect((result as MapStateValidationError).message).toContain("unknown fields");
+  });
+
+  test("rejects a pattern rule missing a required field", () => {
+    const state = baseState();
+    ((state.entities as Record<string, unknown>[])[0] as Record<string, unknown>).pattern = [
+      { id: "r1", title: "Rule" },
+    ];
+    const result = validateMapState(state);
+    expect(result).toBeInstanceOf(MapStateValidationError);
+    expect((result as MapStateValidationError).message).toContain("missing fields");
+  });
+
+  test("rejects an empty-string assignee or detail on a pattern rule", () => {
+    const emptyAssignee = baseState();
+    ((emptyAssignee.entities as Record<string, unknown>[])[0] as Record<string, unknown>).pattern =
+      [{ id: "r1", title: "Rule", every: "6h", assignee: "" }];
+    expect(validateMapState(emptyAssignee)).toBeInstanceOf(MapStateValidationError);
+
+    const emptyDetail = baseState();
+    ((emptyDetail.entities as Record<string, unknown>[])[0] as Record<string, unknown>).pattern = [
+      { id: "r1", title: "Rule", every: "6h", detail: "" },
+    ];
+    expect(validateMapState(emptyDetail)).toBeInstanceOf(MapStateValidationError);
+  });
+
+  test("accepts upgrades on a project referencing an existing system entity", () => {
+    const state = baseState();
+    ((state.entities as Record<string, unknown>[])[1] as Record<string, unknown>).upgrades =
+      "sys-raven-duty-loop";
+    const result = validateMapState(state);
+    expect(result).not.toBeInstanceOf(MapStateValidationError);
+    expect(
+      (result as MapState).entities.find((entity) => entity.id === "prj-map-tab")?.upgrades,
+    ).toBe("sys-raven-duty-loop");
+  });
+
+  test("rejects upgrades on a system entity (project-only)", () => {
+    const state = baseState();
+    ((state.entities as Record<string, unknown>[])[0] as Record<string, unknown>).upgrades =
+      "sys-damien-duty-loop";
+    const result = validateMapState(state);
+    expect(result).toBeInstanceOf(MapStateValidationError);
+    expect((result as MapStateValidationError).message).toContain(
+      "upgrades is only allowed on project entities",
+    );
+  });
+
+  test("rejects an empty-string upgrades", () => {
+    const state = baseState();
+    ((state.entities as Record<string, unknown>[])[1] as Record<string, unknown>).upgrades = "";
+    const result = validateMapState(state);
+    expect(result).toBeInstanceOf(MapStateValidationError);
+    expect((result as MapStateValidationError).message).toContain(
+      "upgrades must be a non-empty string",
+    );
+  });
+
+  test("rejects upgrades referencing an unknown entity id", () => {
+    const state = baseState();
+    ((state.entities as Record<string, unknown>[])[1] as Record<string, unknown>).upgrades =
+      "sys-nonexistent";
+    const result = validateMapState(state);
+    expect(result).toBeInstanceOf(MapStateValidationError);
+    expect((result as MapStateValidationError).message).toContain(
+      "upgrades references unknown entity id",
+    );
+  });
+
+  test("rejects upgrades referencing a non-system entity", () => {
+    const state = baseState();
+    ((state.entities as Record<string, unknown>[])[1] as Record<string, unknown>).upgrades =
+      "prj-map-glow-up";
+    const result = validateMapState(state);
+    expect(result).toBeInstanceOf(MapStateValidationError);
+    expect((result as MapStateValidationError).message).toContain(
+      "upgrades must reference a system entity",
+    );
+  });
+
   test("rejects two positions on the same hex (one entity per hex)", () => {
     const state = baseState();
     // The seed's first position's hex, claimed again by a different entity.
