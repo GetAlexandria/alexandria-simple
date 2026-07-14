@@ -2247,6 +2247,78 @@
     margin: 0;
   }
 
+  .info-hub-inline-link {
+    background: transparent;
+    border: 0;
+    color: var(--viewer-canvas-amber);
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .info-hub-inline-link:hover {
+    color: var(--viewer-canvas-amber-glow);
+  }
+
+  .info-hub-entity-strip {
+    margin-top: 16px;
+  }
+
+  .info-hub-entity-strip-header {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: space-between;
+  }
+
+  .info-hub-entity-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+  }
+
+  .info-hub-entity-chip {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--viewer-canvas-rule);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--viewer-font-ui);
+    gap: 3px;
+    min-width: 168px;
+    padding: 8px 10px;
+    text-align: left;
+  }
+
+  .info-hub-entity-chip:hover {
+    border-color: var(--viewer-canvas-amber-dim);
+  }
+
+  .info-hub-entity-chip-name {
+    color: var(--viewer-canvas-fg-bright);
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  .info-hub-entity-chip-meta {
+    color: var(--viewer-canvas-fg-dim);
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .info-hub-entity-chip-counts {
+    color: var(--viewer-canvas-fg-dimmer);
+    font-size: 10.5px;
+  }
+
   .info-hub-filter-bar {
     background: rgba(20, 14, 8, 0.32);
     border: 1px solid var(--viewer-canvas-panel-bd);

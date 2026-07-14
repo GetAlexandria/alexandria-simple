@@ -16,6 +16,8 @@ import {
   FIXED_LIBRARY_MODE_IDS,
   fixedLibraryRoute,
   folderKeyFromCard,
+  infoEntityIdFromRoute,
+  infoRouteWithEntityId,
   isLegacyLibraryPath,
   libraryCatalogRoute,
   libraryConstellationRoute,
@@ -632,6 +634,49 @@ describe("Builder bundle selection rides ?bundle= (issue #613)", () => {
   test("withBuilderBundle is a no-op on a non-builder route", () => {
     const route = libraryIndexRoute();
     expect(withBuilderBundle(route, "second-bundle")).toBe(route);
+  });
+});
+
+describe("the Info Hub board's ?entity= room deep link (board-project-rooms)", () => {
+  test("infoEntityIdFromRoute reads the entity param on the info surface, null when absent", () => {
+    expect(infoEntityIdFromRoute(surfaceRoute("info"))).toBeNull();
+    expect(infoEntityIdFromRoute(parseViewerRoute("/info", "?entity=prj-map-tab"))).toBe(
+      "prj-map-tab",
+    );
+  });
+
+  test("infoEntityIdFromRoute is null on a non-info surface even if it carries an entity param", () => {
+    expect(infoEntityIdFromRoute(parseViewerRoute("/map", "?entity=prj-map-tab"))).toBeNull();
+  });
+
+  test("infoRouteWithEntityId sets the entity param and preserves other params", () => {
+    const route = parseViewerRoute("/info", "?status=needs-a-human");
+    const withEntity = infoRouteWithEntityId(route, "prj-map-tab");
+    const url = new URL(`https://viewer.test${serializeViewerRoute(withEntity)}`);
+
+    expect(url.pathname).toBe("/info");
+    expect(url.searchParams.get("entity")).toBe("prj-map-tab");
+    expect(url.searchParams.get("status")).toBe("needs-a-human");
+  });
+
+  test("infoRouteWithEntityId(route, null) clears the entity param", () => {
+    const route = parseViewerRoute("/info", "?entity=prj-map-tab&status=open");
+    const cleared = infoRouteWithEntityId(route, null);
+    const url = new URL(`https://viewer.test${serializeViewerRoute(cleared)}`);
+
+    expect(url.searchParams.has("entity")).toBe(false);
+    expect(url.searchParams.get("status")).toBe("open");
+  });
+
+  test("infoRouteWithEntityId always returns an info route, even from a different surface", () => {
+    const withEntity = infoRouteWithEntityId(surfaceRoute("map"), "prj-map-tab");
+    expect(withEntity.surface).toBe("info");
+    expect(serializeViewerRoute(withEntity)).toBe("/info?entity=prj-map-tab");
+  });
+
+  test("a ?entity= deep link round-trips through parse/serialize", () => {
+    const route = parseViewerRoute("/info", "?entity=prj-map-tab");
+    expect(serializeViewerRoute(route)).toBe("/info?entity=prj-map-tab");
   });
 });
 

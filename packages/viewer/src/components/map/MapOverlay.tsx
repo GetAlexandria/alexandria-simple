@@ -13,6 +13,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { InfoHubCard, MapState } from "../../app/runtime/schemas";
 import { sortCardsByPriority, type WorkOrderStatus } from "../library/infohub/boardModel";
+import { EntityRoomBody } from "../library/infohub/EntityRoomBody";
 import {
   buildDomainNameById,
   WorkOrderCardFace,
@@ -22,7 +23,7 @@ import {
 import { MAP_FALLBACK_COLORS } from "./colors";
 import { MapScrimPanel } from "./MapScrimPanel";
 import { ParchmentActionButton } from "./panel-buttons";
-import { cardsJoinedToEntity, entityKindLabel, looseCardsForDomain } from "./placement";
+import { entityKindLabel, looseCardsForDomain } from "./placement";
 
 export type MapOverlayTarget =
   | { kind: "entity"; entityId: string }
@@ -87,19 +88,20 @@ export function MapOverlay({
     target.kind === "pile" ? (domainNameById.get(target.domainId) ?? target.domainId) : null;
   const readOnly = entity != null && entity.kind === "project" && entity.lifecycle === "completed";
 
-  const overlayCards = useMemo(() => {
-    if (cards == null) {
+  // Pile cards only — the entity case's card list/detail now lives inside
+  // EntityRoomBody (the same joined-card grid the board's entity room
+  // renders), keyed on the controlled detailCardId below.
+  const pileCards = useMemo(() => {
+    if (cards == null || target.kind !== "pile") {
       return [];
     }
-    return sortCardsByPriority(
-      target.kind === "entity"
-        ? cardsJoinedToEntity(cards, target.entityId)
-        : looseCardsForDomain(cards, target.domainId),
-    );
+    return sortCardsByPriority(looseCardsForDomain(cards, target.domainId));
   }, [cards, target]);
 
   const detailCard =
-    detailCardId == null ? null : (overlayCards.find((card) => card.id === detailCardId) ?? null);
+    target.kind !== "pile" || detailCardId == null
+      ? null
+      : (pileCards.find((card) => card.id === detailCardId) ?? null);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -168,7 +170,10 @@ export function MapOverlay({
         </div>
       }
       afterPanel={
-        detailCard != null ? (
+        // Pile cards only — the entity case's detail modal now renders
+        // inside EntityRoomBody's own children (the panel's own click
+        // handler already stops propagation there; see its module comment).
+        target.kind === "pile" && detailCard != null ? (
           // The modal's fixed backdrop sits inside the overlay's click-away
           // root; stop propagation so closing the card detail (or clicking
           // inside it) never also closes the overlay underneath.
@@ -184,57 +189,73 @@ export function MapOverlay({
         ) : null
       }
     >
-      {boardSaveError != null ? (
-        // Same failure the board surface banners; a status/checklist
-        // click from the overlay must not fail silently (PR #20 gate).
-        <p
-          className="mb-3 text-xs font-semibold"
-          data-testid="map-overlay-save-error"
-          role="alert"
-          style={{ color: MAP_FALLBACK_COLORS.heading }}
-        >
-          The card change didn&apos;t save:{" "}
-          <span className="font-normal" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
-            {boardSaveError}
-          </span>
-        </p>
-      ) : null}
-      {cards == null ? (
-        <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
-          {boardError ?? "Loading the Info Hub board…"}
-        </p>
-      ) : overlayCards.length === 0 ? (
-        <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
-          {target.kind === "entity"
-            ? "No board cards are joined to this tile yet — join one from the Info Hub card form."
-            : "No loose cards left in this domain."}
-        </p>
+      {target.kind === "entity" ? (
+        <EntityRoomBody
+          boardError={boardError}
+          boardSaveError={boardSaveError}
+          boardSaving={boardSaving}
+          cards={cards}
+          detailCardId={detailCardId}
+          entity={entity}
+          entityId={target.entityId}
+          mapState={state}
+          onCloseCard={() => setDetailCardId(null)}
+          onMoveStatus={onMoveStatus}
+          onOpenCard={(cardId) => setDetailCardId(cardId)}
+          onToggleChecklistItem={onToggleChecklistItem}
+          testIdPrefix="map-overlay"
+        />
       ) : (
-        <div className="flex flex-col gap-3" data-testid="map-overlay-cards">
-          {overlayCards.map((card) => (
-            <article
-              className="info-hub-card"
-              data-testid={`map-overlay-card-${card.id}`}
-              data-type={card.type}
-              key={card.id}
+        <>
+          {boardSaveError != null ? (
+            // Same failure the board surface banners; a status/checklist
+            // click from the overlay must not fail silently (PR #20 gate).
+            <p
+              className="mb-3 text-xs font-semibold"
+              data-testid="map-overlay-save-error"
+              role="alert"
+              style={{ color: MAP_FALLBACK_COLORS.heading }}
             >
-              <WorkOrderCardFace
-                card={card}
-                domainNameById={domainNameById}
-                onOpen={() => setDetailCardId(card.id)}
-              />
-              {readOnly ? null : (
-                <div className="info-hub-card-actions">
-                  <WorkOrderStatusActions
+              The card change didn&apos;t save:{" "}
+              <span className="font-normal" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+                {boardSaveError}
+              </span>
+            </p>
+          ) : null}
+          {cards == null ? (
+            <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+              {boardError ?? "Loading the Info Hub board…"}
+            </p>
+          ) : pileCards.length === 0 ? (
+            <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+              No loose cards left in this domain.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3" data-testid="map-overlay-cards">
+              {pileCards.map((card) => (
+                <article
+                  className="info-hub-card"
+                  data-testid={`map-overlay-card-${card.id}`}
+                  data-type={card.type}
+                  key={card.id}
+                >
+                  <WorkOrderCardFace
                     card={card}
-                    onMoveStatus={onMoveStatus}
-                    saving={boardSaving}
+                    domainNameById={domainNameById}
+                    onOpen={() => setDetailCardId(card.id)}
                   />
-                </div>
-              )}
-            </article>
-          ))}
-        </div>
+                  <div className="info-hub-card-actions">
+                    <WorkOrderStatusActions
+                      card={card}
+                      onMoveStatus={onMoveStatus}
+                      saving={boardSaving}
+                    />
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </MapScrimPanel>
   );

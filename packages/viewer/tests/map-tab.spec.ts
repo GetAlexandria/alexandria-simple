@@ -498,3 +498,57 @@ test("board form joins a card to a context/entity; promote creates an unplaced p
   await expect(page.getByTestId("map-placement-panel")).toBeVisible();
   await expect(page.getByRole("button", { name: /Loose viewer chore/ })).toBeVisible();
 });
+
+test("promote's PendingPromotion retry guard: a failed join parks the created entity and retry never mints a duplicate", async ({
+  page,
+}) => {
+  await page.request.post("/__fixture/reset-map-board");
+  await page.goto("/info");
+  await expect(page.getByTestId("info-hub-board")).toBeVisible();
+
+  const entityCountBefore = (
+    (await (await page.request.get("/api/map/state")).json()) as { entities: unknown[] }
+  ).entities.length;
+
+  // Force the NEXT board write (the join half of promote) to fail — the map
+  // half (entity create) still lands.
+  await page.request.post("/__fixture/fail-next-board-write");
+
+  await page.getByTestId("work-order-card-wo-stray-two").locator(".info-hub-card-face").click();
+  await expect(page.getByTestId("promote-card-section")).toBeVisible();
+  await expect(page.getByLabel("Promote target context")).toHaveValue("viewer");
+  await page.getByTestId("promote-card-button").click();
+
+  // Join failed: the entity was created on the map, but the card isn't
+  // joined yet — the error names the join specifically, and the button
+  // becomes "Retry join" (never re-offers "Promote to project", which would
+  // create a second entity).
+  await expect(page.getByTestId("promote-card-error")).toContainText("joining the card failed");
+  await expect(page.getByTestId("promote-card-button")).toHaveText("Retry join");
+
+  const stateAfterFailedJoin = (await (await page.request.get("/api/map/state")).json()) as {
+    entities: { id: string; kind: string }[];
+  };
+  expect(stateAfterFailedJoin.entities.length).toBe(entityCountBefore + 1);
+  // withEntityCreated appends — the newly-parked entity is the last one.
+  const parkedEntity = stateAfterFailedJoin.entities[stateAfterFailedJoin.entities.length - 1];
+
+  // Retry: the board write succeeds this time (no failure flag armed) — only
+  // the join is re-attempted, no second map write.
+  await page.getByTestId("promote-card-button").click();
+  await expect(page.getByTestId("card-join-note")).toContainText("Another loose viewer chore");
+
+  const stateAfterRetry = (await (await page.request.get("/api/map/state")).json()) as {
+    entities: { id: string }[];
+  };
+  // Still exactly one new entity — the retry joined the card, it did not
+  // create a duplicate project.
+  expect(stateAfterRetry.entities.length).toBe(entityCountBefore + 1);
+
+  const board = (await (await page.request.get("/api/info-hub/board")).json()) as {
+    cards: { id: string; entityId?: string }[];
+  };
+  const joinedCard = board.cards.find((card) => card.id === "wo-stray-two");
+  expect(joinedCard?.entityId).toBeDefined();
+  expect(parkedEntity?.id).toBe(joinedCard?.entityId);
+});

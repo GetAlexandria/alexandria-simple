@@ -557,6 +557,35 @@ export function librarySectionDefaultRoute(section: LibrarySection): ViewerRoute
   return libraryRouteForMode(defaultModeForSection(section), new URLSearchParams());
 }
 
+// The Info Hub board's entity-room deep link (board-project-rooms):
+// `?entity=<id>` on the "info" surface opens that entity's room on load,
+// mirroring the Map tab's colleague overlay `?colleague=` jump and the
+// board's own `?status=` lane seed. Unlike `?status=` (read once inline in
+// LibraryBrowserApp with no serializer), a room is a real deep link the
+// director can share/bookmark/refresh, so it gets real parse/serialize
+// helpers here: opening or closing a room round-trips through the URL.
+export function infoEntityIdFromRoute(route: ViewerRoute): string | null {
+  if (route.surface !== "info") {
+    return null;
+  }
+  const entityId = route.searchParams.get("entity");
+  return entityId != null && entityId.length > 0 ? entityId : null;
+}
+
+// Re-points the info surface at (or away from, when `entityId` is null) an
+// entity room, preserving every other search param already on the route
+// (mirrors withBuilderBundle's preserve-the-rest pattern). Always returns an
+// "info" route — the room lives only on that surface.
+export function infoRouteWithEntityId(route: ViewerRoute, entityId: string | null): ViewerRoute {
+  const searchParams = cloneSearchParams(route.surface === "info" ? route.searchParams : undefined);
+  if (entityId == null || entityId.length === 0) {
+    searchParams.delete("entity");
+  } else {
+    searchParams.set("entity", entityId);
+  }
+  return { searchParams, surface: "info" };
+}
+
 export function surfaceRoute(
   surface: Exclude<ViewerRoute["surface"], "agent" | "library" | "not-found">,
 ): ViewerRoute {

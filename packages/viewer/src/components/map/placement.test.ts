@@ -3,6 +3,7 @@ import type { InfoHubCard, MapState } from "../../app/runtime/schemas";
 import { createHex } from "./hex";
 import {
   cardsJoinedToEntity,
+  entityCardCounts,
   entityIdForDraft,
   entityKindLabel,
   isStrayCard,
@@ -380,6 +381,20 @@ describe("stray-card derivation", () => {
       "joined",
       "joined-done",
     ]);
+  });
+
+  it("entityCardCounts splits joined cards into open vs done (done = any terminal status)", () => {
+    const joinedCards = [
+      ...cards,
+      cardFixture({ id: "joined-in-progress", entityId: "proj-1", status: "in-progress" }),
+      cardFixture({ id: "joined-done", entityId: "proj-1", status: "done" }),
+      cardFixture({ id: "joined-wont-do", entityId: "proj-1", status: "wont-do" }),
+    ];
+    expect(entityCardCounts(joinedCards, "proj-1")).toEqual({ done: 2, open: 2 });
+  });
+
+  it("entityCardCounts is zero/zero for an entity with no joined cards", () => {
+    expect(entityCardCounts(cards, "proj-nonexistent")).toEqual({ done: 0, open: 0 });
   });
 });
 

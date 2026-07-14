@@ -57,6 +57,8 @@ import {
   agentRoute,
   builderBundleIdFromRoute,
   homeRoute,
+  infoEntityIdFromRoute,
+  infoRouteWithEntityId,
   libraryCatalogRoute,
   libraryFoldersRoute,
   librarySectionDefaultRoute,
@@ -934,6 +936,12 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
             initialStatusFilter={
               route.surface === "info" ? (route.searchParams.get("status") ?? undefined) : undefined
             }
+            // Entity room deep link (board-project-rooms): `?entity=<id>`
+            // opens that room on load, and the room keeps the URL in sync as
+            // it opens/closes/switches — a real bookmarkable/shareable link,
+            // unlike the one-way initialStatusFilter seed above.
+            initialEntityId={infoEntityIdFromRoute(route) ?? undefined}
+            onEntityRoomChange={(entityId) => navigate(infoRouteWithEntityId(route, entityId))}
           />
         )
       ) : activeView === "ledger" ? (

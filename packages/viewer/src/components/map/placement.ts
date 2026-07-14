@@ -290,6 +290,21 @@ export function cardsJoinedToEntity(
 }
 
 /**
+ * Open/done card counts for one entity — the board's entity-strip counts
+ * (board-project-rooms). "done" is any terminal status (done or wont-do), the
+ * same fold `inWorkOrderArchive`/the room's read history use elsewhere; every
+ * other joined card counts as open.
+ */
+export function entityCardCounts(
+  cards: readonly InfoHubCard[],
+  entityId: string,
+): { done: number; open: number } {
+  const joined = cardsJoinedToEntity(cards, entityId);
+  const done = joined.filter((card) => isTerminalStatus(card.status)).length;
+  return { done, open: joined.length - done };
+}
+
+/**
  * One key's loose cards — the shared shape behind looseCardsForDomain and
  * looseCardsForAssignee (they differ only in how a card's bucket key is
  * derived, the same split as strayCardCountsByKey).
