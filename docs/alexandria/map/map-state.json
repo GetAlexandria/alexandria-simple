@@ -10,10 +10,7 @@
       "half": "work",
       "owner": "colleague:raven",
       "region": {
-        "center": [
-          1,
-          -4
-        ],
+        "center": [1, -4],
         "radius": 2
       }
     },
@@ -23,10 +20,7 @@
       "half": "work",
       "owner": "colleague:william",
       "region": {
-        "center": [
-          5,
-          -3
-        ],
+        "center": [5, -3],
         "radius": 1
       }
     },
@@ -36,10 +30,7 @@
       "half": "work",
       "owner": "colleague:damien",
       "region": {
-        "center": [
-          -4,
-          -2
-        ],
+        "center": [-4, -2],
         "radius": 1
       }
     },
@@ -49,10 +40,7 @@
       "half": "work",
       "owner": "colleague:rob",
       "region": {
-        "center": [
-          -4,
-          -5
-        ],
+        "center": [-4, -5],
         "radius": 1
       }
     }
@@ -118,6 +106,15 @@
       "id": "prj-map-glow-up",
       "kind": "project",
       "name": "Map Glow Up",
+      "contextId": "viewer",
+      "domainId": "alexandria",
+      "assignee": "human:danvers",
+      "lifecycle": "active"
+    },
+    {
+      "id": "prj-work-system-v1",
+      "kind": "project",
+      "name": "Work System v1",
       "contextId": "viewer",
       "domainId": "alexandria",
       "assignee": "human:danvers",
