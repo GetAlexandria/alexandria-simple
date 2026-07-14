@@ -1111,8 +1111,8 @@ export type RuntimeProjectState = Schema.Schema.Type<typeof RuntimeProjectStateS
 // shape of `docs/alexandria/info-hub/board-state.json`. Deliberately narrower
 // than the PMS `StudioBoardCard` twin in packages/pms/viewer/src/app/runtime/
 // studio.ts: no `play`/`division`/`function` (Alexandria has no plays or org
-// catalog yet) and one optional free-string `area` instead, plus a `task`
-// type and a checklist allowed on any card type.
+// catalog yet) and a required `domainId` (the shared Map/Board domain)
+// instead, plus a `task` type and a checklist allowed on any card type.
 export const InfoHubCardTypeSchema = Schema.Literal("task", "improvement", "bug", "testing");
 
 export type InfoHubCardType = Schema.Schema.Type<typeof InfoHubCardTypeSchema>;
@@ -1142,7 +1142,6 @@ export type InfoHubChecklistItem = Schema.Schema.Type<typeof InfoHubChecklistIte
 
 export const InfoHubCardSchema = Schema.Struct({
   archived: Schema.optionalWith(Schema.Boolean, { exact: true }),
-  area: Schema.optionalWith(Schema.String, { exact: true }),
   checklist: Schema.optionalWith(Schema.Array(InfoHubChecklistItemSchema), { exact: true }),
   // Map-tab joins (Map tab plan §1.1, additive and optional): the map
   // context a card belongs to, and the project/system entity that contains
@@ -1152,6 +1151,10 @@ export const InfoHubCardSchema = Schema.Struct({
   contextId: Schema.optionalWith(Schema.NonEmptyString, { exact: true }),
   created: Schema.String,
   detail: Schema.optionalWith(Schema.String, { exact: true }),
+  // The shared Map/Board domain a work item belongs to (replaces the old
+  // ad-hoc `area`). Required; validated shape-only, matching the ax twin —
+  // the map owns the domain set, and the board view constrains the picker.
+  domainId: Schema.String,
   entityId: Schema.optionalWith(Schema.NonEmptyString, { exact: true }),
   id: Schema.String,
   pinned: Schema.optionalWith(Schema.Boolean, { exact: true }),

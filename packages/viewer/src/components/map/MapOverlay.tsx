@@ -66,6 +66,15 @@ export function MapOverlay({
   // checklist save re-renders the open modal with the server-merged card.
   const [detailCardId, setDetailCardId] = useState<string | null>(null);
 
+  // domainId → display name for the card scope label, from the map's domains.
+  const domainNameById = useMemo(() => {
+    const byId = new Map<string, string>();
+    for (const domain of state.domains) {
+      byId.set(domain.id, domain.name);
+    }
+    return byId;
+  }, [state.domains]);
+
   const entity =
     target.kind === "entity"
       ? (state.entities.find((candidate) => candidate.id === target.entityId) ?? null)
@@ -158,6 +167,7 @@ export function MapOverlay({
           <div onClick={(event) => event.stopPropagation()} role="presentation">
             <WorkOrderDetailModal
               card={detailCard}
+              domainNameById={domainNameById}
               onClose={() => setDetailCardId(null)}
               onToggleChecklistItem={onToggleChecklistItem}
               readOnly={readOnly}
@@ -200,7 +210,11 @@ export function MapOverlay({
               data-type={card.type}
               key={card.id}
             >
-              <WorkOrderCardFace card={card} onOpen={() => setDetailCardId(card.id)} />
+              <WorkOrderCardFace
+                card={card}
+                domainNameById={domainNameById}
+                onOpen={() => setDetailCardId(card.id)}
+              />
               {readOnly ? null : (
                 <div className="info-hub-card-actions">
                   <WorkOrderStatusActions

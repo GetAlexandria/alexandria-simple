@@ -276,6 +276,7 @@ describe("withEntityEdited", () => {
 
 const cardFixture = (overrides: Partial<InfoHubCard> & { id: string }): InfoHubCard => ({
   created: "2026-07-01",
+  domainId: "alexandria",
   priority: 10,
   source: "test",
   status: "open",

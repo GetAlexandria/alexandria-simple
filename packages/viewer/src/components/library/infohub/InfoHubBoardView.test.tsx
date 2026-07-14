@@ -9,8 +9,8 @@ const fixtureBoard: InfoHubBoard = {
   updated: "2026-07-01",
   cards: [
     {
-      area: "viewer",
       created: "2026-06-20",
+      domainId: "alexandria",
       id: "wo-open-bug",
       priority: 10,
       source: "seed:info-hub-prototype",
@@ -19,13 +19,13 @@ const fixtureBoard: InfoHubBoard = {
       type: "bug",
     },
     {
-      area: "library",
       checklist: [
         { done: true, text: "Draft the follow-up plan" },
         { done: false, text: "Land the follow-up PR" },
       ],
       created: "2026-06-18",
       detail: "Continues the library-operations flow-board work.",
+      domainId: "alexandria",
       id: "wo-in-progress-task",
       priority: 15,
       source: "seed:info-hub-prototype",
@@ -34,8 +34,8 @@ const fixtureBoard: InfoHubBoard = {
       type: "task",
     },
     {
-      area: "runtime",
       created: "2026-06-10",
+      domainId: "alexandria",
       id: "wo-done-improvement",
       pinned: true,
       priority: 20,
@@ -46,8 +46,8 @@ const fixtureBoard: InfoHubBoard = {
       type: "improvement",
     },
     {
-      area: "ops",
       created: "2026-05-01",
+      domainId: "alexandria",
       id: "wo-archived-bug",
       priority: 10,
       source: "seed:info-hub-prototype",

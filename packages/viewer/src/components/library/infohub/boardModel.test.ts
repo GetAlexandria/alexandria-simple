@@ -22,8 +22,8 @@ const NOW = new Date("2026-06-24T12:00:00Z");
 
 function card(overrides: Partial<InfoHubCard> = {}): InfoHubCard {
   return {
-    area: "product",
     created: "2026-06-01",
+    domainId: "alexandria",
     id: "wo-card",
     priority: 10,
     source: "test:board-model",

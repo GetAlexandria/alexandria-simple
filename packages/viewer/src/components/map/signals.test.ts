@@ -24,6 +24,7 @@ function card(overrides: Partial<InfoHubCard> & { id: string }): InfoHubCard {
   return {
     type: "task",
     status: "open",
+    domainId: "alexandria",
     priority: 15,
     source: "test",
     created: "2026-07-13",

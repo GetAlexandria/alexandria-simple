@@ -46,6 +46,7 @@ function baseCard(overrides: Partial<InfoHubCard> = {}): InfoHubCard {
     id: "wo-example",
     type: "task",
     status: "open",
+    domainId: "alexandria",
     priority: 15,
     source: "board:director",
     created: "2026-07-01",
@@ -118,9 +119,24 @@ describe("validateInfoHubCards", () => {
     expect((result as InfoHubBoardValidationError).message).toContain("unknown fields");
   });
 
-  test("rejects division/function fields (no PMS org catalog)", () => {
-    const result = validateInfoHubCards([{ ...baseCard(), division: "Product" }]);
-    expect(result).toBeInstanceOf(InfoHubBoardValidationError);
+  test("requires a non-empty domainId (the shared Map/Board spine)", () => {
+    const missing: Record<string, unknown> = { ...baseCard() };
+    delete missing.domainId;
+    const missingResult = validateInfoHubCards([missing]);
+    expect(missingResult).toBeInstanceOf(InfoHubBoardValidationError);
+    expect((missingResult as InfoHubBoardValidationError).message).toContain("missing fields");
+
+    const empty = validateInfoHubCards([baseCard({ domainId: "" })]);
+    expect(empty).toBeInstanceOf(InfoHubBoardValidationError);
+    expect((empty as InfoHubBoardValidationError).message).toContain(
+      "domainId must be a non-empty string",
+    );
+
+    const nonString = validateInfoHubCards([{ ...baseCard(), domainId: 7 }]);
+    expect(nonString).toBeInstanceOf(InfoHubBoardValidationError);
+    expect((nonString as InfoHubBoardValidationError).message).toContain(
+      "domainId must be a non-empty string",
+    );
   });
 
   test("rejects a bad type enum", () => {

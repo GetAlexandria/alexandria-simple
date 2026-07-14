@@ -4,10 +4,10 @@ import type { InfoHubCard } from "../../../app/runtime/schemas";
  * Pure Info Hub work-order board projection logic. Originally ported from
  * the PlayMaker Studio Work Board's browser-safe model (packages/pms, since
  * retired from this repo) with the play coupling removed: no
- * `play`/`division`/`function`, an optional `area` string instead, and a
- * `task` card type. This file is now the sole owner of the terminal-status,
- * age-archive, and priority rules; `boardModel.test.ts` pins the archive
- * table.
+ * `play`/`division`/`function`, a required `domainId` (the shared Map/Board
+ * domain) instead, and a `task` card type. This file is now the sole owner of
+ * the terminal-status, age-archive, and priority rules; `boardModel.test.ts`
+ * pins the archive table.
  */
 
 export type WorkOrderType = InfoHubCard["type"];

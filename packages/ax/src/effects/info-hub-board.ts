@@ -5,8 +5,9 @@ import { FileSystem, isMissingFileError } from "./filesystem.js";
 /**
  * Info Hub work-board state — ported from the PlayMaker Studio work-order
  * board (`packages/pms/src/server/studio-api.ts`), dropping everything
- * play-related. Alexandria has no plays, so cards carry a free-form `area`
- * instead of `division`/`function`, there is no `play` field, and there is
+ * play-related. Alexandria has no plays, so cards carry a required `domainId`
+ * (the shared Map/Board domain a work item belongs to) instead of
+ * `division`/`function`, there is no `play` field, and there is
  * no one-testing-card-per-play invariant. `checklist` is allowed on any
  * card type (PMS restricts it to `testing`). The board file is git-tracked
  * shared state at `<workspace>/info-hub/board-state.json` — agents edit it
@@ -29,13 +30,21 @@ export type InfoHubCardStatus = (typeof INFO_HUB_CARD_STATUSES)[number];
 const TERMINAL_INFO_HUB_CARD_STATUSES = new Set<InfoHubCardStatus>(["done", "wont-do"]);
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-const REQUIRED_CARD_FIELDS = ["id", "type", "status", "priority", "source", "created"] as const;
+const REQUIRED_CARD_FIELDS = [
+  "id",
+  "type",
+  "status",
+  "domainId",
+  "priority",
+  "source",
+  "created",
+] as const;
 
 const CARD_FIELD_ORDER = [
   "id",
   "type",
   "status",
-  "area",
+  "domainId",
   "contextId",
   "entityId",
   "priority",
@@ -62,7 +71,6 @@ export interface InfoHubChecklistItem {
 
 export interface InfoHubCard {
   archived?: boolean;
-  area?: string;
   checklist?: InfoHubChecklistItem[];
   // Map-tab joins (Map tab plan §1.1, additive and optional): the map
   // context a card belongs to, and the project/system entity that contains
@@ -71,6 +79,10 @@ export interface InfoHubCard {
   contextId?: string;
   created: string;
   detail?: string;
+  // The shared Map/Board domain a work item belongs to (replaces the old
+  // ad-hoc `area`). Validated shape-only here — a non-empty string; the map
+  // owns the domain set, and the view constrains the picker.
+  domainId: string;
   entityId?: string;
   id: string;
   pinned?: boolean;
@@ -227,8 +239,8 @@ export function validateInfoHubCards(
     if (typeof rawCard.created !== "string" || !DATE_ONLY_PATTERN.test(rawCard.created)) {
       return validationError(`${ref} created must be YYYY-MM-DD`);
     }
-    if (hasOwn(rawCard, "area") && typeof rawCard.area !== "string") {
-      return validationError(`${ref} area must be a string`);
+    if (typeof rawCard.domainId !== "string" || rawCard.domainId.length === 0) {
+      return validationError(`${ref} domainId must be a non-empty string`);
     }
     if (
       hasOwn(rawCard, "contextId") &&
