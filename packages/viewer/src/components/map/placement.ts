@@ -62,15 +62,21 @@ export function placedEntities(state: MapState, positioned: ReadonlySet<string>)
   return state.entities.filter((entity) => positioned.has(entity.id));
 }
 
-/** The free hexes of one context's patch — the placement highlight set. */
+/**
+ * The free hexes matching one id in a cell→id assignment map — the
+ * placement highlight set. Generic over what the map keys cells by; the Map
+ * tab calls this with the domain-view layout's `territoryByCellKey` and the
+ * placing entity's `domainId` (placement is domain-keyed, not context-keyed
+ * — a context-less entity must still be placeable).
+ */
 export function placeableHexKeys(
-  patchByCellKey: ReadonlyMap<string, string>,
-  contextId: string,
+  cellIdByKey: ReadonlyMap<string, string>,
+  id: string,
   occupied: ReadonlySet<string>,
 ): Set<string> {
   const keys = new Set<string>();
-  for (const [key, patchContextId] of patchByCellKey) {
-    if (patchContextId === contextId && !occupied.has(key)) {
+  for (const [key, cellId] of cellIdByKey) {
+    if (cellId === id && !occupied.has(key)) {
       keys.add(key);
     }
   }
@@ -118,7 +124,10 @@ export function withEntityRemoved(state: MapState, entityId: string): MapState {
 export type MapEntityDraft = {
   cadence?: string;
   colleague?: string;
-  contextId: string;
+  /** Latent data now — optional; a context-less entity is fully valid. */
+  contextId?: string;
+  /** Required, unlike contextId — the shared Map/Board spine every entity carries. */
+  domainId: string;
   kind: MapEntityKind;
   lifecycle: string;
   name: string;
@@ -144,27 +153,20 @@ export function entityIdForDraft(
   return uniqueId(`${ENTITY_ID_PREFIX_BY_KIND[kind]}${slugify(name) || kind}`, existingIds);
 }
 
-/**
- * The domain an entity inherits from its context. Entities carry a flat
- * `domainId` tag alongside `contextId`; it is derived here at create/edit
- * time from the selected context's domain (the map validator requires a
- * known domain id, so a draft whose context is unknown yields "" and fails
- * loudly server-side rather than inventing a domain).
- */
-function domainIdForContextId(state: MapState, contextId: string): string {
-  return state.contexts.find((context) => context.id === contextId)?.domainId ?? "";
-}
-
 /** A canonical entity from a form draft: trimmed, optional fields omitted (never ""). */
-function entityFromDraft(id: string, draft: MapEntityDraft, domainId: string): MapEntity {
+function entityFromDraft(id: string, draft: MapEntityDraft): MapEntity {
   const cadence = draft.cadence?.trim() ?? "";
   const colleague = draft.colleague?.trim() ?? "";
+  const contextId = draft.contextId?.trim() ?? "";
   return {
     id,
     kind: draft.kind,
     name: draft.name.trim(),
-    contextId: draft.contextId,
-    domainId,
+    // Latent data: omitted entirely when blank, same as cadence/colleague —
+    // the ax validator rejects an empty string, and a context-less entity is
+    // fully valid now (Context is a demoted, optional tag).
+    ...(contextId.length > 0 ? { contextId } : {}),
+    domainId: draft.domainId,
     // The form's bare colleague folds into the work-item `assignee` as
     // `colleague:<id>`; cadence stays system-only. Both apply to systems only
     // here (the ax validator rejects cadence on a project, and the form only
@@ -191,7 +193,6 @@ export function withEntityCreated(
   const entity = entityFromDraft(
     entityIdForDraft(draft.kind, draft.name, new Set(state.entities.map((e) => e.id))),
     draft,
-    domainIdForContextId(state, draft.contextId),
   );
   return { next: { ...state, entities: [...state.entities, entity] }, entity };
 }
@@ -212,11 +213,7 @@ export function withEntityEdited(
   if (existing == null) {
     return state;
   }
-  const edited = entityFromDraft(
-    entityId,
-    { ...draft, kind: existing.kind },
-    domainIdForContextId(state, draft.contextId),
-  );
+  const edited = entityFromDraft(entityId, { ...draft, kind: existing.kind });
   const next = {
     ...state,
     entities: state.entities.map((entity) => (entity.id === entityId ? edited : entity)),
@@ -368,6 +365,10 @@ export function promotionDraftFromCard(card: InfoHubCard, contextId: string): Ma
   const title = card.title?.trim() ?? "";
   return {
     contextId,
+    // The promoted project's domain is the card's own domain — every card
+    // already carries one (the shared Map/Board spine), so there is no need
+    // to derive it from the context.
+    domainId: card.domainId,
     kind: "project",
     lifecycle: "active",
     name: title.length > 0 ? title : card.id,

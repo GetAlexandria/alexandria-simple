@@ -201,6 +201,7 @@ describe("withEntityCreated", () => {
       cadence: "  ",
       colleague: "",
       contextId: "ctx-a",
+      domainId: "software",
       kind: "system",
       lifecycle: "planted",
       name: "  Night watch  ",
@@ -224,6 +225,7 @@ describe("withEntityCreated", () => {
       cadence: "30m",
       colleague: "raven",
       contextId: "ctx-a",
+      domainId: "software",
       kind: "system",
       lifecycle: "planted",
       name: "Duty loop",
@@ -238,6 +240,7 @@ describe("withEntityCreated", () => {
       cadence: "30m",
       colleague: "raven",
       contextId: "ctx-a",
+      domainId: "software",
       kind: "project",
       lifecycle: "active",
       name: "Spring clean",
@@ -251,12 +254,32 @@ describe("withEntityCreated", () => {
       lifecycle: "active",
     });
   });
+
+  it("produces a valid, context-less entity when the draft carries no contextId", () => {
+    // Context is latent data (Map/Board contract demotion): a draft with no
+    // contextId at all is a fully valid entity, keyed only by its domain.
+    const { entity } = withEntityCreated(BASE_STATE, {
+      domainId: "software",
+      kind: "project",
+      lifecycle: "active",
+      name: "Context-less project",
+    });
+    expect(entity).toEqual({
+      id: "prj-context-less-project",
+      kind: "project",
+      name: "Context-less project",
+      domainId: "software",
+      lifecycle: "active",
+    });
+    expect("contextId" in entity).toBe(false);
+  });
 });
 
 describe("withEntityEdited", () => {
   it("rewrites the entity fields but keeps id and kind fixed", () => {
     const next = withEntityEdited(BASE_STATE, "proj-1", {
       contextId: "ctx-a",
+      domainId: "software",
       kind: "system", // ignored — kind is identity
       lifecycle: "completed",
       name: "Project One (done)",
@@ -272,6 +295,7 @@ describe("withEntityEdited", () => {
   it("removes a system's position when its lifecycle becomes uprooted", () => {
     const next = withEntityEdited(BASE_STATE, "sys-uprooted", {
       contextId: "ctx-a",
+      domainId: "software",
       kind: "system",
       lifecycle: "uprooted",
       name: "Uprooted System",
@@ -287,6 +311,7 @@ describe("withEntityEdited", () => {
   it("is a no-op for an unknown entity id", () => {
     const next = withEntityEdited(BASE_STATE, "missing", {
       contextId: "ctx-a",
+      domainId: "software",
       kind: "project",
       lifecycle: "active",
       name: "Ghost",
@@ -423,6 +448,7 @@ describe("promotionDraftFromCard", () => {
     );
     expect(draft).toEqual({
       contextId: "ctx-a",
+      domainId: "alexandria",
       kind: "project",
       lifecycle: "active",
       name: "Ship the overlay",

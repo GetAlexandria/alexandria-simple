@@ -141,7 +141,7 @@ describe("InfoHubBoardView", () => {
     expect(markup).not.toContain('data-testid="card-join-pickers"');
   });
 
-  test("renders the context and entity pickers from map state (S2 card join UI)", () => {
+  test("renders an ungated entity picker with no context picker (S2 card join UI)", () => {
     const markup = renderToStaticMarkup(
       React.createElement(InfoHubBoardView, {
         board: fixtureBoard,
@@ -175,11 +175,14 @@ describe("InfoHubBoardView", () => {
       }),
     );
 
+    // The entity picker is present and lists every map entity, ungated by
+    // context — Context is latent data, never rendered on the board form.
     expect(markup).toContain('data-testid="card-join-pickers"');
-    expect(markup).toContain("Viewer");
     expect(markup).toContain("Map tab · Project");
     // "" is the no-join option — the field is omitted on save, never written.
-    expect(markup).toContain("No context");
-    expect(markup).toContain("Loose (stray pile when a context is set)");
+    expect(markup).toContain("Loose (stray)");
+    // No context picker: neither its label nor its "no context" option render.
+    expect(markup).not.toContain("Card map context");
+    expect(markup).not.toContain("Map context (optional)");
   });
 });

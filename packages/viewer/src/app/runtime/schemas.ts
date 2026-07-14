@@ -1255,7 +1255,9 @@ export const MapEntitySchema = Schema.Struct({
   // system-only `colleague` into this; this schema decodes what it validated.
   assignee: Schema.optionalWith(Schema.String, { exact: true }),
   cadence: Schema.optionalWith(Schema.String, { exact: true }),
-  contextId: Schema.String,
+  // Context is latent data (Map/Board contract demotion): optional, matching
+  // the ax twin in packages/ax/src/effects/map-state.ts.
+  contextId: Schema.optionalWith(Schema.String, { exact: true }),
   domainId: Schema.String,
   id: Schema.String,
   kind: MapEntityKindSchema,

@@ -163,7 +163,7 @@ function PanelRowButton({
  * create/edit entry points (New entity, per-row Edit).
  */
 function PlacementPanel({
-  contextNameById,
+  domainNameById,
   onCreate,
   onEdit,
   onRemove,
@@ -173,7 +173,7 @@ function PlacementPanel({
   saving,
   unplacedEntities,
 }: {
-  contextNameById: ReadonlyMap<string, string>;
+  domainNameById: ReadonlyMap<string, string>;
   onCreate: () => void;
   onEdit: (entityId: string) => void;
   onRemove: (entityId: string) => void;
@@ -242,7 +242,7 @@ function PlacementPanel({
                   {entity.name}
                   <span className="ml-1 opacity-70">
                     · {entityKindLabel(entity.kind)} ·{" "}
-                    {contextNameById.get(entity.contextId) ?? entity.contextId}
+                    {domainNameById.get(entity.domainId) ?? entity.domainId}
                   </span>
                 </button>
                 <PanelRowButton
@@ -476,11 +476,9 @@ export function MapTabView({
     () => (state == null ? [] : placedEntitiesFrom(state, positionedEntityIds)),
     [state, positionedEntityIds],
   );
-  const contextNameById = useMemo(
-    () => new Map((state?.contexts ?? []).map((context) => [context.id, context.name])),
-    [state],
-  );
-  // Domain id → name for the domain-keyed stray piles' fallback panel (strays v1).
+  // Domain id → name for the placement panel, the domain-keyed stray piles'
+  // fallback panel (strays v1), and the "no free hex" message — placement is
+  // domain-keyed now, so entity labels speak domain rather than context.
   const domainNameById = useMemo(() => buildDomainNameById(state?.domains ?? []), [state]);
 
   const placingEntity = useMemo(
@@ -491,12 +489,14 @@ export function MapTabView({
     [placingEntityId, unplacedEntities],
   );
 
-  // The free hexes of the placing entity's context patch.
+  // The free hexes of the placing entity's DOMAIN territory (not its context
+  // patch — an entity with no contextId must still be placeable, and one
+  // with a legacy contextId places exactly the same way, domain-keyed).
   const placeableKeys = useMemo(() => {
     if (placingEntity == null || domainLayout == null) {
       return new Set<string>();
     }
-    return placeableHexKeys(domainLayout.patchByCellKey, placingEntity.contextId, occupiedKeys);
+    return placeableHexKeys(domainLayout.territoryByCellKey, placingEntity.domainId, occupiedKeys);
   }, [placingEntity, domainLayout, occupiedKeys]);
 
   const cellVisualStateByKey = useMemo(() => {
@@ -766,6 +766,7 @@ export function MapTabView({
                 // "create" and different edited entities.
                 key={entityForm.entityId ?? "create"}
                 contexts={state.contexts}
+                domains={state.domains}
                 entity={editingEntity}
                 onCancel={() => setEntityForm(null)}
                 onSubmit={submitEntityForm}
@@ -774,7 +775,7 @@ export function MapTabView({
             </Panel>
           ) : (
             <PlacementPanel
-              contextNameById={contextNameById}
+              domainNameById={domainNameById}
               onCreate={() => openEntityForm(null)}
               onEdit={(entityId) => openEntityForm(entityId)}
               onRemove={removeFromMap}
@@ -855,8 +856,8 @@ export function MapTabView({
       {placingEntity != null && placeableKeys.size === 0 ? (
         <Panel className="absolute left-1/2 top-16 z-10 -translate-x-1/2 px-3 py-2">
           <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
-            No free hex in {contextNameById.get(placingEntity.contextId) ?? "this context"}&apos;s
-            patch — remove a tile or grow the domain first.
+            No free hex in {domainNameById.get(placingEntity.domainId) ?? "this domain"}&apos;s
+            territory — remove a tile or grow the domain first.
           </p>
         </Panel>
       ) : null}

@@ -63,14 +63,7 @@ const STATE_FIELD_ORDER = ["domains", "contexts", "entities", "positions"] as co
 
 const REQUIRED_DOMAIN_FIELDS = ["id", "name", "half", "region"] as const;
 const REQUIRED_CONTEXT_FIELDS = ["id", "name", "domainId"] as const;
-const REQUIRED_ENTITY_FIELDS = [
-  "id",
-  "kind",
-  "name",
-  "contextId",
-  "domainId",
-  "lifecycle",
-] as const;
+const REQUIRED_ENTITY_FIELDS = ["id", "kind", "name", "domainId", "lifecycle"] as const;
 
 const ALLOWED_DOMAIN_FIELDS = new Set<string>(DOMAIN_FIELD_ORDER);
 const ALLOWED_CONTEXT_FIELDS = new Set<string>(CONTEXT_FIELD_ORDER);
@@ -117,7 +110,7 @@ export interface MapEntity {
    */
   assignee?: string;
   cadence?: string;
-  contextId: string;
+  contextId?: string;
   domainId: string;
   id: string;
   kind: MapEntityKind;
@@ -393,7 +386,7 @@ function validateEntities(
       return validationError(`${ref} is missing fields: ${JSON.stringify(missing.sort())}`);
     }
 
-    for (const field of ["id", "name", "contextId"] as const) {
+    for (const field of ["id", "name"] as const) {
       const fieldError = requireString(rawEntity, field, ref);
       if (fieldError != null) {
         return fieldError;
@@ -409,10 +402,20 @@ function validateEntities(
         `${ref} kind must be one of ${JSON.stringify([...MAP_ENTITY_KINDS].sort())}`,
       );
     }
-    if (!contextIds.has(rawEntity.contextId as string)) {
-      return validationError(
-        `${ref} references unknown contextId ${rawEntity.contextId as string}`,
-      );
+    // `contextId` is latent data now (Context is demoted to an optional tag,
+    // never required by the Map or Board): optional, but a PRESENT value
+    // must still be non-empty and reference a real context — a stray/typo'd
+    // contextId fails loudly rather than silently pointing nowhere.
+    if (hasOwn(rawEntity, "contextId")) {
+      const contextIdError = requireString(rawEntity, "contextId", ref);
+      if (contextIdError != null) {
+        return contextIdError;
+      }
+      if (!contextIds.has(rawEntity.contextId as string)) {
+        return validationError(
+          `${ref} references unknown contextId ${rawEntity.contextId as string}`,
+        );
+      }
     }
     const domainIdError = requireString(rawEntity, "domainId", ref);
     if (domainIdError != null) {
@@ -458,7 +461,7 @@ function validateEntities(
       id: rawEntity.id as string,
       kind,
       name: rawEntity.name as string,
-      contextId: rawEntity.contextId as string,
+      ...(hasOwn(rawEntity, "contextId") ? { contextId: rawEntity.contextId as string } : {}),
       domainId: rawEntity.domainId as string,
       ...(hasOwn(rawEntity, "assignee") ? { assignee: rawEntity.assignee as string } : {}),
       ...(hasOwn(rawEntity, "cadence") ? { cadence: rawEntity.cadence as string } : {}),

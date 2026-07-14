@@ -91,10 +91,17 @@ export type DomainViewLayout = {
   unplacedPiles: readonly DomainViewUnplacedPile[];
   /**
    * Context patch assignment per cell key (a subset of territory cells).
-   * Public since S1: the Map tab's placement mode reads it to highlight the
-   * free hexes of the placing entity's context patch.
+   * Rendering only now — placement reads `territoryByCellKey` below instead
+   * (an entity's placeable hexes are its DOMAIN's free cells, not its
+   * context patch's, so a context-less entity is still placeable).
    */
   patchByCellKey: ReadonlyMap<string, string>;
+  /**
+   * Domain territory assignment per cell key. Public since the contextId
+   * demotion: the Map tab's placement mode reads it to highlight the free
+   * hexes of the placing entity's DOMAIN territory.
+   */
+  territoryByCellKey: ReadonlyMap<string, string>;
 };
 
 /**
@@ -278,10 +285,11 @@ export function computeDomainViewLayoutInternal(
     }
     const coord = createHex(position.q, position.r);
     const key = hexToKey(coord);
-    const context = contextsById.get(entity.contextId);
-    const accentColor = context
-      ? (domainColorById.get(context.domainId) ?? MAP_DOMAIN_TINTS[0]!)
-      : MAP_DOMAIN_TINTS[0]!;
+    // Context patches are a rendering concept only now (contextId is latent
+    // data); a context-less entity still gets an accent color, keyed off its
+    // own (required) domainId rather than a context's.
+    const context = entity.contextId == null ? undefined : contextsById.get(entity.contextId);
+    const accentColor = domainColorById.get(entity.domainId) ?? MAP_DOMAIN_TINTS[0]!;
 
     tiles.push({ entity, coord, accentColor });
     occupiedCellKeys.add(key);
@@ -595,6 +603,7 @@ export function computeDomainViewLayout(
     piles,
     unplacedPiles,
     patchByCellKey,
+    territoryByCellKey,
   } = computeDomainViewLayoutInternal(state, cells, options);
   return {
     tintByCellKey,
@@ -605,5 +614,6 @@ export function computeDomainViewLayout(
     piles,
     unplacedPiles,
     patchByCellKey,
+    territoryByCellKey,
   };
 }
