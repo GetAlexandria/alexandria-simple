@@ -228,12 +228,11 @@ export function InfoHubBoardView({
   // Falls back to the raw domainId when the map has no matching domain.
   const domainNameById = useMemo(() => buildDomainNameById(mapDomains), [mapDomains]);
   // The entity picker lists every map entity — Context no longer gates it
-  // (contexts may be empty someday and joins must still work).
-  const entityOptions = mapEntities;
-  // A stored entity id is reconciled against the live map (PR #20 gate): an
-  // id whose entity no longer exists renders as unselected, and the SAVE
-  // writes exactly what the form shows — never a stale join back.
-  const effectiveCardEntityId = entityOptions.some((entity) => entity.id === cardEntityId)
+  // (contexts may be empty someday and joins must still work). A stored
+  // entity id is reconciled against the live map (PR #20 gate): an id whose
+  // entity no longer exists renders as unselected, and the SAVE writes
+  // exactly what the form shows — never a stale join back.
+  const effectiveCardEntityId = mapEntities.some((entity) => entity.id === cardEntityId)
     ? cardEntityId
     : "";
 
@@ -1044,7 +1043,7 @@ export function InfoHubBoardView({
                   value={effectiveCardEntityId}
                 >
                   <option value="">Loose (stray)</option>
-                  {entityOptions.map((entity) => (
+                  {mapEntities.map((entity) => (
                     <option key={entity.id} value={entity.id}>
                       {entity.name} · {entityKindLabel(entity.kind)}
                     </option>

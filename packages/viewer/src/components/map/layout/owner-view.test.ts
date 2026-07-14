@@ -284,15 +284,15 @@ describe("computeOwnerViewLayout", () => {
     expect(again).toEqual(layout);
   });
 
-  it("computeOwnerViewLayout drops the bucket/color maps but keeps the render fields", () => {
+  it("computeOwnerViewLayout drops the internal maps but keeps the render fields", () => {
     const rendered = computeOwnerViewLayout(DEV_MAP_FIXTURE, cells, { strayCardCounts });
     expect(rendered.tiles).toEqual(layout.tiles);
     expect(rendered.labels).toEqual(layout.labels);
     expect(rendered.piles).toEqual(layout.piles);
-    // territoryByCellKey is part of the shared DomainViewLayout shape now
-    // (placement reads it in Domain view); Owner view still exposes its own
-    // bucket-keyed version, but drops the bucket/color internals.
-    expect(rendered.territoryByCellKey).toEqual(layout.territoryByCellKey);
+    // territoryByCellKey has no render-shape counterpart in Owner view —
+    // placement (its only reader) runs in Domain view only, so this field
+    // stays internal here alongside the bucket/color maps.
+    expect("territoryByCellKey" in rendered).toBe(false);
     expect("buckets" in rendered).toBe(false);
     expect("colorByBucketKey" in rendered).toBe(false);
   });

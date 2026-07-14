@@ -91,16 +91,23 @@ export type DomainViewLayout = {
   unplacedPiles: readonly DomainViewUnplacedPile[];
   /**
    * Context patch assignment per cell key (a subset of territory cells).
-   * Rendering only now — placement reads `territoryByCellKey` below instead
-   * (an entity's placeable hexes are its DOMAIN's free cells, not its
-   * context patch's, so a context-less entity is still placeable).
+   * Rendering only now — Domain view's placement mode reads domain territory
+   * instead, via `PlaceableDomainViewLayout.territoryByCellKey` below (an
+   * entity's placeable hexes are its DOMAIN's free cells, not its context
+   * patch's, so a context-less entity is still placeable).
    */
   patchByCellKey: ReadonlyMap<string, string>;
-  /**
-   * Domain territory assignment per cell key. Public since the contextId
-   * demotion: the Map tab's placement mode reads it to highlight the free
-   * hexes of the placing entity's DOMAIN territory.
-   */
+};
+
+/**
+ * `DomainViewLayout` plus the domain territory assignment per cell key.
+ * Placement mode needs domain-keyed territory to compute an entity's free
+ * hexes; that concept only exists for Domain view (Owner view's territory is
+ * assignee-bucket-keyed, a different partition it never needs to expose for
+ * placement), so this extension lives only on `computeDomainViewLayout`'s
+ * return, not on the shared render shape every view produces.
+ */
+export type PlaceableDomainViewLayout = DomainViewLayout & {
   territoryByCellKey: ReadonlyMap<string, string>;
 };
 
@@ -584,16 +591,16 @@ export function computeDomainViewLayoutInternal(
 
 /**
  * Domain-view layout for renderers: territory/patch washes, painted
- * borders, labels, tiles, stray piles, and the patch assignment map (which
- * the Map tab's placement mode reads). Drops the intermediate territory/
- * color maps that only this module's tests read; use
- * `computeDomainViewLayoutInternal` if you need those.
+ * borders, labels, tiles, stray piles, the patch assignment map, and the
+ * domain territory assignment map (which the Map tab's placement mode
+ * reads). Drops the intermediate color map that only this module's tests
+ * read; use `computeDomainViewLayoutInternal` if you need that.
  */
 export function computeDomainViewLayout(
   state: MapState,
   cells: readonly HexGridCell[],
   options: DomainViewLayoutOptions = {},
-): DomainViewLayout {
+): PlaceableDomainViewLayout {
   const {
     tintByCellKey,
     domainBorders,

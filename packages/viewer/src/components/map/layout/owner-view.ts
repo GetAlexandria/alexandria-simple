@@ -402,10 +402,12 @@ export function computeOwnerViewLayoutInternal(
 /**
  * Owner-view layout for renderers: the same work regrouped by assignee into
  * per-assignee territory washes, painted borders, brass assignee labels, tiles,
- * and stray piles — a DomainViewLayout the existing DomainView renders as-is
- * (territoryByCellKey included, bucket-keyed, to satisfy that shared shape).
- * Drops the intermediate bucket/color maps that only this module's tests
- * read; use `computeOwnerViewLayoutInternal` if you need those.
+ * and stray piles — a DomainViewLayout the existing DomainView renders as-is.
+ * Drops the intermediate territory/bucket/color maps that only this module's
+ * tests read (Owner view's territory is bucket-(assignee-)keyed, not
+ * domain-keyed, and placement — the only reader of a territory map — runs in
+ * Domain view only, so it has no render-shape counterpart here); use
+ * `computeOwnerViewLayoutInternal` if you need those.
  */
 export function computeOwnerViewLayout(
   state: MapState,
@@ -421,7 +423,6 @@ export function computeOwnerViewLayout(
     piles,
     unplacedPiles,
     patchByCellKey,
-    territoryByCellKey,
   } = computeOwnerViewLayoutInternal(state, cells, options);
   return {
     tintByCellKey,
@@ -432,9 +433,5 @@ export function computeOwnerViewLayout(
     piles,
     unplacedPiles,
     patchByCellKey,
-    // Owner view's territory is bucket-(assignee-)keyed, not domain-keyed;
-    // placement (the only reader of this field) runs in Domain view only, so
-    // this is present to satisfy the shared DomainViewLayout shape, unread here.
-    territoryByCellKey,
   };
 }
