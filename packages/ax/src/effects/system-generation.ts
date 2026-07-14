@@ -78,9 +78,8 @@ export function currentWindowStart(every: string, now: Date): Date {
     case "q":
       return startOfMonthsSinceEpoch(floorStride(monthsSinceEpoch(now), count * 3));
     case "y": {
-      const yearsSinceEpoch = now.getUTCFullYear() - 1970;
-      const windowYears = floorStride(yearsSinceEpoch, count);
-      return new Date(Date.UTC(1970 + windowYears, 0, 1, 0, 0, 0, 0));
+      const windowYears = floorStride(now.getUTCFullYear() - 1970, count);
+      return startOfMonthsSinceEpoch(windowYears * 12);
     }
   }
 }
@@ -118,6 +117,13 @@ export interface DueCardsForBoardOptions {
 export function dueCardsForBoard(options: DueCardsForBoardOptions): InfoHubCard[] {
   const { cards, mapState, now, today } = options;
   const existingIds = new Set(cards.map((card) => card.id));
+  const generatedKeys = new Set(
+    cards.flatMap((card) =>
+      card.generatedBy == null
+        ? []
+        : [`${card.generatedBy.systemId} ${card.generatedBy.ruleId} ${card.generatedBy.window}`],
+    ),
+  );
   const due: InfoHubCard[] = [];
 
   for (const entity of mapState.entities) {
@@ -129,14 +135,7 @@ export function dueCardsForBoard(options: DueCardsForBoardOptions): InfoHubCard[
       const windowStart = currentWindowStart(rule.every, now);
       const window = windowStart.toISOString();
 
-      const alreadyGenerated = cards.some(
-        (card) =>
-          card.generatedBy != null &&
-          card.generatedBy.systemId === entity.id &&
-          card.generatedBy.ruleId === rule.id &&
-          card.generatedBy.window === window,
-      );
-      if (alreadyGenerated) {
+      if (generatedKeys.has(`${entity.id} ${rule.id} ${window}`)) {
         continue;
       }
 

@@ -86,6 +86,7 @@ import {
   validateInfoHubCards,
   writeInfoHubBoard,
   type InfoHubBoard,
+  type InfoHubCard,
 } from "./info-hub-board.js";
 import { dueCardsForBoard } from "./system-generation.js";
 import {
@@ -2718,10 +2719,13 @@ async function infoHubBoardResponse(options: {
 }): Promise<Response> {
   const { mutationSemaphore, workspacePath } = options;
   try {
-    const board = await runWithNodeFileSystem(readInfoHubBoard({ workspacePath }));
-
-    const mapStateResult = await runWithNodeFileSystem(
-      readMapState({ workspacePath }).pipe(Effect.either),
+    // The board and map-state reads are independent, so fetch them
+    // concurrently rather than sequentially.
+    const [board, mapStateResult] = await runWithNodeFileSystem(
+      Effect.all(
+        [readInfoHubBoard({ workspacePath }), readMapState({ workspacePath }).pipe(Effect.either)],
+        { concurrency: "unbounded" },
+      ),
     );
     if (mapStateResult._tag === "Left") {
       return Response.json(board);
@@ -2729,12 +2733,11 @@ async function infoHubBoardResponse(options: {
 
     const now = new Date();
     const today = todayDateOnly();
-    const due = dueCardsForBoard({
-      mapState: mapStateResult.right,
-      cards: board.cards,
-      now,
-      today,
-    });
+    const mapState = mapStateResult.right;
+    const computeDue = (cards: readonly InfoHubCard[]) =>
+      dueCardsForBoard({ mapState, cards, now, today });
+
+    const due = computeDue(board.cards);
     if (due.length === 0) {
       return Response.json(board);
     }
@@ -2746,12 +2749,7 @@ async function infoHubBoardResponse(options: {
           // concurrent GET that might already have materialized these same
           // cards (check-then-act).
           const current = yield* readInfoHubBoard({ workspacePath });
-          const dueNow = dueCardsForBoard({
-            mapState: mapStateResult.right,
-            cards: current.cards,
-            now,
-            today,
-          });
+          const dueNow = computeDue(current.cards);
           if (dueNow.length === 0) {
             return Response.json(current);
           }
