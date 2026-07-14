@@ -110,6 +110,21 @@ export type MapTabViewProps = {
    * flicker) and the overlay reads as "reading journals…".
    */
   journals: readonly ColleagueJournal[] | null;
+  /**
+   * Deep-link entry (Map Glow Up): a colleague coin's "Journal" action
+   * navigates to /map?colleague=<id>, and LibraryBrowserApp forwards that id
+   * here. Opens that colleague's overlay ONCE on mount — the same overlay a
+   * landmark click opens — mirroring the board's initialStatusFilter. Undefined
+   * (no deep-link) opens nothing; an id with no roster/entity still names itself
+   * via resolveColleagueIdentity, exactly as a hand-added landmark does.
+   *
+   * Applied on mount only: navigating map→map with a NEW `?colleague=` (a second
+   * Journal click while already on the Map tab) does not remount, so it does not
+   * reopen. That is the same limitation initialStatusFilter carries; in this PR
+   * the colleague landmark is still on the map as the alternate entry, and the
+   * follow-up that removes colleagues from the map owns closing that gap.
+   */
+  initialColleagueId?: string;
 };
 
 /** The entity form's open state: create, or edit a specific entity. */
@@ -312,6 +327,7 @@ export function MapTabView({
   onOpenNeedsHumanBoard,
   onOpenAgentPage,
   journals,
+  initialColleagueId,
 }: MapTabViewProps) {
   const [hasWebGLSupport] = useState(
     () => supportsWebGL() && !isWebGLForcedOff(window.location.search),
@@ -321,7 +337,12 @@ export function MapTabView({
   const [entityForm, setEntityForm] = useState<EntityFormState | null>(null);
   const [overlayTarget, setOverlayTarget] = useState<MapOverlayTarget | null>(null);
   // The open colleague landmark overlay (L2), by bare colleague id, or null.
-  const [openColleagueId, setOpenColleagueId] = useState<string | null>(null);
+  // Seeded once from the `?colleague=` deep-link (Map Glow Up) — the colleague
+  // coin's "Journal" action — so the Map tab mounts with that overlay already
+  // open; see the initialColleagueId prop doc.
+  const [openColleagueId, setOpenColleagueId] = useState<string | null>(() =>
+    initialColleagueId != null && initialColleagueId.length > 0 ? initialColleagueId : null,
+  );
 
   // Key the grid memo on the derived radius NUMBER, not the state object:
   // every save/refresh produces a new state identity, and regenerating the

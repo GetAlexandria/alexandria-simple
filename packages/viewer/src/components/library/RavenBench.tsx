@@ -263,10 +263,17 @@ function RavenCoin({
 
 function AgentCoin({
   agent,
+  escalated,
   isOpen,
   onToggle,
 }: {
   agent: RuntimeAgent;
+  // Data-driven escalation (Map Glow Up): this colleague needs a human — a
+  // needs-a-human card on one of their systems, or a system that has gone
+  // quiet. Rendered as a distinct warm-ember ring + badge, separate from the
+  // gold open/hover glow, so "someone wants you" reads apart from "you tapped
+  // this coin". See escalationByColleagueId in map/colleague-overlay.ts.
+  escalated: boolean;
   isOpen: boolean;
   onToggle(anchorLeft: number): void;
 }) {
@@ -281,17 +288,29 @@ function AgentCoin({
       <button
         aria-controls={`agent-quick-bar-${agent.id}`}
         aria-expanded={isOpen}
-        aria-label={`${agent.name} - ${title}`}
+        aria-label={
+          escalated ? `${agent.name} - ${title} - needs attention` : `${agent.name} - ${title}`
+        }
         className={[
           "relative h-[112px] w-[112px] rounded-full bg-[radial-gradient(circle_at_30%_28%,rgba(255,222,180,0.16)_0%,transparent_45%),radial-gradient(circle_at_72%_78%,rgba(20,10,4,0.55)_0%,transparent_50%),linear-gradient(135deg,#4a3520_0%,#2e1f10_55%,#15100a_100%)] transition-shadow duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8b86d]",
           isOpen
             ? "shadow-[inset_2px_2px_4px_rgba(255,220,180,0.25),inset_-2px_-2px_4px_rgba(0,0,0,0.55),inset_0_0_0_1px_rgba(232,184,109,0.48),0_4px_16px_rgba(0,0,0,0.55),0_0_22px_rgba(232,184,109,0.28)]"
             : "shadow-[inset_2px_2px_4px_rgba(255,220,180,0.25),inset_-2px_-2px_4px_rgba(0,0,0,0.55),inset_0_0_0_1px_rgba(60,36,14,0.55),0_4px_16px_rgba(0,0,0,0.55)] group-hover:shadow-[inset_2px_2px_4px_rgba(255,220,180,0.25),inset_-2px_-2px_4px_rgba(0,0,0,0.55),inset_0_0_0_1px_rgba(232,184,109,0.34),0_4px_16px_rgba(0,0,0,0.55),0_0_18px_rgba(232,184,109,0.18)]",
         ].join(" ")}
+        data-escalated={escalated ? "true" : undefined}
         data-testid={`agent-coin-${agent.id}`}
         onClick={(event) => onToggle(elementCenterX(event.currentTarget))}
         type="button"
       >
+        {/* Escalation ring: a warm-ember rim + outer bloom laid over the coin
+            face, independent of (and on top of) the gold open/hover shadow, so
+            it stays lit whether or not the coin is tapped. */}
+        {escalated ? (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 z-[4] rounded-full shadow-[inset_0_0_0_2px_rgba(232,120,74,0.78),0_0_20px_rgba(232,120,74,0.50)] motion-safe:animate-pulse"
+          />
+        ) : null}
         {portrait ? (
           <span className="absolute inset-[10px] overflow-hidden rounded-full shadow-[inset_0_0_12px_rgba(0,0,0,0.72),0_1px_0_rgba(255,232,159,0.18)]">
             <img
@@ -325,6 +344,18 @@ function AgentCoin({
           </>
         )}
       </button>
+      {/* Escalation badge: a small ember pip at the coin's shoulder. Purely
+          visual (aria-hidden) — the coin button's aria-label already announces
+          "needs attention" — but data-testid'd so the state is addressable. */}
+      {escalated ? (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute right-[14px] top-[2px] z-[6] grid h-[22px] min-w-[22px] place-items-center rounded-full border border-[rgba(40,14,6,0.80)] bg-[radial-gradient(circle_at_34%_30%,#ffb07a_0%,#d1512c_72%)] px-1 font-display text-[13px] font-bold leading-none text-[#2a0f06] shadow-[0_1px_4px_rgba(0,0,0,0.60),0_0_10px_rgba(232,120,74,0.55)] motion-safe:animate-pulse"
+          data-testid={`agent-coin-escalation-${agent.id}`}
+        >
+          !
+        </span>
+      ) : null}
       <CoinPlate name={agent.name} plateId={agent.id} title={title} />
     </div>
   );
@@ -334,6 +365,8 @@ interface AgentQuickBarProps {
   anchorLeft: number | null;
   agent: RuntimeAgent;
   onAgent(agentId: string): void;
+  onColleagueJournal(agentId: string): void;
+  onColleagueNeedsHuman(agentId: string): void;
   onFrameProblem(): void;
   onKnowledgeBank(): void;
   onClose(): void;
@@ -344,14 +377,19 @@ function AgentQuickBar({
   agent,
   anchorLeft,
   onAgent,
+  onColleagueJournal,
+  onColleagueNeedsHuman,
   onFrameProblem,
   onKnowledgeBank,
   onClose,
   quickBarRef,
 }: AgentQuickBarProps) {
   // Knowledge Bank and Frame a Problem are Raven-specific surfaces (they route
-  // to Raven's KB and launch her play). Other agents only expose their own
-  // Agent page, wired the same way Raven's is via onAgent(agent.id).
+  // to Raven's KB and launch her play). Colleague coins instead expose Journal
+  // (opens their map overlay, which shows the journal) and Needs-a-Human (jumps
+  // to the board's needs-a-human lane) — the coin-tray home for a colleague now
+  // that they are moving off the map (Map Glow Up). Every coin still exposes its
+  // own Agent page, wired the same way Raven's is via onAgent(agent.id).
   const isRaven = agent.id === RAVEN_AGENT_ID;
 
   return (
@@ -383,7 +421,26 @@ function AgentQuickBar({
             Frame a Problem
           </button>
         </>
-      ) : null}
+      ) : (
+        <>
+          <button
+            className="raven-tray-action focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8b86d]"
+            data-testid={`agent-quick-bar-journal-${agent.id}`}
+            onClick={() => onColleagueJournal(agent.id)}
+            type="button"
+          >
+            Journal
+          </button>
+          <button
+            className="raven-tray-action focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8b86d]"
+            data-testid={`agent-quick-bar-needs-a-human-${agent.id}`}
+            onClick={() => onColleagueNeedsHuman(agent.id)}
+            type="button"
+          >
+            Needs a Human
+          </button>
+        </>
+      )}
       <button
         className="raven-tray-action focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8b86d]"
         data-testid={`agent-quick-bar-page-${agent.id}`}
@@ -404,11 +461,26 @@ function AgentQuickBar({
   );
 }
 
+// A stable empty escalation map for the default prop, so an omitted prop never
+// mints a fresh Map identity per render.
+const EMPTY_ESCALATION: ReadonlyMap<string, boolean> = new Map();
+
 interface RavenBenchProps {
   actionRequest?: number;
   agents?: RuntimeAgent[];
   connectionState?: RavenConnectionState;
+  /**
+   * Per-colleague escalation rollup (Map Glow Up), keyed by bare colleague id;
+   * a coin glows when its id maps to `true`. Empty on surfaces that don't load
+   * the board/map/journal data behind it (see LibraryBrowserApp) — no glow
+   * there, by design (v1 keeps the glow's data cost bounded).
+   */
+  escalationByColleagueId?: ReadonlyMap<string, boolean>;
   onAgent?: (agentId: string) => void;
+  /** Colleague coin → open that colleague's map overlay (Journal action). */
+  onColleagueJournal?: (agentId: string) => void;
+  /** Colleague coin → open the board's needs-a-human lane (Needs-a-Human action). */
+  onColleagueNeedsHuman?: (agentId: string) => void;
   onFrameProblem?: () => void;
   onKnowledgeBank?: () => void;
 }
@@ -417,7 +489,10 @@ export function RavenBench({
   actionRequest = 0,
   agents = [],
   connectionState = "disconnected",
+  escalationByColleagueId = EMPTY_ESCALATION,
   onAgent = () => undefined,
+  onColleagueJournal = () => undefined,
+  onColleagueNeedsHuman = () => undefined,
   onFrameProblem = () => undefined,
   onKnowledgeBank = () => undefined,
 }: RavenBenchProps) {
@@ -517,6 +592,15 @@ export function RavenBench({
     }
   }
 
+  // Every quick-bar action (and the close button) dismisses the bar before it
+  // routes: collapse the open/active/anchor trio in one place so each handler
+  // reads as "close, then do the thing".
+  function closeQuickBar(): void {
+    setQuickBarOpen(false);
+    setActiveAgentId(null);
+    setQuickBarAnchorLeft(null);
+  }
+
   function renderLockedCoin(seat: LockedSeat) {
     return (
       <LockedCoin
@@ -537,6 +621,7 @@ export function RavenBench({
     return (
       <AgentCoin
         agent={agent}
+        escalated={escalationByColleagueId.get(agent.id) ?? false}
         isOpen={activeAgentId === agent.id}
         key={agent.id}
         onToggle={(anchorLeft) => {
@@ -580,28 +665,26 @@ export function RavenBench({
             agent={quickBarAgent}
             anchorLeft={quickBarAnchorLeft}
             onAgent={(agentId) => {
-              setQuickBarOpen(false);
-              setActiveAgentId(null);
-              setQuickBarAnchorLeft(null);
+              closeQuickBar();
               onAgent(agentId);
             }}
+            onColleagueJournal={(agentId) => {
+              closeQuickBar();
+              onColleagueJournal(agentId);
+            }}
+            onColleagueNeedsHuman={(agentId) => {
+              closeQuickBar();
+              onColleagueNeedsHuman(agentId);
+            }}
             onFrameProblem={() => {
-              setQuickBarOpen(false);
-              setActiveAgentId(null);
-              setQuickBarAnchorLeft(null);
+              closeQuickBar();
               onFrameProblem();
             }}
             onKnowledgeBank={() => {
-              setQuickBarOpen(false);
-              setActiveAgentId(null);
-              setQuickBarAnchorLeft(null);
+              closeQuickBar();
               onKnowledgeBank();
             }}
-            onClose={() => {
-              setQuickBarOpen(false);
-              setActiveAgentId(null);
-              setQuickBarAnchorLeft(null);
-            }}
+            onClose={closeQuickBar}
             quickBarRef={quickBarRef}
           />
         )}

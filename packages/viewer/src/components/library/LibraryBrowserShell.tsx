@@ -133,12 +133,19 @@ interface LibraryBrowserShellProps {
   // it renders an explicit "Unknown bundle: <id>" placeholder option instead
   // of a blank/mismatched controlled-select value.
   builderUnknownBundleId?: string;
+  // Per-colleague escalation rollup for the coin tray's glow (Map Glow Up).
+  // Optional data (like agents/builderBundles above): empty/undefined = no
+  // glow. LibraryBrowserApp scopes it to the surfaces where the underlying
+  // board/map/journal data already loads.
+  escalationByColleagueId?: ReadonlyMap<string, boolean>;
   mode: LibraryViewMode;
   onHome(): void;
   onInfo(): void;
   onLibrary(): void;
   onMap(): void;
   onAgent(agentId: string): void;
+  onColleagueJournal(agentId: string): void;
+  onColleagueNeedsHuman(agentId: string): void;
   onBundleSelect(bundleId: string): void;
   onFrameProblem(): void;
   onKnowledgeBank(): void;
@@ -158,12 +165,15 @@ export function LibraryBrowserShell({
   builderSelectedBundleId,
   builderUnknownBundleId,
   children,
+  escalationByColleagueId,
   mode,
   onHome,
   onInfo,
   onLibrary,
   onMap,
   onAgent,
+  onColleagueJournal,
+  onColleagueNeedsHuman,
   onBundleSelect,
   onFrameProblem,
   onKnowledgeBank,
@@ -247,7 +257,10 @@ export function LibraryBrowserShell({
         actionRequest={ravenActionRequest}
         agents={agents}
         connectionState={ravenConnectionState}
+        escalationByColleagueId={escalationByColleagueId}
         onAgent={onAgent}
+        onColleagueJournal={onColleagueJournal}
+        onColleagueNeedsHuman={onColleagueNeedsHuman}
         onFrameProblem={onFrameProblem}
         onKnowledgeBank={onKnowledgeBank}
       />
