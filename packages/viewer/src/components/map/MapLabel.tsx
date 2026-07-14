@@ -129,9 +129,10 @@ function createLabelTexture(
       return;
     }
     context.textAlign = "left";
-    // Center the tracked run in the canvas. Reduces to `pad` when no plate
-    // widened the canvas, so unplated labels render exactly as before.
-    let x = (canvas.width - textWidth) / 2;
+    // Same left margin baked into canvas.width above: `pad` alone when
+    // unplated (identical to the pre-plate start position), plus
+    // `plateExtraX` once a plate has widened the canvas.
+    let x = pad + plateExtraX;
     for (const character of text) {
       if (mode === "stroke") {
         context.strokeText(character, x, y);
