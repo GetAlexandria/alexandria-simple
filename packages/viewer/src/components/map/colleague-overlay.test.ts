@@ -3,6 +3,7 @@ import type {
   ColleagueJournal,
   InfoHubCard,
   MapEntity,
+  MapPatternRule,
   MapState,
   RuntimeAgent,
 } from "../../app/runtime/schemas";
@@ -299,5 +300,71 @@ describe("escalationByColleagueId", () => {
     expect([...result.keys()]).toEqual([]);
     // And a human id never resolves through the colleague count.
     expect(colleagueNeedsHumanCount(humanState, cards, "danvers")).toBe(0);
+  });
+
+  // Shared fixture for the two PATTERN-system tests below: sys-raven-pattern
+  // is overdue from its OWN generated-card history (a past window's card is
+  // still open) — no journal beat is late, and the system carries no
+  // `cadence` at all, so only patternHealthSignal can be the source of the
+  // escalation each test checks for. The two tests vary only `journals`
+  // (healthy vs. unavailable) and `nowMs`.
+  const patternRule: MapPatternRule = { id: "monthly", title: "Monthly close", every: "1mo" };
+  const patternState: MapState = {
+    domains: [],
+    contexts: [],
+    entities: [
+      systemEntity({
+        id: "sys-raven-pattern",
+        assignee: "colleague:raven",
+        pattern: [patternRule],
+      }),
+    ],
+    positions: [],
+  };
+  const patternOverdueCard = card({
+    id: "wo-gen-monthly-2026-06-01",
+    status: "open",
+    entityId: "sys-raven-pattern",
+    generatedBy: {
+      systemId: "sys-raven-pattern",
+      ruleId: "monthly",
+      window: "2026-06-01T00:00:00.000Z",
+    },
+  });
+  const patternNowMs = Date.parse("2026-07-14T09:00:00.000Z");
+
+  it("escalates a colleague whose PATTERN system is overdue, OR'd with the journal half (work-system plan §4)", () => {
+    // Raven's journal is healthy (a recent beat) — the pattern overdue must
+    // still surface, proving it is OR'd in rather than requiring a lapsed
+    // journal too.
+    const healthyJournals: ColleagueJournal[] = [
+      {
+        colleague: "raven",
+        entries: [{ timestamp: "2026-07-14T08:45:00Z", title: "beat", body: "" }],
+      },
+    ];
+    const result = escalationByColleagueId({
+      state: patternState,
+      cards: [patternOverdueCard],
+      journals: healthyJournals,
+      nowMs: patternNowMs,
+    });
+    expect(result.get("raven")).toBe(true);
+  });
+
+  it("a PATTERN system still escalates with journals UNAVAILABLE (e.g. the Info Hub surface)", () => {
+    // Same overdue pattern system as above, but `journals: null` — the
+    // surface that never fetches journals at all (colleagueEscalated's own
+    // doc: pattern health comes from board cards already in `cards`, not
+    // journals, so it is NOT part of the "health/overdue half inert when
+    // journals are unavailable" carve-out that applies to pattern-less
+    // systems).
+    const result = escalationByColleagueId({
+      state: patternState,
+      cards: [patternOverdueCard],
+      journals: null,
+      nowMs: patternNowMs,
+    });
+    expect(result.get("raven")).toBe(true);
   });
 });

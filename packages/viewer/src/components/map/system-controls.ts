@@ -321,12 +321,16 @@ export function systemControls(
 }
 
 /**
- * The filled-dot count (0-5) for a 5-dot health row from an on-time rate —
- * shared derivation so the system room and (WS4) the map tile read the same
- * fill from the same rate. Null (no history) is the caller's own "neutral"
+ * The filled-dot count (0-5) for the system room's 5-dot health row, derived
+ * from an on-time rate. Null (no history) is the caller's own "neutral"
  * branch — this always returns 0 for null, but callers should render
  * neutral distinctly rather than "0 filled of 5" (an empty row and a failing
  * row must not look identical).
+ *
+ * The map tile (WS4, signals.ts's `PATTERN_HEALTH_DOTS`) does NOT call this:
+ * SystemHexTile's dot vocabulary is 0-3, not 0-5, so the tile maps the
+ * coarser `healthLevel` bucket (good/worn/failing) onto its own 3-dot scale
+ * instead of rounding this function's 5-dot fill down.
  */
 export function healthDotFillCount(rate: number | null): number {
   if (rate == null) {

@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import type { ColleagueJournal, InfoHubCard, MapEntity } from "../../app/runtime/schemas";
+import type {
+  ColleagueJournal,
+  InfoHubCard,
+  MapEntity,
+  MapPatternRule,
+} from "../../app/runtime/schemas";
 import {
   cardLastTouchedMs,
   deriveTileSignalsByEntity,
@@ -10,6 +15,7 @@ import {
   parseCadenceToMs,
   parseJournalTimestamp,
   parseJournalTimestampMs,
+  patternHealthSignal,
   STALENESS_THRESHOLD_DAYS,
   systemHealthSignal,
   type JournalEntryTime,
@@ -46,6 +52,36 @@ function systemEntity(overrides: Partial<MapEntity> & { id: string }): MapEntity
 /** A precise (date-time) journal entry `windows` cadence-windows before NOW. */
 function entryWindowsAgo(windows: number, windowMs: number): JournalEntryTime {
   return { ms: NOW - windows * windowMs, dateOnly: false };
+}
+
+// --- PATTERN fixtures (work-system plan §4 — mirrors system-controls.test.ts) ---
+
+/** Current monthly window for PATTERN_NOW is 2026-07-01; the prior is 2026-06-01. */
+const PATTERN_NOW = new Date("2026-07-14T09:00:00.000Z");
+
+function patternRule(overrides: Partial<MapPatternRule> = {}): MapPatternRule {
+  return {
+    id: "monthly-bookkeeping",
+    title: "Close the monthly books",
+    every: "1mo",
+    ...overrides,
+  };
+}
+
+function genCard(
+  systemId: string,
+  ruleId: string,
+  window: string,
+  overrides: Partial<InfoHubCard> = {},
+): InfoHubCard {
+  return card({
+    id: `wo-gen-${ruleId}-${window.slice(0, 10)}`,
+    entityId: systemId,
+    source: `system:${systemId}`,
+    created: window.slice(0, 10),
+    generatedBy: { systemId, ruleId, window },
+    ...overrides,
+  });
 }
 
 describe("parseCadenceToMs", () => {
@@ -263,6 +299,94 @@ describe("systemHealthSignal — unknown (never-beaten / unmeasurable)", () => {
   });
 });
 
+describe("patternHealthSignal", () => {
+  const SYSTEM_ID = "sys-llc-administration";
+
+  function systemWithPattern(pattern: MapPatternRule[]): MapEntity {
+    return systemEntity({ id: SYSTEM_ID, pattern });
+  }
+
+  test("no completed window yet → neutral reads as UNKNOWN (dim dots), distinct from failing", () => {
+    const system = systemWithPattern([patternRule()]);
+    expect(patternHealthSignal(system, [], PATTERN_NOW)).toEqual({
+      filledDots: 3,
+      overdue: false,
+      known: false,
+    });
+  });
+
+  test("on-time history → good → 3 filled dots, known, not overdue", () => {
+    const rule = patternRule();
+    const system = systemWithPattern([rule]);
+    const cards: InfoHubCard[] = [
+      genCard(SYSTEM_ID, rule.id, "2026-05-01T00:00:00.000Z", {
+        status: "done",
+        terminalAt: "2026-05-20",
+      }),
+      genCard(SYSTEM_ID, rule.id, "2026-06-01T00:00:00.000Z", {
+        status: "done",
+        terminalAt: "2026-06-18",
+      }),
+    ];
+    expect(patternHealthSignal(system, cards, PATTERN_NOW)).toEqual({
+      filledDots: 3,
+      overdue: false,
+      known: true,
+    });
+  });
+
+  test("on-time rate between 0.5 and 0.8, no rule overdue → worn → 2 filled dots", () => {
+    const rule = patternRule();
+    const system = systemWithPattern([rule]);
+    // Five past monthly windows, all terminal (no overdue): 3 hits, 2
+    // wont-do misses → onTimeRate 0.6 — below the 0.8 "good" bar but not
+    // below the 0.5 "failing" bar, and no non-terminal late card either.
+    const windows = [
+      "2026-02-01T00:00:00.000Z",
+      "2026-03-01T00:00:00.000Z",
+      "2026-04-01T00:00:00.000Z",
+      "2026-05-01T00:00:00.000Z",
+      "2026-06-01T00:00:00.000Z",
+    ];
+    const cards: InfoHubCard[] = windows.map((window, index) =>
+      genCard(SYSTEM_ID, rule.id, window, {
+        status: index < 3 ? "done" : "wont-do",
+        terminalAt: window.slice(0, 10),
+      }),
+    );
+    expect(patternHealthSignal(system, cards, PATTERN_NOW)).toEqual({
+      filledDots: 2,
+      overdue: false,
+      known: true,
+    });
+  });
+
+  test("a past window's card left open → overdue and drained (failing → 0 dots), the flicker case", () => {
+    const rule = patternRule();
+    const system = systemWithPattern([rule]);
+    // The June window's card was generated but never closed — a miss AND
+    // still-pending late work, so ruleControls/systemControls flags it
+    // overdue as well as tanking the on-time rate.
+    const cards: InfoHubCard[] = [
+      genCard(SYSTEM_ID, rule.id, "2026-06-01T00:00:00.000Z", { status: "open" }),
+    ];
+    expect(patternHealthSignal(system, cards, PATTERN_NOW)).toEqual({
+      filledDots: 0,
+      overdue: true,
+      known: true,
+    });
+  });
+
+  test("a system with NO pattern rules at all is also neutral/unknown", () => {
+    const system = systemWithPattern([]);
+    expect(patternHealthSignal(system, [], PATTERN_NOW)).toEqual({
+      filledDots: 3,
+      overdue: false,
+      known: false,
+    });
+  });
+});
+
 describe("deriveTileSignalsByEntity", () => {
   test("joins cards + journals by id and assignee colleague; date-only seed reads healthy", () => {
     const entities: MapEntity[] = [
@@ -367,5 +491,103 @@ describe("deriveTileSignalsByEntity", () => {
     const cards = [card({ id: "old", entityId: "sys-hib", created: oldCreated })];
     const signals = deriveTileSignalsByEntity({ entities, cards, journals: [], nowMs: NOW });
     expect(signals.get("sys-hib")!.stale).toBe(false);
+  });
+
+  describe("systems WITH a pattern (work-system plan §4)", () => {
+    const SYSTEM_ID = "sys-llc-administration";
+    const rule = patternRule();
+
+    test("a healthy pattern system reads its dots from systemControls, not the journal", () => {
+      const entities: MapEntity[] = [
+        systemEntity({ id: SYSTEM_ID, assignee: "human:danvers", pattern: [rule] }),
+      ];
+      const cards: InfoHubCard[] = [
+        genCard(SYSTEM_ID, rule.id, "2026-05-01T00:00:00.000Z", {
+          status: "done",
+          terminalAt: "2026-05-20",
+        }),
+        // Closed right at the June window's end — within STALENESS_THRESHOLD_DAYS
+        // of PATTERN_NOW, so this test's own recency doesn't trip staleness.
+        genCard(SYSTEM_ID, rule.id, "2026-06-01T00:00:00.000Z", {
+          status: "done",
+          terminalAt: "2026-07-01",
+        }),
+      ];
+      // No journal at all for "danvers" (a human, not a colleague) — the
+      // pattern branch needs none of that to read healthy.
+      const signals = deriveTileSignalsByEntity({
+        entities,
+        cards,
+        journals: [],
+        nowMs: PATTERN_NOW.getTime(),
+      });
+      expect(signals.get(SYSTEM_ID)).toEqual({
+        needsHuman: false,
+        stale: false,
+        filledDots: 3,
+        overdue: false,
+        healthKnown: true,
+      });
+    });
+
+    test("a past-window open card reads overdue + drained dots (the candle-flicker case)", () => {
+      const entities: MapEntity[] = [
+        systemEntity({ id: SYSTEM_ID, assignee: "colleague:raven", pattern: [rule] }),
+      ];
+      const cards: InfoHubCard[] = [
+        genCard(SYSTEM_ID, rule.id, "2026-06-01T00:00:00.000Z", { status: "open" }),
+      ];
+      const signals = deriveTileSignalsByEntity({
+        entities,
+        cards,
+        journals: [],
+        nowMs: PATTERN_NOW.getTime(),
+      });
+      expect(signals.get(SYSTEM_ID)).toMatchObject({ filledDots: 0, overdue: true });
+    });
+
+    test("a pattern-less system reads exactly as before against the SAME cards/journals", () => {
+      // A pattern system and a pattern-less (journal-cadence) system side by
+      // side over the same inputs: the pattern system's dots come from its
+      // generated-card history, the journal-cadence system's dots come from
+      // its colleague's journal beat — neither routing leaks into the other.
+      const patternSystem = systemEntity({
+        id: SYSTEM_ID,
+        assignee: "colleague:raven",
+        pattern: [rule],
+      });
+      const journalSystem = systemEntity({
+        id: "sys-raven-duty-loop",
+        assignee: "colleague:raven",
+        cadence: "30m",
+      });
+      const cards: InfoHubCard[] = [
+        genCard(SYSTEM_ID, rule.id, "2026-06-01T00:00:00.000Z", { status: "open" }),
+      ];
+      const journals: ColleagueJournal[] = [
+        {
+          colleague: "raven",
+          entries: [{ timestamp: "2026-07-14T08:45:00Z", title: "beat", body: "" }],
+        },
+      ];
+      const signals = deriveTileSignalsByEntity({
+        entities: [patternSystem, journalSystem],
+        cards,
+        journals,
+        nowMs: PATTERN_NOW.getTime(),
+      });
+      // The pattern system is drained/overdue from its own generated-card
+      // history — unaffected by raven's healthy journal beat.
+      expect(signals.get(SYSTEM_ID)).toMatchObject({ filledDots: 0, overdue: true });
+      // The journal-cadence system reads healthy from raven's recent beat —
+      // unaffected by the pattern system's overdue generated card.
+      expect(signals.get("sys-raven-duty-loop")).toEqual({
+        needsHuman: false,
+        stale: false,
+        filledDots: 3,
+        overdue: false,
+        healthKnown: true,
+      });
+    });
   });
 });

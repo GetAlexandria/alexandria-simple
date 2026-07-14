@@ -10,10 +10,16 @@
 //   • needs-a-human / staleness — the Info Hub board cards already fetched by
 //     the Map tab (their status and their only timestamps, `created` /
 //     `terminalAt`; a work order carries no `updatedAt`).
-//   • system health / overdue — the owning colleague's duty-loop journal,
-//     read through the read-only `/api/journals` path (useColleagueJournals);
-//     health is the recency of the most recent entry, in cadence-window
-//     multiples.
+//   • system health / overdue, PATTERN-LESS systems — the owning colleague's
+//     duty-loop journal, read through the read-only `/api/journals` path
+//     (useColleagueJournals); health is the recency of the most recent
+//     entry, in cadence-window multiples.
+//   • system health / overdue, systems WITH a `pattern` (work-system plan
+//     §4) — the system's OWN generated-card controls (system-controls.ts's
+//     `systemControls`, the same math the system room's CONTROLS section
+//     renders), never the journal heuristic. A pattern system generates its
+//     own on-time history, so its tile health is read from that, regardless
+//     of whether journals are available on this surface.
 //
 // Two philosophy guards, both to avoid a false alarm on the shipped seed:
 //   • A DATE-ONLY journal header can't be resolved below a day, so under a
@@ -31,6 +37,7 @@
 import type { ColleagueJournal, InfoHubCard, MapEntity } from "../../app/runtime/schemas";
 import { dateOnlyUtcMs } from "../library/infohub/boardModel";
 import { cardsJoinedToEntity } from "./placement";
+import { systemControls, type SystemHealthLevel } from "./system-controls";
 import { assigneeColleagueId } from "./vocabulary";
 
 // --- Threshold constants (tunable, in one place) ---------------------------
@@ -344,6 +351,50 @@ export function systemHealthSignal(options: {
 }
 
 /**
+ * Maps a PATTERN system's aggregate `systemControls.healthLevel` onto the
+ * tile's 0–3 dot vocabulary (SystemHexTile): "good" fills all three dots (on
+ * rhythm), "worn" fills two (behind but not written off — one overdue rule,
+ * or a sub-0.8 pooled on-time rate), "failing" drains to zero — mirroring
+ * the journal heuristic's "dots drop, then flicker" (OVERDUE_CADENCE_WINDOWS
+ * above): the last dot goes dark exactly where the candle would light.
+ * "neutral" (no completed window yet) has no entry here — patternHealthSignal
+ * routes it to UNKNOWN_HEALTH instead, so "no history yet" reads as dim/
+ * unmeasured, not as an empty (failing) row.
+ */
+const PATTERN_HEALTH_DOTS: Readonly<Record<Exclude<SystemHealthLevel, "neutral">, HealthDotCount>> =
+  {
+    good: 3,
+    worn: 2,
+    failing: 0,
+  };
+
+/**
+ * System health + overdue for a system WITH a `pattern` (work-system plan
+ * §4): reads the system's own generated-card controls (system-controls.ts's
+ * `systemControls` — the same math the system room's CONTROLS section
+ * renders) instead of the journal-cadence heuristic. A pattern system
+ * generates its own on-time history, so its tile health is that truth, not a
+ * proxy read off the owning colleague's duty-loop journal — and it needs no
+ * colleague or journal data at all (a human-owned pattern system reads the
+ * same way a colleague-run one does).
+ */
+export function patternHealthSignal(
+  system: MapEntity,
+  cards: readonly InfoHubCard[],
+  now: Date,
+): SystemHealthSignal {
+  const controls = systemControls(system, cards, now);
+  if (controls.healthLevel === "neutral") {
+    return UNKNOWN_HEALTH;
+  }
+  return {
+    filledDots: PATTERN_HEALTH_DOTS[controls.healthLevel],
+    overdue: controls.overdue,
+    known: true,
+  };
+}
+
+/**
  * The per-entity signal map the Map tab renders from — every entity's four
  * signals, derived once from the map entities, the board cards, and the
  * colleague journals. Projects carry a neutral (never-rendered) health; only
@@ -375,6 +426,8 @@ export function deriveTileSignalsByEntity(options: {
   // One pass to bucket cards by entityId (see cardsByEntityId) instead of one
   // full rescan per entity below — O(entities + cards), not O(entities × cards).
   const cardBuckets = cardsByEntityId(options.cards);
+  // Loop-invariant: `now` is read once, not re-boxed per pattern-carrying entity.
+  const now = new Date(options.nowMs);
 
   const signalsByEntity = new Map<string, TileSignals>();
   for (const entity of options.entities) {
@@ -392,6 +445,17 @@ export function deriveTileSignalsByEntity(options: {
       // Projects never render dots — value is inert (same shape as UNKNOWN_HEALTH,
       // but "known" so nothing downstream mistakes it for an unmeasured system).
       health = { ...UNKNOWN_HEALTH, known: true };
+    } else if (entity.pattern != null && entity.pattern.length > 0) {
+      // A system WITH a pattern generates its own on-time history — read
+      // that (patternHealthSignal / system-controls.ts), never the
+      // journal-cadence heuristic below, whether or not journals are even
+      // available on this surface (work-system plan §4). `bucket` (this
+      // system's own entityId-joined cards) is exactly the generated-card
+      // set systemControls needs — a generated card's entityId is always
+      // its systemId (ax's system-generation effect) — so this reuses the
+      // O(entities + cards) bucketing above instead of rescanning the full
+      // card list per pattern system.
+      health = patternHealthSignal(entity, bucket, now);
     } else if (!journalsAvailable) {
       health = UNKNOWN_HEALTH;
     } else {
