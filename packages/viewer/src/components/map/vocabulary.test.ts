@@ -1,5 +1,10 @@
 import { describe, expect, it } from "bun:test";
-import { parseDomainOwner, parseLandmarkId } from "./vocabulary";
+import {
+  ASSIGNEE_OPTIONS,
+  assigneeColleagueId,
+  parseDomainOwner,
+  parseLandmarkId,
+} from "./vocabulary";
 
 describe("parseDomainOwner", () => {
   it("parses colleague owners", () => {
@@ -36,6 +41,49 @@ describe("parseDomainOwner", () => {
   it("flags unknown kind-prefixed strings as malformed", () => {
     expect(parseDomainOwner("robot:zed")).toEqual({ status: "malformed", raw: "robot:zed" });
     expect(parseDomainOwner(":")).toEqual({ status: "malformed", raw: ":" });
+  });
+});
+
+describe("assigneeColleagueId", () => {
+  it("returns the bare id for a colleague-kind assignee", () => {
+    expect(assigneeColleagueId("colleague:raven")).toBe("raven");
+    expect(assigneeColleagueId("colleague:damien")).toBe("damien");
+  });
+
+  it("returns undefined for a human-kind assignee", () => {
+    expect(assigneeColleagueId("human:danvers")).toBeUndefined();
+  });
+
+  it("returns undefined for an absent assignee", () => {
+    expect(assigneeColleagueId(undefined)).toBeUndefined();
+    expect(assigneeColleagueId("")).toBeUndefined();
+  });
+
+  it("returns undefined for a malformed colleague ref (prefix, no id)", () => {
+    expect(assigneeColleagueId("colleague:")).toBeUndefined();
+  });
+
+  it("treats a bare, prefix-less id as non-colleague (assignees must be prefixed)", () => {
+    expect(assigneeColleagueId("raven")).toBeUndefined();
+  });
+});
+
+describe("ASSIGNEE_OPTIONS", () => {
+  it("lists the six v1 refs (humans then colleagues) with display names", () => {
+    expect(ASSIGNEE_OPTIONS).toEqual([
+      { ref: "human:danvers", name: "Danvers" },
+      { ref: "human:jess", name: "Jess" },
+      { ref: "colleague:raven", name: "Raven" },
+      { ref: "colleague:damien", name: "Damien" },
+      { ref: "colleague:william", name: "William" },
+      { ref: "colleague:rob", name: "Rob" },
+    ]);
+  });
+
+  it("has a well-formed owner-style ref for every option", () => {
+    for (const option of ASSIGNEE_OPTIONS) {
+      expect(parseDomainOwner(option.ref).status).toBe("owned");
+    }
   });
 });
 

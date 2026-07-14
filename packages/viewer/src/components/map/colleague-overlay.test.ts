@@ -69,7 +69,7 @@ const STATE: MapState = {
       name: "Raven duty loop",
       contextId: "colleagues",
       domainId: "alexandria",
-      colleague: "raven",
+      assignee: "colleague:raven",
       lifecycle: "planted",
     },
     {
@@ -205,8 +205,8 @@ describe("escalationByColleagueId", () => {
     domains: [],
     contexts: [],
     entities: [
-      systemEntity({ id: "sys-raven", colleague: "raven", cadence: "30m" }),
-      systemEntity({ id: "sys-damien", colleague: "damien", cadence: "30m" }),
+      systemEntity({ id: "sys-raven", assignee: "colleague:raven", cadence: "30m" }),
+      systemEntity({ id: "sys-damien", assignee: "colleague:damien", cadence: "30m" }),
     ],
     positions: [],
   };
@@ -276,5 +276,28 @@ describe("escalationByColleagueId", () => {
     });
     expect(result.has("nova")).toBe(false);
     expect([...result.keys()].sort()).toEqual(["damien", "raven"]);
+  });
+
+  it("the fold: a human-assigned or unassigned entity keys no colleague and feeds no glow", () => {
+    // Only colleague-kind assignees derive an agent id; a human-assigned system
+    // and an unassigned one contribute nothing to the coin-tray rollup, even
+    // when they carry a needs-a-human card.
+    const humanState: MapState = {
+      domains: [],
+      contexts: [],
+      entities: [
+        systemEntity({ id: "sys-human", assignee: "human:danvers", cadence: "30m" }),
+        systemEntity({ id: "sys-none", cadence: "30m" }),
+      ],
+      positions: [],
+    };
+    const cards = [
+      card({ id: "n1", status: "needs-a-human", entityId: "sys-human" }),
+      card({ id: "n2", status: "needs-a-human", entityId: "sys-none" }),
+    ];
+    const result = escalationByColleagueId({ state: humanState, cards, journals: [], nowMs: NOW });
+    expect([...result.keys()]).toEqual([]);
+    // And a human id never resolves through the colleague count.
+    expect(colleagueNeedsHumanCount(humanState, cards, "danvers")).toBe(0);
   });
 });

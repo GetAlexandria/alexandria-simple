@@ -216,7 +216,7 @@ describe("withEntityCreated", () => {
     expect(next.contexts).toBe(BASE_STATE.contexts);
   });
 
-  it("keeps cadence and colleague on a system when provided", () => {
+  it("keeps cadence and folds colleague into assignee on a system when provided", () => {
     const { entity } = withEntityCreated(BASE_STATE, {
       cadence: "30m",
       colleague: "raven",
@@ -226,10 +226,11 @@ describe("withEntityCreated", () => {
       name: "Duty loop",
     });
     expect(entity.cadence).toBe("30m");
-    expect(entity.colleague).toBe("raven");
+    // The form's bare colleague folds into the work-item assignee.
+    expect(entity.assignee).toBe("colleague:raven");
   });
 
-  it("never writes cadence/colleague on a project draft", () => {
+  it("never writes cadence/assignee on a project draft", () => {
     const { entity } = withEntityCreated(BASE_STATE, {
       cadence: "30m",
       colleague: "raven",

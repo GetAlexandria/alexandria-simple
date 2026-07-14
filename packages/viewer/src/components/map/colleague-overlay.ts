@@ -10,7 +10,7 @@ import type {
   RuntimeAgent,
 } from "../../app/runtime/schemas";
 import { deriveTileSignalsByEntity, type TileSignals } from "./signals";
-import { capitalize } from "./vocabulary";
+import { assigneeColleagueId, capitalize } from "./vocabulary";
 
 /** The colleague's name/role line, resolved from the agent roster. */
 export interface ColleagueIdentity {
@@ -40,9 +40,10 @@ export function resolveColleagueIdentity(
 
 /**
  * How many of a colleague's cards need a human. A colleague's work is the
- * systems they run (map entities with `colleague: <id>`); a `needs-a-human`
- * board card counts when it is joined (`entityId`) to one of those systems —
- * the card-level twin of the per-tile "needs a human" glow (plan §1.4).
+ * entities assigned to them (map entities whose `assignee` is `colleague:<id>`);
+ * a `needs-a-human` board card counts when it is joined (`entityId`) to one of
+ * those entities — the card-level twin of the per-tile "needs a human" glow
+ * (plan §1.4).
  */
 export function colleagueNeedsHumanCount(
   state: MapState,
@@ -50,7 +51,9 @@ export function colleagueNeedsHumanCount(
   colleagueId: string,
 ): number {
   const entityIds = new Set(
-    state.entities.filter((entity) => entity.colleague === colleagueId).map((entity) => entity.id),
+    state.entities
+      .filter((entity) => assigneeColleagueId(entity.assignee) === colleagueId)
+      .map((entity) => entity.id),
   );
   if (entityIds.size === 0) {
     return 0;
@@ -72,8 +75,9 @@ export function topJournalEntries<Entry>(entries: readonly Entry[], limit: numbe
 
 /**
  * Whether a colleague's coin should carry the escalation glow (Map Glow Up):
- * the director needs to step in on this colleague's work. True when EITHER a
- * `needs-a-human` board card is joined to one of their systems
+ * the director needs to step in on this colleague's work. A colleague's work is
+ * the entities assigned to them (`assignee` = `colleague:<that agent>`). True
+ * when EITHER a `needs-a-human` board card is joined to one of those entities
  * (colleagueNeedsHumanCount > 0), OR one of their systems has gone quiet — its
  * per-entity signal is `overdue`, or its health is KNOWN and fully drained
  * (`healthKnown && filledDots === 0`). It reuses the exact same building blocks
@@ -94,7 +98,7 @@ export function colleagueEscalated(options: {
     return true;
   }
   return options.state.entities.some((entity) => {
-    if (entity.colleague !== options.colleagueId) {
+    if (assigneeColleagueId(entity.assignee) !== options.colleagueId) {
       return false;
     }
     const signals = options.signalsByEntityId.get(entity.id);
@@ -135,7 +139,7 @@ export function escalationByColleagueId(options: {
   });
   const byColleague = new Map<string, boolean>();
   for (const entity of options.state.entities) {
-    const colleagueId = entity.colleague;
+    const colleagueId = assigneeColleagueId(entity.assignee);
     if (colleagueId == null || byColleague.has(colleagueId)) {
       continue;
     }

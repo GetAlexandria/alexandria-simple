@@ -9,6 +9,7 @@ import type { InfoHubCard, MapEntity, MapEntityKind, MapState } from "../../app/
 import { slugify, uniqueId } from "../id-slug";
 import { isTerminalStatus } from "../library/infohub/boardModel";
 import { createHex, hexToKey, type HexCoord } from "./hex";
+import { COLLEAGUE_OWNER_PREFIX } from "./vocabulary";
 
 // Viewer twins of the per-kind lifecycle vocabularies in
 // packages/ax/src/effects/map-state.ts (MAP_PROJECT_LIFECYCLES /
@@ -109,6 +110,10 @@ export function withEntityRemoved(state: MapState, entityId: string): MapState {
  * Everything the entity form captures. `kind` is create-only: an entity's
  * id carries its kind prefix and its stored position carries its
  * entityType, so edits keep the kind fixed rather than rewriting identity.
+ *
+ * `colleague` is the form's bare-id colleague input (systems only); it folds
+ * into the entity's `assignee` as `colleague:<id>` in entityFromDraft. The
+ * full assignee picker (humans + colleagues, projects too) is a later PR.
  */
 export type MapEntityDraft = {
   cadence?: string;
@@ -160,10 +165,15 @@ function entityFromDraft(id: string, draft: MapEntityDraft, domainId: string): M
     name: draft.name.trim(),
     contextId: draft.contextId,
     domainId,
-    // cadence/colleague belong to systems only (the ax validator rejects
-    // them on projects) and are omitted entirely when blank — the schema
-    // twins reject empty strings.
-    ...(draft.kind === "system" && colleague.length > 0 ? { colleague } : {}),
+    // The form's bare colleague folds into the work-item `assignee` as
+    // `colleague:<id>`; cadence stays system-only. Both apply to systems only
+    // here (the ax validator rejects cadence on a project, and the form only
+    // offers colleague for systems) and are omitted entirely when blank — the
+    // validators reject empty strings. A project's assignee is set elsewhere;
+    // the full assignee picker (humans too) is a later PR.
+    ...(draft.kind === "system" && colleague.length > 0
+      ? { assignee: `${COLLEAGUE_OWNER_PREFIX}${colleague}` }
+      : {}),
     ...(draft.kind === "system" && cadence.length > 0 ? { cadence } : {}),
     lifecycle: draft.lifecycle,
   };

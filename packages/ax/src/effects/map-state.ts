@@ -53,7 +53,7 @@ const ENTITY_FIELD_ORDER = [
   "name",
   "contextId",
   "domainId",
-  "colleague",
+  "assignee",
   "cadence",
   "lifecycle",
 ] as const;
@@ -109,8 +109,14 @@ export interface MapContext {
 }
 
 export interface MapEntity {
+  /**
+   * Who the work item is assigned to — a person, prefix-style
+   * (`human:<id>` | `colleague:<id>`, the same scheme as a domain's `owner`).
+   * A work-item field allowed on any kind; optional (unassigned = no field).
+   * The system's former bare `colleague` folded into this as `colleague:<id>`.
+   */
+  assignee?: string;
   cadence?: string;
-  colleague?: string;
   contextId: string;
   domainId: string;
   id: string;
@@ -424,10 +430,10 @@ function validateEntities(
       );
     }
 
-    // `colleague`/`cadence` belong to the System primitive (loops with a
-    // duty rhythm); both stay optional so standing human rhythms are valid
-    // systems, and neither may appear on a project.
-    for (const field of ["colleague", "cadence"] as const) {
+    // `cadence` belongs to the System primitive (loops with a duty rhythm);
+    // it stays optional so standing human rhythms are valid systems, and it
+    // may not appear on a project.
+    for (const field of ["cadence"] as const) {
       if (!hasOwn(rawEntity, field)) {
         continue;
       }
@@ -440,13 +446,24 @@ function validateEntities(
       }
     }
 
+    // `assignee` is a work-item field (who the work is assigned to,
+    // prefix-style human:/colleague:), allowed on ANY kind unlike the
+    // system-only cadence. Optional; a non-empty string when present. The
+    // system's former bare `colleague` folded into this as `colleague:<id>`.
+    if (hasOwn(rawEntity, "assignee")) {
+      const assigneeError = requireString(rawEntity, "assignee", ref);
+      if (assigneeError != null) {
+        return assigneeError;
+      }
+    }
+
     entities.push({
       id: rawEntity.id as string,
       kind,
       name: rawEntity.name as string,
       contextId: rawEntity.contextId as string,
       domainId: rawEntity.domainId as string,
-      ...(hasOwn(rawEntity, "colleague") ? { colleague: rawEntity.colleague as string } : {}),
+      ...(hasOwn(rawEntity, "assignee") ? { assignee: rawEntity.assignee as string } : {}),
       ...(hasOwn(rawEntity, "cadence") ? { cadence: rawEntity.cadence as string } : {}),
       lifecycle: rawEntity.lifecycle as MapEntity["lifecycle"],
     });

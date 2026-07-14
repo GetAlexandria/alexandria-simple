@@ -31,6 +31,7 @@
 import type { ColleagueJournal, InfoHubCard, MapEntity } from "../../app/runtime/schemas";
 import { dateOnlyUtcMs } from "../library/infohub/boardModel";
 import { cardsJoinedToEntity } from "./placement";
+import { assigneeColleagueId } from "./vocabulary";
 
 // --- Threshold constants (tunable, in one place) ---------------------------
 // The one module the L1 signal thresholds live in (issue spec: "tunable, not
@@ -394,10 +395,15 @@ export function deriveTileSignalsByEntity(options: {
     } else if (!journalsAvailable) {
       health = UNKNOWN_HEALTH;
     } else {
+      // Agent-cadence health applies only to a colleague-ASSIGNED system: the
+      // beating agent is the assignee when it is colleague-kind (a human-
+      // assigned or unassigned system has no agent journal, so `colleagueId`
+      // is undefined and systemHealthSignal reads UNKNOWN — dim dots, no flicker).
+      const colleagueId = assigneeColleagueId(entity.assignee);
       health = systemHealthSignal({
-        colleague: entity.colleague,
+        colleague: colleagueId,
         cadence: entity.cadence,
-        entries: entity.colleague == null ? [] : (entriesByColleague.get(entity.colleague) ?? []),
+        entries: colleagueId == null ? [] : (entriesByColleague.get(colleagueId) ?? []),
         nowMs: options.nowMs,
       });
     }

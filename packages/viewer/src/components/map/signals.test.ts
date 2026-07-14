@@ -264,9 +264,9 @@ describe("systemHealthSignal — unknown (never-beaten / unmeasurable)", () => {
 });
 
 describe("deriveTileSignalsByEntity", () => {
-  test("joins cards + journals by id and colleague; date-only seed reads healthy", () => {
+  test("joins cards + journals by id and assignee colleague; date-only seed reads healthy", () => {
     const entities: MapEntity[] = [
-      systemEntity({ id: "sys-raven", colleague: "raven", cadence: "30m" }),
+      systemEntity({ id: "sys-raven", assignee: "colleague:raven", cadence: "30m" }),
       {
         id: "prj-map",
         kind: "project",
@@ -302,7 +302,7 @@ describe("deriveTileSignalsByEntity", () => {
 
   test("a colleague with NO journal file reads unknown — never overdue", () => {
     const entities: MapEntity[] = [
-      systemEntity({ id: "sys-damien", colleague: "damien", cadence: "30m" }),
+      systemEntity({ id: "sys-damien", assignee: "colleague:damien", cadence: "30m" }),
     ];
     // journals loaded, but damien has no file (absent from the list).
     const signals = deriveTileSignalsByEntity({ entities, cards: [], journals: [], nowMs: NOW });
@@ -311,10 +311,30 @@ describe("deriveTileSignalsByEntity", () => {
 
   test("null journals leaves every system unknown (dim, no flicker)", () => {
     const entities: MapEntity[] = [
-      systemEntity({ id: "sys-raven", colleague: "raven", cadence: "30m" }),
+      systemEntity({ id: "sys-raven", assignee: "colleague:raven", cadence: "30m" }),
     ];
     const signals = deriveTileSignalsByEntity({ entities, cards: [], journals: null, nowMs: NOW });
     expect(signals.get("sys-raven")).toMatchObject({ overdue: false, healthKnown: false });
+  });
+
+  test("a system assigned to a HUMAN (not a colleague) has no agent-cadence health", () => {
+    // The fold: agent-cadence health applies only to a colleague-assigned
+    // system. A human-assigned system reads unknown (dim dots, no flicker)
+    // even with a matching journal name present — no agent runs it.
+    const entities: MapEntity[] = [
+      systemEntity({ id: "sys-human", assignee: "human:danvers", cadence: "30m" }),
+    ];
+    const journals: ColleagueJournal[] = [
+      { colleague: "danvers", entries: [{ timestamp: "2026-07-13", title: "beat", body: "" }] },
+    ];
+    const signals = deriveTileSignalsByEntity({ entities, cards: [], journals, nowMs: NOW });
+    expect(signals.get("sys-human")).toMatchObject({ overdue: false, healthKnown: false });
+  });
+
+  test("an UNASSIGNED system has no agent-cadence health", () => {
+    const entities: MapEntity[] = [systemEntity({ id: "sys-none", cadence: "30m" })];
+    const signals = deriveTileSignalsByEntity({ entities, cards: [], journals: [], nowMs: NOW });
+    expect(signals.get("sys-none")).toMatchObject({ overdue: false, healthKnown: false });
   });
 
   test("a completed project is never stale (victories stay visible)", () => {
@@ -337,7 +357,12 @@ describe("deriveTileSignalsByEntity", () => {
   test("a hibernating system is never stale", () => {
     const oldCreated = new Date(NOW - 40 * MS_PER_DAY).toISOString().slice(0, 10);
     const entities: MapEntity[] = [
-      systemEntity({ id: "sys-hib", colleague: "raven", cadence: "30m", lifecycle: "hibernating" }),
+      systemEntity({
+        id: "sys-hib",
+        assignee: "colleague:raven",
+        cadence: "30m",
+        lifecycle: "hibernating",
+      }),
     ];
     const cards = [card({ id: "old", entityId: "sys-hib", created: oldCreated })];
     const signals = deriveTileSignalsByEntity({ entities, cards, journals: [], nowMs: NOW });

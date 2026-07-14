@@ -372,15 +372,16 @@ test("entity create writes through the revision-guarded save and lands in the Un
   await expect(page.getByTestId("map-placement-panel")).toBeVisible();
   await expect(page.getByRole("button", { name: /Night watch/ })).toBeVisible();
 
-  // The persisted document carries the seed id scheme and the system fields.
+  // The persisted document carries the seed id scheme and the system fields;
+  // the form's bare colleague folds into the work-item assignee (colleague:<id>).
   const state = (await (await page.request.get("/api/map/state")).json()) as {
-    entities: { id: string; cadence?: string; colleague?: string; kind: string }[];
+    entities: { id: string; cadence?: string; assignee?: string; kind: string }[];
     positions: { entityId: string }[];
   };
   const created = state.entities.find((entity) => entity.id === "sys-night-watch");
   expect(created?.kind).toBe("system");
   expect(created?.cadence).toBe("45m");
-  expect(created?.colleague).toBe("raven");
+  expect(created?.assignee).toBe("colleague:raven");
   // Created unplaced: no position was written.
   expect(state.positions.some((position) => position.entityId === "sys-night-watch")).toBe(false);
 });

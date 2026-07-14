@@ -47,6 +47,7 @@ const CARD_FIELD_ORDER = [
   "domainId",
   "contextId",
   "entityId",
+  "assignee",
   "priority",
   "source",
   "created",
@@ -71,6 +72,11 @@ export interface InfoHubChecklistItem {
 
 export interface InfoHubCard {
   archived?: boolean;
+  // Who the work item is assigned to — a person, prefix-style
+  // (`human:<id>` | `colleague:<id>`, the same scheme as a map domain's
+  // `owner`). Optional (unassigned = no field); non-empty when present. A
+  // later PR renders the assignee picker; this PR only adds the field.
+  assignee?: string;
   checklist?: InfoHubChecklistItem[];
   // Map-tab joins (Map tab plan §1.1, additive and optional): the map
   // context a card belongs to, and the project/system entity that contains
@@ -253,6 +259,12 @@ export function validateInfoHubCards(
       (typeof rawCard.entityId !== "string" || rawCard.entityId.length === 0)
     ) {
       return validationError(`${ref} entityId must be a non-empty string`);
+    }
+    if (
+      hasOwn(rawCard, "assignee") &&
+      (typeof rawCard.assignee !== "string" || rawCard.assignee.length === 0)
+    ) {
+      return validationError(`${ref} assignee must be a non-empty string`);
     }
     if (hasOwn(rawCard, "terminalAt")) {
       if (typeof rawCard.terminalAt !== "string" || !DATE_ONLY_PATTERN.test(rawCard.terminalAt)) {

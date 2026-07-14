@@ -82,7 +82,7 @@
       "name": "Raven duty loop",
       "contextId": "colleagues",
       "domainId": "alexandria",
-      "colleague": "raven",
+      "assignee": "colleague:raven",
       "cadence": "30m",
       "lifecycle": "planted"
     },
@@ -92,6 +92,7 @@
       "name": "Map tab",
       "contextId": "viewer",
       "domainId": "alexandria",
+      "assignee": "human:danvers",
       "lifecycle": "active"
     },
     {
@@ -100,7 +101,7 @@
       "name": "Damien duty loop",
       "contextId": "demos",
       "domainId": "new-media",
-      "colleague": "damien",
+      "assignee": "colleague:damien",
       "cadence": "30m",
       "lifecycle": "planted"
     },
@@ -110,6 +111,7 @@
       "name": "Authenticate Gmail/Calendar connectors for the duty loop",
       "contextId": "viewer",
       "domainId": "alexandria",
+      "assignee": "human:danvers",
       "lifecycle": "active"
     },
     {
@@ -118,6 +120,7 @@
       "name": "Map Glow Up",
       "contextId": "viewer",
       "domainId": "alexandria",
+      "assignee": "human:danvers",
       "lifecycle": "active"
     }
   ],
