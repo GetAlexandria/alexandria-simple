@@ -502,15 +502,6 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
     setRavenActionRequest((request) => request + 1);
   }
 
-  // The "Frame a Problem" coin slot emits a play.requested event (it does NOT
-  // launch a headless run): the monitor wakes Raven, who elicits the material
-  // and launches the play with it. Fire-and-forget — the wake is the feedback.
-  function requestFrameProblem(): void {
-    void Effect.runPromise(runtimeClient.requestPlay("frame-the-problem", "raven")).catch(
-      () => undefined,
-    );
-  }
-
   function handleVisionBanked(result: RuntimeRavenVisionBankResult): void {
     projectState.applyVisionBankResult(result);
     navigate(surfaceRoute("raven-knowledge-bank"));
@@ -859,10 +850,8 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
         })
       }
       onBundleSelect={selectBuilderBundle}
-      onFrameProblem={requestFrameProblem}
       onHome={() => navigate(homeRoute())}
       onInfo={() => navigate(surfaceRoute("info"))}
-      onKnowledgeBank={() => navigate(surfaceRoute("raven-knowledge-bank"))}
       onLedger={() => navigate(surfaceRoute("ledger"))}
       onLibrary={() => navigate(librarySectionDefaultRoute("viewer"))}
       onMap={() => navigate(surfaceRoute("map"))}

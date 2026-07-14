@@ -42,8 +42,6 @@ function ShellStory({
       onAgent={() => setActiveView("agent")}
       onColleagueJournal={() => setActiveView("map")}
       onColleagueNeedsHuman={() => setActiveView("info")}
-      onFrameProblem={() => {}}
-      onKnowledgeBank={() => setActiveView("knowledge-bank")}
       onLedger={() => setActiveView("ledger")}
       onModeChange={setMode}
       onPlaybook={() => setActiveView("playbook")}

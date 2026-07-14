@@ -2708,7 +2708,9 @@ test("Raven coin opens and closes the Quick Bar without navigation", async ({ pa
   await expectWithinViewport(page, quickBar);
   await expectHorizontallyAligned(quickBar, raven);
   await attachScreenshot(page, "issue-208-quick-bar-desktop.png");
-  await expect(quickBar.getByRole("button", { name: /Knowledge Bank/ })).toBeVisible();
+  // Every coin (Raven included) now exposes the same three actions.
+  await expect(quickBar.getByRole("button", { name: /^Journal$/ })).toBeVisible();
+  await expect(quickBar.getByRole("button", { name: /Needs a Human/ })).toBeVisible();
   await expect(quickBar.getByRole("button", { name: /^Agent$/ })).toBeVisible();
 
   await page.getByRole("button", { name: "Close Raven Quick Bar" }).click();
@@ -2756,11 +2758,10 @@ test("Raven Home and Quick Bar visual shell stay inside mobile viewport", async 
   await attachScreenshot(page, "issue-208-quick-bar-mobile.png");
   await expectNoHorizontalOverflow(page);
 
-  await quickBar.getByRole("button", { name: /Knowledge Bank/ }).click();
-  await expect(page.getByRole("heading", { name: "Knowledge Bank" })).toBeVisible();
-  await expect(page.getByTestId("knowledge-bank-status")).toContainText("Not banked");
+  await expect(quickBar.getByRole("button", { name: /^Journal$/ })).toBeVisible();
+  await expect(quickBar.getByRole("button", { name: /Needs a Human/ })).toBeVisible();
+  await expect(quickBar.getByRole("button", { name: /^Agent$/ })).toBeVisible();
   await expectNoHorizontalOverflow(page);
-  await attachScreenshot(page, "issue-208-knowledge-bank-before-mobile.png");
 });
 
 test("Vision onboarding source and slot visuals fit mobile viewport", async ({ page }) => {
@@ -2795,17 +2796,12 @@ test("Vision onboarding source and slot visuals fit mobile viewport", async ({ p
   await expectNoHorizontalOverflow(page);
 });
 
-test("Knowledge Bank opens from Raven Quick Bar and stays independent", async ({ page }) => {
-  await expandAgentBench(page);
-  await page.goto("/");
+test("Knowledge Bank view renders as an independent dormant surface", async ({ page }) => {
+  // The coin shortcut to the Knowledge Bank was retired (every coin now shows
+  // Journal + Needs a Human + Agent); the KB view itself is left dormant, still
+  // reachable by direct navigation, so its rendering stays covered here.
+  await page.goto("/raven/knowledge-bank");
 
-  const raven = ravenCoin(page);
-  await raven.click();
-  const quickBar = ravenQuickBar(page);
-  await expect(quickBar).toBeVisible();
-
-  await quickBar.getByRole("button", { name: /Knowledge Bank/ }).click();
-  await expect(quickBar).toBeHidden();
   await expect(page.getByRole("heading", { name: "Knowledge Bank" })).toBeVisible();
   const knowledgeBank = page.getByTestId("knowledge-bank-status");
   await expect(knowledgeBank.locator(".raven-kb-sheet")).toBeVisible();
@@ -2848,12 +2844,6 @@ test("Knowledge Bank opens from Raven Quick Bar and stays independent", async ({
   await expectNoHorizontalOverflow(page);
   await attachScreenshot(page, "issue-208-knowledge-bank-before-desktop.png");
 
-  await raven.click();
-  await expect(quickBar).toBeVisible();
-  await page.getByRole("button", { name: "Close Raven Quick Bar" }).click();
-  await expect(quickBar).toBeHidden();
-  await expect(page.getByRole("heading", { name: "Knowledge Bank" })).toBeVisible();
-
   await canvasNav(page).getByRole("tab", { name: "Library" }).click();
   await expect(libraryHeading(page)).toBeVisible();
   await page.getByRole("button", { name: "Return to Alexandria home" }).click();
@@ -2871,8 +2861,8 @@ test("Raven visual navigation does not mutate fixture state or event count", asy
   await page.getByTestId("raven-home-cta").click();
   const quickBar = ravenQuickBar(page);
   await expect(quickBar).toBeVisible();
-  await quickBar.getByRole("button", { name: /Knowledge Bank/ }).click();
-  await expect(page.getByRole("heading", { name: "Knowledge Bank" })).toBeVisible();
+  await quickBar.getByRole("button", { name: /Needs a Human/ }).click();
+  await expect(page.getByRole("heading", { name: /Work Board/ })).toBeVisible();
   await page.getByRole("button", { name: "Return to Alexandria home" }).click();
   await expect(page.getByRole("heading", { name: "Raven" })).toBeVisible();
 
