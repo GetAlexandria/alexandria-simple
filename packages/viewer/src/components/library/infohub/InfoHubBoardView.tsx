@@ -32,6 +32,7 @@ import {
   type WorkOrderType,
 } from "./boardModel";
 import {
+  buildDomainNameById,
   cardScopeLabel,
   cardTitleLabel,
   WORK_ORDER_STATUS_LABELS,
@@ -220,13 +221,7 @@ export function InfoHubBoardView({
   const domainPickerAvailable = mapDomains.length > 0;
   // domainId → display name, for the card scope label and the domain filter.
   // Falls back to the raw domainId when the map has no matching domain.
-  const domainNameById = useMemo(() => {
-    const byId = new Map<string, string>();
-    for (const domain of mapDomains) {
-      byId.set(domain.id, domain.name);
-    }
-    return byId;
-  }, [mapDomains]);
+  const domainNameById = useMemo(() => buildDomainNameById(mapDomains), [mapDomains]);
   // Stored joins are reconciled against the live map (PR #20 gate): an id
   // whose context/entity no longer exists (or whose entity moved contexts)
   // renders as unselected, and the SAVE writes exactly what the form shows —

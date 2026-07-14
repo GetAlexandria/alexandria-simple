@@ -6,7 +6,7 @@
 // over docs/alexandria/info-hub/board-state.json, never a second store).
 
 import type { ReactNode } from "react";
-import type { InfoHubCard } from "../../../app/runtime/schemas";
+import type { InfoHubCard, MapDomain } from "../../../app/runtime/schemas";
 import {
   isTerminalStatus,
   priorityLabel,
@@ -30,10 +30,19 @@ export const WORK_ORDER_STATUS_LABELS: Readonly<Record<WorkOrderStatus, string>>
 };
 
 /**
+ * domainId → display name, from the map's domain set. Shared by every
+ * surface that renders `cardScopeLabel` against live map state
+ * (InfoHubBoardView, MapOverlay) so the lookup is built the same way once.
+ */
+export function buildDomainNameById(domains: readonly MapDomain[]): ReadonlyMap<string, string> {
+  return new Map(domains.map((domain) => [domain.id, domain.name]));
+}
+
+/**
  * The card's domain, rendered as its map display name when known and falling
  * back to the raw `domainId` (or "General" for a domain-less card). Callers on
- * a surface with map state pass `domainNameById` (built from mapState.domains);
- * without it the raw id shows.
+ * a surface with map state pass `domainNameById` (built from mapState.domains
+ * via `buildDomainNameById`); without it the raw id shows.
  */
 export function cardScopeLabel(
   card: InfoHubCard,

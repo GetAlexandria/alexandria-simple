@@ -14,6 +14,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { InfoHubCard, MapState } from "../../app/runtime/schemas";
 import { sortCardsByPriority, type WorkOrderStatus } from "../library/infohub/boardModel";
 import {
+  buildDomainNameById,
   WorkOrderCardFace,
   WorkOrderDetailModal,
   WorkOrderStatusActions,
@@ -67,13 +68,7 @@ export function MapOverlay({
   const [detailCardId, setDetailCardId] = useState<string | null>(null);
 
   // domainId → display name for the card scope label, from the map's domains.
-  const domainNameById = useMemo(() => {
-    const byId = new Map<string, string>();
-    for (const domain of state.domains) {
-      byId.set(domain.id, domain.name);
-    }
-    return byId;
-  }, [state.domains]);
+  const domainNameById = useMemo(() => buildDomainNameById(state.domains), [state.domains]);
 
   const entity =
     target.kind === "entity"
