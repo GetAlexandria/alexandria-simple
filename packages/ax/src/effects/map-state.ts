@@ -433,16 +433,13 @@ function validateEntities(
     // `cadence` belongs to the System primitive (loops with a duty rhythm);
     // it stays optional so standing human rhythms are valid systems, and it
     // may not appear on a project.
-    for (const field of ["cadence"] as const) {
-      if (!hasOwn(rawEntity, field)) {
-        continue;
-      }
+    if (hasOwn(rawEntity, "cadence")) {
       if (kind !== "system") {
-        return validationError(`${ref} ${field} is only allowed on system entities`);
+        return validationError(`${ref} cadence is only allowed on system entities`);
       }
-      const fieldError = requireString(rawEntity, field, ref);
-      if (fieldError != null) {
-        return fieldError;
+      const cadenceError = requireString(rawEntity, "cadence", ref);
+      if (cadenceError != null) {
+        return cadenceError;
       }
     }
 
