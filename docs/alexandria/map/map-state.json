@@ -1,16 +1,33 @@
 {
+  "org": {
+    "id": "sociotechnica",
+    "name": "SocioTechnica"
+  },
   "domains": [
     {
-      "id": "software",
-      "name": "Software",
+      "id": "alexandria",
+      "name": "Alexandria",
       "half": "work",
-      "owner": "human:danvers",
+      "owner": "colleague:raven",
       "region": {
         "center": [
-          0,
-          -3
+          1,
+          -4
         ],
         "radius": 2
+      }
+    },
+    {
+      "id": "skillmaker-studio",
+      "name": "Skillmaker.Studio",
+      "half": "work",
+      "owner": "colleague:william",
+      "region": {
+        "center": [
+          5,
+          -3
+        ],
+        "radius": 1
       }
     },
     {
@@ -21,7 +38,20 @@
       "region": {
         "center": [
           -4,
-          -1
+          -2
+        ],
+        "radius": 1
+      }
+    },
+    {
+      "id": "business-development",
+      "name": "Business Development",
+      "half": "work",
+      "owner": "colleague:rob",
+      "region": {
+        "center": [
+          -4,
+          -5
         ],
         "radius": 1
       }
@@ -31,13 +61,13 @@
     {
       "id": "viewer",
       "name": "Viewer",
-      "domainId": "software",
+      "domainId": "alexandria",
       "libraryContext": "product/viewer"
     },
     {
       "id": "colleagues",
       "name": "Colleagues",
-      "domainId": "software"
+      "domainId": "alexandria"
     },
     {
       "id": "demos",

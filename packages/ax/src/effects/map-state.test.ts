@@ -54,11 +54,12 @@ function runWrite(state: MapState, workspacePath: string) {
 
 const seedPath = join(import.meta.dir, "../../../..", "docs/alexandria/map/map-state.json");
 
-// The checked-in seed world — two work-half domains (Software, New Media),
-// three contexts, the two duty-loop systems plus the Map tab project, three
-// entity positions, and the L2 landmark bench (two colleague landmarks, the
-// campfire, and four locked future-seat plots) — loaded from the seed file so
-// it stays the single source of truth.
+// The checked-in seed world — four work-half domains (Alexandria,
+// Skillmaker.Studio, New Media, Business Development) under the SocioTechnica
+// org, three contexts, the two duty-loop systems plus three projects (Map tab,
+// the Gmail/Calendar connectors, Map Glow Up), and the L2 landmark bench (two
+// colleague landmarks, the campfire, and four locked future-seat plots) —
+// loaded from the seed file so it stays the single source of truth.
 // Each call parses fresh, so tests that mutate the returned document stay
 // independent.
 function baseState(): Record<string, unknown> {
@@ -70,20 +71,46 @@ describe("validateMapState", () => {
     const result = validateMapState(baseState());
     expect(result).not.toBeInstanceOf(MapStateValidationError);
     const state = result as MapState;
-    expect(state.domains.map((domain) => domain.id)).toEqual(["software", "new-media"]);
+    expect(state.org).toEqual({ id: "sociotechnica", name: "SocioTechnica" });
+    expect(state.domains.map((domain) => domain.id)).toEqual([
+      "alexandria",
+      "skillmaker-studio",
+      "new-media",
+      "business-development",
+    ]);
     expect(state.entities.map((entity) => entity.id)).toEqual([
       "sys-raven-duty-loop",
       "prj-map-tab",
       "sys-damien-duty-loop",
+      "prj-authenticate-gmail-calendar-connectors-for-the-duty-loop",
+      "prj-map-glow-up",
     ]);
-    // Three entity positions + the L2 landmark bench (2 colleagues, 1 campfire,
+    // Five entity positions + the L2 landmark bench (2 colleagues, 1 campfire,
     // 4 locked seats).
-    expect(state.positions).toHaveLength(10);
+    expect(state.positions).toHaveLength(12);
   });
 
   test("accepts an empty document", () => {
     const result = validateMapState(defaultMapState());
     expect(result).not.toBeInstanceOf(MapStateValidationError);
+  });
+
+  test("accepts a document with no org (org is optional — a fresh world has none)", () => {
+    const state = baseState();
+    delete state.org;
+    expect(validateMapState(state)).not.toBeInstanceOf(MapStateValidationError);
+  });
+
+  test("rejects an org missing a field or carrying unknown fields", () => {
+    const missingName = baseState();
+    missingName.org = { id: "sociotechnica" };
+    expect(validateMapState(missingName)).toBeInstanceOf(MapStateValidationError);
+
+    const unknownField = baseState();
+    (unknownField.org as Record<string, unknown>).tagline = "we build";
+    const result = validateMapState(unknownField);
+    expect(result).toBeInstanceOf(MapStateValidationError);
+    expect((result as MapStateValidationError).message).toContain("unknown fields");
   });
 
   test("accepts a domain without an owner (unowned is a demand signal, not an error)", () => {
