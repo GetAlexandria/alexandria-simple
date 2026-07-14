@@ -1,14 +1,15 @@
 // The Map tab's landmark layer (L2, plan §1.1 — colleagues are landmarks, not
 // tiles). Renders the parsed landmark list (landmarks.ts) inside MapScene's
-// canvas, in BOTH view modes: colleague buildings (click → colleague
-// overlay), the locked future-seat plots (tooltip-only), and the campfire.
+// canvas, in Owner view only: colleague buildings (click → colleague overlay),
+// the locked future-seat plots (tooltip-only), and the campfire. (Domain view
+// is work-geography only after the Map Glow Up declutter, so it mounts no
+// landmark layer.)
 //
-// Colleague buildings are Domain-view furniture at their reserved bench hex;
-// the Owner view re-anchors owned colleagues on their region centers
-// (OwnerViewLayer), so `skipColleagueIds` drops those from this layer there to
-// avoid drawing a colleague twice. Seats and the campfire are view-independent
-// and always render. The locked-seat piece is shared with OwnerViewLayer so a
-// seat looks and behaves identically in both looks.
+// The Owner view re-anchors owned colleagues on their region centers
+// (OwnerViewLayer), so `skipColleagueIds` drops those from this layer to avoid
+// drawing a colleague twice; non-anchor colleagues render as bench buildings.
+// The locked-seat piece is shared with OwnerViewLayer so a seat looks and
+// behaves identically wherever it appears.
 
 import { useState } from "react";
 import { Campfire } from "./Campfire";

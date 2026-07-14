@@ -1,15 +1,14 @@
 // Landmark derivation for the Map tab (L2, plan §1.1 — colleagues are
 // landmarks, not tiles). A pure projection of the map state's `landmark`
 // positions into a render list, three.js- and React-free so it unit-tests
-// under bun alongside the layout modules. The renderers (MapLandmarks in
-// both view modes) and the container's HUD counts read this one derivation.
+// under bun alongside the layout modules. The renderer (MapLandmarks, in
+// Owner view) and the container's HUD counts read this one derivation.
 //
-// Colleague landmarks are Domain-view furniture (a colleague's building on
-// its reserved bench hex); the Owner view re-anchors owned colleagues on
-// their region centers instead (layout/owner-view.ts), so it renders bench
-// colleagues only for colleagues that are NOT a domain anchor — see
-// `MapLandmarks`. Seats and the campfire are view-independent and render at
-// their stored hex in both looks.
+// The Owner view re-anchors owned colleagues on their region centers
+// (layout/owner-view.ts), so MapLandmarks renders bench buildings only for
+// colleagues that are NOT a domain anchor — see `MapLandmarks`. Seats and the
+// campfire render at their stored hex there too. (Domain view is work-geography
+// only and mounts no landmark layer — Map Glow Up declutter.)
 
 import type { MapState } from "../../app/runtime/schemas";
 import { createHex, type HexCoord } from "./hex";
