@@ -9,7 +9,7 @@ import type { InfoHubCard, MapEntity, MapEntityKind, MapState } from "../../app/
 import { slugify, uniqueId } from "../id-slug";
 import { isTerminalStatus } from "../library/infohub/boardModel";
 import { createHex, hexToKey, type HexCoord } from "./hex";
-import { COLLEAGUE_OWNER_PREFIX } from "./vocabulary";
+import { assigneeKeyOf, COLLEAGUE_OWNER_PREFIX } from "./vocabulary";
 
 // Viewer twins of the per-kind lifecycle vocabularies in
 // packages/ax/src/effects/map-state.ts (MAP_PROJECT_LIFECYCLES /
@@ -239,19 +239,34 @@ export function isStrayCard(card: InfoHubCard): boolean {
   return card.entityId == null && !isTerminalStatus(card.status);
 }
 
-/** Stray-card counts per domain id — the Domain-view layout's pile input. */
-export function strayCardCountsByDomain(
+/**
+ * Stray-card counts keyed by an arbitrary per-card key — the shared shape
+ * behind strayCardCountsByDomain and strayCardCountsByAssignee (they differ
+ * only in how a card's bucket key is derived).
+ */
+function strayCardCountsByKey(
   cards: readonly InfoHubCard[],
+  keyOf: (card: InfoHubCard) => string,
 ): Readonly<Record<string, number>> {
   const counts: Record<string, number> = {};
   for (const card of cards) {
     if (isStrayCard(card)) {
-      // domainId is required on every board card (M1 schema), so every stray
-      // buckets under a real key — no `??`-guarded fallback needed here.
-      counts[card.domainId] = (counts[card.domainId] ?? 0) + 1;
+      const key = keyOf(card);
+      counts[key] = (counts[key] ?? 0) + 1;
     }
   }
   return counts;
+}
+
+/**
+ * Stray-card counts per domain id — the Domain-view layout's pile input.
+ * domainId is required on every board card (M1 schema), so every stray
+ * buckets under a real key — no `??`-guarded fallback needed here.
+ */
+export function strayCardCountsByDomain(
+  cards: readonly InfoHubCard[],
+): Readonly<Record<string, number>> {
+  return strayCardCountsByKey(cards, (card) => card.domainId);
 }
 
 /**
@@ -277,12 +292,50 @@ export function cardsJoinedToEntity(
   return cards.filter((card) => card.entityId === entityId);
 }
 
+/**
+ * One key's loose cards — the shared shape behind looseCardsForDomain and
+ * looseCardsForAssignee (they differ only in how a card's bucket key is
+ * derived, the same split as strayCardCountsByKey).
+ */
+function looseCardsForKey(
+  cards: readonly InfoHubCard[],
+  key: string,
+  keyOf: (card: InfoHubCard) => string,
+): InfoHubCard[] {
+  return cards.filter((card) => isStrayCard(card) && keyOf(card) === key);
+}
+
 /** One domain's loose cards — exactly the cards its stray pile counts. */
 export function looseCardsForDomain(
   cards: readonly InfoHubCard[],
   domainId: string,
 ): InfoHubCard[] {
-  return cards.filter((card) => isStrayCard(card) && card.domainId === domainId);
+  return looseCardsForKey(cards, domainId, (card) => card.domainId);
+}
+
+/**
+ * Stray-card counts per ASSIGNEE — the Owner-by-assignee view's pile input, the
+ * assignee twin of strayCardCountsByDomain. Each live, entity-less card counts
+ * under its `assignee` ref (`human:`/`colleague:`), and cards with no assignee
+ * count under UNASSIGNED_ASSIGNEE_KEY — so, unlike the always-present domainId,
+ * the unassigned pile is a real bucket here (assigneeKeyOf owns that fold).
+ */
+export function strayCardCountsByAssignee(
+  cards: readonly InfoHubCard[],
+): Readonly<Record<string, number>> {
+  return strayCardCountsByKey(cards, (card) => assigneeKeyOf(card.assignee));
+}
+
+/**
+ * One assignee's loose cards — exactly the cards its Owner-view pile counts.
+ * Pass UNASSIGNED_ASSIGNEE_KEY for the cards with no assignee (the same fold as
+ * strayCardCountsByAssignee, via assigneeKeyOf).
+ */
+export function looseCardsForAssignee(
+  cards: readonly InfoHubCard[],
+  assignee: string,
+): InfoHubCard[] {
+  return looseCardsForKey(cards, assignee, (card) => assigneeKeyOf(card.assignee));
 }
 
 /**

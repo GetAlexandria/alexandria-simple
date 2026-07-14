@@ -1,7 +1,11 @@
 import { describe, expect, it } from "bun:test";
 import {
   ASSIGNEE_OPTIONS,
+  UNASSIGNED_ASSIGNEE_KEY,
+  UNASSIGNED_ASSIGNEE_LABEL,
   assigneeColleagueId,
+  assigneeDisplayName,
+  assigneeKeyOf,
   parseDomainOwner,
   parseLandmarkId,
 } from "./vocabulary";
@@ -84,6 +88,40 @@ describe("ASSIGNEE_OPTIONS", () => {
     for (const option of ASSIGNEE_OPTIONS) {
       expect(parseDomainOwner(option.ref).status).toBe("owned");
     }
+  });
+});
+
+describe("assigneeKeyOf", () => {
+  it("returns the prefix-style ref unchanged when present", () => {
+    expect(assigneeKeyOf("human:danvers")).toBe("human:danvers");
+    expect(assigneeKeyOf("colleague:raven")).toBe("colleague:raven");
+  });
+
+  it("folds an absent or empty assignee to the unassigned key", () => {
+    expect(assigneeKeyOf(undefined)).toBe(UNASSIGNED_ASSIGNEE_KEY);
+    expect(assigneeKeyOf("")).toBe(UNASSIGNED_ASSIGNEE_KEY);
+  });
+});
+
+describe("assigneeDisplayName", () => {
+  it("uses the canonical ASSIGNEE_OPTIONS name for a known ref", () => {
+    expect(assigneeDisplayName("human:danvers")).toBe("Danvers");
+    expect(assigneeDisplayName("colleague:raven")).toBe("Raven");
+  });
+
+  it("labels the unassigned key with the unassigned label", () => {
+    expect(assigneeDisplayName(UNASSIGNED_ASSIGNEE_KEY)).toBe(UNASSIGNED_ASSIGNEE_LABEL);
+  });
+
+  it("derives a name for an unknown-but-parseable ref (colleague/human/bare)", () => {
+    expect(assigneeDisplayName("colleague:zoe")).toBe("Zoe");
+    expect(assigneeDisplayName("human:sam")).toBe("Sam");
+    expect(assigneeDisplayName("mystery")).toBe("Mystery");
+  });
+
+  it("falls back to the raw ref for malformed data (shown, never dropped)", () => {
+    expect(assigneeDisplayName("colleague:")).toBe("colleague:");
+    expect(assigneeDisplayName("robot:zed")).toBe("robot:zed");
   });
 });
 

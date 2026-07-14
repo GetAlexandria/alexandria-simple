@@ -4,28 +4,33 @@
 // patches, project/system tiles, and stray piles — plus the P1 base (wheel
 // zoom, arrow-key pan, hover highlight, WebGL fallback). V2 adds the
 // two-look toggle (plan §1.2): Domain view ↔ Owner view over the identical
-// fixture state. Owner view (Map Glow Up) reuses the Domain-view work layout
-// and its territory wash, only relabeled by owner — there is no separate Owner
-// layout or colleague furniture. Dev-only: not linked from any navigation.
+// fixture state. Owner view regroups the same work by assignee into computed
+// per-assignee territories (layout/owner-view.ts), with the unassigned work in
+// its own region — a separate layout from Domain view, no colleague furniture.
+// Dev-only: not linked from any navigation.
 //
 // This module (and everything it imports, including three.js) is only ever
 // loaded through React.lazy in LibraryBrowserApp, so the main viewer bundle
 // is unaffected until the route is visited.
 
 import { useMemo, useState } from "react";
-import type { MapDomain } from "../../app/runtime/schemas";
 import { MAP_FALLBACK_COLORS } from "./colors";
-import { DEV_MAP_FIXTURE, DEV_MAP_STRAY_CARD_COUNTS, devMapGridRadius } from "./dev-map-fixture";
+import {
+  DEV_MAP_FIXTURE,
+  DEV_MAP_STRAY_CARD_COUNTS,
+  DEV_MAP_STRAY_CARD_COUNTS_BY_ASSIGNEE,
+  devMapGridRadius,
+} from "./dev-map-fixture";
 import { DomainView } from "./DomainView";
 import { mapLandmarks } from "./landmarks";
-import { computeDomainViewLayout, relabelDomainLabelsByOwner } from "./layout/domain-view";
+import { computeDomainViewLayout } from "./layout/domain-view";
+import { computeOwnerViewLayout, groupWorkByAssignee, workItemEntities } from "./layout/owner-view";
 import { generateHexGrid } from "./hex";
 import { MapLandmarks } from "./MapLandmarks";
 import { MapMessagePanel } from "./MapMessagePanel";
 import { MapScene } from "./MapScene";
 import { PanelButton } from "./panel-buttons";
 import { type MapViewMode, VIEW_MODES } from "./view-mode";
-import { parseDomainOwner } from "./vocabulary";
 import { isWebGLForcedOff, supportsWebGL } from "./webgl";
 
 // The dev harness proves landmark RENDERING in the Domain look (the Map Glow
@@ -47,15 +52,21 @@ export function MapDevView() {
       }),
     [cells],
   );
-  // Owner view reuses the Domain-view work layout, relabeled by owner (Map
-  // Glow Up); it renders no colleague furniture — those moved to the coin tray.
-  const ownerViewLayout = useMemo(() => {
-    const domainsById = new Map(DEV_MAP_FIXTURE.domains.map((domain) => [domain.id, domain]));
-    return {
-      ...domainLayout,
-      labels: relabelDomainLabelsByOwner(domainLayout.labels, domainsById),
-    };
-  }, [domainLayout]);
+  // Owner view regroups the same fixture work by assignee into computed
+  // territories (the real Map tab's owner layout), with a by-assignee stray
+  // stand-in for its piles; it renders no colleague furniture.
+  const ownerLayout = useMemo(
+    () =>
+      computeOwnerViewLayout(DEV_MAP_FIXTURE, cells, {
+        strayCardCounts: DEV_MAP_STRAY_CARD_COUNTS_BY_ASSIGNEE,
+      }),
+    [cells],
+  );
+  const ownerBuckets = useMemo(
+    () =>
+      groupWorkByAssignee(workItemEntities(DEV_MAP_FIXTURE), DEV_MAP_STRAY_CARD_COUNTS_BY_ASSIGNEE),
+    [],
+  );
   const landmarks = useMemo(() => mapLandmarks(DEV_MAP_FIXTURE), []);
 
   if (!hasWebGLSupport) {
@@ -67,17 +78,15 @@ export function MapDevView() {
     );
   }
 
-  // DEV_MAP_FIXTURE has a narrow literal type (some domains omit `owner`); read
-  // it through the MapDomain shape so `owner` is uniformly optional here.
-  const ownedDomainCount = DEV_MAP_FIXTURE.domains.filter(
-    (domain: MapDomain) => parseDomainOwner(domain.owner).status === "owned",
-  ).length;
+  const assigneeTerritoryCount = ownerBuckets.filter((bucket) => bucket.assigned).length;
+  const hasUnassignedRegion = ownerBuckets.some((bucket) => !bucket.assigned);
   const hudStats =
     viewMode === "domain"
       ? `${DEV_MAP_FIXTURE.domains.length} domains · ${DEV_MAP_FIXTURE.contexts.length} contexts · ` +
         `${domainLayout.tiles.length} tiles · ${domainLayout.piles.length} piles · ${cells.length} hexes`
-      : `${ownedDomainCount} of ${DEV_MAP_FIXTURE.domains.length} domains owned · ` +
-        `${domainLayout.tiles.length} tiles · ${cells.length} hexes`;
+      : `${assigneeTerritoryCount} ${assigneeTerritoryCount === 1 ? "assignee" : "assignees"} · ` +
+        `${ownerLayout.tiles.length} tiles${hasUnassignedRegion ? " · unassigned region" : ""} · ` +
+        `${cells.length} hexes`;
 
   return (
     <div className="relative h-screen w-full">
@@ -115,18 +124,23 @@ export function MapDevView() {
         ))}
       </div>
 
-      {/* Both views share the Domain-view territory wash; Owner view reuses the
-          same work layout, only relabeled by owner. */}
-      <MapScene cells={cells} cellTintByKey={domainLayout.tintByCellKey}>
+      {/* Each view paints its own territory wash: Domain view's domain/patch
+          washes, or Owner view's per-assignee territory washes. */}
+      <MapScene
+        cells={cells}
+        cellTintByKey={
+          viewMode === "owner" ? ownerLayout.tintByCellKey : domainLayout.tintByCellKey
+        }
+      >
         {viewMode === "domain" ? (
           <>
             <DomainView layout={domainLayout} />
             <MapLandmarks landmarks={landmarks} onColleagueClick={noopColleagueClick} />
           </>
         ) : (
-          // Owner view mirrors the real Map tab: the Domain-view work layout
-          // relabeled by owner, with no colleague furniture.
-          <DomainView layout={ownerViewLayout} />
+          // Owner view mirrors the real Map tab: the same work regrouped by
+          // assignee into computed territories, with no colleague furniture.
+          <DomainView layout={ownerLayout} />
         )}
       </MapScene>
     </div>

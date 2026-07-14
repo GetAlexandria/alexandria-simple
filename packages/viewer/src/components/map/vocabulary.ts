@@ -123,6 +123,50 @@ export const ASSIGNEE_OPTIONS: readonly AssigneeOption[] = [
   { ref: "colleague:rob", name: "Rob" },
 ];
 
+/**
+ * The bucket key work with no assignee groups under in the Owner-by-assignee
+ * view. A colon-free sentinel: a real v1 assignee is always prefix-style
+ * (`human:`/`colleague:`), so this can't collide with one — only a bare,
+ * hand-written assignee literally spelled "unassigned" would, a documented v1
+ * edge (assignees are meant to be prefixed).
+ */
+export const UNASSIGNED_ASSIGNEE_KEY = "unassigned";
+
+/** The territory label for the unassigned bucket (Owner-by-assignee view). */
+export const UNASSIGNED_ASSIGNEE_LABEL = "Unassigned";
+
+/**
+ * The bucket key a work item's `assignee` groups under: the prefix-style ref
+ * itself (`human:danvers` | `colleague:raven` — the identity ASSIGNEE_OPTIONS
+ * lists), or UNASSIGNED_ASSIGNEE_KEY when the field is absent or empty. Map
+ * entities carry `assignee` as an optional (possibly empty) string and board
+ * cards as an optional non-empty one; both fold through here, so a blank
+ * assignee reads as unassigned rather than its own empty-string bucket.
+ */
+export function assigneeKeyOf(assignee?: string): string {
+  return assignee != null && assignee.length > 0 ? assignee : UNASSIGNED_ASSIGNEE_KEY;
+}
+
+/**
+ * The display name an assignee bucket renders as (the Owner-by-assignee
+ * territory label): UNASSIGNED_ASSIGNEE_LABEL for the unassigned key, the
+ * canonical ASSIGNEE_OPTIONS name for a known v1 ref, else the name
+ * parseDomainOwner derives (a colleague/human id capitalized, or a bare
+ * hand-written name), else the raw ref for malformed data — shown, never
+ * dropped, so bad assignee data reads as itself instead of vanishing.
+ */
+export function assigneeDisplayName(ref: string): string {
+  if (ref === UNASSIGNED_ASSIGNEE_KEY) {
+    return UNASSIGNED_ASSIGNEE_LABEL;
+  }
+  const option = ASSIGNEE_OPTIONS.find((candidate) => candidate.ref === ref);
+  if (option) {
+    return option.name;
+  }
+  const parsed = parseDomainOwner(ref);
+  return parsed.status === "owned" ? parsed.owner.name : ref;
+}
+
 /** A parsed landmark position id; "unknown" ids carry no map furniture yet. */
 export type ParsedLandmarkId =
   | { kind: "colleague"; id: string }
