@@ -701,6 +701,7 @@ describe("viewer runtime client map state endpoints", () => {
         kind: "project",
         name: "Map tab",
         contextId: "viewer",
+        domainId: "software",
         lifecycle: "active",
       },
     ],

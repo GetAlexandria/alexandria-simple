@@ -34,6 +34,7 @@ export function initialFixtureMapState(): MapState {
         kind: "system",
         name: "Raven duty loop",
         contextId: "colleagues",
+        domainId: "software",
         colleague: "raven",
         cadence: "30m",
         lifecycle: "planted",
@@ -43,6 +44,7 @@ export function initialFixtureMapState(): MapState {
         kind: "project",
         name: "Map tab",
         contextId: "viewer",
+        domainId: "software",
         lifecycle: "active",
       },
       {
@@ -50,6 +52,7 @@ export function initialFixtureMapState(): MapState {
         kind: "project",
         name: "Trophy shelf",
         contextId: "viewer",
+        domainId: "software",
         lifecycle: "completed",
       },
     ],

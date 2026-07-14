@@ -36,6 +36,7 @@ function systemEntity(overrides: Partial<MapEntity> & { id: string }): MapEntity
   return {
     kind: "system",
     contextId: "ctx",
+    domainId: "alexandria",
     lifecycle: "planted",
     name: overrides.name ?? overrides.id,
     ...overrides,
@@ -119,7 +120,14 @@ describe("isStaleEligible", () => {
     expect(isStaleEligible(systemEntity({ id: "s", lifecycle: "planted" }))).toBe(true);
     expect(isStaleEligible(systemEntity({ id: "s", lifecycle: "hibernating" }))).toBe(false);
     expect(
-      isStaleEligible({ id: "p", kind: "project", name: "p", contextId: "c", lifecycle: "active" }),
+      isStaleEligible({
+        id: "p",
+        kind: "project",
+        name: "p",
+        contextId: "c",
+        domainId: "alexandria",
+        lifecycle: "active",
+      }),
     ).toBe(true);
     expect(
       isStaleEligible({
@@ -127,6 +135,7 @@ describe("isStaleEligible", () => {
         kind: "project",
         name: "p",
         contextId: "c",
+        domainId: "alexandria",
         lifecycle: "completed",
       }),
     ).toBe(false);
@@ -258,7 +267,14 @@ describe("deriveTileSignalsByEntity", () => {
   test("joins cards + journals by id and colleague; date-only seed reads healthy", () => {
     const entities: MapEntity[] = [
       systemEntity({ id: "sys-raven", colleague: "raven", cadence: "30m" }),
-      { id: "prj-map", kind: "project", name: "Map", contextId: "ctx", lifecycle: "active" },
+      {
+        id: "prj-map",
+        kind: "project",
+        name: "Map",
+        contextId: "ctx",
+        domainId: "alexandria",
+        lifecycle: "active",
+      },
     ];
     const cards = [card({ id: "needs", entityId: "prj-map", status: "needs-a-human" })];
     // The real seed: a single date-only entry dated today.
@@ -304,7 +320,14 @@ describe("deriveTileSignalsByEntity", () => {
   test("a completed project is never stale (victories stay visible)", () => {
     const oldCreated = new Date(NOW - 40 * MS_PER_DAY).toISOString().slice(0, 10);
     const entities: MapEntity[] = [
-      { id: "prj-done", kind: "project", name: "Done", contextId: "ctx", lifecycle: "completed" },
+      {
+        id: "prj-done",
+        kind: "project",
+        name: "Done",
+        contextId: "ctx",
+        domainId: "alexandria",
+        lifecycle: "completed",
+      },
     ];
     const cards = [card({ id: "old", entityId: "prj-done", created: oldCreated })];
     const signals = deriveTileSignalsByEntity({ entities, cards, journals: [], nowMs: NOW });

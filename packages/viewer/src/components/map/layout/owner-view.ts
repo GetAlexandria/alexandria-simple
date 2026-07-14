@@ -65,12 +65,9 @@ const hexesWithin = (center: HexCoord, radius: number): HexCoord[] =>
 /**
  * Build the Owner-view layout from M1-shaped map state: one territory per
  * domain anchored at its region center, positioned work joined to its
- * domain through the context chain, and the locked seats passed through.
+ * domain via its `domainId`, and the locked seats passed through.
  */
 export function buildOwnerViewLayout(state: MapState): OwnerViewLayout {
-  const domainIdByContextId = new Map(
-    state.contexts.map((context) => [context.id, context.domainId]),
-  );
   const entityById = new Map(state.entities.map((entity) => [entity.id, entity]));
 
   const workByDomainId = new Map<string, OwnerWorkMarker[]>();
@@ -89,11 +86,7 @@ export function buildOwnerViewLayout(state: MapState): OwnerViewLayout {
       continue;
     }
 
-    const domainId = domainIdByContextId.get(entity.contextId);
-    if (domainId === undefined) {
-      continue;
-    }
-
+    const domainId = entity.domainId;
     const markers = workByDomainId.get(domainId) ?? [];
     markers.push({ entity, coord: createHex(position.q, position.r) });
     workByDomainId.set(domainId, markers);

@@ -101,6 +101,7 @@ export const DEV_MAP_FIXTURE = {
       kind: "project",
       name: "Map tab",
       contextId: "viewer",
+      domainId: "software",
       lifecycle: "active",
     },
     {
@@ -108,6 +109,7 @@ export const DEV_MAP_FIXTURE = {
       kind: "project",
       name: "Library draft",
       contextId: "viewer",
+      domainId: "software",
       lifecycle: "completed",
     },
     {
@@ -115,6 +117,7 @@ export const DEV_MAP_FIXTURE = {
       kind: "system",
       name: "Raven duty loop",
       contextId: "colleagues",
+      domainId: "software",
       colleague: "raven",
       cadence: "30m",
       lifecycle: "planted",
@@ -124,6 +127,7 @@ export const DEV_MAP_FIXTURE = {
       kind: "system",
       name: "Damien demo loop",
       contextId: "demos",
+      domainId: "marketing",
       colleague: "damien",
       cadence: "1d",
       lifecycle: "planted",
@@ -133,6 +137,7 @@ export const DEV_MAP_FIXTURE = {
       kind: "project",
       name: "Launch video",
       contextId: "demos",
+      domainId: "marketing",
       lifecycle: "active",
     },
     {
@@ -140,6 +145,7 @@ export const DEV_MAP_FIXTURE = {
       kind: "system",
       name: "Weekly reset",
       contextId: "household",
+      domainId: "chores",
       lifecycle: "planted",
     },
     {
@@ -147,6 +153,7 @@ export const DEV_MAP_FIXTURE = {
       kind: "system",
       name: "Meal plan",
       contextId: "household",
+      domainId: "chores",
       lifecycle: "hibernating",
     },
     {
@@ -154,6 +161,7 @@ export const DEV_MAP_FIXTURE = {
       kind: "project",
       name: "Garage cleanout",
       contextId: "errands",
+      domainId: "chores",
       lifecycle: "active",
     },
     {
@@ -161,6 +169,7 @@ export const DEV_MAP_FIXTURE = {
       kind: "project",
       name: "Dinner party",
       contextId: "friends",
+      domainId: "social",
       lifecycle: "active",
     },
     {
@@ -168,6 +177,7 @@ export const DEV_MAP_FIXTURE = {
       kind: "project",
       name: "Demo video",
       contextId: "campaigns",
+      domainId: "outreach",
       lifecycle: "active",
     },
   ],
