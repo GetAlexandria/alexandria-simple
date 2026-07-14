@@ -67,6 +67,15 @@ type MapLabelProps = {
   italic?: boolean;
   /** Extra tracking (em fraction), for cartographic uppercase region names. */
   letterSpacingEm?: number;
+  /**
+   * Draw the label strictly on top of terrain/tiles. Disables depth-testing
+   * on the material (keeping `depthWrite` off) so lifted hex tiles can no
+   * longer depth-occlude the plate and punch through the glyphs, and lifts
+   * the mesh to a high `renderOrder` so it composites after the scene. For
+   * persistent world-space labels (region/owner + context names) that should
+   * never be occluded; transient tile hover-names leave it off.
+   */
+  alwaysOnTop?: boolean;
 };
 
 type LabelTexture = { texture: THREE.CanvasTexture; aspect: number };
@@ -190,6 +199,7 @@ export function MapLabel({
   opacity = 1,
   italic = false,
   letterSpacingEm = 0,
+  alwaysOnTop = false,
 }: MapLabelProps) {
   const [fontsReady, setFontsReady] = useState(mapLabelFontsLoaded);
 
@@ -225,6 +235,9 @@ export function MapLabel({
       position={[position[0], position[1], position[2]]}
       rotation={[CAMERA_FACING_ROTATION_X, 0, 0]}
       raycast={() => null}
+      // Lift on-top labels past the terrain/tiles in the transparent pass so
+      // they composite last; leave default order for the rest.
+      renderOrder={alwaysOnTop ? 10 : 0}
     >
       <planeGeometry args={[height * label.aspect, height]} />
       <meshBasicMaterial
@@ -232,6 +245,9 @@ export function MapLabel({
         transparent
         opacity={opacity}
         depthWrite={false}
+        // depthTest off pairs with the high renderOrder: the label ignores the
+        // depth buffer entirely, so lifted hex tiles can't punch through it.
+        depthTest={!alwaysOnTop}
         side={THREE.DoubleSide}
       />
     </mesh>

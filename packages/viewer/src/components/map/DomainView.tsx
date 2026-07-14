@@ -93,13 +93,17 @@ export function DomainView({
               // with tile rows at default zoom.
               position={[label.x, 1.7, label.z]}
               height={0.72}
-              color={MAP_LABEL_COLORS.domain}
-              // Region/owner titles get an underlay plate for legibility
-              // against the busy parchment/tint wash; context + half labels
-              // keep the plain stroke-halo.
+              // Engraved brass nameplate: light-brass glyph + thin dark
+              // outline on the near-solid espresso plate (see MAP_LABEL_COLORS
+              // regionFill/regionHalo/plate). Rendered on top so lifted tiles
+              // can't punch through the plate. Context + half labels keep the
+              // plain dark-ink-on-parchment stroke-halo.
+              color={MAP_LABEL_COLORS.regionFill}
+              haloColor={MAP_LABEL_COLORS.regionHalo}
               plateColor={MAP_LABEL_COLORS.plate}
               letterSpacingEm={0.18}
               opacity={0.92}
+              alwaysOnTop
             />
           );
         }
@@ -113,6 +117,10 @@ export function DomainView({
               color={MAP_LABEL_COLORS.context}
               italic
               opacity={0.95}
+              // Persistent world-space label sitting low among the tiles —
+              // render on top so lifted tiles can't occlude it. Ink/halo
+              // treatment is unchanged.
+              alwaysOnTop
             />
           );
         }
