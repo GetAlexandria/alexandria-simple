@@ -317,14 +317,14 @@
     {
       "id": "wo-work-system-contract",
       "type": "improvement",
-      "status": "in-progress",
+      "status": "done",
       "domainId": "alexandria",
       "entityId": "prj-work-system-v1",
       "priority": 15,
       "source": "board:director",
       "created": "2026-07-14",
       "title": "Adopt the work-system contract: the Board is the system of record; the Map visualizes it",
-      "detail": "The Map and the Board now share one domain vocabulary, but the relationship between them was never ruled. Ruled today. This is the parent card; the concrete builds are the child cards joined to prj-work-system-v1.\n\nDecisions (director, 2026-07-14):\n- The Work Board is the work system of record and the QA surface \u2014 a known, simple, non-innovative primitive to generate the Map from. The Map is a reflection of the work system. This settles the open subsume-vs-federate question for now: federate. Deeper unification (less UI surface between board and map, or the map absorbing the board) stays a horizon option, not a plan.\n- Systems generate work; projects contain it. This ratifies the ported Lifebuild 'Planting Season' contract (docs/alexandria/plans/map-tab/plan.md \u00a71.1) as the unified model: a System spawns cards on its rhythm (e.g. 'check and respond to customer emails' every 6 hours); a Project is stuffed with cards, still exists when half are done, and its membership changes over time (tasks removed, tasks added).\n- Every map entity gets a room: clicking a Project or System shows that entity's own populated view \u2014 its cards, their state, their history. The room already exists (the Map tile-click overlay renders joined cards via cardsJoinedToEntity), but it is starved: only 6 of 14 cards carry an entityId and both systems have zero.\n- Projects and Systems measure different things, so their rooms differ. Project room = progress: contains work, ends, victories stay visible. System room = health & performance: is work done on time and to spec, is the system reliable and maintained, what is queued for testing or improving it.\n\nScope:\n- This is the parent/contract card. Children: ungate the entity join (wo-board-ungate-entity-join), create-from-board + rooms on the board (wo-board-project-rooms), system generation v1 (wo-system-generation-v1).\n\nOut of scope:\n- Subsume (the Map absorbing the Board) \u2014 named horizon, not decided.\n- A single unified Project/System/Task work-item model with real parent/child ('one day we may be more unified').\n- The map filling-up visualization experiments (piles/aging/stomp) \u2014 still governed by the command-center test.",
+      "detail": "The Map and the Board now share one domain vocabulary, but the relationship between them was never ruled. Ruled today. This is the parent card; the concrete builds are the child cards joined to prj-work-system-v1.\n\nDecisions (director, 2026-07-14):\n- The Work Board is the work system of record and the QA surface \u2014 a known, simple, non-innovative primitive to generate the Map from. The Map is a reflection of the work system. This settles the open subsume-vs-federate question for now: federate. Deeper unification (less UI surface between board and map, or the map absorbing the board) stays a horizon option, not a plan.\n- Systems generate work; projects contain it. This ratifies the ported Lifebuild 'Planting Season' contract (docs/alexandria/plans/map-tab/plan.md \u00a71.1) as the unified model: a System spawns cards on its rhythm (e.g. 'check and respond to customer emails' every 6 hours); a Project is stuffed with cards, still exists when half are done, and its membership changes over time (tasks removed, tasks added).\n- Every map entity gets a room: clicking a Project or System shows that entity's own populated view \u2014 its cards, their state, their history. The room already exists (the Map tile-click overlay renders joined cards via cardsJoinedToEntity), but it is starved: only 6 of 14 cards carry an entityId and both systems have zero.\n- Projects and Systems measure different things, so their rooms differ. Project room = progress: contains work, ends, victories stay visible. System room = health & performance: is work done on time and to spec, is the system reliable and maintained, what is queued for testing or improving it.\n\nScope:\n- This is the parent/contract card. Children: ungate the entity join (wo-board-ungate-entity-join), create-from-board + rooms on the board (wo-board-project-rooms), system generation v1 (wo-system-generation-v1).\n\nOut of scope:\n- Subsume (the Map absorbing the Board) \u2014 named horizon, not decided.\n- A single unified Project/System/Task work-item model with real parent/child ('one day we may be more unified').\n- The map filling-up visualization experiments (piles/aging/stomp) \u2014 still governed by the command-center test.\n\nStatus: delivered \u2014 the contract is real: board is the system of record, the map visualizes it, systems generate (LLC Administration live), projects contain, every entity has a room (project=progress, system=health).",
       "checklist": [
         {
           "done": true,
@@ -339,10 +339,11 @@
           "text": "System generation v1 lands (child card)"
         },
         {
-          "done": false,
+          "done": true,
           "text": "Director places prj-work-system-v1 on the map (added unplaced; placement is director-only)"
         }
-      ]
+      ],
+      "terminalAt": "2026-07-14"
     },
     {
       "id": "wo-board-ungate-entity-join",
@@ -409,36 +410,37 @@
     {
       "id": "wo-system-generation-v1",
       "type": "task",
-      "status": "open",
+      "status": "done",
       "domainId": "alexandria",
       "entityId": "prj-work-system-v1",
       "priority": 15,
       "source": "board:director",
       "created": "2026-07-14",
       "title": "Systems generate their work: pattern-spawned cards + a health-first system room",
-      "detail": "RESCOPED (director, 2026-07-14): the single-cadence v1 is superseded by the full work-systems model \u2014 plural pattern rules, real controls (on-time %, streak, next due), multi-level ownership (system owner / upgrade-project owner / per-rule task assignee), and the upgrade-project loop. Plan: docs/alexandria/plans/work-system/plan.md (issues WS1-WS6 become this card's children). Source: docs/alexandria/sources/2026-07-14-work-systems-and-map-first-inversion.md.\n\nOriginal scope (kept for history): The contract says a System generates cards, but nothing generates today \u2014 both systems have zero joined cards, and system health derives only from duty-loop journal entries within the cadence window (plan \u00a71.4). Lifebuild had recurring-task machinery (recurringTasks/taskExecutions) and the port deliberately left it behind as legacy AI-cron; this rebuilds the behavior natively on the Board, where the work system of record lives. Child of wo-work-system-contract.\n\nDecisions (director, 2026-07-14):\n- A System spawns a card on its cadence (e.g. 'check and respond to customer emails' every 6 hours), joined to the system via entityId, assigned to the system's assignee.\n- Spawned cards done or missed become the system's history, and the system room reads health and performance from it: done on time? to spec? what's the queue for testing or improving the system?\n- Flagged experimental like strays v1 \u2014 the director expects to iterate; ship something simple to start.\n\nOpen design (decide in-card, small):\n- Who spawns: the colleague duty loop writing cards as part of its rhythm, an ax runtime tick, or materialize-on-read when the board is loaded past a cadence boundary. v1 should pick the simplest that leaves a durable file trace (no server-owned state).\n- Missed-cadence semantics: does an unspawned/undone card mark the system overdue, and does that feed the existing coin/tile escalation glow?\n\nScope:\n- Card shape: a way to mark a card as system-generated (e.g. source: system:<id>) so history queries are cheap.\n- Generation v1 for the two duty-loop systems as the first real users.\n- System room v1: health summary (on-time rate over the recent window) + open queue + history, distinct from the project room's progress framing.\n\nOut of scope:\n- General recurring-task UI for arbitrary schedules; template libraries.\n- Reviving Lifebuild's recurringTasks/taskExecutions machinery as-is.",
+      "detail": "RESCOPED (director, 2026-07-14): the single-cadence v1 is superseded by the full work-systems model \u2014 plural pattern rules, real controls (on-time %, streak, next due), multi-level ownership (system owner / upgrade-project owner / per-rule task assignee), and the upgrade-project loop. Plan: docs/alexandria/plans/work-system/plan.md (issues WS1-WS6 become this card's children). Source: docs/alexandria/sources/2026-07-14-work-systems-and-map-first-inversion.md.\n\nOriginal scope (kept for history): The contract says a System generates cards, but nothing generates today \u2014 both systems have zero joined cards, and system health derives only from duty-loop journal entries within the cadence window (plan \u00a71.4). Lifebuild had recurring-task machinery (recurringTasks/taskExecutions) and the port deliberately left it behind as legacy AI-cron; this rebuilds the behavior natively on the Board, where the work system of record lives. Child of wo-work-system-contract.\n\nDecisions (director, 2026-07-14):\n- A System spawns a card on its cadence (e.g. 'check and respond to customer emails' every 6 hours), joined to the system via entityId, assigned to the system's assignee.\n- Spawned cards done or missed become the system's history, and the system room reads health and performance from it: done on time? to spec? what's the queue for testing or improving the system?\n- Flagged experimental like strays v1 \u2014 the director expects to iterate; ship something simple to start.\n\nOpen design (decide in-card, small):\n- Who spawns: the colleague duty loop writing cards as part of its rhythm, an ax runtime tick, or materialize-on-read when the board is loaded past a cadence boundary. v1 should pick the simplest that leaves a durable file trace (no server-owned state).\n- Missed-cadence semantics: does an unspawned/undone card mark the system overdue, and does that feed the existing coin/tile escalation glow?\n\nScope:\n- Card shape: a way to mark a card as system-generated (e.g. source: system:<id>) so history queries are cheap.\n- Generation v1 for the two duty-loop systems as the first real users.\n- System room v1: health summary (on-time rate over the recent window) + open queue + history, distinct from the project room's progress framing.\n\nOut of scope:\n- General recurring-task UI for arbitrary schedules; template libraries.\n- Reviving Lifebuild's recurringTasks/taskExecutions machinery as-is.\n\nStatus: delivered \u2014 WS1\u2013WS5 complete (#50\u2013#55 + WS4). WS6 (library mission) tracked on its own card.",
       "checklist": [
         {
-          "done": false,
+          "done": true,
           "text": "Spawn mechanism chosen and recorded (duty loop vs runtime tick vs materialize-on-read)"
         },
         {
-          "done": false,
+          "done": true,
           "text": "Systems spawn cadence cards joined via entityId with the system's assignee"
         },
         {
-          "done": false,
+          "done": true,
           "text": "Generated cards are marked as system-generated for cheap history queries"
         },
         {
-          "done": false,
+          "done": true,
           "text": "System room v1 shows health (on-time), open queue, and history \u2014 distinct from project progress"
         },
         {
-          "done": false,
+          "done": true,
           "text": "Missed-cadence semantics defined and wired to the existing escalation glow"
         }
-      ]
+      ],
+      "terminalAt": "2026-07-14"
     },
     {
       "id": "wo-ws1-data-model",
@@ -482,26 +484,28 @@
     {
       "id": "wo-ws4-map-health-wiring",
       "type": "task",
-      "status": "open",
+      "status": "done",
       "domainId": "alexandria",
       "entityId": "prj-work-system-v1",
       "priority": 15,
       "source": "board:director",
       "created": "2026-07-14",
       "title": "WS4 \u2014 map health wiring: pattern-driven dots, overdue escalation",
-      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md \u00a74. Wires system tiles that carry a pattern to read health from generated-card controls; pattern-less colleague systems keep the journal-cadence heuristic, and overdue systems keep the existing flicker + coin glow."
+      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md \u00a74. Wires system tiles that carry a pattern to read health from generated-card controls; pattern-less colleague systems keep the journal-cadence heuristic, and overdue systems keep the existing flicker + coin glow.\n\nStatus: delivered \u2014 pattern systems' tile dots and candle-flicker read systemControls; journal heuristic retained for pattern-less systems; coin escalation includes pattern-overdue.",
+      "terminalAt": "2026-07-14"
     },
     {
       "id": "wo-ws5-pilot-system",
       "type": "task",
-      "status": "in-progress",
+      "status": "done",
       "domainId": "alexandria",
       "entityId": "prj-work-system-v1",
       "priority": 15,
       "source": "board:director",
       "created": "2026-07-14",
       "title": "WS5 \u2014 pilot system: seed, place, first real cards",
-      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md \u00a75. Seeds one real system with a real pattern as the first generator, the director places it on the map, and its first cards materialize. Pilot: LLC administration (monthly bookkeeping, quarterly tax estimates, annual report filing) \u2014 agent-owned, human-lane delegation back to the director. Rulings (director, 2026-07-14): the system lives in the new `operations` domain \u2014 restored because systems made it coherent ('without systems, operations didn't make much sense'). The domain is seeded UNOWNED on purpose: the unclaimed nameplate is the demand signal for the back-office/admin colleague who doesn't exist yet. Interim: colleague:raven owns the system; pattern rules delegate human-lane items (signatures, payments, filings) to human:danvers. Status: seeded and generating \u2014 sys-llc-administration planted in operations (#53); the first three cards materialized on the next board read (monthly close -> raven; quarterly taxes + annual report -> danvers, human lane). Remaining: the director places the tile in the Operations region."
+      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md \u00a75. Seeds one real system with a real pattern as the first generator, the director places it on the map, and its first cards materialize. Pilot: LLC administration (monthly bookkeeping, quarterly tax estimates, annual report filing) \u2014 agent-owned, human-lane delegation back to the director. Rulings (director, 2026-07-14): the system lives in the new `operations` domain \u2014 restored because systems made it coherent ('without systems, operations didn't make much sense'). The domain is seeded UNOWNED on purpose: the unclaimed nameplate is the demand signal for the back-office/admin colleague who doesn't exist yet. Interim: colleague:raven owns the system; pattern rules delegate human-lane items (signatures, payments, filings) to human:danvers. Status: seeded and generating \u2014 sys-llc-administration planted in operations (#53); the first three cards materialized on the next board read (monthly close -> raven; quarterly taxes + annual report -> danvers, human lane). Remaining: the director places the tile in the Operations region.\n\nStatus: delivered \u2014 director placed the tile in Operations (2026-07-14); first three cards generated and on the board; tile health reads the pattern.",
+      "terminalAt": "2026-07-14"
     },
     {
       "id": "wo-ws6-library-mission",

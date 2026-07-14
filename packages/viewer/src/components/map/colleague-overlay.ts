@@ -120,10 +120,14 @@ export function colleagueEscalated(options: {
  *
  * `journals == null` — the journal path is unavailable on this surface (e.g. the
  * Info Hub surface loads the board + map state but NOT the journals) — leaves
- * the health/overdue half inert (every system reads UNKNOWN: never overdue, and
- * `healthKnown` false), so only the needs-a-human half contributes there. That
- * mirrors the map's own graceful degradation, and it is deliberate: the caller
- * does not broaden journal fetching, keeping the glow's data cost bounded (v1).
+ * the health/overdue half inert for PATTERN-LESS systems (every one of those
+ * reads UNKNOWN: never overdue, `healthKnown` false), so only the needs-a-human
+ * half contributes from them there. That mirrors the map's own graceful
+ * degradation, and it is deliberate: the caller does not broaden journal
+ * fetching, keeping the glow's data cost bounded (v1). A system WITH a
+ * `pattern` (work-system plan §4) is unaffected by this — its health comes
+ * from the board cards already in `options.cards`, not journals — so it keeps
+ * contributing its own overdue/drained reading to the rollup on every surface.
  */
 export function escalationByColleagueId(options: {
   state: MapState;
