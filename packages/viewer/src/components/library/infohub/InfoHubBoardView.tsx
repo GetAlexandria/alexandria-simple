@@ -4,16 +4,21 @@ import {
   type InfoHubBoard,
   type InfoHubCard,
   type MapContext,
+  type MapEntityKind,
   type MapState,
 } from "../../../app/runtime/schemas";
 import type { MapStateSaveError } from "../hooks/useMapState";
 import { slugify, uniqueId } from "../../id-slug";
+import { MapEntityForm } from "../../map/MapEntityForm";
 import {
   entityKindLabel,
   promotionDraftFromCard,
   withCardJoin,
   withEntityCreated,
+  type MapEntityDraft,
 } from "../../map/placement";
+import { EntityRoomView } from "./EntityRoomView";
+import { EntityStrip } from "./EntityStrip";
 import {
   activeWorkOrderLane,
   archiveDateForTerminalCard,
@@ -146,6 +151,20 @@ export interface InfoHubBoardViewProps {
    * an unrecognized value is ignored. The user can still change or clear it.
    */
   initialStatusFilter?: string;
+  /**
+   * Initial entity room, from the route's `?entity=` deep link
+   * (board-project-rooms). Seeded once on mount, same as
+   * initialStatusFilter — an id that doesn't resolve against the loaded map
+   * state renders the room's "not found" fallback rather than silently
+   * falling back to the lane view.
+   */
+  initialEntityId?: string;
+  /**
+   * Fires whenever the open room changes (opened, closed, or switched) so the
+   * caller can keep the `?entity=` deep link in sync — the room is a real
+   * bookmarkable/shareable link, unlike the one-way initialStatusFilter seed.
+   */
+  onEntityRoomChange?: (entityId: string | null) => void;
 }
 
 /**
@@ -167,6 +186,27 @@ type PromoteFailure = {
   message: string;
 };
 
+/**
+ * Turns a map save failure into a `PromoteFailure` — shared by `promoteCard`
+ * (creating a project off a card) and `createEntity` (the board's "New
+ * project"/"New system"), which both wrap the same `onSaveMapState` write
+ * and want the same conflict copy, differing only in what failed to save.
+ */
+function mapSaveFailureToPromoteFailure(
+  failure: MapStateSaveError,
+  errorVerb: string,
+): PromoteFailure {
+  return failure.kind === "conflict"
+    ? {
+        kind: "conflict",
+        message: "The map changed since it loaded here — refresh the map data and retry.",
+      }
+    : {
+        kind: "error",
+        message: `${errorVerb}: ${failure.message}`,
+      };
+}
+
 export function InfoHubBoardView({
   board,
   onSaveCards,
@@ -177,6 +217,8 @@ export function InfoHubBoardView({
   onRefreshMapState,
   mapSaving = false,
   initialStatusFilter,
+  initialEntityId,
+  onEntityRoomChange,
 }: InfoHubBoardViewProps) {
   const [detailCard, setDetailCard] = useState<InfoHubCard | null>(null);
   const [typeFilter, setTypeFilter] = useState<"" | WorkOrderType>("");
@@ -211,6 +253,18 @@ export function InfoHubBoardView({
   const [promoteError, setPromoteError] = useState<PromoteFailure | null>(null);
   const [promoting, setPromoting] = useState(false);
   const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
+  // Entity room (board-project-rooms): the open room, seeded once from the
+  // `?entity=` deep link (mirrors statusFilter's initialStatusFilter seed).
+  // Every open/close/switch also calls onEntityRoomChange so the caller can
+  // keep the URL in sync — see the type's doc.
+  const [roomEntityId, setRoomEntityId] = useState<string | null>(() =>
+    initialEntityId != null && initialEntityId.length > 0 ? initialEntityId : null,
+  );
+  // New project/system from the board (board-project-rooms): null closes the
+  // form; a kind opens it pre-set to that kind (MapEntityForm's defaultKind).
+  const [entityFormKind, setEntityFormKind] = useState<MapEntityKind | null>(null);
+  const [entityCreateError, setEntityCreateError] = useState<PromoteFailure | null>(null);
+  const [entityCreating, setEntityCreating] = useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
   const titleInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -459,15 +513,7 @@ export function InfoHubBoardView({
         const failure = await onSaveMapState(next);
         if (failure != null) {
           setPromoteError(
-            failure.kind === "conflict"
-              ? {
-                  kind: "conflict",
-                  message: "The map changed since it loaded here — refresh the map data and retry.",
-                }
-              : {
-                  kind: "error",
-                  message: `Couldn't add the project to the map: ${failure.message}`,
-                },
+            mapSaveFailureToPromoteFailure(failure, "Couldn't add the project to the map"),
           );
           setPromoting(false);
           return;
@@ -577,6 +623,118 @@ export function InfoHubBoardView({
     [cards, onSaveCards],
   );
 
+  // --- Entity room (board-project-rooms) -----------------------------------
+
+  const openRoom = useCallback(
+    (entityId: string) => {
+      setRoomEntityId(entityId);
+      onEntityRoomChange?.(entityId);
+    },
+    [onEntityRoomChange],
+  );
+
+  const closeRoom = useCallback(() => {
+    setRoomEntityId(null);
+    onEntityRoomChange?.(null);
+  }, [onEntityRoomChange]);
+
+  const roomEntity = useMemo(
+    () => (roomEntityId == null ? null : (mapEntities.find((e) => e.id === roomEntityId) ?? null)),
+    [roomEntityId, mapEntities],
+  );
+
+  /**
+   * "New project" / "New system" from the board (plan §2): one map write
+   * creating the (unplaced) entity — the same withEntityCreated + map save
+   * promoteCard uses, but with no card to join. Conflict/error branch the
+   * same way; a conflict never partially creates anything, so retrying after
+   * a refresh is just resubmitting the same draft.
+   */
+  const createEntity = useCallback(
+    async (draft: MapEntityDraft): Promise<boolean> => {
+      if (mapState == null || onSaveMapState == null) {
+        return false;
+      }
+      setEntityCreating(true);
+      setEntityCreateError(null);
+      const { next, entity } = withEntityCreated(mapState, draft);
+      const failure = await onSaveMapState(next);
+      setEntityCreating(false);
+      if (failure != null) {
+        setEntityCreateError(mapSaveFailureToPromoteFailure(failure, "Couldn't create the entity"));
+        return false;
+      }
+      setEntityFormKind(null);
+      // The room continues the "create a project, then build it out of
+      // tasks" flow — open it straight away, empty and unplaced.
+      openRoom(entity.id);
+      return true;
+    },
+    [mapState, onSaveMapState, openRoom],
+  );
+
+  /** The room's "+ Add task" — closes the room and pre-picks the entity on the existing card form. */
+  const addTaskForEntity = useCallback(
+    (entityId: string) => {
+      closeRoom();
+      resetForm();
+      setCardEntityId(entityId);
+      const entity = mapEntities.find((candidate) => candidate.id === entityId);
+      if (entity != null) {
+        setCardDomainId(entity.domainId);
+      }
+      window.requestAnimationFrame(() => {
+        formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        titleInputRef.current?.focus();
+      });
+    },
+    [closeRoom, mapEntities, resetForm],
+  );
+
+  if (roomEntityId != null) {
+    return (
+      <section
+        aria-labelledby="info-hub-heading"
+        className="raven-canvas-section info-hub-surface min-h-[calc(100vh-84px-220px)] px-6 py-9"
+        data-testid="info-hub-board"
+      >
+        <div className="info-hub-sheet">
+          {mapState == null ? (
+            <p className="info-hub-lane-empty" data-testid="entity-room-loading">
+              Loading the map…
+            </p>
+          ) : roomEntity == null ? (
+            <div data-testid="entity-room-not-found">
+              <button
+                className="info-hub-action-btn"
+                data-testid="entity-room-back"
+                onClick={closeRoom}
+                type="button"
+              >
+                ← Work Board
+              </button>
+              <p className="info-hub-lane-empty mt-3">
+                This entity isn&apos;t on the map (it may have been removed).
+              </p>
+            </div>
+          ) : (
+            <EntityRoomView
+              boardSaveError={saveError}
+              boardSaving={saving}
+              cards={cards}
+              entity={roomEntity}
+              mapState={mapState}
+              onAddTask={addTaskForEntity}
+              onBack={closeRoom}
+              onMoveStatus={moveCardStatus}
+              onToggleChecklistItem={toggleChecklistItem}
+            />
+          )}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
       aria-labelledby="info-hub-heading"
@@ -609,6 +767,51 @@ export function InfoHubBoardView({
             </div>
           </dl>
         </header>
+
+        {mapState != null ? (
+          <EntityStrip
+            cards={cards}
+            domainNameById={domainNameById}
+            entities={mapEntities}
+            onCreateEntity={onSaveMapState != null ? (kind) => setEntityFormKind(kind) : undefined}
+            onOpenRoom={openRoom}
+          />
+        ) : null}
+
+        {entityFormKind != null ? (
+          <div className="info-hub-form mt-3" data-testid="entity-create-form">
+            <h3 className="info-hub-form-title">
+              {entityFormKind === "project" ? "New project" : "New system"}
+            </h3>
+            <MapEntityForm
+              contexts={mapContexts}
+              defaultKind={entityFormKind}
+              domains={mapDomains}
+              entity={null}
+              key={entityFormKind}
+              onCancel={() => {
+                setEntityFormKind(null);
+                setEntityCreateError(null);
+              }}
+              onSubmit={createEntity}
+              saving={entityCreating || mapSaving}
+            />
+            {entityCreateError != null ? (
+              <p className="info-hub-form-error mt-2" data-testid="entity-create-error">
+                {entityCreateError.message}
+                {entityCreateError.kind === "conflict" && onRefreshMapState != null ? (
+                  <button
+                    className="info-hub-action-btn ml-2"
+                    onClick={onRefreshMapState}
+                    type="button"
+                  >
+                    Refresh map data
+                  </button>
+                ) : null}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="info-hub-filter-bar">
           <label className="info-hub-filter-field">
@@ -938,8 +1141,22 @@ export function InfoHubBoardView({
               ) : detailCard.entityId != null ? (
                 <p className="info-hub-card-scope mt-3" data-testid="card-join-note">
                   Joined to{" "}
-                  {mapEntities.find((entity) => entity.id === detailCard.entityId)?.name ??
-                    detailCard.entityId}{" "}
+                  <button
+                    className="info-hub-inline-link"
+                    data-testid="card-join-note-link"
+                    onClick={() => {
+                      const entityId = detailCard.entityId;
+                      if (entityId == null) {
+                        return;
+                      }
+                      setDetailCard(null);
+                      openRoom(entityId);
+                    }}
+                    type="button"
+                  >
+                    {mapEntities.find((entity) => entity.id === detailCard.entityId)?.name ??
+                      detailCard.entityId}
+                  </button>{" "}
                   on the map.
                 </p>
               ) : null

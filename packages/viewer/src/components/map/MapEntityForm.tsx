@@ -27,6 +27,13 @@ type MapEntityFormProps = {
   domains: readonly MapDomain[];
   /** Null → create form; an entity → edit form (kind fixed). */
   entity: MapEntity | null;
+  /**
+   * Create-only initial kind (board-project-rooms: the Board's separate "New
+   * project" / "New system" entry points preset this rather than always
+   * landing on "project"). Ignored once `entity` is set — an edit's kind
+   * always comes from the entity itself.
+   */
+  defaultKind?: MapEntityKind;
   onCancel: () => void;
   /** Resolves true when the save landed; the form then closes upstream. */
   onSubmit: (draft: MapEntityDraft) => Promise<boolean>;
@@ -37,12 +44,13 @@ export function MapEntityForm({
   contexts,
   domains,
   entity,
+  defaultKind,
   onCancel,
   onSubmit,
   saving,
 }: MapEntityFormProps) {
   const [name, setName] = useState(entity?.name ?? "");
-  const [kind, setKind] = useState<MapEntityKind>(entity?.kind ?? "project");
+  const [kind, setKind] = useState<MapEntityKind>(entity?.kind ?? defaultKind ?? "project");
   // Context is latent data now: no fallback to "the first context" — a new
   // entity defaults to no context, same as a new board card.
   const [contextId, setContextId] = useState(entity?.contextId ?? "");

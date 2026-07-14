@@ -2063,7 +2063,18 @@ function fixtureInfoHubBoardResponse(): Response {
   });
 }
 
+// Board-write failure injection (map-tab.spec.ts's PendingPromotion retry
+// gate): a promote whose map half landed but whose board join fails must
+// park the created entity and, on retry, only re-attempt the join — never
+// mint a second entity. Set by /__fixture/fail-next-board-write, consumed
+// (and cleared) by the NEXT board POST only, so the retry itself succeeds.
+let fixtureFailNextBoardWrite = false;
+
 async function fixtureInfoHubBoardWrite(request: Request): Promise<Response> {
+  if (fixtureFailNextBoardWrite) {
+    fixtureFailNextBoardWrite = false;
+    return fixtureRuntimeHttpFailure(500);
+  }
   const body = (await request.json()) as { cards?: InfoHubCard[] };
   const posted = body.cards ?? [];
   const byId = new Map(fixtureInfoHubCards.map((card) => [card.id, card]));
@@ -2434,6 +2445,12 @@ Bun.serve({
     if (url.pathname === "/__fixture/reset-map-board" && request.method === "POST") {
       fixtureMapState = initialFixtureMapState();
       fixtureInfoHubCards = initialFixtureInfoHubCards();
+      fixtureFailNextBoardWrite = false;
+      return Response.json({ ok: true });
+    }
+
+    if (url.pathname === "/__fixture/fail-next-board-write" && request.method === "POST") {
+      fixtureFailNextBoardWrite = true;
       return Response.json({ ok: true });
     }
 

@@ -331,7 +331,7 @@
           "text": "Entity join ungated and the existing backlog joined (child card)"
         },
         {
-          "done": false,
+          "done": true,
           "text": "Projects creatable from the Board; entity rooms reachable from the Board (child card)"
         },
         {
@@ -378,32 +378,33 @@
     {
       "id": "wo-board-project-rooms",
       "type": "task",
-      "status": "open",
+      "status": "done",
       "domainId": "alexandria",
       "entityId": "prj-work-system-v1",
       "priority": 15,
       "source": "board:director",
       "created": "2026-07-14",
       "title": "Create projects from the Board; give every entity a room on the Board",
-      "detail": "Today a Project or System can only be born by hand in map-state.json or via the Map's entity form, and the only per-entity view is the Map tile-click overlay. The Board — the system of record — can neither create an entity nor show one. This blocks 'create a project and build it out of tasks.' Child of wo-work-system-contract.\n\nDecisions (director, 2026-07-14):\n- 'New project' (and 'New system') actions on the Board create the map entity directly. The entity is born unplaced; placement stays director-only on the Map (the ported hard rule: agents and forms may add entities, only the director arranges the map).\n- Every entity gets a room reachable from the Board: the entity's cards, their state, and their history — the same entityId join the Map overlay already computes (cardsJoinedToEntity in packages/viewer/src/components/map/placement.ts). Done cards stay visible in the room: a project outlives its tasks, and its history is part of the room.\n- The project room reads as progress (open vs done, the contained set changing over time). The system room will diverge toward health/performance — designed in wo-system-generation-v1, not here.\n\nScope:\n- Board UI: New project / New system actions writing through the existing map-state save path.\n- Board UI: an entity room view (entity header + joined cards, open and done), shared-component with the Map overlay rather than duplicated.\n- Unplaced entities: confirm the Map renders/queues them sanely until the director places them.\n\nOut of scope:\n- Cadence generation and system health metrics (wo-system-generation-v1).\n- Any change to what the Map overlay shows (it already works; reuse, don't fork).",
+      "detail": "Today a Project or System can only be born by hand in map-state.json or via the Map's entity form, and the only per-entity view is the Map tile-click overlay. The Board — the system of record — can neither create an entity nor show one. This blocks 'create a project and build it out of tasks.' Child of wo-work-system-contract.\n\nDecisions (director, 2026-07-14):\n- 'New project' (and 'New system') actions on the Board create the map entity directly. The entity is born unplaced; placement stays director-only on the Map (the ported hard rule: agents and forms may add entities, only the director arranges the map).\n- Every entity gets a room reachable from the Board: the entity's cards, their state, and their history — the same entityId join the Map overlay already computes (cardsJoinedToEntity in packages/viewer/src/components/map/placement.ts). Done cards stay visible in the room: a project outlives its tasks, and its history is part of the room.\n- The project room reads as progress (open vs done, the contained set changing over time). The system room will diverge toward health/performance — designed in wo-system-generation-v1, not here.\n\nScope:\n- Board UI: New project / New system actions writing through the existing map-state save path.\n- Board UI: an entity room view (entity header + joined cards, open and done), shared-component with the Map overlay rather than duplicated.\n- Unplaced entities: confirm the Map renders/queues them sanely until the director places them.\n\nOut of scope:\n- Cadence generation and system health metrics (wo-system-generation-v1).\n- Any change to what the Map overlay shows (it already works; reuse, don't fork).\n\nStatus: delivered — shared EntityRoomBody extracted from the Map overlay (overlay unchanged); Board gains an entity strip, per-entity rooms with ?entity= deep links, and New project / New system actions creating unplaced entities through the existing map save path; rooms show open and done cards with the completed-project read-only rule.",
       "checklist": [
         {
-          "done": false,
+          "done": true,
           "text": "New project / New system can be created from the Board (born unplaced)"
         },
         {
-          "done": false,
+          "done": true,
           "text": "Placement remains director-only; unplaced entities are visible somewhere until placed"
         },
         {
-          "done": false,
+          "done": true,
           "text": "Entity room on the Board shows joined cards with state and history (done cards included)"
         },
         {
-          "done": false,
+          "done": true,
           "text": "Room components shared with the Map overlay, not duplicated"
         }
-      ]
+      ],
+      "terminalAt": "2026-07-14"
     },
     {
       "id": "wo-system-generation-v1",
