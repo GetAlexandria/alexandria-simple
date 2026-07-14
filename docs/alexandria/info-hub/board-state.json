@@ -335,7 +335,7 @@
           "text": "Projects creatable from the Board; entity rooms reachable from the Board (child card)"
         },
         {
-          "done": false,
+          "done": true,
           "text": "System generation v1 lands (child card)"
         },
         {
@@ -456,14 +456,15 @@
     {
       "id": "wo-ws2-materialize-on-read",
       "type": "task",
-      "status": "open",
+      "status": "done",
       "domainId": "alexandria",
       "entityId": "prj-work-system-v1",
       "priority": 15,
       "source": "board:director",
       "created": "2026-07-14",
       "title": "WS2 \u2014 materialize-on-read generation",
-      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md \u00a72. Materialize-on-read card generation in the ax runtime: idempotent by (systemId, ruleId, window), no backfill, gated by system lifecycle (hibernating generates nothing, uprooted never again). Ruling #1 confirmed (director, 2026-07-14): materialize-on-read."
+      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md \u00a72. Materialize-on-read card generation in the ax runtime: idempotent by (systemId, ruleId, window), no backfill, gated by system lifecycle (hibernating generates nothing, uprooted never again). Ruling #1 confirmed (director, 2026-07-14): materialize-on-read.\n\nStatus: delivered \u2014 board GET materializes the current window's due cards under the shared mutation semaphore; windows are epoch-anchored (h/d/w) and calendar-anchored (mo/q/y); no backfill; generation never breaks the board read.",
+      "terminalAt": "2026-07-14"
     },
     {
       "id": "wo-ws3-system-room-v2",

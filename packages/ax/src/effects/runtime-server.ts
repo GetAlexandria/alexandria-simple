@@ -83,9 +83,11 @@ import {
   mergeInfoHubCards,
   readInfoHubBoard,
   todayDateOnly,
+  validateInfoHubCards,
   writeInfoHubBoard,
   type InfoHubBoard,
 } from "./info-hub-board.js";
+import { dueCardsForBoard } from "./system-generation.js";
 import {
   MapStateFileError,
   MapStateValidationError,
@@ -2701,10 +2703,70 @@ async function sourceCreateResponse(options: {
   }
 }
 
-async function infoHubBoardResponse(workspacePath: string): Promise<Response> {
+/**
+ * Serves the Info Hub board, materializing this instant's due generated
+ * cards first (work-system plan §2, `docs/alexandria/plans/work-system/
+ * plan.md`): every `planted` system's PATTERN rules are checked against the
+ * current cadence window, and any card missing for that window is appended
+ * before the board is served. A missing or corrupt map-state file never
+ * breaks the board read — it just means nothing gets materialized this
+ * time, board serves as-is.
+ */
+async function infoHubBoardResponse(options: {
+  mutationSemaphore: Effect.Semaphore;
+  workspacePath: string;
+}): Promise<Response> {
+  const { mutationSemaphore, workspacePath } = options;
   try {
     const board = await runWithNodeFileSystem(readInfoHubBoard({ workspacePath }));
-    return Response.json(board);
+
+    const mapStateResult = await runWithNodeFileSystem(
+      readMapState({ workspacePath }).pipe(Effect.either),
+    );
+    if (mapStateResult._tag === "Left") {
+      return Response.json(board);
+    }
+
+    const now = new Date();
+    const today = todayDateOnly();
+    const due = dueCardsForBoard({
+      mapState: mapStateResult.right,
+      cards: board.cards,
+      now,
+      today,
+    });
+    if (due.length === 0) {
+      return Response.json(board);
+    }
+
+    return await runWithNodeFileSystem(
+      mutationSemaphore.withPermits(1)(
+        Effect.gen(function* () {
+          // Re-read under the lock: the fast-path read above raced any
+          // concurrent GET that might already have materialized these same
+          // cards (check-then-act).
+          const current = yield* readInfoHubBoard({ workspacePath });
+          const dueNow = dueCardsForBoard({
+            mapState: mapStateResult.right,
+            cards: current.cards,
+            now,
+            today,
+          });
+          if (dueNow.length === 0) {
+            return Response.json(current);
+          }
+
+          const merged = validateInfoHubCards([...current.cards, ...dueNow], "cards");
+          if (merged instanceof InfoHubBoardValidationError) {
+            return jsonError(`generated cards failed validation: ${merged.message}`, 500);
+          }
+
+          const next: InfoHubBoard = { comment: current.comment, cards: merged, updated: today };
+          yield* writeInfoHubBoard({ board: next, workspacePath });
+          return Response.json(next);
+        }),
+      ),
+    );
   } catch (error) {
     return jsonError(
       error instanceof Error ? error.message : String(error),
@@ -3215,7 +3277,7 @@ function createRuntimeFetchHandler(
     }
 
     if (url.pathname === "/api/info-hub/board" && request.method === "GET") {
-      return infoHubBoardResponse(options.workspacePath);
+      return infoHubBoardResponse({ mutationSemaphore, workspacePath: options.workspacePath });
     }
 
     if (url.pathname === "/api/info-hub/board" && request.method === "POST") {
