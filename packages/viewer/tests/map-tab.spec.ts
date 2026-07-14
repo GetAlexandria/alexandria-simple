@@ -438,22 +438,22 @@ test("a stray pile is inert during placement: clicking through it opens no overl
   await expect(page.locator('[data-testid="map-overlay"]')).toHaveCount(0);
 });
 
-test("board form joins a card to a context/entity; promote creates an unplaced project", async ({
+test("board form joins a card to an entity; promote creates an unplaced project", async ({
   page,
 }) => {
   await page.request.post("/__fixture/reset-map-board");
   await page.goto("/info");
   await expect(page.getByTestId("info-hub-board")).toBeVisible();
 
-  // Join pickers are populated from map state; picking an entity adopts its
-  // context automatically.
+  // The entity picker is populated from map state and ungated (no context
+  // picker since #45); a card's stored contextId passes through untouched —
+  // wo-unmapped has none, so it stays absent after the join.
   await page
     .getByTestId("work-order-card-wo-unmapped")
     .getByRole("button", { name: "Edit", exact: true })
     .click();
   await expect(page.getByTestId("card-join-pickers")).toBeVisible();
   await page.getByLabel("Card map entity").selectOption("prj-map-tab");
-  await expect(page.getByLabel("Card map context")).toHaveValue("viewer");
   await page.getByRole("button", { name: "Save card" }).click();
   await expect
     .poll(async () => {
@@ -463,7 +463,7 @@ test("board form joins a card to a context/entity; promote creates an unplaced p
       const card = board.cards.find((candidate) => candidate.id === "wo-unmapped");
       return `${card?.contextId ?? ""}/${card?.entityId ?? ""}`;
     })
-    .toBe("viewer/prj-map-tab");
+    .toBe("/prj-map-tab");
 
   // Promote a stray card: detail modal → pick nothing (its own context is
   // preselected) → Promote. One map write (new unplaced project), one board
