@@ -1264,9 +1264,9 @@ export type MapEntityKind = Schema.Schema.Type<typeof MapEntityKindSchema>;
 
 // A system's PATTERN rule (work-system plan §1, `docs/alexandria/plans/
 // work-system/plan.md`) — mirrors packages/ax/src/effects/map-state.ts's
-// PatternRule. Time-only `every` (`"6h"` | `"1d"` | `"1w"`) is decoded as a
-// free string here; the ax validator owns the duration-shape check
-// server-side.
+// PatternRule. Time-only `every` (`"6h"` | `"1d"` | `"1w"` | `"1mo"` |
+// `"1q"` | `"1y"`; months are `mo`, never bare `m`) is decoded as a free
+// string here; the ax validator owns the duration-shape check server-side.
 export const MapPatternRuleSchema = Schema.Struct({
   assignee: Schema.optionalWith(Schema.String, { exact: true }),
   detail: Schema.optionalWith(Schema.String, { exact: true }),
@@ -1281,8 +1281,9 @@ export const MapEntitySchema = Schema.Struct({
   // Who the work item is assigned to (person, prefix-style human:/colleague:).
   // The ax twin validates optional/non-empty and owns the fold of the former
   // system-only `colleague` into this; this schema decodes what it validated.
-  // For a system entity this reads as the system's OWNER (work-system plan
-  // §1, ruling #4).
+  // For a system entity this is who is accountable for its health (work-
+  // system plan §1); labeled "Assignee" in the UI (director ruling,
+  // 2026-07-14 — the field says what it is).
   assignee: Schema.optionalWith(Schema.String, { exact: true }),
   cadence: Schema.optionalWith(Schema.String, { exact: true }),
   // Context is latent data (Map/Board contract demotion): optional, matching

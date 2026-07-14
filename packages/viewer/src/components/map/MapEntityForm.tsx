@@ -250,13 +250,13 @@ export function MapEntityForm({
       {kind === "system" ? (
         <>
           <div className="flex gap-2">
-            {/* Entity-level assignee: labeled "Owner" here (work-system plan
-                §1, ruling #4 — the field stays `assignee` everywhere; only
-                the label changes for a system's owner). */}
+            {/* Entity-level assignee: labeled "Assignee" — director ruling
+                (2026-07-14) overrode the plan's earlier "Owner"-label idea:
+                the field says what it is, no front-name/back-name split. */}
             <label className={`${FIELD_LABEL_CLASS} flex-1`} style={labelStyle}>
-              Owner
+              Assignee
               <input
-                aria-label="System owner"
+                aria-label="System assignee"
                 className={INPUT_CLASS}
                 onChange={(event) => setColleague(event.target.value)}
                 placeholder="raven, damien…"
@@ -312,7 +312,7 @@ export function MapEntityForm({
                     aria-label={`Pattern rule ${index + 1} every`}
                     className={INPUT_CLASS}
                     onChange={(event) => updatePatternRow(index, { every: event.target.value })}
-                    placeholder="6h / 1d / 1w"
+                    placeholder="6h / 1d / 1w / 1mo / 1q / 1y"
                     style={inputStyle}
                     value={row.every}
                   />
@@ -323,7 +323,7 @@ export function MapEntityForm({
                     style={inputStyle}
                     value={row.assignee ?? ""}
                   >
-                    <option value="">System owner</option>
+                    <option value="">System assignee</option>
                     {ASSIGNEE_OPTIONS.map((option) => (
                       <option key={option.ref} value={option.ref}>
                         {option.name}

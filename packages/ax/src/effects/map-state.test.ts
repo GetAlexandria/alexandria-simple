@@ -394,6 +394,22 @@ describe("validateMapState", () => {
     ]);
   });
 
+  test("accepts month/quarter/year every durations (the LLC-administration pilot's rhythms)", () => {
+    const state = baseState();
+    ((state.entities as Record<string, unknown>[])[0] as Record<string, unknown>).pattern = [
+      { id: "monthly-bookkeeping", title: "Monthly bookkeeping", every: "1mo" },
+      { id: "quarterly-tax-estimates", title: "Quarterly tax estimates", every: "1q" },
+      { id: "annual-report", title: "Annual report filing", every: "1y" },
+    ];
+    const result = validateMapState(state);
+    expect(result).not.toBeInstanceOf(MapStateValidationError);
+    expect(
+      (result as MapState).entities
+        .find((candidate) => candidate.id === "sys-raven-duty-loop")
+        ?.pattern?.map((rule) => rule.every),
+    ).toEqual(["1mo", "1q", "1y"]);
+  });
+
   test("rejects pattern on a project entity (system-only, like cadence)", () => {
     const state = baseState();
     ((state.entities as Record<string, unknown>[])[1] as Record<string, unknown>).pattern = [
@@ -424,12 +440,19 @@ describe("validateMapState", () => {
     const result = validateMapState(state);
     expect(result).toBeInstanceOf(MapStateValidationError);
     expect((result as MapStateValidationError).message).toContain("every must be a duration");
+  });
 
-    const monthly = baseState();
-    ((monthly.entities as Record<string, unknown>[])[0] as Record<string, unknown>).pattern = [
-      { id: "r1", title: "Rule", every: "1m" },
+  test("rejects a bare-m every ('m' is cadence minutes; months are 'mo')", () => {
+    const state = baseState();
+    ((state.entities as Record<string, unknown>[])[0] as Record<string, unknown>).pattern = [
+      { id: "r1", title: "Rule", every: "30m" },
     ];
-    expect(validateMapState(monthly)).toBeInstanceOf(MapStateValidationError);
+    const result = validateMapState(state);
+    expect(result).toBeInstanceOf(MapStateValidationError);
+    expect((result as MapStateValidationError).message).toContain("every must be a duration");
+    expect((result as MapStateValidationError).message).toContain(
+      'bare "m" is reserved for cadence minutes',
+    );
   });
 
   test("rejects duplicate pattern rule ids within one entity", () => {

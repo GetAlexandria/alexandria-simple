@@ -463,7 +463,7 @@
       "source": "board:director",
       "created": "2026-07-14",
       "title": "WS2 — materialize-on-read generation",
-      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md §2. Materialize-on-read card generation in the ax runtime: idempotent by (systemId, ruleId, window), no backfill, gated by system lifecycle (hibernating generates nothing, uprooted never again). Holds on plan ruling #1 (materialize-on-read as the generation mechanism) being confirmed."
+      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md §2. Materialize-on-read card generation in the ax runtime: idempotent by (systemId, ruleId, window), no backfill, gated by system lifecycle (hibernating generates nothing, uprooted never again). Ruling #1 confirmed (director, 2026-07-14): materialize-on-read."
     },
     {
       "id": "wo-ws3-system-room-v2",
@@ -499,7 +499,7 @@
       "source": "board:director",
       "created": "2026-07-14",
       "title": "WS5 — pilot system: seed, place, first real cards",
-      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md §5. Seeds one real system with a real pattern as the first generator (recommendation: an operating loop from the director's actual week, over synthetic duty-loop tasks), the director places it on the map, and its first cards materialize."
+      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md §5. Seeds one real system with a real pattern as the first generator, the director places it on the map, and its first cards materialize. Pilot: LLC administration (monthly bookkeeping, quarterly tax estimates, annual report filing) — agent-owned, human-lane delegation back to the director."
     },
     {
       "id": "wo-ws6-library-mission",

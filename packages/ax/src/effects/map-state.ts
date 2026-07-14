@@ -77,10 +77,13 @@ const ALLOWED_POSITION_FIELDS = new Set<string>(POSITION_FIELD_ORDER);
 const ALLOWED_ORG_FIELDS = new Set<string>(ORG_FIELD_ORDER);
 const ALLOWED_PATTERN_RULE_FIELDS = new Set<string>(PATTERN_RULE_FIELD_ORDER);
 // A pattern rule's `every` is a time-only duration in v1 (plan §1): a count of
-// hours, days, or weeks. Meter-/condition-based rules are reserved future work
-// (a `kind` discriminator, not built here), so any other unit is rejected with
-// a clear message rather than silently accepted.
-const PATTERN_RULE_EVERY_PATTERN = /^\d+[hdw]$/;
+// hours, days, weeks, months, quarters, or years (director ruling 2026-07-14
+// — the LLC-administration pilot needs monthly/quarterly/annual rules).
+// Months are `mo`, never a bare `m` — that would collide with the existing
+// `cadence` field's minutes (e.g. "30m"). Meter-/condition-based rules are
+// reserved future work (a `kind` discriminator, not built here), so any
+// other unit is rejected with a clear message rather than silently accepted.
+const PATTERN_RULE_EVERY_PATTERN = /^\d+(h|d|w|mo|q|y)$/;
 // `org` is optional at the top level (a fresh/empty world has no org yet), so
 // it is allowed but deliberately kept out of STATE_FIELD_ORDER, which doubles
 // as the required-collection list.
@@ -116,16 +119,17 @@ export interface MapContext {
  * A system's PATTERN rule (work-system plan §1, `docs/alexandria/plans/
  * work-system/plan.md`) — one generation rule, e.g. "check and respond to
  * customer emails, every 6h". Time-only in v1: `every` is a duration
- * (`"6h"` | `"1d"` | `"1w"`, hours/days/weeks); meter- and condition-based
- * rules are declared future work (a `kind` discriminator is reserved,
- * absent means `time`).
+ * (`"6h"` | `"1d"` | `"1w"` | `"1mo"` | `"1q"` | `"1y"` — hours/days/weeks/
+ * months/quarters/years; months are `mo`, never bare `m`, which is the
+ * `cadence` field's minutes); meter- and condition-based rules are declared
+ * future work (a `kind` discriminator is reserved, absent means `time`).
  */
 export interface PatternRule {
   /** Non-empty, unique within the entity's `pattern` list. */
   id: string;
   /** The rule's human-readable name (becomes the spawned card's title). */
   title: string;
-  /** A duration like `"6h"`, `"1d"`, or `"1w"` (hours/days/weeks). */
+  /** A duration like `"6h"`, `"1d"`, `"1w"`, `"1mo"`, `"1q"`, or `"1y"`. */
   every: string;
   /**
    * Rule-level delegation: who works the spawned cards. Falls back to the
@@ -142,8 +146,10 @@ export interface MapEntity {
    * (`human:<id>` | `colleague:<id>`, the same scheme as a domain's `owner`).
    * A work-item field allowed on any kind; optional (unassigned = no field).
    * The system's former bare `colleague` folded into this as `colleague:<id>`.
-   * For a system entity this reads as the system's OWNER (work-system plan
-   * §1, ruling #4) — accountable for its health.
+   * For a system entity this is who is accountable for its health (work-
+   * system plan §1); the UI labels it "Assignee" everywhere — director
+   * ruling (2026-07-14): the field says what it is, no separate "Owner"
+   * front-name.
    */
   assignee?: string;
   cadence?: string;
@@ -468,7 +474,9 @@ function validatePatternRules(
 
     if (!PATTERN_RULE_EVERY_PATTERN.test(rawRule.every as string)) {
       return validationError(
-        `${ruleRef} every must be a duration like "6h", "1d", or "1w" (hours, days, or weeks)`,
+        `${ruleRef} every must be a duration like "6h", "1d", "1w", "1mo", "1q", or "1y" ` +
+          `(hours, days, weeks, months, quarters, or years; use "mo" for months — ` +
+          `bare "m" is reserved for cadence minutes)`,
       );
     }
 
