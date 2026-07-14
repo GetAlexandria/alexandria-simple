@@ -84,9 +84,11 @@ describe("validateMapState", () => {
       "sys-damien-duty-loop",
       "prj-authenticate-gmail-calendar-connectors-for-the-duty-loop",
       "prj-map-glow-up",
+      "prj-work-system-v1",
     ]);
-    // Five entity positions + the L2 landmark bench (2 colleagues, 1 campfire,
-    // 4 locked seats).
+    // Five placed entity positions + the L2 landmark bench (2 colleagues,
+    // 1 campfire, 4 locked seats). prj-work-system-v1 is born unplaced and
+    // carries no position until the director places it.
     expect(state.positions).toHaveLength(12);
     // The fold: each duty-loop system carries a colleague-kind assignee (its
     // former bare `colleague`), and the projects carry a human one.
