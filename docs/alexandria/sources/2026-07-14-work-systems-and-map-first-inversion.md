@@ -159,3 +159,29 @@ mission runs:
   Project noun collision (workspace-Project vs map-Project vs work
   model); rename `Domain - Playmaker's Studio Library` → Skillmaker;
   create colleague cards for William and Rob.
+
+## 8. Addendum — Operations returns (ruling, 2026-07-14, same day)
+
+The first real pilot system — LLC administration (monthly bookkeeping,
+quarterly estimated-tax work, annual report filing) — fit none of the
+four post-pivot domains. The pre-pivot library's `Entity - Domain` had
+listed Operations as a division; the pivot reset dropped it.
+
+**Ruling (director):** "Operations is back … without systems, operations
+didn't make much sense, but now they're a crucial part of the map."
+
+**Synthesis (Raven):** a domain of pure recurring obligations had no
+shape on a map that only knew projects — nothing in it ever *finishes*.
+The System primitive is what makes Operations coherent as work
+geography: it is the domain where systems dominate and projects are the
+exception, the inverse texture of every other domain.
+
+The `operations` domain is seeded **unowned** on purpose: the map's own
+design reads owner-less regions as demand signal, and the demand here is
+real — the back-office/admin colleague who should own systems like LLC
+administration does not exist yet. The unclaimed nameplate is the hire
+requisition. Interim: Raven owns the pilot system, with pattern rules
+delegating human-lane items (signatures, payments, filings) to the
+director. The atomization backlog above inherits this: `Entity - Domain`
+gains Operations back, and the ownership-pattern card should record the
+unowned-domain-as-demand-signal move.
