@@ -1,15 +1,10 @@
 // The Map tab's landmark layer (L2, plan §1.1 — colleagues are landmarks, not
 // tiles). Renders the parsed landmark list (landmarks.ts) inside MapScene's
-// canvas, in Owner view only: colleague buildings (click → colleague overlay),
-// the locked future-seat plots (tooltip-only), and the campfire. (Domain view
-// is work-geography only after the Map Glow Up declutter, so it mounts no
-// landmark layer.)
-//
-// The Owner view re-anchors owned colleagues on their region centers
-// (OwnerViewLayer), so `skipColleagueIds` drops those from this layer to avoid
-// drawing a colleague twice; non-anchor colleagues render as bench buildings.
-// The locked-seat piece is shared with OwnerViewLayer so a seat looks and
-// behaves identically wherever it appears.
+// canvas: colleague buildings (click → colleague overlay), the locked
+// future-seat plots (tooltip-only), and the campfire. Currently mounted only
+// by the /dev/map regression harness (under its Domain-view toggle) — the
+// shipped Map tab mounts no landmark layer in either view after the Map Glow
+// Up declutter; colleagues live in the coin tray instead.
 
 import { useState } from "react";
 import { Campfire } from "./Campfire";
@@ -49,8 +44,7 @@ function ColleagueLandmark({
 /**
  * A locked future-seat plot: a ghosted building that is visibly
  * non-interactive beyond a hover tooltip (the map's twin of RavenBench's
- * "future teammate" locked coin). Exported so OwnerViewLayer renders seats
- * through the same piece.
+ * "future teammate" locked coin).
  */
 export function LockedSeatLandmark({ coord }: { coord: HexCoord }) {
   const [hovered, setHovered] = useState(false);
@@ -77,25 +71,15 @@ type MapLandmarksProps = {
   landmarks: readonly MapLandmark[];
   /** Opens the colleague overlay for a clicked colleague building. */
   onColleagueClick: (colleagueId: string) => void;
-  /** Colleague ids shown as Owner-view anchors — skipped here to avoid a double render. */
-  skipColleagueIds?: ReadonlySet<string>;
   /** Display name for a colleague's hover tooltip; defaults to the capitalized id. */
   colleagueName?: (colleagueId: string) => string;
 };
 
-export function MapLandmarks({
-  landmarks,
-  onColleagueClick,
-  skipColleagueIds,
-  colleagueName,
-}: MapLandmarksProps) {
+export function MapLandmarks({ landmarks, onColleagueClick, colleagueName }: MapLandmarksProps) {
   return (
     <>
       {landmarks.map((landmark) => {
         if (landmark.kind === "colleague") {
-          if (skipColleagueIds?.has(landmark.id)) {
-            return null;
-          }
           return (
             <ColleagueLandmark
               key={`colleague:${landmark.id}`}

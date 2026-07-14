@@ -1,7 +1,6 @@
 // A pointer-transparent DOM chip floating over a hex (drei Html), the shared
-// base for the map's two hex-anchored HTML labels: LandmarkTooltip (landmark
-// hover captions / the resting locked-seat marker) and OwnerViewLayer's
-// OwnerChip (owner cards, work-marker captions, vacant-plot notices). It owns
+// base for the map's hex-anchored HTML labels — currently LandmarkTooltip
+// (landmark hover captions / the resting locked-seat marker). It owns
 // only the placement grammar — hex → world center, `center`, pointer-events
 // off so it never blocks the sprite underneath, and the HUD-safe zIndexRange;
 // each caller supplies its own styled span as children. For in-scene

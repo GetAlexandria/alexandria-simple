@@ -1,18 +1,17 @@
 // Landmark derivation for the Map tab (L2, plan §1.1 — colleagues are
 // landmarks, not tiles). A pure projection of the map state's `landmark`
 // positions into a render list, three.js- and React-free so it unit-tests
-// under bun alongside the layout modules. The renderer (MapLandmarks, in
-// Owner view) and the container's HUD counts read this one derivation.
+// under bun alongside the layout modules. The renderer (MapLandmarks) reads
+// this one derivation.
 //
-// The Owner view re-anchors owned colleagues on their region centers
-// (layout/owner-view.ts), so MapLandmarks renders bench buildings only for
-// colleagues that are NOT a domain anchor — see `MapLandmarks`. Seats and the
-// campfire render at their stored hex there too. (Domain view is work-geography
-// only and mounts no landmark layer — Map Glow Up declutter.)
+// The shipped Map tab mounts no landmark layer in either view — colleagues,
+// seats, and the campfire moved off the map entirely (Map Glow Up declutter;
+// colleagues now live in the coin tray). MapLandmarks currently renders only
+// from the /dev/map regression harness, under its Domain-view toggle.
 
 import type { MapState } from "../../app/runtime/schemas";
 import { createHex, type HexCoord } from "./hex";
-import { parseDomainOwner, parseLandmarkId } from "./vocabulary";
+import { parseLandmarkId } from "./vocabulary";
 
 /** A landmark ready to render: its parsed kind, bare id, and hex. */
 export type MapLandmark =
@@ -43,21 +42,4 @@ export function mapLandmarks(state: MapState): MapLandmark[] {
     });
   }
   return landmarks;
-}
-
-/**
- * The bare ids of colleagues shown as Owner-view domain anchors (a domain
- * whose `owner` is `colleague:<id>`). The Owner view renders these at their
- * region centers, so MapLandmarks skips their bench buildings there to avoid
- * drawing the same colleague twice.
- */
-export function ownerAnchoredColleagueIds(state: MapState): Set<string> {
-  const ids = new Set<string>();
-  for (const domain of state.domains) {
-    const ownership = parseDomainOwner(domain.owner);
-    if (ownership.status === "owned" && ownership.owner.kind === "colleague") {
-      ids.add(ownership.owner.id);
-    }
-  }
-  return ids;
 }

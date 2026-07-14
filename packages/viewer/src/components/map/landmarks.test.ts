@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import type { MapState } from "../../app/runtime/schemas";
-import { mapLandmarks, ownerAnchoredColleagueIds } from "./landmarks";
+import { mapLandmarks } from "./landmarks";
 
 function stateWith(overrides: Partial<MapState>): MapState {
   return {
@@ -45,38 +45,5 @@ describe("mapLandmarks", () => {
     );
 
     expect(landmarks).toEqual([{ kind: "colleague", id: "raven", coord: { q: 0, r: 0, s: 0 } }]);
-  });
-});
-
-describe("ownerAnchoredColleagueIds", () => {
-  it("collects colleague-owned domain ids (not human owners or unowned domains)", () => {
-    const ids = ownerAnchoredColleagueIds(
-      stateWith({
-        domains: [
-          {
-            id: "new-media",
-            name: "New Media",
-            half: "work",
-            owner: "colleague:damien",
-            region: { center: [-4, -1], radius: 1 },
-          },
-          {
-            id: "software",
-            name: "Software",
-            half: "work",
-            owner: "human:danvers",
-            region: { center: [0, -3], radius: 2 },
-          },
-          {
-            id: "outreach",
-            name: "Outreach",
-            half: "work",
-            region: { center: [3, -1], radius: 1 },
-          },
-        ],
-      }),
-    );
-
-    expect([...ids]).toEqual(["damien"]);
   });
 });
