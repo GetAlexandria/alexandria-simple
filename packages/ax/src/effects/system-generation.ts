@@ -51,6 +51,12 @@ function startOfMonthsSinceEpoch(windowMonths: number): Date {
 }
 
 /**
+ * Browser-side TWIN: packages/viewer/src/components/map/system-controls.ts
+ * ports this exact function (plus nextWindowStart/windowEndFor, which this
+ * module has no need for) for the WS3 system room's health controls — the
+ * viewer bundle cannot import ax. Keep the two in lockstep; the twin carries
+ * a matching sync comment pointing back here.
+ *
  * The UTC start of the cadence window `now` falls in for a pattern rule's
  * `every` duration (work-system plan §2):
  *

@@ -42,6 +42,15 @@ type MapOverlayProps = {
   onToggleChecklistItem: (cardId: string, index: number) => void;
   onEditEntity: (entityId: string) => void;
   onClose: () => void;
+  /**
+   * System room upgrade-queue project links (work-system plan §3):
+   * re-targets this same overlay at another entity's room. The map surface
+   * has no "Create upgrade project" entry point yet (no entity-creation form
+   * mounted here to hand a preset to — board-project-rooms owns that flow),
+   * so SystemRoomBody's create action is omitted here on purpose; a director
+   * on the map who wants to create an upgrade project uses the Board room.
+   */
+  onOpenEntity?: (entityId: string) => void;
 };
 
 /** `contextName` null → the entity has no context (latent data) — the segment is omitted, never "undefined". */
@@ -66,6 +75,7 @@ export function MapOverlay({
   onToggleChecklistItem,
   onEditEntity,
   onClose,
+  onOpenEntity,
 }: MapOverlayProps) {
   // Card detail is derived from the live card list by id so a status or
   // checklist save re-renders the open modal with the server-merged card.
@@ -202,6 +212,7 @@ export function MapOverlay({
           onCloseCard={() => setDetailCardId(null)}
           onMoveStatus={onMoveStatus}
           onOpenCard={(cardId) => setDetailCardId(cardId)}
+          onOpenEntity={onOpenEntity}
           onToggleChecklistItem={onToggleChecklistItem}
           testIdPrefix="map-overlay"
         />

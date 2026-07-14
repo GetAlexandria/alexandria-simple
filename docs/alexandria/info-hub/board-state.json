@@ -469,14 +469,15 @@
     {
       "id": "wo-ws3-system-room-v2",
       "type": "task",
-      "status": "open",
+      "status": "done",
       "domainId": "alexandria",
       "entityId": "prj-work-system-v1",
       "priority": 15,
       "source": "board:director",
       "created": "2026-07-14",
+      "terminalAt": "2026-07-14",
       "title": "WS3 \u2014 system room v2: controls, history, upgrade queue",
-      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md \u00a73. Builds the system room's health/performance view \u2014 on-time % and streak per rule, next due, the PATTERN section, THIS WEEK's open generated cards, HISTORY, and the UPGRADE QUEUE of linked upgrade projects."
+      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md \u00a73. Builds the system room's health/performance view \u2014 on-time % and streak per rule, next due, the PATTERN section, THIS WEEK's open generated cards, HISTORY, and the UPGRADE QUEUE of linked upgrade projects.\n\nStatus: delivered \u2014 system rooms render purpose, health dots + on-time/behind, PATTERN with delegation and next-due, open queue with generation provenance, per-rule \u2713/\u2717 history, and the upgrade queue with create-upgrade-project; controls computed in the shared system-controls module (WS4 reuses it)."
     },
     {
       "id": "wo-ws4-map-health-wiring",
