@@ -1,6 +1,6 @@
 {
   "comment": "Info Hub work board (Info Hub kanban plan, Lane B). Agents edit this file directly; the Info Hub board page persists here. Git-tracked shared state — treat it like source, not per-machine runtime state.",
-  "updated": "2026-07-13",
+  "updated": "2026-07-14",
   "cards": [
     {
       "id": "wo-viewer-light-theme-remnants",
@@ -129,7 +129,7 @@
     {
       "id": "wo-map-declutter-colleagues-to-tray",
       "type": "task",
-      "status": "open",
+      "status": "in-progress",
       "domainId": "alexandria",
       "contextId": "viewer",
       "entityId": "prj-map-glow-up",
@@ -137,10 +137,10 @@
       "source": "board:director",
       "created": "2026-07-13",
       "title": "Declutter the map: colleagues live in the coin tray; Owner view groups by owner",
-      "detail": "Both Domain view and Owner view carry a full row of colleague furniture — colleague buildings, the campfire, and four locked bench seats — across the neutral middle of the map. That furniture predates the coin tray (RavenBench), which is now a fixed top bar on every tab (the Map tab included) and is already the agent action surface: a coin fires plays today. With the tray in place, the map no longer needs to host colleagues.\n\nDecisions (director, 2026-07-13):\n- Domain view loses the entire landmark row: colleague buildings, campfire, and locked seats.\n- Owner view works exactly like Domain view (same work-geography — contexts, projects, systems, stray piles) except each region is labelled and grouped by its owner (e.g. 'DANVERS', from domain.owner with the human:/colleague: prefix stripped) instead of its domain name (e.g. 'SOFTWARE'). Ownership is not assumed 1:1 with domains: a domain may map to a single owner (then the two views differ only in the label), or ownership may regroup regions.\n- The two features the colleague building overlay carried — the work journal and the Needs-a-Human lane — move onto the colleague's coin as coin actions.\n- The colleague-level escalation cue moves with them: a coin glows or badges when its colleague has a Needs-a-Human item or an overdue/unhealthy system, preserving the at-a-glance signal the building glow used to give. Tile-level Needs-a-Human glow stays on the work tile (L1) unchanged.\n\nScope:\n- Domain-view layout: stop rendering the colleague/seat/campfire landmark layer (MapLandmarks renders in both modes today; skip the whole row in Domain view).\n- Owner view: reuse the Domain-view work layout; label and group regions by domain.owner rather than name; keep an owner-less region visibly unclaimed (demand signal, plan §1.2).\n- Coin (RavenBench): add Journal and Needs-a-Human actions to the coin action menu; wire the coin lit/activated state to a colleague-level escalation rollup.\n\nOut of scope:\n- Placement UX for unplaced projects (tracked separately, in flight).\n- The long-term question of whether the map becomes purely work and whether Owner view survives — noted in the Map Glow Up thread, not decided here.",
+      "detail": "Both Domain view and Owner view carry a full row of colleague furniture — colleague buildings, the campfire, and four locked bench seats — across the neutral middle of the map. That furniture predates the coin tray (RavenBench), which is now a fixed top bar on every tab (the Map tab included) and is already the agent action surface: a coin fires plays today. With the tray in place, the map no longer needs to host colleagues.\n\nDecisions (director, 2026-07-13):\n- Domain view loses the entire landmark row: colleague buildings, campfire, and locked seats.\n- Owner view works exactly like Domain view (same work-geography — contexts, projects, systems, stray piles) except each region is labelled and grouped by its owner (e.g. 'DANVERS', from domain.owner with the human:/colleague: prefix stripped) instead of its domain name (e.g. 'SOFTWARE'). Ownership is not assumed 1:1 with domains: a domain may map to a single owner (then the two views differ only in the label), or ownership may regroup regions.\n- The two features the colleague building overlay carried — the work journal and the Needs-a-Human lane — move onto the colleague's coin as coin actions.\n- The colleague-level escalation cue moves with them: a coin glows or badges when its colleague has a Needs-a-Human item or an overdue/unhealthy system, preserving the at-a-glance signal the building glow used to give. Tile-level Needs-a-Human glow stays on the work tile (L1) unchanged.\n\nScope:\n- Domain-view layout: stop rendering the colleague/seat/campfire landmark layer (MapLandmarks renders in both modes today; skip the whole row in Domain view).\n- Owner view: reuse the Domain-view work layout; label and group regions by domain.owner rather than name; keep an owner-less region visibly unclaimed (demand signal, plan §1.2).\n- Coin (RavenBench): add Journal and Needs-a-Human actions to the coin action menu; wire the coin lit/activated state to a colleague-level escalation rollup.\n\nOut of scope:\n- Placement UX for unplaced projects (tracked separately, in flight).\n- The long-term question of whether the map becomes purely work and whether Owner view survives — noted in the Map Glow Up thread, not decided here.\n\nStatus (2026-07-14): the Domain-view declutter landed in #32 (colleague/campfire/seat row removed from Domain view). Deferred pending a product/cost decision: Owner-view grouped/labelled by owner, and moving Journal + Needs-a-Human + a colleague-escalation glow onto the coin tray (needs board/journal data plumbed to RavenBench on every surface, plus a Journal surface that does not exist yet).",
       "checklist": [
         {
-          "done": false,
+          "done": true,
           "text": "Domain view renders no colleague buildings, campfire, or locked seats — work-geography only"
         },
         {
@@ -172,7 +172,7 @@
     {
       "id": "wo-unify-map-board-data-model",
       "type": "improvement",
-      "status": "open",
+      "status": "done",
       "domainId": "alexandria",
       "contextId": "viewer",
       "entityId": "prj-map-glow-up",
@@ -207,7 +207,7 @@
     {
       "id": "wo-map-reset-domain-model",
       "type": "task",
-      "status": "open",
+      "status": "done",
       "domainId": "alexandria",
       "contextId": "viewer",
       "entityId": "prj-map-glow-up",
@@ -246,7 +246,7 @@
     {
       "id": "wo-board-retire-area-field",
       "type": "task",
-      "status": "open",
+      "status": "done",
       "domainId": "alexandria",
       "contextId": "viewer",
       "entityId": "prj-map-glow-up",
@@ -277,7 +277,7 @@
     {
       "id": "wo-map-stray-tasks-and-placement-v1",
       "type": "task",
-      "status": "open",
+      "status": "done",
       "domainId": "alexandria",
       "contextId": "viewer",
       "entityId": "prj-map-glow-up",
