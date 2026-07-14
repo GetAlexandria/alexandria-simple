@@ -128,6 +128,37 @@
       "domainId": "alexandria",
       "assignee": "human:danvers",
       "lifecycle": "active"
+    },
+    {
+      "id": "sys-llc-administration",
+      "kind": "system",
+      "name": "LLC Administration",
+      "domainId": "operations",
+      "assignee": "colleague:raven",
+      "purpose": "Keep the LLC compliant and its books current \u2014 filings on time, taxes estimated and paid, books closed monthly.",
+      "pattern": [
+        {
+          "id": "monthly-bookkeeping",
+          "title": "Close the monthly books",
+          "every": "1mo",
+          "detail": "Reconcile accounts, categorize the month's transactions, and flag anything needing the director (human lane) before close."
+        },
+        {
+          "id": "quarterly-tax-estimate",
+          "title": "Calculate and pay the quarterly estimated taxes",
+          "every": "1q",
+          "assignee": "human:danvers",
+          "detail": "Raven preps the estimate from the closed books; payment itself is the director's (human lane)."
+        },
+        {
+          "id": "annual-report",
+          "title": "File the LLC annual report",
+          "every": "1y",
+          "assignee": "human:danvers",
+          "detail": "State filing \u2014 requires the director's signature and payment (human lane); Raven preps the paperwork."
+        }
+      ],
+      "lifecycle": "planted"
     }
   ],
   "positions": [

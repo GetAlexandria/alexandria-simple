@@ -91,7 +91,16 @@ describe("validateMapState", () => {
       "prj-authenticate-gmail-calendar-connectors-for-the-duty-loop",
       "prj-map-glow-up",
       "prj-work-system-v1",
+      "sys-llc-administration",
     ]);
+    // The WS5 pilot: a planted system in operations with a three-rule
+    // pattern (1mo/1q/1y) and NO contextId (WS1 made it optional) —
+    // the first real generator.
+    const llc = state.entities.find((entity) => entity.id === "sys-llc-administration");
+    expect(llc?.kind).toBe("system");
+    expect(llc?.lifecycle).toBe("planted");
+    expect(llc?.contextId).toBeUndefined();
+    expect(llc?.pattern?.map((rule) => rule.every)).toEqual(["1mo", "1q", "1y"]);
     // Five placed entity positions + the L2 landmark bench (2 colleagues,
     // 1 campfire, 4 locked seats). prj-work-system-v1 is born unplaced and
     // carries no position until the director places it.
