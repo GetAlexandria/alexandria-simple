@@ -101,10 +101,10 @@ describe("validateMapState", () => {
     expect(llc?.lifecycle).toBe("planted");
     expect(llc?.contextId).toBeUndefined();
     expect(llc?.pattern?.map((rule) => rule.every)).toEqual(["1mo", "1q", "1y"]);
-    // Five placed entity positions + the L2 landmark bench (2 colleagues,
-    // 1 campfire, 4 locked seats). prj-work-system-v1 is born unplaced and
-    // carries no position until the director places it.
-    expect(state.positions).toHaveLength(12);
+    // Seven placed entity positions (the director placed prj-work-system-v1
+    // and sys-llc-administration on 2026-07-14) + the L2 landmark bench
+    // (2 colleagues, 1 campfire, 4 locked seats).
+    expect(state.positions).toHaveLength(14);
     // The fold: each duty-loop system carries a colleague-kind assignee (its
     // former bare `colleague`), and the projects carry a human one.
     expect(state.entities.find((entity) => entity.id === "sys-raven-duty-loop")?.assignee).toBe(

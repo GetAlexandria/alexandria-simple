@@ -135,7 +135,7 @@
       "name": "LLC Administration",
       "domainId": "operations",
       "assignee": "colleague:raven",
-      "purpose": "Keep the LLC compliant and its books current \u2014 filings on time, taxes estimated and paid, books closed monthly.",
+      "purpose": "Keep the LLC compliant and its books current — filings on time, taxes estimated and paid, books closed monthly.",
       "pattern": [
         {
           "id": "monthly-bookkeeping",
@@ -155,7 +155,7 @@
           "title": "File the LLC annual report",
           "every": "1y",
           "assignee": "human:danvers",
-          "detail": "State filing \u2014 requires the director's signature and payment (human lane); Raven preps the paperwork."
+          "detail": "State filing — requires the director's signature and payment (human lane); Raven preps the paperwork."
         }
       ],
       "lifecycle": "planted"
@@ -233,6 +233,18 @@
       "r": -5,
       "entityType": "project",
       "entityId": "prj-map-tab"
+    },
+    {
+      "q": 5,
+      "r": -6,
+      "entityType": "system",
+      "entityId": "sys-llc-administration"
+    },
+    {
+      "q": 0,
+      "r": -3,
+      "entityType": "project",
+      "entityId": "prj-work-system-v1"
     }
   ]
 }
