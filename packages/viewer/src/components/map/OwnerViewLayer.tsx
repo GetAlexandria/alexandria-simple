@@ -185,10 +185,10 @@ type OwnerViewLayerProps = {
 };
 
 export function OwnerViewLayer({ layout, onColleagueClick }: OwnerViewLayerProps) {
-  // Locked seats are NOT rendered here: they are view-independent landmarks,
-  // owned by the MapLandmarks layer mounted beside this one in both view modes
-  // (rendering them here too would double-draw every seat in Owner view).
-  // `layout.seats` still feeds the HUD's locked-seat count.
+  // Locked seats are NOT rendered here: they are landmarks owned by the
+  // MapLandmarks layer mounted beside this one in Owner view (rendering them
+  // here too would double-draw every seat). `layout.seats` still feeds the
+  // HUD's locked-seat count.
   return (
     <>
       {layout.territories.map((territory) => (
