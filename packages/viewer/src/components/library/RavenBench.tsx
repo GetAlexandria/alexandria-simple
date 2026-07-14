@@ -367,31 +367,29 @@ interface AgentQuickBarProps {
   onAgent(agentId: string): void;
   onColleagueJournal(agentId: string): void;
   onColleagueNeedsHuman(agentId: string): void;
-  onFrameProblem(): void;
-  onKnowledgeBank(): void;
   onClose(): void;
   quickBarRef: RefObject<HTMLDivElement | null>;
 }
 
-function AgentQuickBar({
+// Exported for a standalone-mount test: RavenBench starts minimized and only
+// opens the bar on interaction, so the static-markup test suite mounts this
+// per-coin action bar directly to assert the actions a coin exposes.
+export function AgentQuickBar({
   agent,
   anchorLeft,
   onAgent,
   onColleagueJournal,
   onColleagueNeedsHuman,
-  onFrameProblem,
-  onKnowledgeBank,
   onClose,
   quickBarRef,
 }: AgentQuickBarProps) {
-  // Knowledge Bank and Frame a Problem are Raven-specific surfaces (they route
-  // to Raven's KB and launch her play). Colleague coins instead expose Journal
-  // (opens their map overlay, which shows the journal) and Needs-a-Human (jumps
-  // to the board's needs-a-human lane) — the coin-tray home for a colleague now
-  // that they are moving off the map (Map Glow Up). Every coin still exposes its
-  // own Agent page, wired the same way Raven's is via onAgent(agent.id).
-  const isRaven = agent.id === RAVEN_AGENT_ID;
-
+  // Every coin — Raven and each colleague alike — exposes the SAME three
+  // actions, with no per-agent branch: Journal (opens the coin's map overlay,
+  // which shows their journal), Needs a Human (jumps to the board's
+  // needs-a-human lane), and the coin's own Agent page. Kept uniform so no coin
+  // is a special case now that colleagues are moving off the map onto the coin
+  // tray (Map Glow Up). The former Raven-only Knowledge Bank + Frame a Problem
+  // slots were retired here.
   return (
     <div
       aria-label={`${agent.name} actions`}
@@ -402,45 +400,22 @@ function AgentQuickBar({
       role="group"
       style={quickBarStyle(anchorLeft)}
     >
-      {isRaven ? (
-        <>
-          <button
-            className="raven-tray-action focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8b86d]"
-            data-testid={`agent-quick-bar-knowledge-bank-${agent.id}`}
-            onClick={onKnowledgeBank}
-            type="button"
-          >
-            Knowledge Bank
-          </button>
-          <button
-            className="raven-tray-action focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8b86d]"
-            data-testid={`agent-quick-bar-frame-the-problem-${agent.id}`}
-            onClick={onFrameProblem}
-            type="button"
-          >
-            Frame a Problem
-          </button>
-        </>
-      ) : (
-        <>
-          <button
-            className="raven-tray-action focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8b86d]"
-            data-testid={`agent-quick-bar-journal-${agent.id}`}
-            onClick={() => onColleagueJournal(agent.id)}
-            type="button"
-          >
-            Journal
-          </button>
-          <button
-            className="raven-tray-action focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8b86d]"
-            data-testid={`agent-quick-bar-needs-a-human-${agent.id}`}
-            onClick={() => onColleagueNeedsHuman(agent.id)}
-            type="button"
-          >
-            Needs a Human
-          </button>
-        </>
-      )}
+      <button
+        className="raven-tray-action focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8b86d]"
+        data-testid={`agent-quick-bar-journal-${agent.id}`}
+        onClick={() => onColleagueJournal(agent.id)}
+        type="button"
+      >
+        Journal
+      </button>
+      <button
+        className="raven-tray-action focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8b86d]"
+        data-testid={`agent-quick-bar-needs-a-human-${agent.id}`}
+        onClick={() => onColleagueNeedsHuman(agent.id)}
+        type="button"
+      >
+        Needs a Human
+      </button>
       <button
         className="raven-tray-action focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8b86d]"
         data-testid={`agent-quick-bar-page-${agent.id}`}
@@ -477,12 +452,10 @@ interface RavenBenchProps {
    */
   escalationByColleagueId?: ReadonlyMap<string, boolean>;
   onAgent?: (agentId: string) => void;
-  /** Colleague coin → open that colleague's map overlay (Journal action). */
+  /** Any coin → open that agent's map overlay (Journal action). */
   onColleagueJournal?: (agentId: string) => void;
-  /** Colleague coin → open the board's needs-a-human lane (Needs-a-Human action). */
+  /** Any coin → open the board's needs-a-human lane (Needs-a-Human action). */
   onColleagueNeedsHuman?: (agentId: string) => void;
-  onFrameProblem?: () => void;
-  onKnowledgeBank?: () => void;
 }
 
 export function RavenBench({
@@ -493,8 +466,6 @@ export function RavenBench({
   onAgent = () => undefined,
   onColleagueJournal = () => undefined,
   onColleagueNeedsHuman = () => undefined,
-  onFrameProblem = () => undefined,
-  onKnowledgeBank = () => undefined,
 }: RavenBenchProps) {
   const [minimized, setMinimized] = useState(() => {
     if (typeof window === "undefined") {
@@ -675,14 +646,6 @@ export function RavenBench({
             onColleagueNeedsHuman={(agentId) => {
               closeQuickBar();
               onColleagueNeedsHuman(agentId);
-            }}
-            onFrameProblem={() => {
-              closeQuickBar();
-              onFrameProblem();
-            }}
-            onKnowledgeBank={() => {
-              closeQuickBar();
-              onKnowledgeBank();
             }}
             onClose={closeQuickBar}
             quickBarRef={quickBarRef}

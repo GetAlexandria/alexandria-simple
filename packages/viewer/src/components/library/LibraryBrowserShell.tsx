@@ -147,8 +147,6 @@ interface LibraryBrowserShellProps {
   onColleagueJournal(agentId: string): void;
   onColleagueNeedsHuman(agentId: string): void;
   onBundleSelect(bundleId: string): void;
-  onFrameProblem(): void;
-  onKnowledgeBank(): void;
   onLedger(): void;
   onModeChange(mode: LibraryViewMode): void;
   onPlaybook(): void;
@@ -175,8 +173,6 @@ export function LibraryBrowserShell({
   onColleagueJournal,
   onColleagueNeedsHuman,
   onBundleSelect,
-  onFrameProblem,
-  onKnowledgeBank,
   onLedger,
   onModeChange,
   onPlaybook,
@@ -261,8 +257,6 @@ export function LibraryBrowserShell({
         onAgent={onAgent}
         onColleagueJournal={onColleagueJournal}
         onColleagueNeedsHuman={onColleagueNeedsHuman}
-        onFrameProblem={onFrameProblem}
-        onKnowledgeBank={onKnowledgeBank}
       />
     </div>
   );
