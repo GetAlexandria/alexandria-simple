@@ -4,15 +4,13 @@
 // under bun alongside the layout modules. The renderer (MapLandmarks, in
 // Owner view) and the container's HUD counts read this one derivation.
 //
-// The Owner view re-anchors owned colleagues on their region centers
-// (layout/owner-view.ts), so MapLandmarks renders bench buildings only for
-// colleagues that are NOT a domain anchor — see `MapLandmarks`. Seats and the
-// campfire render at their stored hex there too. (Domain view is work-geography
-// only and mounts no landmark layer — Map Glow Up declutter.)
+// Colleagues, seats, and the campfire all render at their stored hexes in the
+// Owner-view landmark layer (MapLandmarks); Domain view is work-geography only
+// and mounts no landmark layer — Map Glow Up declutter.
 
 import type { MapState } from "../../app/runtime/schemas";
 import { createHex, type HexCoord } from "./hex";
-import { parseDomainOwner, parseLandmarkId } from "./vocabulary";
+import { parseLandmarkId } from "./vocabulary";
 
 /** A landmark ready to render: its parsed kind, bare id, and hex. */
 export type MapLandmark =
@@ -43,21 +41,4 @@ export function mapLandmarks(state: MapState): MapLandmark[] {
     });
   }
   return landmarks;
-}
-
-/**
- * The bare ids of colleagues shown as Owner-view domain anchors (a domain
- * whose `owner` is `colleague:<id>`). The Owner view renders these at their
- * region centers, so MapLandmarks skips their bench buildings there to avoid
- * drawing the same colleague twice.
- */
-export function ownerAnchoredColleagueIds(state: MapState): Set<string> {
-  const ids = new Set<string>();
-  for (const domain of state.domains) {
-    const ownership = parseDomainOwner(domain.owner);
-    if (ownership.status === "owned" && ownership.owner.kind === "colleague") {
-      ids.add(ownership.owner.id);
-    }
-  }
-  return ids;
 }

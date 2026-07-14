@@ -1,8 +1,8 @@
 // A small caption anchored at a landmark's hex, built on the shared
-// pointer-transparent HexHtmlChip (like OwnerViewLayer's OwnerChip). Used by
-// the colleague building (its name on hover) and the locked seat (a quiet
-// persistent "Locked seat" marker at rest, its fuller "future teammate"
-// caption on hover). Shared across both view modes.
+// pointer-transparent HexHtmlChip. Used by the colleague building (its name on
+// hover) and the locked seat (a quiet persistent "Locked seat" marker at rest,
+// its fuller "future teammate" caption on hover), in the Owner-view landmark
+// layer.
 
 import type { CSSProperties, ReactNode } from "react";
 import { MAP_FALLBACK_COLORS, MAP_SCENE_COLORS, withAlpha } from "./colors";

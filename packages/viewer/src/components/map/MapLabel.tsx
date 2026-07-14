@@ -9,8 +9,9 @@
 //
 // Label systems, deliberately split: this MapLabel is canonical for
 // in-scene world-space text (region/context/half names, tile names). The
-// Owner view's drei-Html OwnerChip (OwnerViewLayer.tsx) is the DOM-overlay
-// chip system — owner name cards, warning chips — and stays separate.
+// hex-anchored drei-Html chips (HexHtmlChip, via LandmarkTooltip) are the
+// DOM-overlay system — landmark hover captions, the resting locked-seat
+// marker — and stay separate.
 
 import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";

@@ -10,8 +10,7 @@ import type { HexCellVisualState } from "./HexCell";
 /**
  * A parchment-shader wash applied to a hex cell's top face (and, faintly,
  * its rim/side tints): Domain view paints domain territories and context
- * patches with these; Owner view paints claimed/unclaimed territories.
- * Strength is the shader highlight mix factor (0..1).
+ * patches with these. Strength is the shader highlight mix factor (0..1).
  */
 export type HexTint = { color: string; strength: number };
 
@@ -122,36 +121,6 @@ export const LANDMARK_SPRITE_COLORS = {
   human: { tint: "#f4ede1", opacity: 0.96 },
   vacantPlot: { tint: "#c9b493", opacity: 0.78 },
   lockedSeat: { tint: "#8d8478", opacity: 0.38 },
-} as const;
-
-/**
- * Owner-view territory washes, rendered through MapScene's cellTintByKey
- * parchment-shader tint (the Domain-view mechanism — no overlay meshes, so
- * the hover highlight keeps working over tinted territory). Claimed
- * territories take a soft warm wash; unclaimed (and malformed-owner)
- * territories a heavier muted dim — visibly ownerless at a glance.
- */
-export const OWNER_VIEW_TERRITORY_TINTS: Record<"claimed" | "unclaimed", HexTint> = {
-  claimed: { color: "#c98f4a", strength: 0.14 },
-  unclaimed: { color: "#6f6353", strength: 0.24 },
-};
-
-/** Owner-view work markers and floating chips. */
-export const OWNER_VIEW_COLORS = {
-  /** Small work-marker discs by entity kind. */
-  work: { project: "#a86f32", system: "#5f7d64" },
-  /** Floating landmark chips (DOM, via drei Html). */
-  label: {
-    background: withAlpha(MAP_FALLBACK_COLORS.panel, 0.92),
-    border: MAP_FALLBACK_COLORS.border,
-    heading: MAP_FALLBACK_COLORS.heading,
-    subtext: MAP_FALLBACK_COLORS.subtext,
-    /** Muted variant for the vacant-plot and locked-seat chips. */
-    mutedBackground: withAlpha(MAP_SCENE_COLORS.background, 0.78),
-    mutedText: "#6c6152",
-    /** Warning tone for the malformed-owner chip. */
-    warningText: "#8a4b2f",
-  },
 } as const;
 
 // --- Domain view (V1) ------------------------------------------------------
