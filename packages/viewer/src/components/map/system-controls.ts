@@ -161,9 +161,16 @@ function cardsForRule(
   );
 }
 
-function cardForWindow(matching: readonly InfoHubCard[], windowStart: Date): InfoHubCard | null {
-  const iso = windowStart.toISOString();
-  return matching.find((card) => card.generatedBy?.window === iso) ?? null;
+/** generatedBy.window ISO → card, first card winning a (never-expected) duplicate window, matching a linear scan's order. */
+function cardsByWindow(matching: readonly InfoHubCard[]): Map<string, InfoHubCard> {
+  const byWindow = new Map<string, InfoHubCard>();
+  for (const card of matching) {
+    const window = card.generatedBy!.window;
+    if (!byWindow.has(window)) {
+      byWindow.set(window, card);
+    }
+  }
+  return byWindow;
 }
 
 /** hit = a DONE matching card whose terminal date (terminalAt, falling back like boardModel's archive rule) is <= the window's end. */
@@ -191,9 +198,10 @@ export function ruleControls(
   now: Date,
 ): RuleControls {
   const matching = cardsForRule(systemId, rule.id, cards);
+  const byWindow = cardsByWindow(matching);
   const currentStart = currentWindowStart(rule.every, now);
   const currentEnd = windowEndFor(rule.every, currentStart);
-  const currentCard = cardForWindow(matching, currentStart);
+  const currentCard = byWindow.get(currentStart.toISOString()) ?? null;
 
   const history: HistoryWindow[] = [];
   if (matching.length > 0) {
@@ -211,7 +219,7 @@ export function ruleControls(
       steps += 1
     ) {
       const windowEnd = windowEndFor(rule.every, cursor);
-      const card = cardForWindow(matching, cursor);
+      const card = byWindow.get(cursor.toISOString()) ?? null;
       history.push({ windowStart: cursor, windowEnd, hit: isHit(card, windowEnd), card });
       cursor = windowEnd;
     }
@@ -294,7 +302,9 @@ export function systemControls(
     healthLevel = "neutral";
   } else if (onTimeRate < 0.5 || overdueCount >= 2) {
     healthLevel = "failing";
-  } else if (onTimeRate < 0.8 || overdueCount === 1) {
+  } else if (onTimeRate < 0.8 || overdue) {
+    // Any overdue rule at all wears the system (the >=2 case was already
+    // taken by "failing" above, so `overdue` here means exactly one).
     healthLevel = "worn";
   } else {
     healthLevel = "good";

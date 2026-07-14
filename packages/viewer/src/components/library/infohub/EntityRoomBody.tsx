@@ -69,7 +69,9 @@ export type EntityRoomBodyProps = {
    * §3) — ignored for a project entity. Defaults to `new Date()` here at the
    * shared body's edge (both MapOverlay and EntityRoomView route through
    * this component) so a caller only needs to pass it to pin the clock in a
-   * test.
+   * test. The default is memoized per mount (a room is transient UI) so it
+   * keeps a stable identity — a bare `new Date()` per render would defeat
+   * SystemRoomBody's `useMemo` over the health controls.
    */
   now?: Date;
   /** System room upgrade-queue project links — see SystemRoomBody's doc. */
@@ -92,12 +94,23 @@ export function EntityRoomBody({
   onMoveStatus,
   onToggleChecklistItem,
   testIdPrefix,
-  now = new Date(),
+  now,
   onOpenEntity,
   onCreateUpgradeProject,
 }: EntityRoomBodyProps) {
   const domainNameById = useMemo(() => buildDomainNameById(mapState.domains), [mapState.domains]);
   const readOnly = entity != null && isEntityRoomReadOnly(entity);
+  // See the prop doc — a stable default clock, and a hook that must run on
+  // every render (before the system-room branch) to keep hook order fixed
+  // even if the same mounted body switches entity kinds.
+  const effectiveNow = useMemo(() => now ?? new Date(), [now]);
+
+  const roomCards = useMemo(() => {
+    if (cards == null) {
+      return [];
+    }
+    return sortCardsByPriority(cardsJoinedToEntity(cards, entityId));
+  }, [cards, entityId]);
 
   if (entity != null && entity.kind === "system") {
     return (
@@ -108,7 +121,7 @@ export function EntityRoomBody({
         cards={cards}
         detailCardId={detailCardId}
         mapState={mapState}
-        now={now}
+        now={effectiveNow}
         onCloseCard={onCloseCard}
         onCreateUpgradeProject={onCreateUpgradeProject}
         onMoveStatus={onMoveStatus}
@@ -120,13 +133,6 @@ export function EntityRoomBody({
       />
     );
   }
-
-  const roomCards = useMemo(() => {
-    if (cards == null) {
-      return [];
-    }
-    return sortCardsByPriority(cardsJoinedToEntity(cards, entityId));
-  }, [cards, entityId]);
 
   const detailCard =
     detailCardId == null ? null : (roomCards.find((card) => card.id === detailCardId) ?? null);

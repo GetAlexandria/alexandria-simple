@@ -17,7 +17,7 @@
 // clock; system-controls.ts (the pure health/history math this renders) is
 // exported cleanly enough that WS4's map health wiring can reuse it too.
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import type { InfoHubCard, MapEntity, MapState } from "../../../app/runtime/schemas";
 import { cardsJoinedToEntity } from "../../map/placement";
 import { healthDotFillCount, systemControls } from "../../map/system-controls";
@@ -83,6 +83,43 @@ function windowLabelFor(
     : generatedBy.window.slice(0, 10);
 }
 
+/** The one card-article shape both queues render: face + optional provenance line + status actions. */
+function QueueCard({
+  card,
+  domainNameById,
+  onMoveStatus,
+  onOpenCard,
+  provenance,
+  saving,
+  testIdPrefix,
+}: {
+  card: InfoHubCard;
+  domainNameById: ReadonlyMap<string, string>;
+  onMoveStatus: (cardId: string, status: WorkOrderStatus) => void;
+  onOpenCard: (cardId: string) => void;
+  provenance?: ReactNode;
+  saving: boolean;
+  testIdPrefix: string;
+}) {
+  return (
+    <article
+      className="info-hub-card"
+      data-testid={`${testIdPrefix}-card-${card.id}`}
+      data-type={card.type}
+    >
+      <WorkOrderCardFace
+        card={card}
+        domainNameById={domainNameById}
+        onOpen={() => onOpenCard(card.id)}
+      />
+      {provenance}
+      <div className="info-hub-card-actions">
+        <WorkOrderStatusActions card={card} onMoveStatus={onMoveStatus} saving={saving} />
+      </div>
+    </article>
+  );
+}
+
 export function SystemRoomBody({
   system,
   mapState,
@@ -145,7 +182,10 @@ export function SystemRoomBody({
     [mapState.entities, system.id],
   );
 
-  const rulesWithHistory = controls.rules.filter((rule) => rule.history.length > 0);
+  const rulesWithHistory = useMemo(
+    () => controls.rules.filter((rule) => rule.history.length > 0),
+    [controls.rules],
+  );
 
   const interactiveCards = useMemo(
     () => [...openQueueCards, ...upgradeCards],
@@ -258,35 +298,27 @@ export function SystemRoomBody({
         ) : (
           <div className="flex flex-col gap-3" data-testid={`${testIdPrefix}-open-queue-cards`}>
             {openQueueCards.map((card) => (
-              <article
-                className="info-hub-card"
-                data-testid={`${testIdPrefix}-card-${card.id}`}
-                data-type={card.type}
+              <QueueCard
+                card={card}
+                domainNameById={domainNameById}
                 key={card.id}
-              >
-                <WorkOrderCardFace
-                  card={card}
-                  domainNameById={domainNameById}
-                  onOpen={() => onOpenCard(card.id)}
-                />
-                {card.generatedBy != null ? (
-                  <p
-                    className="info-hub-card-provenance"
-                    data-testid={`${testIdPrefix}-card-${card.id}-provenance`}
-                  >
-                    Generated ·{" "}
-                    {ruleTitleById.get(card.generatedBy.ruleId) ?? card.generatedBy.ruleId} · window{" "}
-                    {windowLabelFor(system, card.generatedBy)}
-                  </p>
-                ) : null}
-                <div className="info-hub-card-actions">
-                  <WorkOrderStatusActions
-                    card={card}
-                    onMoveStatus={onMoveStatus}
-                    saving={boardSaving}
-                  />
-                </div>
-              </article>
+                onMoveStatus={onMoveStatus}
+                onOpenCard={onOpenCard}
+                provenance={
+                  card.generatedBy != null ? (
+                    <p
+                      className="info-hub-card-provenance"
+                      data-testid={`${testIdPrefix}-card-${card.id}-provenance`}
+                    >
+                      Generated ·{" "}
+                      {ruleTitleById.get(card.generatedBy.ruleId) ?? card.generatedBy.ruleId} ·
+                      window {windowLabelFor(system, card.generatedBy)}
+                    </p>
+                  ) : null
+                }
+                saving={boardSaving}
+                testIdPrefix={testIdPrefix}
+              />
             ))}
           </div>
         )}
@@ -357,31 +389,35 @@ export function SystemRoomBody({
                 className="info-hub-upgrade-project-list"
                 data-testid={`${testIdPrefix}-upgrade-projects`}
               >
-                {upgradeProjects.map((project) =>
-                  onOpenEntity != null ? (
+                {upgradeProjects.map((project) => {
+                  const chip = (
+                    <>
+                      <span className="info-hub-entity-chip-name">{project.name}</span>
+                      <span className="info-hub-entity-chip-meta">{project.lifecycle}</span>
+                    </>
+                  );
+                  return (
                     <li key={project.id}>
-                      <button
-                        className="info-hub-upgrade-project"
-                        data-testid={`${testIdPrefix}-upgrade-project-${project.id}`}
-                        onClick={() => onOpenEntity(project.id)}
-                        type="button"
-                      >
-                        <span className="info-hub-entity-chip-name">{project.name}</span>
-                        <span className="info-hub-entity-chip-meta">{project.lifecycle}</span>
-                      </button>
+                      {onOpenEntity != null ? (
+                        <button
+                          className="info-hub-upgrade-project"
+                          data-testid={`${testIdPrefix}-upgrade-project-${project.id}`}
+                          onClick={() => onOpenEntity(project.id)}
+                          type="button"
+                        >
+                          {chip}
+                        </button>
+                      ) : (
+                        <span
+                          className="info-hub-upgrade-project"
+                          data-testid={`${testIdPrefix}-upgrade-project-${project.id}`}
+                        >
+                          {chip}
+                        </span>
+                      )}
                     </li>
-                  ) : (
-                    <li key={project.id}>
-                      <span
-                        className="info-hub-upgrade-project"
-                        data-testid={`${testIdPrefix}-upgrade-project-${project.id}`}
-                      >
-                        <span className="info-hub-entity-chip-name">{project.name}</span>
-                        <span className="info-hub-entity-chip-meta">{project.lifecycle}</span>
-                      </span>
-                    </li>
-                  ),
-                )}
+                  );
+                })}
               </ul>
             ) : null}
             {cardsLoaded && upgradeCards.length > 0 ? (
@@ -390,25 +426,15 @@ export function SystemRoomBody({
                 data-testid={`${testIdPrefix}-upgrade-cards`}
               >
                 {upgradeCards.map((card) => (
-                  <article
-                    className="info-hub-card"
-                    data-testid={`${testIdPrefix}-card-${card.id}`}
-                    data-type={card.type}
+                  <QueueCard
+                    card={card}
+                    domainNameById={domainNameById}
                     key={card.id}
-                  >
-                    <WorkOrderCardFace
-                      card={card}
-                      domainNameById={domainNameById}
-                      onOpen={() => onOpenCard(card.id)}
-                    />
-                    <div className="info-hub-card-actions">
-                      <WorkOrderStatusActions
-                        card={card}
-                        onMoveStatus={onMoveStatus}
-                        saving={boardSaving}
-                      />
-                    </div>
-                  </article>
+                    onMoveStatus={onMoveStatus}
+                    onOpenCard={onOpenCard}
+                    saving={boardSaving}
+                    testIdPrefix={testIdPrefix}
+                  />
                 ))}
               </div>
             ) : null}
