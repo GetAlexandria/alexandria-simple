@@ -13,7 +13,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { InfoHubCard, MapState } from "../../app/runtime/schemas";
 import { sortCardsByPriority, type WorkOrderStatus } from "../library/infohub/boardModel";
-import { EntityRoomBody } from "../library/infohub/EntityRoomBody";
+import { EntityRoomBody, isEntityRoomReadOnly } from "../library/infohub/EntityRoomBody";
 import {
   buildDomainNameById,
   WorkOrderCardFace,
@@ -86,7 +86,7 @@ export function MapOverlay({
       : (state.contexts.find((candidate) => candidate.id === entity.contextId) ?? null);
   const pileDomainName =
     target.kind === "pile" ? (domainNameById.get(target.domainId) ?? target.domainId) : null;
-  const readOnly = entity != null && entity.kind === "project" && entity.lifecycle === "completed";
+  const readOnly = entity != null && isEntityRoomReadOnly(entity);
 
   // Pile cards only — the entity case's card list/detail now lives inside
   // EntityRoomBody (the same joined-card grid the board's entity room

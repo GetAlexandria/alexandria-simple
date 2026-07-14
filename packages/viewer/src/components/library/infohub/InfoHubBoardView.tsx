@@ -186,6 +186,27 @@ type PromoteFailure = {
   message: string;
 };
 
+/**
+ * Turns a map save failure into a `PromoteFailure` — shared by `promoteCard`
+ * (creating a project off a card) and `createEntity` (the board's "New
+ * project"/"New system"), which both wrap the same `onSaveMapState` write
+ * and want the same conflict copy, differing only in what failed to save.
+ */
+function mapSaveFailureToPromoteFailure(
+  failure: MapStateSaveError,
+  errorVerb: string,
+): PromoteFailure {
+  return failure.kind === "conflict"
+    ? {
+        kind: "conflict",
+        message: "The map changed since it loaded here — refresh the map data and retry.",
+      }
+    : {
+        kind: "error",
+        message: `${errorVerb}: ${failure.message}`,
+      };
+}
+
 export function InfoHubBoardView({
   board,
   onSaveCards,
@@ -492,15 +513,7 @@ export function InfoHubBoardView({
         const failure = await onSaveMapState(next);
         if (failure != null) {
           setPromoteError(
-            failure.kind === "conflict"
-              ? {
-                  kind: "conflict",
-                  message: "The map changed since it loaded here — refresh the map data and retry.",
-                }
-              : {
-                  kind: "error",
-                  message: `Couldn't add the project to the map: ${failure.message}`,
-                },
+            mapSaveFailureToPromoteFailure(failure, "Couldn't add the project to the map"),
           );
           setPromoting(false);
           return;
@@ -648,17 +661,7 @@ export function InfoHubBoardView({
       const failure = await onSaveMapState(next);
       setEntityCreating(false);
       if (failure != null) {
-        setEntityCreateError(
-          failure.kind === "conflict"
-            ? {
-                kind: "conflict",
-                message: "The map changed since it loaded here — refresh the map data and retry.",
-              }
-            : {
-                kind: "error",
-                message: `Couldn't create the entity: ${failure.message}`,
-              },
-        );
+        setEntityCreateError(mapSaveFailureToPromoteFailure(failure, "Couldn't create the entity"));
         return false;
       }
       setEntityFormKind(null);
