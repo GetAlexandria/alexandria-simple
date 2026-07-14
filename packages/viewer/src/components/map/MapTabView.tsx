@@ -33,6 +33,7 @@ import {
   withStatus,
   type WorkOrderStatus,
 } from "../library/infohub/boardModel";
+import { buildDomainNameById } from "../library/infohub/WorkOrderCard";
 import { colleagueNeedsHumanCount, resolveColleagueIdentity } from "./colleague-overlay";
 import { ColleagueOverlay } from "./ColleagueOverlay";
 import { MAP_FALLBACK_COLORS } from "./colors";
@@ -439,10 +440,7 @@ export function MapTabView({
     [state],
   );
   // Domain id → name for the domain-keyed stray piles' fallback panel (strays v1).
-  const domainNameById = useMemo(
-    () => new Map((state?.domains ?? []).map((domain) => [domain.id, domain.name])),
-    [state],
-  );
+  const domainNameById = useMemo(() => buildDomainNameById(state?.domains ?? []), [state]);
 
   const placingEntity = useMemo(
     () =>
