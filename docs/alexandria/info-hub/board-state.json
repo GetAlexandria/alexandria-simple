@@ -317,7 +317,7 @@
     {
       "id": "wo-work-system-contract",
       "type": "improvement",
-      "status": "open",
+      "status": "in-progress",
       "domainId": "alexandria",
       "entityId": "prj-work-system-v1",
       "priority": 15,
@@ -327,7 +327,7 @@
       "detail": "The Map and the Board now share one domain vocabulary, but the relationship between them was never ruled. Ruled today. This is the parent card; the concrete builds are the child cards joined to prj-work-system-v1.\n\nDecisions (director, 2026-07-14):\n- The Work Board is the work system of record and the QA surface — a known, simple, non-innovative primitive to generate the Map from. The Map is a reflection of the work system. This settles the open subsume-vs-federate question for now: federate. Deeper unification (less UI surface between board and map, or the map absorbing the board) stays a horizon option, not a plan.\n- Systems generate work; projects contain it. This ratifies the ported Lifebuild 'Planting Season' contract (docs/alexandria/plans/map-tab/plan.md §1.1) as the unified model: a System spawns cards on its rhythm (e.g. 'check and respond to customer emails' every 6 hours); a Project is stuffed with cards, still exists when half are done, and its membership changes over time (tasks removed, tasks added).\n- Every map entity gets a room: clicking a Project or System shows that entity's own populated view — its cards, their state, their history. The room already exists (the Map tile-click overlay renders joined cards via cardsJoinedToEntity), but it is starved: only 6 of 14 cards carry an entityId and both systems have zero.\n- Projects and Systems measure different things, so their rooms differ. Project room = progress: contains work, ends, victories stay visible. System room = health & performance: is work done on time and to spec, is the system reliable and maintained, what is queued for testing or improving it.\n\nScope:\n- This is the parent/contract card. Children: ungate the entity join (wo-board-ungate-entity-join), create-from-board + rooms on the board (wo-board-project-rooms), system generation v1 (wo-system-generation-v1).\n\nOut of scope:\n- Subsume (the Map absorbing the Board) — named horizon, not decided.\n- A single unified Project/System/Task work-item model with real parent/child ('one day we may be more unified').\n- The map filling-up visualization experiments (piles/aging/stomp) — still governed by the command-center test.",
       "checklist": [
         {
-          "done": false,
+          "done": true,
           "text": "Entity join ungated and the existing backlog joined (child card)"
         },
         {
@@ -347,32 +347,33 @@
     {
       "id": "wo-board-ungate-entity-join",
       "type": "task",
-      "status": "open",
+      "status": "done",
       "domainId": "alexandria",
       "entityId": "prj-work-system-v1",
       "priority": 15,
       "source": "board:director",
       "created": "2026-07-14",
       "title": "Drop the Context picker; ungate the project/system join on the Board",
-      "detail": "The New Work Order form still shows 'map Context (optional)' and gates the project picker behind it — the form filters entities to entity.contextId === selectedContext, so with Context deprecated a card can't reach a project at all. This is why the director cannot assign a task to a project today. Child of wo-work-system-contract.\n\nDecisions (director, 2026-07-14):\n- Remove the Context picker from the work-order form; Context stays a latent data field only ('model it, don't render it' still stands).\n- Ungate the entity picker: a card can join any Project or System directly (optionally narrowed by the card's domainId, never by context).\n- Finish the context demotion in the map data model: packages/ax/src/effects/map-state.ts still requires contextId as a mandatory string referencing a known context on every entity, despite the demotion ruling — make it optional/nullable there and in the entity form.\n- Join the backlog: sweep the existing cards and join the ones that clearly belong to an entity (e.g. duty-loop-shaped cards to their systems), so the rooms stop rendering empty.\n\nScope:\n- Work-order form: remove the Context field; entity picker lists all projects and systems.\n- map-state.ts + MapEntityForm: contextId optional/nullable.\n- board-state.json: backlog join pass (data only, no shape change).\n\nOut of scope:\n- Creating entities from the Board and the board-side room view (wo-board-project-rooms).",
+      "detail": "The New Work Order form still shows 'map Context (optional)' and gates the project picker behind it — the form filters entities to entity.contextId === selectedContext, so with Context deprecated a card can't reach a project at all. This is why the director cannot assign a task to a project today. Child of wo-work-system-contract.\n\nDecisions (director, 2026-07-14):\n- Remove the Context picker from the work-order form; Context stays a latent data field only ('model it, don't render it' still stands).\n- Ungate the entity picker: a card can join any Project or System directly (optionally narrowed by the card's domainId, never by context).\n- Finish the context demotion in the map data model: packages/ax/src/effects/map-state.ts still requires contextId as a mandatory string referencing a known context on every entity, despite the demotion ruling — make it optional/nullable there and in the entity form.\n- Join the backlog: sweep the existing cards and join the ones that clearly belong to an entity (e.g. duty-loop-shaped cards to their systems), so the rooms stop rendering empty.\n\nScope:\n- Work-order form: remove the Context field; entity picker lists all projects and systems.\n- map-state.ts + MapEntityForm: contextId optional/nullable.\n- board-state.json: backlog join pass (data only, no shape change).\n\nOut of scope:\n- Creating entities from the Board and the board-side room view (wo-board-project-rooms).\n\nStatus: delivered — Context picker removed, entity picker ungated, contextId optional end-to-end (ax validator, viewer schema, entity form), placement re-keyed off domainId. Backlog join sweep: no additional clear joins found — remaining unjoined cards are genuine strays (no matching entity exists for them).",
       "checklist": [
         {
-          "done": false,
+          "done": true,
           "text": "Context picker removed from the New Work Order form"
         },
         {
-          "done": false,
+          "done": true,
           "text": "Entity picker offers every project/system with no context gate"
         },
         {
-          "done": false,
+          "done": true,
           "text": "map-state validation accepts entities without a contextId"
         },
         {
-          "done": false,
+          "done": true,
           "text": "Existing backlog cards joined to their entities where they clearly belong"
         }
-      ]
+      ],
+      "terminalAt": "2026-07-14"
     },
     {
       "id": "wo-board-project-rooms",

@@ -77,9 +77,9 @@ function createCardId(
 }
 
 /**
- * The context `<option>`s shared by the promote picker and the card join
- * form — each select renders its own leading "no context" placeholder, then
- * these. The two lists must stay identical, so they live in one place.
+ * The context `<option>`s for the detail modal's "promote to project" picker
+ * (the card join form no longer has a context field — Context is latent
+ * data now, not something the board writes).
  */
 function ContextOptions({ contexts }: { contexts: readonly MapContext[] }) {
   return (
@@ -199,10 +199,12 @@ export function InfoHubBoardView({
   const [cardTitle, setCardTitle] = useState("");
   const [cardDetail, setCardDetail] = useState("");
   const [cardChecklist, setCardChecklist] = useState("");
-  // Map join pickers (S2): the ids the form writes as contextId/entityId.
-  // "" means "no join" — the fields are omitted from the card, never
-  // written as empty strings (the M1 validators reject "").
-  const [cardContextId, setCardContextId] = useState("");
+  // Map join picker (S2): the entity id the form writes as entityId. "" means
+  // "no join" — the field is omitted from the card, never written as an
+  // empty string (the M1 validators reject ""). The form has no context
+  // field — Context is latent data (never authored from the board); an
+  // existing card's stored contextId passes through untouched on save (see
+  // buildCardFromForm).
   const [cardEntityId, setCardEntityId] = useState("");
   // Promote-to-project state (detail modal footer).
   const [promoteContextId, setPromoteContextId] = useState("");
@@ -215,30 +217,22 @@ export function InfoHubBoardView({
   const mapContexts = useMemo(() => mapState?.contexts ?? [], [mapState]);
   const mapEntities = useMemo(() => mapState?.entities ?? [], [mapState]);
   const mapDomains = useMemo(() => mapState?.domains ?? [], [mapState]);
-  const joinUiAvailable = mapState != null && mapContexts.length > 0;
+  // Context is demoted to latent data — the join UI only needs the map's
+  // entities (or, absent any, its presence at all) to be available; it no
+  // longer requires any contexts to exist.
+  const joinUiAvailable = mapState != null && mapEntities.length > 0;
   // The form's domain picker is sourced from the map's domain set; without it
   // there is nothing to pick, so the form falls back to the raw stored value.
   const domainPickerAvailable = mapDomains.length > 0;
   // domainId → display name, for the card scope label and the domain filter.
   // Falls back to the raw domainId when the map has no matching domain.
   const domainNameById = useMemo(() => buildDomainNameById(mapDomains), [mapDomains]);
-  // Stored joins are reconciled against the live map (PR #20 gate): an id
-  // whose context/entity no longer exists (or whose entity moved contexts)
-  // renders as unselected, and the SAVE writes exactly what the form shows —
-  // never a stale join back.
-  const effectiveCardContextId = mapContexts.some((context) => context.id === cardContextId)
-    ? cardContextId
-    : "";
-  // The entity picker narrows to the picked context; without a context it
-  // offers every entity (picking one adopts its context, below).
-  const entityOptions = useMemo(
-    () =>
-      effectiveCardContextId.length === 0
-        ? mapEntities
-        : mapEntities.filter((entity) => entity.contextId === effectiveCardContextId),
-    [mapEntities, effectiveCardContextId],
-  );
-  const effectiveCardEntityId = entityOptions.some((entity) => entity.id === cardEntityId)
+  // The entity picker lists every map entity — Context no longer gates it
+  // (contexts may be empty someday and joins must still work). A stored
+  // entity id is reconciled against the live map (PR #20 gate): an id whose
+  // entity no longer exists renders as unselected, and the SAVE writes
+  // exactly what the form shows — never a stale join back.
+  const effectiveCardEntityId = mapEntities.some((entity) => entity.id === cardEntityId)
     ? cardEntityId
     : "";
 
@@ -354,7 +348,6 @@ export function InfoHubBoardView({
     setCardTitle("");
     setCardDetail("");
     setCardChecklist("");
-    setCardContextId("");
     setCardEntityId("");
   }, []);
 
@@ -377,11 +370,14 @@ export function InfoHubBoardView({
       const domainId = cardDomainId.trim();
       const title = cardTitle.trim() || WORK_ORDER_TYPE_LABELS[cardType];
       const checklist = parseChecklist(cardChecklist);
-      // Join fields ride through withCardJoin so ""/absent means "omit the
-      // field" — never an empty string on disk. With the join UI visible the
-      // RECONCILED ids are written (what the pickers display); without map
-      // state the stored ids pass through untouched, so editing a card while
-      // the map is unavailable never strips its joins.
+      // The entity join rides through withCardJoin so ""/absent means "omit
+      // the field" — never an empty string on disk. With the join UI visible
+      // the RECONCILED id is written (what the picker displays); without map
+      // state the stored id passes through untouched, so editing a card
+      // while the map is unavailable never strips its join. The form has no
+      // context field — contextId is latent data the board never authors —
+      // so an existing card's stored contextId is threaded straight through
+      // unchanged, and a new card never gets one.
       return withCardJoin(
         {
           ...(existing?.archived == null ? {} : { archived: existing.archived }),
@@ -400,14 +396,14 @@ export function InfoHubBoardView({
           title,
           type: cardType,
         },
-        joinUiAvailable
-          ? { contextId: effectiveCardContextId, entityId: effectiveCardEntityId }
-          : { contextId: cardContextId, entityId: cardEntityId },
+        {
+          contextId: existing?.contextId,
+          entityId: joinUiAvailable ? effectiveCardEntityId : cardEntityId,
+        },
       );
     },
     [
       cardChecklist,
-      cardContextId,
       cardDetail,
       cardDomainId,
       cardEntityId,
@@ -415,7 +411,6 @@ export function InfoHubBoardView({
       cardTitle,
       cardType,
       cards,
-      effectiveCardContextId,
       effectiveCardEntityId,
       joinUiAvailable,
     ],
@@ -430,7 +425,6 @@ export function InfoHubBoardView({
     setCardTitle(card.title ?? "");
     setCardDetail(card.detail ?? "");
     setCardChecklist(checklistToText(card.checklist));
-    setCardContextId(card.contextId ?? "");
     setCardEntityId(card.entityId ?? "");
     window.requestAnimationFrame(() => {
       formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1028,52 +1022,28 @@ export function InfoHubBoardView({
           {joinUiAvailable ? (
             <div className="info-hub-form-row mt-2" data-testid="card-join-pickers">
               <label className="info-hub-form-field">
-                Map context (optional)
-                <select
-                  aria-label="Card map context"
-                  onChange={(event) => {
-                    const nextContextId = event.target.value;
-                    setCardContextId(nextContextId);
-                    // A picked entity that lives elsewhere no longer fits.
-                    const entity = mapEntities.find((candidate) => candidate.id === cardEntityId);
-                    if (
-                      entity != null &&
-                      nextContextId.length > 0 &&
-                      entity.contextId !== nextContextId
-                    ) {
-                      setCardEntityId("");
-                    }
-                  }}
-                  // The RECONCILED id: a stored context that left the map
-                  // renders (and saves) as "No context", never silently
-                  // written back stale.
-                  value={effectiveCardContextId}
-                >
-                  <option value="">No context</option>
-                  <ContextOptions contexts={mapContexts} />
-                </select>
-              </label>
-              <label className="info-hub-form-field">
                 Project / System (optional)
                 <select
                   aria-label="Card map entity"
                   onChange={(event) => {
                     const nextEntityId = event.target.value;
                     setCardEntityId(nextEntityId);
-                    // Joining an entity adopts its context, so the stored
-                    // card always carries a consistent contextId pair.
+                    // Joining an entity adopts its DOMAIN (not its context —
+                    // Context is latent data the board never authors), so
+                    // the card's domain stays consistent with the entity it
+                    // now belongs to.
                     const entity = mapEntities.find((candidate) => candidate.id === nextEntityId);
                     if (entity != null) {
-                      setCardContextId(entity.contextId);
+                      setCardDomainId(entity.domainId);
                     }
                   }}
-                  // The RECONCILED id: a stored entity that left the map (or
-                  // moved contexts) renders (and saves) as Loose — the write
-                  // always matches the display.
+                  // The RECONCILED id: a stored entity that left the map
+                  // renders (and saves) as Loose — the write always matches
+                  // the display.
                   value={effectiveCardEntityId}
                 >
-                  <option value="">Loose (stray pile when a context is set)</option>
-                  {entityOptions.map((entity) => (
+                  <option value="">Loose (stray)</option>
+                  {mapEntities.map((entity) => (
                     <option key={entity.id} value={entity.id}>
                       {entity.name} · {entityKindLabel(entity.kind)}
                     </option>

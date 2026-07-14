@@ -43,12 +43,15 @@ type MapOverlayProps = {
   onClose: () => void;
 };
 
+/** `contextName` null → the entity has no context (latent data) — the segment is omitted, never "undefined". */
 function entityMetaLine(
   kind: "project" | "system",
   lifecycle: string,
-  contextName: string,
+  contextName: string | null,
 ): string {
-  return `${entityKindLabel(kind)} · ${lifecycle} · ${contextName}`;
+  return contextName == null
+    ? `${entityKindLabel(kind)} · ${lifecycle}`
+    : `${entityKindLabel(kind)} · ${lifecycle} · ${contextName}`;
 }
 
 export function MapOverlay({
@@ -121,7 +124,11 @@ export function MapOverlay({
     target.kind === "entity"
       ? entity == null
         ? "This entity is no longer in the map state."
-        : entityMetaLine(entity.kind, entity.lifecycle, context?.name ?? entity.contextId)
+        : entityMetaLine(
+            entity.kind,
+            entity.lifecycle,
+            entity.contextId == null ? null : (context?.name ?? entity.contextId),
+          )
       : `Cards in ${pileDomainName} joined to no project or system — the stray pile.`;
 
   return (

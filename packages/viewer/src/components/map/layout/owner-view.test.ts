@@ -289,7 +289,11 @@ describe("computeOwnerViewLayout", () => {
     expect(rendered.tiles).toEqual(layout.tiles);
     expect(rendered.labels).toEqual(layout.labels);
     expect(rendered.piles).toEqual(layout.piles);
+    // territoryByCellKey has no render-shape counterpart in Owner view —
+    // placement (its only reader) runs in Domain view only, so this field
+    // stays internal here alongside the bucket/color maps.
     expect("territoryByCellKey" in rendered).toBe(false);
     expect("buckets" in rendered).toBe(false);
+    expect("colorByBucketKey" in rendered).toBe(false);
   });
 });

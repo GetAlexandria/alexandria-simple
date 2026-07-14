@@ -84,9 +84,11 @@ describe("validateMapState", () => {
       "sys-damien-duty-loop",
       "prj-authenticate-gmail-calendar-connectors-for-the-duty-loop",
       "prj-map-glow-up",
+      "prj-work-system-v1",
     ]);
-    // Five entity positions + the L2 landmark bench (2 colleagues, 1 campfire,
-    // 4 locked seats).
+    // Five placed entity positions + the L2 landmark bench (2 colleagues,
+    // 1 campfire, 4 locked seats). prj-work-system-v1 is born unplaced and
+    // carries no position until the director places it.
     expect(state.positions).toHaveLength(12);
     // The fold: each duty-loop system carries a colleague-kind assignee (its
     // former bare `colleague`), and the projects carry a human one.
@@ -248,6 +250,30 @@ describe("validateMapState", () => {
     const result = validateMapState(state);
     expect(result).toBeInstanceOf(MapStateValidationError);
     expect((result as MapStateValidationError).message).toContain("unknown contextId");
+  });
+
+  // Context is demoted to latent data (Map/Board contract): an entity's
+  // contextId is optional now, but a PRESENT value must still be a
+  // non-empty string that resolves to a real context.
+  test("accepts an entity with no contextId at all", () => {
+    const state = baseState();
+    delete ((state.entities as Record<string, unknown>[])[0] as Record<string, unknown>).contextId;
+    const result = validateMapState(state);
+    expect(result).not.toBeInstanceOf(MapStateValidationError);
+    const entity = (result as MapState).entities.find(
+      (candidate) => candidate.id === "sys-raven-duty-loop",
+    );
+    expect(entity?.contextId).toBeUndefined();
+  });
+
+  test("rejects an entity with an empty-string contextId", () => {
+    const state = baseState();
+    ((state.entities as Record<string, unknown>[])[0] as Record<string, unknown>).contextId = "";
+    const result = validateMapState(state);
+    expect(result).toBeInstanceOf(MapStateValidationError);
+    expect((result as MapStateValidationError).message).toContain(
+      "contextId must be a non-empty string",
+    );
   });
 
   test("rejects an entity referencing an unknown domainId", () => {

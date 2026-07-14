@@ -404,7 +404,10 @@ export function computeOwnerViewLayoutInternal(
  * per-assignee territory washes, painted borders, brass assignee labels, tiles,
  * and stray piles — a DomainViewLayout the existing DomainView renders as-is.
  * Drops the intermediate territory/bucket/color maps that only this module's
- * tests read; use `computeOwnerViewLayoutInternal` if you need those.
+ * tests read (Owner view's territory is bucket-(assignee-)keyed, not
+ * domain-keyed, and placement — the only reader of a territory map — runs in
+ * Domain view only, so it has no render-shape counterpart here); use
+ * `computeOwnerViewLayoutInternal` if you need those.
  */
 export function computeOwnerViewLayout(
   state: MapState,

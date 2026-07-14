@@ -91,10 +91,24 @@ export type DomainViewLayout = {
   unplacedPiles: readonly DomainViewUnplacedPile[];
   /**
    * Context patch assignment per cell key (a subset of territory cells).
-   * Public since S1: the Map tab's placement mode reads it to highlight the
-   * free hexes of the placing entity's context patch.
+   * Rendering only now — Domain view's placement mode reads domain territory
+   * instead, via `PlaceableDomainViewLayout.territoryByCellKey` below (an
+   * entity's placeable hexes are its DOMAIN's free cells, not its context
+   * patch's, so a context-less entity is still placeable).
    */
   patchByCellKey: ReadonlyMap<string, string>;
+};
+
+/**
+ * `DomainViewLayout` plus the domain territory assignment per cell key.
+ * Placement mode needs domain-keyed territory to compute an entity's free
+ * hexes; that concept only exists for Domain view (Owner view's territory is
+ * assignee-bucket-keyed, a different partition it never needs to expose for
+ * placement), so this extension lives only on `computeDomainViewLayout`'s
+ * return, not on the shared render shape every view produces.
+ */
+export type PlaceableDomainViewLayout = DomainViewLayout & {
+  territoryByCellKey: ReadonlyMap<string, string>;
 };
 
 /**
@@ -278,10 +292,11 @@ export function computeDomainViewLayoutInternal(
     }
     const coord = createHex(position.q, position.r);
     const key = hexToKey(coord);
-    const context = contextsById.get(entity.contextId);
-    const accentColor = context
-      ? (domainColorById.get(context.domainId) ?? MAP_DOMAIN_TINTS[0]!)
-      : MAP_DOMAIN_TINTS[0]!;
+    // Context patches are a rendering concept only now (contextId is latent
+    // data); a context-less entity still gets an accent color, keyed off its
+    // own (required) domainId rather than a context's.
+    const context = entity.contextId == null ? undefined : contextsById.get(entity.contextId);
+    const accentColor = domainColorById.get(entity.domainId) ?? MAP_DOMAIN_TINTS[0]!;
 
     tiles.push({ entity, coord, accentColor });
     occupiedCellKeys.add(key);
@@ -576,16 +591,16 @@ export function computeDomainViewLayoutInternal(
 
 /**
  * Domain-view layout for renderers: territory/patch washes, painted
- * borders, labels, tiles, stray piles, and the patch assignment map (which
- * the Map tab's placement mode reads). Drops the intermediate territory/
- * color maps that only this module's tests read; use
- * `computeDomainViewLayoutInternal` if you need those.
+ * borders, labels, tiles, stray piles, the patch assignment map, and the
+ * domain territory assignment map (which the Map tab's placement mode
+ * reads). Drops the intermediate color map that only this module's tests
+ * read; use `computeDomainViewLayoutInternal` if you need that.
  */
 export function computeDomainViewLayout(
   state: MapState,
   cells: readonly HexGridCell[],
   options: DomainViewLayoutOptions = {},
-): DomainViewLayout {
+): PlaceableDomainViewLayout {
   const {
     tintByCellKey,
     domainBorders,
@@ -595,6 +610,7 @@ export function computeDomainViewLayout(
     piles,
     unplacedPiles,
     patchByCellKey,
+    territoryByCellKey,
   } = computeDomainViewLayoutInternal(state, cells, options);
   return {
     tintByCellKey,
@@ -605,5 +621,6 @@ export function computeDomainViewLayout(
     piles,
     unplacedPiles,
     patchByCellKey,
+    territoryByCellKey,
   };
 }
