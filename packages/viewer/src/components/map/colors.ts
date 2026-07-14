@@ -217,14 +217,28 @@ export const MAP_LABEL_COLORS = {
   half: "#7c6849",
   halo: "#f3e7d0",
   /**
-   * Semi-opaque deep warm-ink backing plate drawn behind the region/owner
-   * (domain-kind) titles only. It mutes the busy parchment wash and domain
-   * tints under the title so the cream halo and dark glyphs read as one
-   * legible nameplate — a deep espresso/brass tone at ~0.6 alpha so the map
-   * still bleeds faintly through (a tasteful wash, not a hard black box).
-   * rgba() so it composites over whatever tiles sit under the label.
+   * Engraved brass nameplate for the plated region/owner (domain-kind)
+   * titles. `regionFill` is a warm antique-brass glyph — on-brand with the
+   * amber/brass accents elsewhere in this file (#d9a860 / #efc067 / ochre
+   * #b08f4d) — and `regionHalo` is a thin dark outline. A light-brass glyph
+   * with a dark stroke on the near-solid espresso `plate` reads crisply
+   * (light-on-dark + dark outline), where the old dark-brown `domain` fill
+   * under a cream halo went dark-on-dark and mushy. The tone is a one-line
+   * change here: brass → cream (#f3e7d0) is a swap of `regionFill`.
+   * Context/half labels keep the dark-ink-on-parchment inks above — they are
+   * not plated.
    */
-  plate: "rgba(38, 28, 20, 0.62)",
+  regionFill: "#e8c88a",
+  regionHalo: "#2a1f14",
+  /**
+   * Near-solid deep warm-ink backing plate drawn behind the region/owner
+   * (domain-kind) titles only, UNDER the halo + glyphs. At ~0.85 alpha it
+   * stops the busy parchment wash and domain tints bleeding through and
+   * muddying the brass glyphs, while the faint remaining translucency keeps
+   * it a warm nameplate rather than a hard black box. rgba() so it composites
+   * over whatever tiles sit under the label.
+   */
+  plate: "rgba(38, 28, 20, 0.85)",
   tileName: "#fffaf0",
   tileNameHalo: "#2a1f14",
 } as const;

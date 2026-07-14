@@ -41,17 +41,57 @@ describe("domainWashColors", () => {
 });
 
 describe("MAP_LABEL_COLORS.plate", () => {
-  it("defines a semi-opaque rgba backing plate for the region/owner labels", () => {
-    // The plate composites over the map, so it must carry an alpha strictly
-    // between 0 and 1 (a solid or fully transparent plate would defeat the
-    // point). The visual itself is e2e/canvas-only; this guards the token.
+  const plateAlpha = (): number => {
     const match = /^rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(0|1|0?\.\d+)\s*\)$/.exec(
       MAP_LABEL_COLORS.plate,
     );
     expect(match).not.toBeNull();
-    const alpha = Number(match![1]);
+    return Number(match![1]);
+  };
+
+  it("defines a semi-opaque rgba backing plate for the region/owner labels", () => {
+    // The plate composites over the map, so it must carry an alpha strictly
+    // between 0 and 1 (a solid or fully transparent plate would defeat the
+    // point). The visual itself is e2e/canvas-only; this guards the token.
+    const alpha = plateAlpha();
     expect(alpha).toBeGreaterThan(0);
     expect(alpha).toBeLessThan(1);
+  });
+
+  it("is near-solid so the busy parchment/tint no longer muddies the glyphs", () => {
+    // Legibility v2 solidified the plate (0.62 → ~0.85). It stays < 1 (a hint
+    // of translucency keeps it a warm nameplate, not a hard black box) but is
+    // opaque enough that the tiles beneath stop bleeding through the contrast.
+    expect(plateAlpha()).toBeGreaterThanOrEqual(0.8);
+  });
+});
+
+describe("MAP_LABEL_COLORS region nameplate", () => {
+  const channelSum = (hex: string): number => {
+    const match = /^#([0-9a-fA-F]{6})$/.exec(hex);
+    expect(match).not.toBeNull();
+    const value = match![1]!;
+    return (
+      parseInt(value.slice(0, 2), 16) +
+      parseInt(value.slice(2, 4), 16) +
+      parseInt(value.slice(4, 6), 16)
+    );
+  };
+
+  it("gives the plated region/owner titles a light brass fill over a dark outline", () => {
+    // The engraved-nameplate treatment is light-on-dark: a warm brass glyph
+    // (regionFill) with a thin dark outline (regionHalo). Guard the contrast
+    // direction — fill lighter than halo — without pinning the exact tone, so
+    // a brass → cream retune stays a one-token swap.
+    expect(channelSum(MAP_LABEL_COLORS.regionFill)).toBeGreaterThan(
+      channelSum(MAP_LABEL_COLORS.regionHalo),
+    );
+  });
+
+  it("no longer reuses the dark domain ink for the region fill", () => {
+    // The legibility fix flips the region glyph off the dark-brown `domain`
+    // ink (which read dark-on-dark on the plate) to the brass `regionFill`.
+    expect(MAP_LABEL_COLORS.regionFill).not.toBe(MAP_LABEL_COLORS.domain);
   });
 });
 
