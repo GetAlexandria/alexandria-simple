@@ -55,8 +55,12 @@ const ENTITY_FIELD_ORDER = [
   "domainId",
   "assignee",
   "cadence",
+  "purpose",
+  "pattern",
+  "upgrades",
   "lifecycle",
 ] as const;
+const PATTERN_RULE_FIELD_ORDER = ["id", "title", "every", "assignee", "detail"] as const;
 const POSITION_FIELD_ORDER = ["q", "r", "entityType", "entityId"] as const;
 const ORG_FIELD_ORDER = ["id", "name"] as const;
 const STATE_FIELD_ORDER = ["domains", "contexts", "entities", "positions"] as const;
@@ -64,12 +68,22 @@ const STATE_FIELD_ORDER = ["domains", "contexts", "entities", "positions"] as co
 const REQUIRED_DOMAIN_FIELDS = ["id", "name", "half", "region"] as const;
 const REQUIRED_CONTEXT_FIELDS = ["id", "name", "domainId"] as const;
 const REQUIRED_ENTITY_FIELDS = ["id", "kind", "name", "domainId", "lifecycle"] as const;
+const REQUIRED_PATTERN_RULE_FIELDS = ["id", "title", "every"] as const;
 
 const ALLOWED_DOMAIN_FIELDS = new Set<string>(DOMAIN_FIELD_ORDER);
 const ALLOWED_CONTEXT_FIELDS = new Set<string>(CONTEXT_FIELD_ORDER);
 const ALLOWED_ENTITY_FIELDS = new Set<string>(ENTITY_FIELD_ORDER);
 const ALLOWED_POSITION_FIELDS = new Set<string>(POSITION_FIELD_ORDER);
 const ALLOWED_ORG_FIELDS = new Set<string>(ORG_FIELD_ORDER);
+const ALLOWED_PATTERN_RULE_FIELDS = new Set<string>(PATTERN_RULE_FIELD_ORDER);
+// A pattern rule's `every` is a time-only duration in v1 (plan §1): a count of
+// hours, days, weeks, months, quarters, or years (director ruling 2026-07-14
+// — the LLC-administration pilot needs monthly/quarterly/annual rules).
+// Months are `mo`, never a bare `m` — that would collide with the existing
+// `cadence` field's minutes (e.g. "30m"). Meter-/condition-based rules are
+// reserved future work (a `kind` discriminator, not built here), so any
+// other unit is rejected with a clear message rather than silently accepted.
+const PATTERN_RULE_EVERY_PATTERN = /^\d+(h|d|w|mo|q|y)$/;
 // `org` is optional at the top level (a fresh/empty world has no org yet), so
 // it is allowed but deliberately kept out of STATE_FIELD_ORDER, which doubles
 // as the required-collection list.
@@ -101,12 +115,41 @@ export interface MapContext {
   name: string;
 }
 
+/**
+ * A system's PATTERN rule (work-system plan §1, `docs/alexandria/plans/
+ * work-system/plan.md`) — one generation rule, e.g. "check and respond to
+ * customer emails, every 6h". Time-only in v1: `every` is a duration
+ * (`"6h"` | `"1d"` | `"1w"` | `"1mo"` | `"1q"` | `"1y"` — hours/days/weeks/
+ * months/quarters/years; months are `mo`, never bare `m`, which is the
+ * `cadence` field's minutes); meter- and condition-based rules are declared
+ * future work (a `kind` discriminator is reserved, absent means `time`).
+ */
+export interface PatternRule {
+  /** Non-empty, unique within the entity's `pattern` list. */
+  id: string;
+  /** The rule's human-readable name (becomes the spawned card's title). */
+  title: string;
+  /** A duration like `"6h"`, `"1d"`, `"1w"`, `"1mo"`, `"1q"`, or `"1y"`. */
+  every: string;
+  /**
+   * Rule-level delegation: who works the spawned cards. Falls back to the
+   * system's own `assignee` when absent.
+   */
+  assignee?: string;
+  /** Optional card-body text carried onto spawned cards. */
+  detail?: string;
+}
+
 export interface MapEntity {
   /**
    * Who the work item is assigned to — a person, prefix-style
    * (`human:<id>` | `colleague:<id>`, the same scheme as a domain's `owner`).
    * A work-item field allowed on any kind; optional (unassigned = no field).
    * The system's former bare `colleague` folded into this as `colleague:<id>`.
+   * For a system entity this is who is accountable for its health (work-
+   * system plan §1); the UI labels it "Assignee" everywhere — director
+   * ruling (2026-07-14): the field says what it is, no separate "Owner"
+   * front-name.
    */
   assignee?: string;
   cadence?: string;
@@ -116,6 +159,23 @@ export interface MapEntity {
   kind: MapEntityKind;
   lifecycle: MapProjectLifecycle | MapSystemLifecycle;
   name: string;
+  /**
+   * One sentence: what does this system maintain? (anatomy: PURPOSE, work-
+   * system plan §1). Optional; harmless but unused on a project.
+   */
+  purpose?: string;
+  /**
+   * The generation rules (anatomy: PATTERN, work-system plan §1). System
+   * entities only; absent means none (an empty list is rejected rather than
+   * accepted as equivalent to absent).
+   */
+  pattern?: PatternRule[];
+  /**
+   * A system id: this project is an upgrade project improving that system
+   * (work-system plan §1). Project entities only; must resolve to a real
+   * system entity.
+   */
+  upgrades?: string;
 }
 
 export interface MapPosition {
@@ -359,6 +419,92 @@ function validateContexts(
   return contexts;
 }
 
+/**
+ * Validates one entity's `pattern` list (work-system plan §1): a non-empty
+ * array of PATTERN rules, each with a unique id within the entity, a
+ * duration-shaped `every`, and optional rule-level `assignee`/`detail`.
+ * Absent means none, so an empty array is rejected rather than accepted as a
+ * no-op — callers should omit the field instead.
+ */
+function validatePatternRules(
+  value: unknown,
+  entityRef: string,
+): PatternRule[] | MapStateValidationError {
+  if (!Array.isArray(value)) {
+    return validationError(`${entityRef} pattern must be a list`);
+  }
+  if (value.length === 0) {
+    return validationError(
+      `${entityRef} pattern must not be an empty list (omit the field for no pattern)`,
+    );
+  }
+
+  const seenRuleIds = new Set<string>();
+  const rules: PatternRule[] = [];
+
+  for (const [index, rawRule] of value.entries()) {
+    const ruleRef = `${entityRef} pattern rule ${index + 1}`;
+    if (!isRecord(rawRule)) {
+      return validationError(`${entityRef} pattern must contain objects`);
+    }
+
+    const unknownFields = unknownFieldsIn(rawRule, ALLOWED_PATTERN_RULE_FIELDS);
+    if (unknownFields.length > 0) {
+      return validationError(
+        `${ruleRef} has unknown fields: ${JSON.stringify(unknownFields.sort())}`,
+      );
+    }
+    const missing = REQUIRED_PATTERN_RULE_FIELDS.filter((field) => !hasOwn(rawRule, field));
+    if (missing.length > 0) {
+      return validationError(`${ruleRef} is missing fields: ${JSON.stringify(missing.sort())}`);
+    }
+
+    for (const field of ["id", "title", "every"] as const) {
+      const fieldError = requireString(rawRule, field, ruleRef);
+      if (fieldError != null) {
+        return fieldError;
+      }
+    }
+
+    const id = rawRule.id as string;
+    if (seenRuleIds.has(id)) {
+      return validationError(`${entityRef} has duplicate pattern rule id ${id}`);
+    }
+    seenRuleIds.add(id);
+
+    if (!PATTERN_RULE_EVERY_PATTERN.test(rawRule.every as string)) {
+      return validationError(
+        `${ruleRef} every must be a duration like "6h", "1d", "1w", "1mo", "1q", or "1y" ` +
+          `(hours, days, weeks, months, quarters, or years; use "mo" for months — ` +
+          `bare "m" is reserved for cadence minutes)`,
+      );
+    }
+
+    if (hasOwn(rawRule, "assignee")) {
+      const assigneeError = requireString(rawRule, "assignee", ruleRef);
+      if (assigneeError != null) {
+        return assigneeError;
+      }
+    }
+    if (hasOwn(rawRule, "detail")) {
+      const detailError = requireString(rawRule, "detail", ruleRef);
+      if (detailError != null) {
+        return detailError;
+      }
+    }
+
+    rules.push({
+      id,
+      title: rawRule.title as string,
+      every: rawRule.every as string,
+      ...(hasOwn(rawRule, "assignee") ? { assignee: rawRule.assignee as string } : {}),
+      ...(hasOwn(rawRule, "detail") ? { detail: rawRule.detail as string } : {}),
+    });
+  }
+
+  return rules;
+}
+
 function validateEntities(
   value: unknown,
   contextIds: ReadonlySet<string>,
@@ -457,6 +603,45 @@ function validateEntities(
       }
     }
 
+    // `purpose` (anatomy: PURPOSE, work-system plan §1) is a work-item field
+    // like assignee: allowed on any kind (systems mainly; harmless on a
+    // project), optional, non-empty when present.
+    if (hasOwn(rawEntity, "purpose")) {
+      const purposeError = requireString(rawEntity, "purpose", ref);
+      if (purposeError != null) {
+        return purposeError;
+      }
+    }
+
+    // `pattern` (anatomy: PATTERN) belongs to the System primitive only —
+    // the rules that generate cards. Optional; a project may not carry it.
+    let pattern: PatternRule[] | undefined;
+    if (hasOwn(rawEntity, "pattern")) {
+      if (kind !== "system") {
+        return validationError(`${ref} pattern is only allowed on system entities`);
+      }
+      const patternResult = validatePatternRules(rawEntity.pattern, ref);
+      if (patternResult instanceof MapStateValidationError) {
+        return patternResult;
+      }
+      pattern = patternResult;
+    }
+
+    // `upgrades` belongs to the Project primitive only — an upgrade project
+    // linked to the system it improves. Optional; a system may not carry it.
+    // The referenced id must resolve to a real system entity; that
+    // referential check runs after every entity is known (below), the same
+    // deferred pattern positions use against entities.
+    if (hasOwn(rawEntity, "upgrades")) {
+      if (kind !== "project") {
+        return validationError(`${ref} upgrades is only allowed on project entities`);
+      }
+      const upgradesError = requireString(rawEntity, "upgrades", ref);
+      if (upgradesError != null) {
+        return upgradesError;
+      }
+    }
+
     entities.push({
       id: rawEntity.id as string,
       kind,
@@ -465,8 +650,34 @@ function validateEntities(
       domainId: rawEntity.domainId as string,
       ...(hasOwn(rawEntity, "assignee") ? { assignee: rawEntity.assignee as string } : {}),
       ...(hasOwn(rawEntity, "cadence") ? { cadence: rawEntity.cadence as string } : {}),
+      ...(hasOwn(rawEntity, "purpose") ? { purpose: rawEntity.purpose as string } : {}),
+      ...(pattern != null ? { pattern } : {}),
+      ...(hasOwn(rawEntity, "upgrades") ? { upgrades: rawEntity.upgrades as string } : {}),
       lifecycle: rawEntity.lifecycle as MapEntity["lifecycle"],
     });
+  }
+
+  // `upgrades` referential check (like position→entity checks): deferred
+  // until every entity is known, since an upgrade project may be declared
+  // before or after the system it names. Same O(1)-lookup idiom as
+  // validatePositions' entityKindById below, built once rather than
+  // rescanning `entities` per entity.
+  const entityById = new Map(entities.map((entity) => [entity.id, entity]));
+  for (const entity of entities) {
+    if (entity.upgrades == null) {
+      continue;
+    }
+    const target = entityById.get(entity.upgrades);
+    if (target == null) {
+      return validationError(
+        `entity ${entity.id} upgrades references unknown entity id ${entity.upgrades}`,
+      );
+    }
+    if (target.kind !== "system") {
+      return validationError(
+        `entity ${entity.id} upgrades must reference a system entity, but ${entity.upgrades} is a ${target.kind}`,
+      );
+    }
   }
 
   return entities;

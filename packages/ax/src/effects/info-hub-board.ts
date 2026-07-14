@@ -57,10 +57,14 @@ const CARD_FIELD_ORDER = [
   "terminalAt",
   "archived",
   "pinned",
+  "generatedBy",
 ] as const;
+
+const GENERATED_BY_FIELD_ORDER = ["systemId", "ruleId", "window"] as const;
 
 const ALLOWED_CARD_FIELDS = new Set<string>(CARD_FIELD_ORDER);
 const ALLOWED_CHECKLIST_FIELDS = new Set(["text", "done"]);
+const ALLOWED_GENERATED_BY_FIELDS = new Set<string>(GENERATED_BY_FIELD_ORDER);
 
 export const DEFAULT_INFO_HUB_BOARD_COMMENT =
   "Info Hub work board. Agents edit this file directly; the Info Hub board page persists here.";
@@ -68,6 +72,19 @@ export const DEFAULT_INFO_HUB_BOARD_COMMENT =
 export interface InfoHubChecklistItem {
   done: boolean;
   text: string;
+}
+
+/**
+ * Provenance + idempotency key for a card materialize-on-read spawned from a
+ * system's PATTERN rule (work-system plan §1/§2, `docs/alexandria/plans/
+ * work-system/plan.md`): the system it came from, the rule that spawned it,
+ * and the ISO start of the cadence window it belongs to — one card per
+ * (systemId, ruleId, window), ever.
+ */
+export interface InfoHubGeneratedBy {
+  systemId: string;
+  ruleId: string;
+  window: string;
 }
 
 export interface InfoHubCard {
@@ -90,6 +107,10 @@ export interface InfoHubCard {
   // owns the domain set, and the view constrains the picker.
   domainId: string;
   entityId?: string;
+  // Materialize-on-read provenance (work-system plan §1/§2): present only on
+  // a card a system's PATTERN rule spawned. Optional; this PR only adds the
+  // field, generation itself is WS2.
+  generatedBy?: InfoHubGeneratedBy;
   id: string;
   pinned?: boolean;
   priority: number;
@@ -168,6 +189,32 @@ function validateChecklist(value: unknown, ref: string): InfoHubBoardValidationE
   return null;
 }
 
+/**
+ * Validates a card's `generatedBy` provenance object (materialize-on-read,
+ * work-system plan §1/§2): `systemId`/`ruleId`/`window` all non-empty
+ * strings, `window` parseable as an ISO date-time, no unknown fields.
+ */
+function validateGeneratedBy(value: unknown, ref: string): InfoHubBoardValidationError | null {
+  if (!isRecord(value)) {
+    return validationError(`${ref} generatedBy must be an object`);
+  }
+  const unknownFields = hasOnlyAllowedFields(value, ALLOWED_GENERATED_BY_FIELDS);
+  if (unknownFields.length > 0) {
+    return validationError(
+      `${ref} generatedBy has unknown fields: ${JSON.stringify(unknownFields.sort())}`,
+    );
+  }
+  for (const field of GENERATED_BY_FIELD_ORDER) {
+    if (typeof value[field] !== "string" || (value[field] as string).length === 0) {
+      return validationError(`${ref} generatedBy ${field} must be a non-empty string`);
+    }
+  }
+  if (Number.isNaN(Date.parse(value.window as string))) {
+    return validationError(`${ref} generatedBy window must be an ISO date-time`);
+  }
+  return null;
+}
+
 function canonicalizeCard(card: Record<string, unknown>): InfoHubCard {
   const canonical = {} as Record<string, unknown>;
   for (const field of CARD_FIELD_ORDER) {
@@ -179,6 +226,15 @@ function canonicalizeCard(card: Record<string, unknown>): InfoHubCard {
         const checklistItem = item as Record<string, unknown>;
         return { done: checklistItem.done, text: checklistItem.text };
       });
+      continue;
+    }
+    if (field === "generatedBy" && isRecord(card.generatedBy)) {
+      const generatedBy = card.generatedBy;
+      canonical.generatedBy = {
+        systemId: generatedBy.systemId,
+        ruleId: generatedBy.ruleId,
+        window: generatedBy.window,
+      };
       continue;
     }
     canonical[field] = card[field];
@@ -289,6 +345,12 @@ export function validateInfoHubCards(
       const checklistError = validateChecklist(rawCard.checklist, ref);
       if (checklistError != null) {
         return checklistError;
+      }
+    }
+    if (hasOwn(rawCard, "generatedBy")) {
+      const generatedByError = validateGeneratedBy(rawCard.generatedBy, ref);
+      if (generatedByError != null) {
+        return generatedByError;
       }
     }
 

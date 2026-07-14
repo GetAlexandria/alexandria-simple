@@ -256,6 +256,94 @@ describe("withEntityCreated", () => {
     });
   });
 
+  it("round-trips purpose and pattern rules on a system, deriving rule ids from the title", () => {
+    const { entity } = withEntityCreated(BASE_STATE, {
+      contextId: "ctx-a",
+      domainId: "software",
+      kind: "system",
+      lifecycle: "planted",
+      name: "Email triage",
+      purpose: "  Keep the inbox at zero.  ",
+      pattern: [
+        { title: "Check and respond to customer emails", every: "6h", assignee: "colleague:raven" },
+        { title: "Weekly review", every: "1w" },
+      ],
+    });
+    expect(entity.purpose).toBe("Keep the inbox at zero.");
+    expect(entity.pattern).toEqual([
+      {
+        id: "check-and-respond-to-customer-emails",
+        title: "Check and respond to customer emails",
+        every: "6h",
+        assignee: "colleague:raven",
+      },
+      { id: "weekly-review", title: "Weekly review", every: "1w" },
+    ]);
+  });
+
+  it("de-dupes pattern rule ids that slug to the same base within one entity", () => {
+    const { entity } = withEntityCreated(BASE_STATE, {
+      domainId: "software",
+      kind: "system",
+      lifecycle: "planted",
+      name: "Duplicate rules",
+      pattern: [
+        { title: "Review", every: "1d" },
+        { title: "Review!", every: "1w" },
+      ],
+    });
+    expect(entity.pattern?.map((rule) => rule.id)).toEqual(["review", "review-2"]);
+  });
+
+  it("drops blank pattern rows and omits pattern entirely when none survive", () => {
+    const { entity } = withEntityCreated(BASE_STATE, {
+      domainId: "software",
+      kind: "system",
+      lifecycle: "planted",
+      name: "No real rules",
+      pattern: [
+        { title: "  ", every: "1d" },
+        { title: "Has title, no cadence", every: "  " },
+      ],
+    });
+    expect("pattern" in entity).toBe(false);
+  });
+
+  it("omits purpose/pattern on a project draft even if the draft carries them", () => {
+    const { entity } = withEntityCreated(BASE_STATE, {
+      domainId: "software",
+      kind: "project",
+      lifecycle: "active",
+      name: "Not a system",
+      purpose: "Should not appear",
+      pattern: [{ title: "Should not appear", every: "1d" }],
+    });
+    expect("purpose" in entity).toBe(false);
+    expect("pattern" in entity).toBe(false);
+  });
+
+  it("round-trips upgrades on a project", () => {
+    const { entity } = withEntityCreated(BASE_STATE, {
+      domainId: "software",
+      kind: "project",
+      lifecycle: "active",
+      name: "Upgrade the system",
+      upgrades: "  sys-1  ",
+    });
+    expect(entity.upgrades).toBe("sys-1");
+  });
+
+  it("omits upgrades on a system draft even if the draft carries it", () => {
+    const { entity } = withEntityCreated(BASE_STATE, {
+      domainId: "software",
+      kind: "system",
+      lifecycle: "planted",
+      name: "Not a project",
+      upgrades: "sys-1",
+    });
+    expect("upgrades" in entity).toBe(false);
+  });
+
   it("produces a valid, context-less entity when the draft carries no contextId", () => {
     // Context is latent data (Map/Board contract demotion): a draft with no
     // contextId at all is a fully valid entity, keyed only by its domain.

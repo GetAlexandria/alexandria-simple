@@ -1140,6 +1140,16 @@ export const InfoHubChecklistItemSchema = Schema.Struct({
 
 export type InfoHubChecklistItem = Schema.Schema.Type<typeof InfoHubChecklistItemSchema>;
 
+// Materialize-on-read provenance + idempotency key (work-system plan §1/§2)
+// — mirrors packages/ax/src/effects/info-hub-board.ts's InfoHubGeneratedBy.
+export const InfoHubGeneratedBySchema = Schema.Struct({
+  ruleId: Schema.NonEmptyString,
+  systemId: Schema.NonEmptyString,
+  window: Schema.NonEmptyString,
+});
+
+export type InfoHubGeneratedBy = Schema.Schema.Type<typeof InfoHubGeneratedBySchema>;
+
 export const InfoHubCardSchema = Schema.Struct({
   archived: Schema.optionalWith(Schema.Boolean, { exact: true }),
   // Who the work item is assigned to (person, prefix-style human:/colleague:).
@@ -1161,6 +1171,9 @@ export const InfoHubCardSchema = Schema.Struct({
   // the map owns the domain set, and the board view constrains the picker.
   domainId: Schema.String,
   entityId: Schema.optionalWith(Schema.NonEmptyString, { exact: true }),
+  // Present only on a card a system's PATTERN rule spawned (work-system plan
+  // §1/§2); matching the ax twin.
+  generatedBy: Schema.optionalWith(InfoHubGeneratedBySchema, { exact: true }),
   id: Schema.String,
   pinned: Schema.optionalWith(Schema.Boolean, { exact: true }),
   priority: Schema.Number,
@@ -1249,10 +1262,28 @@ export const MapEntityKindSchema = Schema.Literal("project", "system");
 
 export type MapEntityKind = Schema.Schema.Type<typeof MapEntityKindSchema>;
 
+// A system's PATTERN rule (work-system plan §1, `docs/alexandria/plans/
+// work-system/plan.md`) — mirrors packages/ax/src/effects/map-state.ts's
+// PatternRule. Time-only `every` (`"6h"` | `"1d"` | `"1w"` | `"1mo"` |
+// `"1q"` | `"1y"`; months are `mo`, never bare `m`) is decoded as a free
+// string here; the ax validator owns the duration-shape check server-side.
+export const MapPatternRuleSchema = Schema.Struct({
+  assignee: Schema.optionalWith(Schema.String, { exact: true }),
+  detail: Schema.optionalWith(Schema.String, { exact: true }),
+  every: Schema.String,
+  id: Schema.String,
+  title: Schema.String,
+});
+
+export type MapPatternRule = Schema.Schema.Type<typeof MapPatternRuleSchema>;
+
 export const MapEntitySchema = Schema.Struct({
   // Who the work item is assigned to (person, prefix-style human:/colleague:).
   // The ax twin validates optional/non-empty and owns the fold of the former
   // system-only `colleague` into this; this schema decodes what it validated.
+  // For a system entity this is who is accountable for its health (work-
+  // system plan §1); labeled "Assignee" in the UI (director ruling,
+  // 2026-07-14 — the field says what it is).
   assignee: Schema.optionalWith(Schema.String, { exact: true }),
   cadence: Schema.optionalWith(Schema.String, { exact: true }),
   // Context is latent data (Map/Board contract demotion): optional, matching
@@ -1270,6 +1301,15 @@ export const MapEntitySchema = Schema.Struct({
   // catalog schemas' posture above.
   lifecycle: Schema.String,
   name: Schema.String,
+  // PATTERN (work-system plan §1): the generation rules. System entities
+  // only, matching the ax twin; this schema only decodes what it validated.
+  pattern: Schema.optionalWith(Schema.Array(MapPatternRuleSchema), { exact: true }),
+  // PURPOSE (work-system plan §1): one sentence, what this system maintains.
+  // Any kind, matching the ax twin.
+  purpose: Schema.optionalWith(Schema.String, { exact: true }),
+  // A system id this project upgrades (work-system plan §1). Project
+  // entities only, matching the ax twin.
+  upgrades: Schema.optionalWith(Schema.String, { exact: true }),
 });
 
 export type MapEntity = Schema.Schema.Type<typeof MapEntitySchema>;
