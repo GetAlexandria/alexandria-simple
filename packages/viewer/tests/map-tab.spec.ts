@@ -22,10 +22,16 @@
 // canvas) always runs in CI.
 
 import { expect, test, type Page } from "@playwright/test";
-import { generateHexGrid, hexToWorld, HEX_SIZE, type HexCoord } from "../src/components/map/hex";
+import {
+  generateHexGrid,
+  hexToKey,
+  hexToWorld,
+  HEX_SIZE,
+  type HexCoord,
+} from "../src/components/map/hex";
 import { computeDomainViewLayout } from "../src/components/map/layout/domain-view";
 import { mapStateGridRadius } from "../src/components/map/map-grid";
-import { strayCardCountsByContext } from "../src/components/map/placement";
+import { strayCardCountsByDomain } from "../src/components/map/placement";
 import {
   CAMERA_ELEVATION_DEGREES,
   CAMERA_INITIAL_ZOOM,
@@ -41,11 +47,13 @@ import { initialFixtureInfoHubCards, initialFixtureMapState } from "./map-board-
 
 const FIXTURE_MAP_STATE = initialFixtureMapState();
 const FIXTURE_CARDS = initialFixtureInfoHubCards();
-const FIXTURE_LAYOUT = computeDomainViewLayout(
-  FIXTURE_MAP_STATE,
-  generateHexGrid(mapStateGridRadius(FIXTURE_MAP_STATE)),
-  { strayCardCounts: strayCardCountsByContext(FIXTURE_CARDS) },
-);
+const FIXTURE_CELLS = generateHexGrid(mapStateGridRadius(FIXTURE_MAP_STATE));
+// Stray piles are domain-keyed now (strays v1): all fixture cards live in the
+// `software` domain, so its one pile counts every live entity-less card —
+// including `wo-unmapped`, which carries no context.
+const FIXTURE_LAYOUT = computeDomainViewLayout(FIXTURE_MAP_STATE, FIXTURE_CELLS, {
+  strayCardCounts: strayCardCountsByDomain(FIXTURE_CARDS),
+});
 
 // CameraRig steady state: orthographic, looking at the origin, initial zoom
 // (world units of half viewport height), fixed elevation. For an ortho
@@ -89,18 +97,41 @@ function tileWorldPoint(entityId: string): { x: number; y: number; z: number } {
   return { x, y: TILE_TOP_Y, z };
 }
 
-function viewerPileCoord(): HexCoord {
-  const pile = FIXTURE_LAYOUT.piles.find((candidate) => candidate.contextId === "viewer");
+function softwarePileCoord(): HexCoord {
+  const pile = FIXTURE_LAYOUT.piles.find((candidate) => candidate.domainId === "software");
   if (pile == null) {
-    throw new Error("fixture layout has no viewer pile");
+    throw new Error("fixture layout has no software-domain pile");
   }
   return pile.coord;
 }
 
-/** The viewer pile sprite's world center (elevated, z-offset from its hex). */
-function viewerPileSpritePoint(): { x: number; y: number; z: number } {
-  const [x, z] = hexToWorld(viewerPileCoord(), HEX_SIZE);
+/** The software-domain pile sprite's world center (elevated, z-offset from its hex). */
+function softwarePileSpritePoint(): { x: number; y: number; z: number } {
+  const [x, z] = hexToWorld(softwarePileCoord(), HEX_SIZE);
   return { x, y: STRAY_PILE_ELEVATION, z: z + STRAY_PILE_Z_OFFSET };
+}
+
+/**
+ * A free viewer-patch cell — a genuinely placeable target for a viewer entity
+ * that is neither an entity hex nor the (open-ground) stray-pile cell.
+ */
+function placeableViewerCell(): HexCoord {
+  const entityKeys = new Set(
+    FIXTURE_MAP_STATE.positions.map((position) =>
+      hexToKey({ q: position.q, r: position.r, s: -position.q - position.r }),
+    ),
+  );
+  const pileKey = hexToKey(softwarePileCoord());
+  const cell = FIXTURE_CELLS.find(
+    (candidate) =>
+      FIXTURE_LAYOUT.patchByCellKey.get(candidate.key) === "viewer" &&
+      !entityKeys.has(candidate.key) &&
+      candidate.key !== pileKey,
+  );
+  if (cell == null) {
+    throw new Error("fixture layout has no free viewer-patch cell");
+  }
+  return cell.coord;
 }
 
 /** Raven's colleague landmark building world center (L2, from the fixture). */
@@ -287,15 +318,20 @@ test("clicking a colleague building opens the colleague overlay (role + journal 
   await expect(page.locator('[data-testid="colleague-overlay"]')).toHaveCount(0);
 });
 
-test("pile click opens the context's loose cards (exactly the stray set)", async ({ page }) => {
+test("pile click opens the domain's loose cards, including a no-context stray (strays v1)", async ({
+  page,
+}) => {
   await openMapTab(page);
 
-  await clickWorldPoint(page, viewerPileSpritePoint());
+  await clickWorldPoint(page, softwarePileSpritePoint());
 
   await expect(page.getByTestId("map-overlay")).toBeVisible();
   await expect(page.getByTestId("map-overlay-title")).toHaveText("Loose cards");
   await expect(page.getByTestId("map-overlay-card-wo-stray-one")).toBeVisible();
   await expect(page.getByTestId("map-overlay-card-wo-stray-two")).toBeVisible();
+  // The context-less card now counts as a stray in its DOMAIN (v1 drops the
+  // old contextId-required rule) and shows in the same pile.
+  await expect(page.getByTestId("map-overlay-card-wo-unmapped")).toBeVisible();
   // Terminal and entity-joined cards are not in the pile.
   await expect(page.locator('[data-testid="map-overlay-card-wo-stray-done"]')).toHaveCount(0);
   await expect(page.locator('[data-testid="map-overlay-card-wo-joined-one"]')).toHaveCount(0);
@@ -343,7 +379,7 @@ test("entity create writes through the revision-guarded save and lands in the Un
   expect(state.positions.some((position) => position.entityId === "sys-night-watch")).toBe(false);
 });
 
-test("a stray pile never blocks placement: in placement mode the sprite is inert and the cell places", async ({
+test("a stray pile is inert during placement: clicking through it opens no overlay, and a placeable cell still places", async ({
   page,
 }) => {
   await openMapTab(page);
@@ -356,24 +392,31 @@ test("a stray pile never blocks placement: in placement mode the sprite is inert
   await page.getByTestId("map-entity-form-submit").click();
   await expect(page.getByTestId("map-placement-panel")).toBeVisible();
 
-  // Prove the pile sprite is mounted AND interactive before placement mode —
-  // otherwise a pass-through click would be trivially true.
+  // The domain-keyed stray pile sits on open ground, outside the viewer patch.
+  // Prove its sprite is mounted AND interactive before placement mode —
+  // otherwise the pass-through below would be trivially true.
   const spritePoint = await canvasPointForWorld(
     page,
-    viewerPileSpritePoint().x,
-    viewerPileSpritePoint().y,
-    viewerPileSpritePoint().z,
+    softwarePileSpritePoint().x,
+    softwarePileSpritePoint().y,
+    softwarePileSpritePoint().z,
   );
   await hoverUntilPointer(page, spritePoint);
 
-  // Enter placement mode and click the PILE'S CELL — a free patch cell, so
-  // it is placeable. Pre-fix the always-clickable sprite swallowed this
-  // click (stopPropagation) and cancelled placement; now the sprite goes
-  // raycast-inert during placement and the click reaches the cell.
+  // Enter placement mode and click the PILE SPRITE. During placement the pile
+  // withholds its onClick and goes raycast-inert, so the click passes through
+  // to the open ground beneath (a click-away) instead of opening the pile's
+  // loose-cards overlay the way the always-clickable sprite used to.
   await page.getByRole("button", { name: /Pile squatter/ }).click();
-  const pileCell = viewerPileCoord();
-  const [cellX, cellZ] = hexToWorld(pileCell, HEX_SIZE);
-  await clickWorldPoint(page, { x: cellX, y: GROUND_TOP_Y, z: cellZ });
+  await page.mouse.click(spritePoint.x, spritePoint.y);
+  await expect(page.locator('[data-testid="map-overlay"]')).toHaveCount(0);
+
+  // And placement still works around the pile: re-enter placement and click a
+  // real placeable viewer-patch cell — the squatter lands exactly there.
+  await page.getByRole("button", { name: /Pile squatter/ }).click();
+  const target = placeableViewerCell();
+  const [targetX, targetZ] = hexToWorld(target, HEX_SIZE);
+  await clickWorldPoint(page, { x: targetX, y: GROUND_TOP_Y, z: targetZ });
 
   await expect
     .poll(async () => {
@@ -383,7 +426,7 @@ test("a stray pile never blocks placement: in placement mode the sprite is inert
       const position = state.positions.find((entry) => entry.entityId === "prj-pile-squatter");
       return position == null ? null : `${position.q},${position.r}`;
     })
-    .toBe(`${pileCell.q},${pileCell.r}`);
+    .toBe(`${target.q},${target.r}`);
   // Placement completed (no overlay opened, mode exited).
   await expect(page.locator('[data-testid="map-overlay"]')).toHaveCount(0);
 });

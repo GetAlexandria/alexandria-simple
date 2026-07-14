@@ -31,8 +31,8 @@ type DomainViewProps = {
   layout: DomainViewLayout;
   /** S2: tile click opens the entity's work overlay (completed tiles too). */
   onTileClick?: (entity: MapEntity) => void;
-  /** S2: pile click opens the context's loose-cards overlay. */
-  onPileClick?: (contextId: string) => void;
+  /** S2: pile click opens the domain's loose-cards overlay (strays v1). */
+  onPileClick?: (domainId: string) => void;
   /**
    * L1: per-entity ambient signals (needs-a-human glow, staleness sepia,
    * system health dots, overdue flicker), derived at read time in MapTabView.
@@ -167,10 +167,10 @@ export function DomainView({
 
       {layout.piles.map((pile) => (
         <StrayPile
-          key={pile.contextId}
+          key={pile.domainId}
           coord={pile.coord}
           cardCount={pile.cardCount}
-          onClick={onPileClick == null ? undefined : () => onPileClick(pile.contextId)}
+          onClick={onPileClick == null ? undefined : () => onPileClick(pile.domainId)}
         />
       ))}
     </group>

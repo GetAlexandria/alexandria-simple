@@ -219,29 +219,33 @@ export function withEntityEdited(
 // --- Board-card joins and stray piles (S2, plan §1.1/§1.3) ------------------
 
 /**
- * A card is stray when it belongs to a map context but to no project/system
- * and is still live: `contextId` set, no `entityId`, status not terminal
- * (done/wont-do). Piles derive from this at read time — never stored.
+ * A card is stray when it is joined to no project/system and still live: no
+ * `entityId`, status not terminal (done/wont-do). Strays v1 (board card
+ * wo-map-stray-tasks-and-placement-v1) piles them by their required
+ * `domainId`, not by context — so a card with no `contextId` still counts,
+ * surfacing in its domain. Piles derive from this at read time — never stored.
  */
 export function isStrayCard(card: InfoHubCard): boolean {
-  return card.contextId != null && card.entityId == null && !isTerminalStatus(card.status);
+  return card.entityId == null && !isTerminalStatus(card.status);
 }
 
-/** Stray-card counts per context id — the Domain-view layout's pile input. */
-export function strayCardCountsByContext(
+/** Stray-card counts per domain id — the Domain-view layout's pile input. */
+export function strayCardCountsByDomain(
   cards: readonly InfoHubCard[],
 ): Readonly<Record<string, number>> {
   const counts: Record<string, number> = {};
   for (const card of cards) {
     if (isStrayCard(card)) {
-      counts[card.contextId!] = (counts[card.contextId!] ?? 0) + 1;
+      // domainId is required on every board card (M1 schema), so every stray
+      // buckets under a real key — no `??`-guarded fallback needed here.
+      counts[card.domainId] = (counts[card.domainId] ?? 0) + 1;
     }
   }
   return counts;
 }
 
 /**
- * Value-equality of two stray-count maps — same context ids, same counts.
+ * Value-equality of two stray-count maps — same domain ids, same counts.
  * The Map tab keys its domain-layout memo on this (not on board object
  * identity) so a board write that leaves every pile count unchanged — e.g.
  * toggling a checklist item on a card already joined to an entity — doesn't
@@ -263,12 +267,12 @@ export function cardsJoinedToEntity(
   return cards.filter((card) => card.entityId === entityId);
 }
 
-/** One context's loose cards — exactly the cards its stray pile counts. */
-export function looseCardsForContext(
+/** One domain's loose cards — exactly the cards its stray pile counts. */
+export function looseCardsForDomain(
   cards: readonly InfoHubCard[],
-  contextId: string,
+  domainId: string,
 ): InfoHubCard[] {
-  return cards.filter((card) => isStrayCard(card) && card.contextId === contextId);
+  return cards.filter((card) => isStrayCard(card) && card.domainId === domainId);
 }
 
 /**

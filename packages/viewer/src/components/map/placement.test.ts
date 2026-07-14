@@ -6,13 +6,13 @@ import {
   entityIdForDraft,
   entityKindLabel,
   isStrayCard,
-  looseCardsForContext,
+  looseCardsForDomain,
   occupiedHexKeys,
   placeableHexKeys,
   placedEntities,
   positionedEntityIds,
   promotionDraftFromCard,
-  strayCardCountsByContext,
+  strayCardCountsByDomain,
   strayCountsEqual,
   unplacedEntities,
   withCardJoin,
@@ -303,34 +303,42 @@ const cardFixture = (overrides: Partial<InfoHubCard> & { id: string }): InfoHubC
 
 describe("stray-card derivation", () => {
   const cards: InfoHubCard[] = [
-    cardFixture({ id: "stray-a", contextId: "ctx-a" }),
-    cardFixture({ id: "stray-a-2", contextId: "ctx-a", status: "in-progress" }),
-    cardFixture({ id: "stray-b", contextId: "ctx-b", status: "needs-a-human" }),
-    // Joined to an entity → not stray.
-    cardFixture({ id: "joined", contextId: "ctx-a", entityId: "proj-1" }),
+    cardFixture({ id: "stray-a", domainId: "software", contextId: "ctx-a" }),
+    cardFixture({
+      id: "stray-a-2",
+      domainId: "software",
+      contextId: "ctx-a",
+      status: "in-progress",
+    }),
+    // No context, non-terminal → still a stray, surfacing in its DOMAIN.
+    // Strays v1 drops the old contextId-required rule.
+    cardFixture({ id: "no-context", domainId: "software" }),
+    cardFixture({ id: "stray-b", domainId: "writing", status: "needs-a-human" }),
+    // Joined to an entity → not stray (regardless of domain/context).
+    cardFixture({ id: "joined", domainId: "software", contextId: "ctx-a", entityId: "proj-1" }),
     // Terminal → not stray (done work leaves the pile).
-    cardFixture({ id: "done", contextId: "ctx-a", status: "done" }),
-    cardFixture({ id: "wont", contextId: "ctx-a", status: "wont-do" }),
-    // No context → not on the map at all.
-    cardFixture({ id: "unmapped" }),
+    cardFixture({ id: "done", domainId: "software", contextId: "ctx-a", status: "done" }),
+    cardFixture({ id: "wont", domainId: "software", status: "wont-do" }),
   ];
 
-  it("counts context-joined, entity-less, non-terminal cards per context", () => {
-    expect(strayCardCountsByContext(cards)).toEqual({ "ctx-a": 2, "ctx-b": 1 });
+  it("counts entity-less, non-terminal cards per DOMAIN — a no-context card still counts", () => {
+    expect(strayCardCountsByDomain(cards)).toEqual({ software: 3, writing: 1 });
   });
 
-  it("isStrayCard matches exactly the pile membership rule", () => {
+  it("isStrayCard matches any entity-less, non-terminal card (context not required)", () => {
     expect(cards.filter(isStrayCard).map((card) => card.id)).toEqual([
       "stray-a",
       "stray-a-2",
+      "no-context",
       "stray-b",
     ]);
   });
 
-  it("looseCardsForContext lists one context's pile cards", () => {
-    expect(looseCardsForContext(cards, "ctx-a").map((card) => card.id)).toEqual([
+  it("looseCardsForDomain lists one domain's pile cards, including no-context strays", () => {
+    expect(looseCardsForDomain(cards, "software").map((card) => card.id)).toEqual([
       "stray-a",
       "stray-a-2",
+      "no-context",
     ]);
   });
 
@@ -397,9 +405,9 @@ describe("entityKindLabel", () => {
 describe("strayCountsEqual", () => {
   it("is true only when the same ids carry the same counts", () => {
     expect(strayCountsEqual({}, {})).toBe(true);
-    expect(strayCountsEqual({ "ctx-a": 2, "ctx-b": 1 }, { "ctx-b": 1, "ctx-a": 2 })).toBe(true);
-    expect(strayCountsEqual({ "ctx-a": 2 }, { "ctx-a": 3 })).toBe(false);
-    expect(strayCountsEqual({ "ctx-a": 1 }, { "ctx-a": 1, "ctx-b": 1 })).toBe(false);
-    expect(strayCountsEqual({ "ctx-a": 1 }, { "ctx-b": 1 })).toBe(false);
+    expect(strayCountsEqual({ software: 2, writing: 1 }, { writing: 1, software: 2 })).toBe(true);
+    expect(strayCountsEqual({ software: 2 }, { software: 3 })).toBe(false);
+    expect(strayCountsEqual({ software: 1 }, { software: 1, writing: 1 })).toBe(false);
+    expect(strayCountsEqual({ software: 1 }, { writing: 1 })).toBe(false);
   });
 });

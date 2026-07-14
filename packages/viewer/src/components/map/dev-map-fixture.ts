@@ -204,15 +204,16 @@ export const DEV_MAP_FIXTURE = {
 } as const satisfies MapState;
 
 /**
- * Stray-card counts per context (board cards joined to the context but to no
- * project/system). Deliberately NOT part of DEV_MAP_FIXTURE: the pile is
- * derived from the Info Hub board, never stored in map state (plan §1.3).
- * This is the V1 fixture stand-in for the S1 board join; the two counts land
- * on different crop-plot growth stages to show the size stepping.
+ * Stray-card counts per DOMAIN (board cards joined to no project/system,
+ * bucketed by their required domainId — strays v1). Deliberately NOT part of
+ * DEV_MAP_FIXTURE: the pile is derived from the Info Hub board, never stored
+ * in map state (plan §1.3). This is the fixture stand-in for the board join;
+ * the two counts land on different crop-plot growth stages to show the size
+ * stepping.
  */
 export const DEV_MAP_STRAY_CARD_COUNTS: Readonly<Record<string, number>> = {
-  viewer: 2,
-  household: 6,
+  software: 2,
+  chores: 6,
 };
 
 export const DEV_MAP_MIN_GRID_RADIUS = MAP_MIN_GRID_RADIUS;
