@@ -1,8 +1,8 @@
 // A small caption anchored at a landmark's hex, built on the shared
 // pointer-transparent HexHtmlChip. Used by the colleague building (its name on
 // hover) and the locked seat (a quiet persistent "Locked seat" marker at rest,
-// its fuller "future teammate" caption on hover), in the Owner-view landmark
-// layer.
+// its fuller "future teammate" caption on hover) in MapLandmarks — currently
+// mounted only by the /dev/map regression harness, not the shipped Map tab.
 
 import type { CSSProperties, ReactNode } from "react";
 import { MAP_FALLBACK_COLORS, MAP_SCENE_COLORS, withAlpha } from "./colors";

@@ -1,9 +1,10 @@
 // The Map tab's landmark layer (L2, plan §1.1 — colleagues are landmarks, not
 // tiles). Renders the parsed landmark list (landmarks.ts) inside MapScene's
-// canvas, in Owner view only: colleague buildings (click → colleague overlay),
-// the locked future-seat plots (tooltip-only), and the campfire. (Domain view
-// is work-geography only after the Map Glow Up declutter, so it mounts no
-// landmark layer.)
+// canvas: colleague buildings (click → colleague overlay), the locked
+// future-seat plots (tooltip-only), and the campfire. Currently mounted only
+// by the /dev/map regression harness (under its Domain-view toggle) — the
+// shipped Map tab mounts no landmark layer in either view after the Map Glow
+// Up declutter; colleagues live in the coin tray instead.
 
 import { useState } from "react";
 import { Campfire } from "./Campfire";
