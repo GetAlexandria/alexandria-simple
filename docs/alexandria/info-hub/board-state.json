@@ -493,14 +493,14 @@
     {
       "id": "wo-ws5-pilot-system",
       "type": "task",
-      "status": "open",
+      "status": "in-progress",
       "domainId": "alexandria",
       "entityId": "prj-work-system-v1",
       "priority": 15,
       "source": "board:director",
       "created": "2026-07-14",
       "title": "WS5 \u2014 pilot system: seed, place, first real cards",
-      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md \u00a75. Seeds one real system with a real pattern as the first generator, the director places it on the map, and its first cards materialize. Pilot: LLC administration (monthly bookkeeping, quarterly tax estimates, annual report filing) \u2014 agent-owned, human-lane delegation back to the director. Rulings (director, 2026-07-14): the system lives in the new `operations` domain \u2014 restored because systems made it coherent ('without systems, operations didn't make much sense'). The domain is seeded UNOWNED on purpose: the unclaimed nameplate is the demand signal for the back-office/admin colleague who doesn't exist yet. Interim: colleague:raven owns the system; pattern rules delegate human-lane items (signatures, payments, filings) to human:danvers."
+      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md \u00a75. Seeds one real system with a real pattern as the first generator, the director places it on the map, and its first cards materialize. Pilot: LLC administration (monthly bookkeeping, quarterly tax estimates, annual report filing) \u2014 agent-owned, human-lane delegation back to the director. Rulings (director, 2026-07-14): the system lives in the new `operations` domain \u2014 restored because systems made it coherent ('without systems, operations didn't make much sense'). The domain is seeded UNOWNED on purpose: the unclaimed nameplate is the demand signal for the back-office/admin colleague who doesn't exist yet. Interim: colleague:raven owns the system; pattern rules delegate human-lane items (signatures, payments, filings) to human:danvers. Status: seeded and generating \u2014 sys-llc-administration planted in operations (#53); the first three cards materialized on the next board read (monthly close -> raven; quarterly taxes + annual report -> danvers, human lane). Remaining: the director places the tile in the Operations region."
     },
     {
       "id": "wo-ws6-library-mission",
@@ -513,6 +513,60 @@
       "created": "2026-07-14",
       "title": "WS6 \u2014 library mission: atomize the work-systems source",
       "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md \u00a76 (WS6), source \u00a77. Atomizes docs/alexandria/sources/2026-07-14-work-systems-and-map-first-inversion.md into library cards once the work-systems capability ships \u2014 the Work System anatomy, the Work Project, the Work Board, the systems-generate/projects-contain pattern, and multi-level ownership."
+    },
+    {
+      "id": "wo-gen-llc-administration-monthly-bookkeeping-2026-07-01",
+      "type": "task",
+      "status": "open",
+      "domainId": "operations",
+      "entityId": "sys-llc-administration",
+      "assignee": "colleague:raven",
+      "priority": 15,
+      "source": "system:sys-llc-administration",
+      "created": "2026-07-14",
+      "title": "Close the monthly books",
+      "detail": "Reconcile accounts, categorize the month's transactions, and flag anything needing the director (human lane) before close.",
+      "generatedBy": {
+        "systemId": "sys-llc-administration",
+        "ruleId": "monthly-bookkeeping",
+        "window": "2026-07-01T00:00:00.000Z"
+      }
+    },
+    {
+      "id": "wo-gen-llc-administration-quarterly-tax-estimate-2026-07-01",
+      "type": "task",
+      "status": "open",
+      "domainId": "operations",
+      "entityId": "sys-llc-administration",
+      "assignee": "human:danvers",
+      "priority": 15,
+      "source": "system:sys-llc-administration",
+      "created": "2026-07-14",
+      "title": "Calculate and pay the quarterly estimated taxes",
+      "detail": "Raven preps the estimate from the closed books; payment itself is the director's (human lane).",
+      "generatedBy": {
+        "systemId": "sys-llc-administration",
+        "ruleId": "quarterly-tax-estimate",
+        "window": "2026-07-01T00:00:00.000Z"
+      }
+    },
+    {
+      "id": "wo-gen-llc-administration-annual-report-2026-01-01",
+      "type": "task",
+      "status": "open",
+      "domainId": "operations",
+      "entityId": "sys-llc-administration",
+      "assignee": "human:danvers",
+      "priority": 15,
+      "source": "system:sys-llc-administration",
+      "created": "2026-07-14",
+      "title": "File the LLC annual report",
+      "detail": "State filing \u2014 requires the director's signature and payment (human lane); Raven preps the paperwork.",
+      "generatedBy": {
+        "systemId": "sys-llc-administration",
+        "ruleId": "annual-report",
+        "window": "2026-01-01T00:00:00.000Z"
+      }
     }
   ]
 }
