@@ -288,12 +288,12 @@ test("tile click opens the entity overlay with its joined board cards; hover sho
   await expect(page.locator('[data-testid="map-overlay"]')).toHaveCount(0);
 });
 
-// Skipped: colleagues no longer render in Domain view — the landmark row moved
-// out in the Map Glow Up declutter (MapTabView domain branch), and this test
-// clicked Raven's building in the default Domain view. Needs re-homing to Owner
-// view (toggle to Owner view first; a non-owning colleague like Raven still
-// renders as a neutral-row building there, so the same click point applies) plus
-// a CI e2e run to verify before re-enabling.
+// Skipped: colleague buildings no longer render on the map in EITHER view — the
+// landmark row moved to the coin tray in the Map Glow Up, and Owner view is now
+// the Domain-view work layout labelled by owner (no colleague furniture). The
+// colleague overlay is now reached through the coin's "Journal" action (the
+// ?colleague= deep-link), not a map building; re-home this to the coin (plus a
+// CI e2e run) before re-enabling.
 test.skip("clicking a colleague building opens the colleague overlay (role + journal top entries)", async ({
   page,
 }) => {

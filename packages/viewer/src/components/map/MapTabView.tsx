@@ -40,17 +40,13 @@ import { MAP_FALLBACK_COLORS } from "./colors";
 import { DomainView } from "./DomainView";
 import { generateHexGrid, hexToKey, type HexCoord } from "./hex";
 import type { HexCellVisualState } from "./HexCell";
-import { mapLandmarks, ownerAnchoredColleagueIds } from "./landmarks";
-import { computeDomainViewLayout } from "./layout/domain-view";
-import { buildOwnerViewLayout } from "./layout/owner-view";
+import { computeDomainViewLayout, relabelDomainLabelsByOwner } from "./layout/domain-view";
 import { mapStateGridRadius } from "./map-grid";
 import { MapEntityForm } from "./MapEntityForm";
-import { MapLandmarks } from "./MapLandmarks";
 import { MapMessagePanel } from "./MapMessagePanel";
 import { MapLegend } from "./MapLegend";
 import { MapOverlay, type MapOverlayTarget } from "./MapOverlay";
 import { MapScene } from "./MapScene";
-import { OwnerViewLayer } from "./OwnerViewLayer";
 import { Panel, PanelButton, ParchmentActionButton } from "./panel-buttons";
 import {
   entityKindLabel,
@@ -69,6 +65,7 @@ import {
 } from "./placement";
 import { deriveTileSignalsByEntity, tileSignalsByEntityEqual, type TileSignals } from "./signals";
 import { type MapViewMode, VIEW_MODES } from "./view-mode";
+import { parseDomainOwner } from "./vocabulary";
 import { isWebGLForcedOff, supportsWebGL } from "./webgl";
 
 export type MapTabViewProps = {
@@ -375,20 +372,21 @@ export function MapTabView({
     () => (state == null ? null : computeDomainViewLayout(state, cells, { strayCardCounts })),
     [state, cells, strayCardCounts],
   );
-  const ownerLayout = useMemo(() => (state == null ? null : buildOwnerViewLayout(state)), [state]);
-
-  // Landmarks (L2): colleague buildings, locked seats, and the campfire, from
-  // the map's `landmark` positions. Owner view anchors owned colleagues on
-  // their region centers, so those are skipped in the landmark layer there.
-  const landmarks = useMemo(() => (state == null ? [] : mapLandmarks(state)), [state]);
-  const anchoredColleagueIds = useMemo(
-    () => (state == null ? new Set<string>() : ownerAnchoredColleagueIds(state)),
-    [state],
-  );
-  const colleagueName = useCallback(
-    (colleagueId: string) => resolveColleagueIdentity(colleagueId, agents).name,
-    [agents],
-  );
+  // Owner view reuses the Domain-view work layout (Map Glow Up declutter) —
+  // the same territories, tiles, and stray piles — but relabels each region by
+  // its owner instead of its domain name (relabelDomainLabelsByOwner). The
+  // colleagues themselves now live on the coin tray, so no colleague furniture
+  // or landmark layer renders on the map in either view.
+  const ownerViewLayout = useMemo(() => {
+    if (domainLayout == null || state == null) {
+      return null;
+    }
+    const domainsById = new Map(state.domains.map((domain) => [domain.id, domain]));
+    return {
+      ...domainLayout,
+      labels: relabelDomainLabelsByOwner(domainLayout.labels, domainsById),
+    };
+  }, [domainLayout, state]);
 
   // The clicked colleague's overlay inputs (L2): identity, needs-a-human count,
   // and journal entries SELECTED from the shared journals feed (L1's
@@ -628,22 +626,6 @@ export function MapTabView({
     [placingEntityId, cancelPlacement],
   );
 
-  // --- Colleague landmark overlay (L2): a colleague building click opens the
-  // colleague overlay (journal + quick bar). Mirrors openOverlay: during
-  // placement a landmark click is click-away (cancel), not an open.
-  const openColleague = useCallback(
-    (colleagueId: string) => {
-      if (placingEntityId != null) {
-        cancelPlacement();
-        return;
-      }
-      setOverlayTarget(null);
-      setEntityForm(null);
-      setOpenColleagueId(colleagueId);
-    },
-    [placingEntityId, cancelPlacement],
-  );
-
   // --- Overlay card writes: the EXISTING board save path (the same
   // full-known-set POST the Info Hub board makes; the server merges by id).
   const moveCardStatus = useCallback(
@@ -711,12 +693,18 @@ export function MapTabView({
     );
   }
 
+  // Owner view shows the same work geography as Domain view; its HUD counts
+  // owned domains (a demand signal — unowned regions still render) and tiles,
+  // not the retired territory/seat layout.
+  const ownedDomainCount = state.domains.filter(
+    (domain) => parseDomainOwner(domain.owner).status === "owned",
+  ).length;
   const hudStats =
     viewMode === "domain"
       ? `${state.domains.length} domains · ${state.contexts.length} contexts · ` +
         `${domainLayout?.tiles.length ?? 0} tiles`
-      : `${ownerLayout?.territories.length ?? 0} territories · ` +
-        `${ownerLayout?.seats.length ?? 0} locked seats`;
+      : `${ownedDomainCount} of ${state.domains.length} domains owned · ` +
+        `${domainLayout?.tiles.length ?? 0} tiles`;
 
   return (
     <div className="relative h-full w-full" data-testid="map-tab">
@@ -854,9 +842,9 @@ export function MapTabView({
 
       <MapScene
         cells={cells}
-        cellTintByKey={
-          viewMode === "domain" ? domainLayout?.tintByCellKey : ownerLayout?.tintByCellKey
-        }
+        // Both views share the Domain-view territory/patch wash: Owner view
+        // reuses the same work layout, only relabeled by owner.
+        cellTintByKey={domainLayout?.tintByCellKey}
         cellVisualStateByKey={viewMode === "domain" ? cellVisualStateByKey : undefined}
         // Only wired while placing: HexCell shows a pointer cursor for any
         // onClick, and the ground is not clickable outside placement mode.
@@ -864,9 +852,9 @@ export function MapTabView({
         onPointerMissed={placingEntityId == null ? undefined : cancelPlacement}
       >
         {viewMode === "domain" && domainLayout != null ? (
-          // Domain view is work-geography only (Map Glow Up declutter): the
-          // colleague-building / campfire / locked-seat landmark row no longer
-          // renders here. The landmark layer stays in Owner view.
+          // Work-geography only (Map Glow Up declutter): the colleague-building
+          // / campfire / locked-seat landmark row renders in neither view now —
+          // colleagues moved to the coin tray.
           <DomainView
             layout={domainLayout}
             signalsByEntityId={signalsByEntityId}
@@ -882,25 +870,19 @@ export function MapTabView({
                 : undefined
             }
           />
-        ) : viewMode === "owner" && ownerLayout != null ? (
-          <>
-            <OwnerViewLayer layout={ownerLayout} onColleagueClick={openColleague} />
-            {/* Seats + campfire (view-independent); owned colleagues are the
-                Owner-view anchors, so they are skipped here. */}
-            <MapLandmarks
-              landmarks={landmarks}
-              onColleagueClick={openColleague}
-              skipColleagueIds={anchoredColleagueIds}
-              colleagueName={colleagueName}
-            />
-          </>
+        ) : viewMode === "owner" && ownerViewLayout != null ? (
+          // Owner view is the identical Domain-view work layout relabeled by
+          // owner — no colleague furniture, ambient signals, or click overlays
+          // (the coin tray owns colleagues; the signal legend is Domain-only).
+          // A read-only owner lens over the same territories, tiles, and piles.
+          <DomainView layout={ownerViewLayout} />
         ) : null}
       </MapScene>
 
       {/* Signal legend (L1): small, collapsed by default. Scoped to Domain
-          view — that is where the signals ride the tiles; Owner view renders
-          work markers beside colleague landmarks (L2) and carries none of the
-          four treatments, so the legend would claim states nothing shows. */}
+          view — that is where the signals ride the tiles; Owner view reuses the
+          same layout without signals, so it carries none of the four treatments
+          and the legend would claim states nothing shows. */}
       {viewMode === "domain" ? <MapLegend /> : null}
 
       {overlayTarget != null ? (
