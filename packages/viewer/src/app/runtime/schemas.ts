@@ -1142,6 +1142,11 @@ export type InfoHubChecklistItem = Schema.Schema.Type<typeof InfoHubChecklistIte
 
 export const InfoHubCardSchema = Schema.Struct({
   archived: Schema.optionalWith(Schema.Boolean, { exact: true }),
+  // Who the work item is assigned to (person, prefix-style human:/colleague:).
+  // Optional and non-empty when present, matching the ax twin in
+  // packages/ax/src/effects/info-hub-board.ts; existing boards without it stay
+  // valid. A later PR renders the picker; this PR only adds the field.
+  assignee: Schema.optionalWith(Schema.NonEmptyString, { exact: true }),
   checklist: Schema.optionalWith(Schema.Array(InfoHubChecklistItemSchema), { exact: true }),
   // Map-tab joins (Map tab plan §1.1, additive and optional): the map
   // context a card belongs to, and the project/system entity that contains
@@ -1245,8 +1250,11 @@ export const MapEntityKindSchema = Schema.Literal("project", "system");
 export type MapEntityKind = Schema.Schema.Type<typeof MapEntityKindSchema>;
 
 export const MapEntitySchema = Schema.Struct({
+  // Who the work item is assigned to (person, prefix-style human:/colleague:).
+  // The ax twin validates optional/non-empty and owns the fold of the former
+  // system-only `colleague` into this; this schema decodes what it validated.
+  assignee: Schema.optionalWith(Schema.String, { exact: true }),
   cadence: Schema.optionalWith(Schema.String, { exact: true }),
-  colleague: Schema.optionalWith(Schema.String, { exact: true }),
   contextId: Schema.String,
   domainId: Schema.String,
   id: Schema.String,

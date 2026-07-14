@@ -1,7 +1,8 @@
 // The map's shared id vocabulary (extracted at the V2 rebase so the layout
 // modules, fixtures, and tests stop repeating the raw prefixes): domain
-// `owner` strings ("colleague:raven" | "human:danvers") and landmark
-// position ids ("colleague:raven" | "seat:bench-1"). Three.js- and
+// `owner` strings ("colleague:raven" | "human:danvers"), work-item `assignee`
+// refs (the same prefix scheme, read via assigneeColleagueId / ASSIGNEE_OPTIONS),
+// and landmark position ids ("colleague:raven" | "seat:bench-1"). Three.js- and
 // React-free so it stays bun-testable alongside the layout modules.
 
 /** Domain `owner` prefix for a colleague owner (e.g. "colleague:raven"). */
@@ -79,6 +80,48 @@ export function parseDomainOwner(owner: string | undefined): DomainOwnership {
 
   return { status: "owned", owner: { kind: "human", id: owner, name: capitalize(owner) } };
 }
+
+/**
+ * The bare colleague id an `assignee` names, or undefined when it names no
+ * colleague. A work item's `assignee` shares the domain-`owner` prefix scheme
+ * (`colleague:<id>` | `human:<id>`, parsed by parseDomainOwner), so this is
+ * "the agent id when the assignee is colleague-kind, else nothing": a
+ * human-kind, malformed, bare (prefix-less), or absent assignee all yield
+ * undefined. The map's agent-cadence health and the coin's escalation glow
+ * read work through this, so only a colleague-assigned item feeds an agent's
+ * signals — a human-assigned or unassigned item feeds none.
+ */
+export function assigneeColleagueId(assignee?: string): string | undefined {
+  const parsed = parseDomainOwner(assignee);
+  return parsed.status === "owned" && parsed.owner.kind === "colleague"
+    ? parsed.owner.id
+    : undefined;
+}
+
+/** One selectable work-item assignee: a prefix-style ref and its display name. */
+export type AssigneeOption = {
+  /** The `human:<id>` | `colleague:<id>` ref stored on the work item. */
+  ref: string;
+  /** The display name a picker shows (and the Owner-by-assignee view labels with). */
+  name: string;
+};
+
+/**
+ * The valid work-item assignees (v1): the two humans and the four colleagues,
+ * prefix-style (the same `owner` scheme parseDomainOwner reads), each with the
+ * display name a picker renders. A single assignee per item; unassigned is
+ * simply no field, so it is not an entry here. A later PR renders these as the
+ * assignee picker and the Owner-by-assignee view references them; this PR only
+ * adds the field and the constant.
+ */
+export const ASSIGNEE_OPTIONS: readonly AssigneeOption[] = [
+  { ref: "human:danvers", name: "Danvers" },
+  { ref: "human:jess", name: "Jess" },
+  { ref: "colleague:raven", name: "Raven" },
+  { ref: "colleague:damien", name: "Damien" },
+  { ref: "colleague:william", name: "William" },
+  { ref: "colleague:rob", name: "Rob" },
+];
 
 /** A parsed landmark position id; "unknown" ids carry no map furniture yet. */
 export type ParsedLandmarkId =

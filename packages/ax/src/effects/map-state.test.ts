@@ -88,6 +88,17 @@ describe("validateMapState", () => {
     // Five entity positions + the L2 landmark bench (2 colleagues, 1 campfire,
     // 4 locked seats).
     expect(state.positions).toHaveLength(12);
+    // The fold: each duty-loop system carries a colleague-kind assignee (its
+    // former bare `colleague`), and the projects carry a human one.
+    expect(state.entities.find((entity) => entity.id === "sys-raven-duty-loop")?.assignee).toBe(
+      "colleague:raven",
+    );
+    expect(state.entities.find((entity) => entity.id === "sys-damien-duty-loop")?.assignee).toBe(
+      "colleague:damien",
+    );
+    expect(state.entities.find((entity) => entity.id === "prj-map-tab")?.assignee).toBe(
+      "human:danvers",
+    );
   });
 
   test("accepts an empty document", () => {
@@ -119,10 +130,10 @@ describe("validateMapState", () => {
     expect(validateMapState(state)).not.toBeInstanceOf(MapStateValidationError);
   });
 
-  test("accepts a system without colleague/cadence (standing human rhythms)", () => {
+  test("accepts a system without assignee/cadence (standing human rhythms)", () => {
     const state = baseState();
     const system = (state.entities as Record<string, unknown>[])[0];
-    delete system?.colleague;
+    delete system?.assignee;
     delete system?.cadence;
     expect(validateMapState(state)).not.toBeInstanceOf(MapStateValidationError);
   });
@@ -262,15 +273,43 @@ describe("validateMapState", () => {
     expect((result as MapStateValidationError).message).toContain("lifecycle must be one of");
   });
 
-  test("rejects colleague/cadence on a project entity", () => {
-    const state = baseState();
-    ((state.entities as Record<string, unknown>[])[1] as Record<string, unknown>).colleague =
-      "raven";
-    const result = validateMapState(state);
-    expect(result).toBeInstanceOf(MapStateValidationError);
-    expect((result as MapStateValidationError).message).toContain(
+  test("rejects cadence on a project entity (system-only), but allows an assignee on any kind", () => {
+    // entities[1] is prj-map-tab, a project. cadence is system-only …
+    const withCadence = baseState();
+    ((withCadence.entities as Record<string, unknown>[])[1] as Record<string, unknown>).cadence =
+      "30m";
+    const cadenceResult = validateMapState(withCadence);
+    expect(cadenceResult).toBeInstanceOf(MapStateValidationError);
+    expect((cadenceResult as MapStateValidationError).message).toContain(
       "only allowed on system entities",
     );
+
+    // … but assignee is a work-item field valid on a project too (the seed's
+    // projects already carry human:danvers; re-assigning still validates).
+    const withAssignee = baseState();
+    ((withAssignee.entities as Record<string, unknown>[])[1] as Record<string, unknown>).assignee =
+      "human:jess";
+    expect(validateMapState(withAssignee)).not.toBeInstanceOf(MapStateValidationError);
+  });
+
+  test("rejects an empty assignee, and no longer knows the folded-away colleague field", () => {
+    const emptyAssignee = baseState();
+    ((emptyAssignee.entities as Record<string, unknown>[])[0] as Record<string, unknown>).assignee =
+      "";
+    const emptyResult = validateMapState(emptyAssignee);
+    expect(emptyResult).toBeInstanceOf(MapStateValidationError);
+    expect((emptyResult as MapStateValidationError).message).toContain(
+      "assignee must be a non-empty string",
+    );
+
+    // `colleague` folded into `assignee`; it is no longer an allowed field.
+    const withColleague = baseState();
+    (
+      (withColleague.entities as Record<string, unknown>[])[0] as Record<string, unknown>
+    ).colleague = "raven";
+    const colleagueResult = validateMapState(withColleague);
+    expect(colleagueResult).toBeInstanceOf(MapStateValidationError);
+    expect((colleagueResult as MapStateValidationError).message).toContain("unknown fields");
   });
 
   test("rejects two positions on the same hex (one entity per hex)", () => {

@@ -100,6 +100,25 @@ describe("validateInfoHubCards", () => {
     expect(emptyEntityId).toBeInstanceOf(InfoHubBoardValidationError);
   });
 
+  test("accepts an optional assignee (prefix-style) and rejects an empty one", () => {
+    const assigned = validateInfoHubCards([baseCard({ assignee: "human:danvers" })]);
+    expect(assigned).not.toBeInstanceOf(InfoHubBoardValidationError);
+    expect((assigned as InfoHubCard[])[0]?.assignee).toBe("human:danvers");
+
+    // Unassigned stays valid — the field is simply absent.
+    const unassigned = validateInfoHubCards([baseCard()]);
+    expect((unassigned as InfoHubCard[])[0]?.assignee).toBeUndefined();
+
+    const empty = validateInfoHubCards([baseCard({ assignee: "" })]);
+    expect(empty).toBeInstanceOf(InfoHubBoardValidationError);
+    expect((empty as InfoHubBoardValidationError).message).toContain(
+      "assignee must be a non-empty string",
+    );
+
+    const nonString = validateInfoHubCards([{ ...baseCard(), assignee: 7 }]);
+    expect(nonString).toBeInstanceOf(InfoHubBoardValidationError);
+  });
+
   test("a pre-M1 board (frozen snapshot, no contextId/entityId) still validates unmodified", () => {
     // A frozen snapshot of docs/alexandria/info-hub/board-state.json as it
     // stood when the map-join fields landed (Map tab M1) — the one-time

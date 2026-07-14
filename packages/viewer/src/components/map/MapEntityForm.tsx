@@ -1,15 +1,18 @@
 // The Map tab's entity create/edit form (S2, plan §1.1): name, kind,
-// context, lifecycle, and cadence + colleague for systems. Pure form — the
-// caller turns the submitted draft into the next full document via
-// placement.ts (withEntityCreated / withEntityEdited) and saves it through
-// useMapState's revision-guarded POST. Kind is create-only (see
-// MapEntityDraft); editing shows it fixed.
+// context, lifecycle, and cadence + colleague for systems. The colleague
+// input folds into the entity's work-item `assignee` (colleague:<id>) through
+// placement.ts's entityFromDraft — the full assignee picker (humans too, and
+// projects) is a later PR. Pure form — the caller turns the submitted draft
+// into the next full document via placement.ts (withEntityCreated /
+// withEntityEdited) and saves it through useMapState's revision-guarded POST.
+// Kind is create-only (see MapEntityDraft); editing shows it fixed.
 
 import { useState } from "react";
 import type { MapContext, MapEntity, MapEntityKind } from "../../app/runtime/schemas";
 import { MAP_FALLBACK_COLORS } from "./colors";
 import { ParchmentActionButton } from "./panel-buttons";
 import { lifecyclesForKind, type MapEntityDraft } from "./placement";
+import { assigneeColleagueId } from "./vocabulary";
 
 const FIELD_LABEL_CLASS = "flex flex-col gap-0.5 text-[10px] font-semibold uppercase tracking-wide";
 // w-full + min-w-0 keep side-by-side inputs from overflowing the w-64 panel
@@ -39,7 +42,9 @@ export function MapEntityForm({
   const [contextId, setContextId] = useState(entity?.contextId ?? contexts[0]?.id ?? "");
   const [lifecycle, setLifecycle] = useState(entity?.lifecycle ?? lifecyclesForKind(kind)[0]!);
   const [cadence, setCadence] = useState(entity?.cadence ?? "");
-  const [colleague, setColleague] = useState(entity?.colleague ?? "");
+  // Prefill the bare colleague id from the entity's assignee when it is
+  // colleague-kind (the fold's read side); a human-assigned system shows blank.
+  const [colleague, setColleague] = useState(assigneeColleagueId(entity?.assignee) ?? "");
 
   const nameError = name.trim().length === 0 ? "Name is required." : null;
   const contextError = contextId.length === 0 ? "Pick a context." : null;

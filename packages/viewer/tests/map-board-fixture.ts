@@ -35,7 +35,7 @@ export function initialFixtureMapState(): MapState {
         name: "Raven duty loop",
         contextId: "colleagues",
         domainId: "software",
-        colleague: "raven",
+        assignee: "colleague:raven",
         cadence: "30m",
         lifecycle: "planted",
       },
