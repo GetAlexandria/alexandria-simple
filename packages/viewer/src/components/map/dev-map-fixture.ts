@@ -20,6 +20,7 @@
 
 import type { MapState } from "../../app/runtime/schemas";
 import { MAP_MIN_GRID_RADIUS, mapStateGridRadius } from "./map-grid";
+import { UNASSIGNED_ASSIGNEE_KEY } from "./vocabulary";
 
 export const DEV_MAP_FIXTURE = {
   domains: [
@@ -214,6 +215,18 @@ export const DEV_MAP_FIXTURE = {
 export const DEV_MAP_STRAY_CARD_COUNTS: Readonly<Record<string, number>> = {
   software: 2,
   chores: 6,
+};
+
+/**
+ * Stray-card counts per ASSIGNEE for the dev harness's Owner view — the
+ * assignee twin of DEV_MAP_STRAY_CARD_COUNTS (which buckets by domain). Like
+ * that stand-in it is deliberately NOT part of DEV_MAP_FIXTURE (piles derive
+ * from the Info Hub board, never from map state); it feeds the /dev/map Owner
+ * look a couple of visible piles, including one on the unassigned region.
+ */
+export const DEV_MAP_STRAY_CARD_COUNTS_BY_ASSIGNEE: Readonly<Record<string, number>> = {
+  "colleague:raven": 2,
+  [UNASSIGNED_ASSIGNEE_KEY]: 5,
 };
 
 export const DEV_MAP_MIN_GRID_RADIUS = MAP_MIN_GRID_RADIUS;

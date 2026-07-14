@@ -6,7 +6,7 @@
 // Owner view can sit alongside as a sibling module sharing the same
 // conventions (plan §1.2: same state file, two layout functions).
 
-import type { MapDomain, MapDomainHalf, MapEntity, MapState } from "../../../app/runtime/schemas";
+import type { MapDomainHalf, MapEntity, MapState } from "../../../app/runtime/schemas";
 import {
   MAP_DOMAIN_TINTS,
   MAP_PATCH_ALTERNATE_MIX,
@@ -27,15 +27,14 @@ import {
   type HexCoord,
   type HexGridCell,
 } from "../hex";
-import { parseDomainOwner } from "../vocabulary";
 
 // A patch should hold its entities plus breathing room for a pile + label.
 const MIN_PATCH_SIZE = 4;
 const PATCH_PADDING = 3;
 
 // The `id` prefix carried by every `kind:"domain"` label — set where the
-// labels are pushed (step 7) and read back by relabelDomainLabelsByOwner to
-// recover the domain, so the two stay in lockstep off one literal.
+// labels are pushed (step 7). Kept a named constant so the label-id scheme
+// reads in one place.
 const DOMAIN_LABEL_ID_PREFIX = "domain:";
 
 /** One painted border stroke between two hex-corner points (world XZ). */
@@ -147,9 +146,12 @@ const CORNER_OFFSETS: readonly (readonly [number, number])[] = Array.from(
 
 /**
  * The border segment along the edge a cell shares with a neighbor: the two
- * hex corners closest to the midpoint between the two cell centers.
+ * hex corners closest to the midpoint between the two cell centers. Exported
+ * so the sibling Owner-view layout paints its territory borders off the exact
+ * same geometry (the two looks read identically); the Domain path is otherwise
+ * untouched.
  */
-function sharedEdgeSegment(cell: HexCoord, neighbor: HexCoord): DomainViewBorderSegment {
+export function sharedEdgeSegment(cell: HexCoord, neighbor: HexCoord): DomainViewBorderSegment {
   const [cellX, cellZ] = hexToWorld(cell, HEX_SIZE);
   const [neighborX, neighborZ] = hexToWorld(neighbor, HEX_SIZE);
   const midX = (neighborX - cellX) / 2;
@@ -179,8 +181,11 @@ export function roundBorderCoordinate(value: number): number {
   return Math.round(value * 1000) / 1000;
 }
 
-/** Order-independent key so a border shared by two cells draws once. */
-function segmentKey(segment: DomainViewBorderSegment): string {
+/**
+ * Order-independent key so a border shared by two cells draws once. Exported
+ * alongside sharedEdgeSegment for the Owner-view layout's border dedup.
+ */
+export function segmentKey(segment: DomainViewBorderSegment): string {
   const a = `${roundBorderCoordinate(segment.x1)},${roundBorderCoordinate(segment.z1)}`;
   const b = `${roundBorderCoordinate(segment.x2)},${roundBorderCoordinate(segment.z2)}`;
   return a < b ? `${a}|${b}` : `${b}|${a}`;
@@ -601,44 +606,4 @@ export function computeDomainViewLayout(
     unplacedPiles,
     patchByCellKey,
   };
-}
-
-/**
- * The visibly-unclaimed marker used in place of an owner's name for a domain
- * whose `owner` field is absent or malformed. Owner-less domains are a demand
- * signal (they *want* an owner), never dropped; DomainView uppercases
- * domain-kind label text, so this reads as "UNCLAIMED" on the map.
- */
-export const UNCLAIMED_OWNER_LABEL = "unclaimed";
-
-/**
- * Owner-view label text for one domain: the owner's display name when the
- * domain's `owner` field parses as owned (parseDomainOwner — colleague, human,
- * or bare-name fallback), else the visibly-unclaimed marker. Returned in
- * natural case; DomainView's toUpperCase() owns the casing.
- */
-export function ownerLabelForDomain(domain: MapDomain): string {
-  const ownership = parseDomainOwner(domain.owner);
-  return ownership.status === "owned" ? ownership.owner.name : UNCLAIMED_OWNER_LABEL;
-}
-
-/**
- * Relabel a Domain-view layout's labels by owner for Owner view (Map Glow Up):
- * every `kind:"domain"` label's text becomes its owner label (ownerLabelForDomain),
- * while `context`/`half` labels — and any `domain` label whose id is absent from
- * `domainsById` — pass through untouched. A pure remap over the already-computed
- * labels, so the Owner branch reuses the identical Domain-view work layout (tiles,
- * piles, washes) with the layout engine single-sourced and untouched.
- */
-export function relabelDomainLabelsByOwner(
-  labels: readonly DomainViewLabel[],
-  domainsById: ReadonlyMap<string, MapDomain>,
-): DomainViewLabel[] {
-  return labels.map((label) => {
-    if (label.kind !== "domain") {
-      return label;
-    }
-    const domain = domainsById.get(label.id.slice(DOMAIN_LABEL_ID_PREFIX.length));
-    return domain === undefined ? label : { ...label, text: ownerLabelForDomain(domain) };
-  });
 }

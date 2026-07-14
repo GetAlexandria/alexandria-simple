@@ -40,7 +40,8 @@ import { MAP_FALLBACK_COLORS } from "./colors";
 import { DomainView } from "./DomainView";
 import { generateHexGrid, hexToKey, type HexCoord } from "./hex";
 import type { HexCellVisualState } from "./HexCell";
-import { computeDomainViewLayout, relabelDomainLabelsByOwner } from "./layout/domain-view";
+import { computeDomainViewLayout } from "./layout/domain-view";
+import { computeOwnerViewLayout, groupWorkByAssignee, workItemEntities } from "./layout/owner-view";
 import { mapStateGridRadius } from "./map-grid";
 import { MapEntityForm } from "./MapEntityForm";
 import { MapMessagePanel } from "./MapMessagePanel";
@@ -54,6 +55,7 @@ import {
   placeableHexKeys,
   placedEntities as placedEntitiesFrom,
   positionedEntityIds as positionedEntityIdsFrom,
+  strayCardCountsByAssignee,
   strayCardCountsByDomain,
   strayCountsEqual,
   unplacedEntities as unplacedEntitiesFrom,
@@ -65,7 +67,6 @@ import {
 } from "./placement";
 import { deriveTileSignalsByEntity, tileSignalsByEntityEqual, type TileSignals } from "./signals";
 import { type MapViewMode, VIEW_MODES } from "./view-mode";
-import { parseDomainOwner } from "./vocabulary";
 import { isWebGLForcedOff, supportsWebGL } from "./webgl";
 
 export type MapTabViewProps = {
@@ -372,21 +373,42 @@ export function MapTabView({
     () => (state == null ? null : computeDomainViewLayout(state, cells, { strayCardCounts })),
     [state, cells, strayCardCounts],
   );
-  // Owner view reuses the Domain-view work layout (Map Glow Up declutter) —
-  // the same territories, tiles, and stray piles — but relabels each region by
-  // its owner instead of its domain name (relabelDomainLabelsByOwner). The
-  // colleagues themselves now live on the coin tray, so no colleague furniture
-  // or landmark layer renders on the map in either view.
-  const ownerViewLayout = useMemo(() => {
-    if (domainLayout == null || state == null) {
-      return null;
+
+  // Owner view is NOT a relabeled Domain view: it regroups the SAME work — the
+  // project/system tiles and the stray Task-card piles — by each item's
+  // `assignee`, giving every assignee a computed territory and the unassigned
+  // work its own region (layout/owner-view.ts). Its stray piles are counted by
+  // assignee, held at a stable identity across board writes that don't change
+  // any pile size — same trick as the domain counts above — so a signal-
+  // irrelevant board write keeps the owner-layout memo warm.
+  const assigneeStrayCountsRef = useRef<Readonly<Record<string, number>> | null>(null);
+  const strayCardCountsByAssigneeValue = useMemo(() => {
+    const next = strayCardCountsByAssignee(board?.cards ?? []);
+    const previous = assigneeStrayCountsRef.current;
+    if (previous != null && strayCountsEqual(previous, next)) {
+      return previous;
     }
-    const domainsById = new Map(state.domains.map((domain) => [domain.id, domain]));
-    return {
-      ...domainLayout,
-      labels: relabelDomainLabelsByOwner(domainLayout.labels, domainsById),
-    };
-  }, [domainLayout, state]);
+    assigneeStrayCountsRef.current = next;
+    return next;
+  }, [board]);
+  const ownerLayout = useMemo(
+    () =>
+      state == null
+        ? null
+        : computeOwnerViewLayout(state, cells, {
+            strayCardCounts: strayCardCountsByAssigneeValue,
+          }),
+    [state, cells, strayCardCountsByAssigneeValue],
+  );
+  // The ordered assignee buckets behind the owner layout — the HUD counts these
+  // (assignee territories, and whether an unassigned region is present).
+  const ownerBuckets = useMemo(
+    () =>
+      state == null
+        ? []
+        : groupWorkByAssignee(workItemEntities(state), strayCardCountsByAssigneeValue),
+    [state, strayCardCountsByAssigneeValue],
+  );
 
   // The clicked colleague's overlay inputs (L2): identity, needs-a-human count,
   // and journal entries SELECTED from the shared journals feed (L1's
@@ -693,18 +715,17 @@ export function MapTabView({
     );
   }
 
-  // Owner view shows the same work geography as Domain view; its HUD counts
-  // owned domains (a demand signal — unowned regions still render) and tiles,
-  // not the retired territory/seat layout.
-  const ownedDomainCount = state.domains.filter(
-    (domain) => parseDomainOwner(domain.owner).status === "owned",
-  ).length;
+  // Owner view regroups the same work by assignee; its HUD counts the assignee
+  // territories and their tiles (and flags an unassigned region), where Domain
+  // view counts domains and contexts.
+  const assigneeTerritoryCount = ownerBuckets.filter((bucket) => bucket.assigned).length;
+  const hasUnassignedRegion = ownerBuckets.some((bucket) => !bucket.assigned);
   const hudStats =
     viewMode === "domain"
       ? `${state.domains.length} domains · ${state.contexts.length} contexts · ` +
         `${domainLayout?.tiles.length ?? 0} tiles`
-      : `${ownedDomainCount} of ${state.domains.length} domains owned · ` +
-        `${domainLayout?.tiles.length ?? 0} tiles`;
+      : `${assigneeTerritoryCount} ${assigneeTerritoryCount === 1 ? "assignee" : "assignees"} · ` +
+        `${ownerLayout?.tiles.length ?? 0} tiles${hasUnassignedRegion ? " · unassigned region" : ""}`;
 
   return (
     <div className="relative h-full w-full" data-testid="map-tab">
@@ -842,9 +863,11 @@ export function MapTabView({
 
       <MapScene
         cells={cells}
-        // Both views share the Domain-view territory/patch wash: Owner view
-        // reuses the same work layout, only relabeled by owner.
-        cellTintByKey={domainLayout?.tintByCellKey}
+        // Each view paints its own territory wash: Domain view's domain/patch
+        // washes, or Owner view's per-assignee territory washes.
+        cellTintByKey={
+          viewMode === "owner" ? ownerLayout?.tintByCellKey : domainLayout?.tintByCellKey
+        }
         cellVisualStateByKey={viewMode === "domain" ? cellVisualStateByKey : undefined}
         // Only wired while placing: HexCell shows a pointer cursor for any
         // onClick, and the ground is not clickable outside placement mode.
@@ -870,12 +893,13 @@ export function MapTabView({
                 : undefined
             }
           />
-        ) : viewMode === "owner" && ownerViewLayout != null ? (
-          // Owner view is the identical Domain-view work layout relabeled by
-          // owner — no colleague furniture, ambient signals, or click overlays
-          // (the coin tray owns colleagues; the signal legend is Domain-only).
-          // A read-only owner lens over the same territories, tiles, and piles.
-          <DomainView layout={ownerViewLayout} />
+        ) : viewMode === "owner" && ownerLayout != null ? (
+          // Owner view = the same work regrouped by assignee: each assignee's
+          // tiles and stray pile in that assignee's computed territory, the
+          // unassigned work in its own visibly-unclaimed region. Read-only — no
+          // ambient signals or click overlays, no context patches — rendered
+          // through DomainView's primitives with the brass region labels.
+          <DomainView layout={ownerLayout} />
         ) : null}
       </MapScene>
 

@@ -6,12 +6,14 @@ import {
   entityIdForDraft,
   entityKindLabel,
   isStrayCard,
+  looseCardsForAssignee,
   looseCardsForDomain,
   occupiedHexKeys,
   placeableHexKeys,
   placedEntities,
   positionedEntityIds,
   promotionDraftFromCard,
+  strayCardCountsByAssignee,
   strayCardCountsByDomain,
   strayCountsEqual,
   unplacedEntities,
@@ -21,6 +23,7 @@ import {
   withEntityPlaced,
   withEntityRemoved,
 } from "./placement";
+import { UNASSIGNED_ASSIGNEE_KEY } from "./vocabulary";
 
 const BASE_STATE: MapState = {
   contexts: [{ domainId: "software", id: "ctx-a", name: "Context A" }],
@@ -351,6 +354,43 @@ describe("stray-card derivation", () => {
     expect(cardsJoinedToEntity(withDoneJoin, "proj-1").map((card) => card.id)).toEqual([
       "joined",
       "joined-done",
+    ]);
+  });
+});
+
+describe("stray-card derivation by assignee", () => {
+  const cards: InfoHubCard[] = [
+    cardFixture({ id: "raven-a", assignee: "colleague:raven" }),
+    cardFixture({ id: "raven-b", assignee: "colleague:raven", status: "in-progress" }),
+    cardFixture({ id: "danvers-a", assignee: "human:danvers" }),
+    // No assignee → the unassigned bucket (a real key here, unlike domainId).
+    cardFixture({ id: "loose-a" }),
+    cardFixture({ id: "loose-b", status: "needs-a-human" }),
+    // Joined to an entity → not stray, regardless of assignee.
+    cardFixture({ id: "joined", assignee: "colleague:raven", entityId: "prj-x" }),
+    // Terminal → not stray.
+    cardFixture({ id: "done", assignee: "human:danvers", status: "done" }),
+  ];
+
+  it("counts entity-less, non-terminal cards per assignee, unassigned under the sentinel key", () => {
+    expect(strayCardCountsByAssignee(cards)).toEqual({
+      "colleague:raven": 2,
+      "human:danvers": 1,
+      [UNASSIGNED_ASSIGNEE_KEY]: 2,
+    });
+  });
+
+  it("looseCardsForAssignee lists one assignee's pile cards", () => {
+    expect(looseCardsForAssignee(cards, "colleague:raven").map((card) => card.id)).toEqual([
+      "raven-a",
+      "raven-b",
+    ]);
+  });
+
+  it("looseCardsForAssignee returns the unassigned strays for the sentinel key", () => {
+    expect(looseCardsForAssignee(cards, UNASSIGNED_ASSIGNEE_KEY).map((card) => card.id)).toEqual([
+      "loose-a",
+      "loose-b",
     ]);
   });
 });
