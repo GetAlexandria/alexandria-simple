@@ -544,13 +544,9 @@ export function validateMapState(value: unknown): MapState | MapStateValidationE
     return validationError(`map state is missing fields: ${JSON.stringify(missing.sort())}`);
   }
 
-  let org: MapOrg | undefined;
-  if (hasOwn(value, "org")) {
-    const validatedOrg = validateOrg(value.org);
-    if (validatedOrg instanceof MapStateValidationError) {
-      return validatedOrg;
-    }
-    org = validatedOrg;
+  const org = hasOwn(value, "org") ? validateOrg(value.org) : undefined;
+  if (org instanceof MapStateValidationError) {
+    return org;
   }
 
   const domains = validateDomains(value.domains);
