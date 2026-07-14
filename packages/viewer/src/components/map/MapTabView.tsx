@@ -843,30 +843,24 @@ export function MapTabView({
         onPointerMissed={placingEntityId == null ? undefined : cancelPlacement}
       >
         {viewMode === "domain" && domainLayout != null ? (
-          <>
-            <DomainView
-              layout={domainLayout}
-              signalsByEntityId={signalsByEntityId}
-              onTileClick={(entity) => openOverlay({ kind: "entity", entityId: entity.id })}
-              // Undefined during placement: a pile by construction sits on a
-              // free (placeable) patch cell, and a clickable sprite would
-              // swallow the placement click (stopPropagation) and cancel the
-              // mode. With no onClick the sprite reverts to raycast-inert, so
-              // clicks and hover pass through to the cell (PR #20 gate).
-              onPileClick={
-                placingEntityId == null
-                  ? (domainId) => openOverlay({ kind: "pile", domainId })
-                  : undefined
-              }
-            />
-            {/* Domain-view furniture: colleague buildings on their bench hexes,
-                locked seats, and the campfire. */}
-            <MapLandmarks
-              landmarks={landmarks}
-              onColleagueClick={openColleague}
-              colleagueName={colleagueName}
-            />
-          </>
+          // Domain view is work-geography only (Map Glow Up declutter): the
+          // colleague-building / campfire / locked-seat landmark row no longer
+          // renders here. The landmark layer stays in Owner view.
+          <DomainView
+            layout={domainLayout}
+            signalsByEntityId={signalsByEntityId}
+            onTileClick={(entity) => openOverlay({ kind: "entity", entityId: entity.id })}
+            // Undefined during placement: a pile by construction sits on a
+            // free (placeable) patch cell, and a clickable sprite would
+            // swallow the placement click (stopPropagation) and cancel the
+            // mode. With no onClick the sprite reverts to raycast-inert, so
+            // clicks and hover pass through to the cell (PR #20 gate).
+            onPileClick={
+              placingEntityId == null
+                ? (domainId) => openOverlay({ kind: "pile", domainId })
+                : undefined
+            }
+          />
         ) : viewMode === "owner" && ownerLayout != null ? (
           <>
             <OwnerViewLayer layout={ownerLayout} onColleagueClick={openColleague} />
