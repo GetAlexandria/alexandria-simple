@@ -216,6 +216,15 @@ export const MAP_LABEL_COLORS = {
   context: "#54432c",
   half: "#7c6849",
   halo: "#f3e7d0",
+  /**
+   * Semi-opaque deep warm-ink backing plate drawn behind the region/owner
+   * (domain-kind) titles only. It mutes the busy parchment wash and domain
+   * tints under the title so the cream halo and dark glyphs read as one
+   * legible nameplate — a deep espresso/brass tone at ~0.6 alpha so the map
+   * still bleeds faintly through (a tasteful wash, not a hard black box).
+   * rgba() so it composites over whatever tiles sit under the label.
+   */
+  plate: "rgba(38, 28, 20, 0.62)",
   tileName: "#fffaf0",
   tileNameHalo: "#2a1f14",
 } as const;

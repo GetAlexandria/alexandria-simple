@@ -94,6 +94,10 @@ export function DomainView({
               position={[label.x, 1.7, label.z]}
               height={0.72}
               color={MAP_LABEL_COLORS.domain}
+              // Region/owner titles get an underlay plate for legibility
+              // against the busy parchment/tint wash; context + half labels
+              // keep the plain stroke-halo.
+              plateColor={MAP_LABEL_COLORS.plate}
               letterSpacingEm={0.18}
               opacity={0.92}
             />
