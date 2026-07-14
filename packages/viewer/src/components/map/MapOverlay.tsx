@@ -22,11 +22,11 @@ import {
 import { MAP_FALLBACK_COLORS } from "./colors";
 import { MapScrimPanel } from "./MapScrimPanel";
 import { ParchmentActionButton } from "./panel-buttons";
-import { cardsJoinedToEntity, entityKindLabel, looseCardsForContext } from "./placement";
+import { cardsJoinedToEntity, entityKindLabel, looseCardsForDomain } from "./placement";
 
 export type MapOverlayTarget =
   | { kind: "entity"; entityId: string }
-  | { kind: "pile"; contextId: string };
+  | { kind: "pile"; domainId: string };
 
 type MapOverlayProps = {
   target: MapOverlayTarget;
@@ -74,8 +74,14 @@ export function MapOverlay({
     target.kind === "entity"
       ? (state.entities.find((candidate) => candidate.id === target.entityId) ?? null)
       : null;
-  const contextId = target.kind === "entity" ? (entity?.contextId ?? null) : target.contextId;
-  const context = state.contexts.find((candidate) => candidate.id === contextId) ?? null;
+  // The entity meta line still names the entity's own context; the stray pile
+  // is domain-keyed now (strays v1) and labels by the domain name instead.
+  const context =
+    entity == null
+      ? null
+      : (state.contexts.find((candidate) => candidate.id === entity.contextId) ?? null);
+  const pileDomainName =
+    target.kind === "pile" ? (domainNameById.get(target.domainId) ?? target.domainId) : null;
   const readOnly = entity != null && entity.kind === "project" && entity.lifecycle === "completed";
 
   const overlayCards = useMemo(() => {
@@ -85,7 +91,7 @@ export function MapOverlay({
     return sortCardsByPriority(
       target.kind === "entity"
         ? cardsJoinedToEntity(cards, target.entityId)
-        : looseCardsForContext(cards, target.contextId),
+        : looseCardsForDomain(cards, target.domainId),
     );
   }, [cards, target]);
 
@@ -116,7 +122,7 @@ export function MapOverlay({
       ? entity == null
         ? "This entity is no longer in the map state."
         : entityMetaLine(entity.kind, entity.lifecycle, context?.name ?? entity.contextId)
-      : `Cards in ${context?.name ?? target.contextId} joined to no project or system — the stray pile.`;
+      : `Cards in ${pileDomainName} joined to no project or system — the stray pile.`;
 
   return (
     <MapScrimPanel
@@ -194,7 +200,7 @@ export function MapOverlay({
         <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
           {target.kind === "entity"
             ? "No board cards are joined to this tile yet — join one from the Info Hub card form."
-            : "No loose cards left in this context."}
+            : "No loose cards left in this domain."}
         </p>
       ) : (
         <div className="flex flex-col gap-3" data-testid="map-overlay-cards">

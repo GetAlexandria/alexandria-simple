@@ -225,7 +225,7 @@ describe("computeDomainViewLayout tiles, piles, labels", () => {
     expect(computeDomainViewLayout(uprooted, cells).tiles).toHaveLength(0);
   });
 
-  it("places one pile per stray-count context, on a free cell of its patch", () => {
+  it("places one pile per stray-count DOMAIN, on free open ground of its territory", () => {
     expect(layout.piles).toHaveLength(Object.keys(DEV_MAP_STRAY_CARD_COUNTS).length);
     const entityKeys = new Set(
       DEV_MAP_FIXTURE.positions
@@ -234,9 +234,12 @@ describe("computeDomainViewLayout tiles, piles, labels", () => {
     );
     for (const pile of layout.piles) {
       const key = hexToKey(pile.coord);
-      expect(layout.patchByCellKey.get(key)).toBe(pile.contextId);
+      // In its domain's territory, on a free hex carrying no entity tile, and
+      // — open ground remains in the fixture — outside every context patch.
+      expect(layout.territoryByCellKey.get(key)).toBe(pile.domainId);
       expect(entityKeys.has(key)).toBe(false);
-      expect(pile.cardCount).toBe(DEV_MAP_STRAY_CARD_COUNTS[pile.contextId]!);
+      expect(layout.patchByCellKey.get(key)).toBeUndefined();
+      expect(pile.cardCount).toBe(DEV_MAP_STRAY_CARD_COUNTS[pile.domainId]!);
     }
   });
 
@@ -262,13 +265,11 @@ describe("computeDomainViewLayout tiles, piles, labels", () => {
   });
 });
 
-describe("computeDomainViewLayout full-patch pile fallback (issue #9 carry-over)", () => {
-  it("moves a pile to a free territory cell when every claimed patch cell holds a tile", () => {
-    // Context b's only patch cell is its entity's hex: its seed at (2,-5) is
-    // walled in by context a's entity seeds on every in-territory neighbor,
-    // so BFS growth stops immediately and the patch is fully occupied. The
-    // pile must fall back to a free cell of the domain territory instead of
-    // silently vanishing (the pre-S2 behavior).
+describe("computeDomainViewLayout domain-pile placement (strays v1)", () => {
+  it("places the domain pile on open ground outside every context patch", () => {
+    // Domain d holds two contexts (a, b) with placed entities. Its stray pile
+    // is domain-keyed now: it takes free open ground of the domain territory,
+    // outside every context patch, rather than sitting on a context patch cell.
     const state: MapState = {
       domains: [{ id: "d", name: "D", half: "work", region: { center: [0, -3], radius: 2 } }],
       contexts: [
@@ -316,30 +317,24 @@ describe("computeDomainViewLayout full-patch pile fallback (issue #9 carry-over)
         { q: 2, r: -5, entityType: "project", entityId: "prj-b1" },
       ],
     };
-    const fallbackLayout = computeDomainViewLayoutInternal(state, cells, {
-      strayCardCounts: { b: 4 },
+    const domainLayout = computeDomainViewLayoutInternal(state, cells, {
+      strayCardCounts: { d: 4 },
     });
 
-    // b's patch really is just its occupied entity cell (the setup holds).
-    const bPatchKeys = [...fallbackLayout.patchByCellKey]
-      .filter(([, owner]) => owner === "b")
-      .map(([key]) => key);
-    expect(bPatchKeys).toEqual([hexToKey(createHex(2, -5))]);
-
-    const pile = fallbackLayout.piles.find((candidate) => candidate.contextId === "b");
+    const pile = domainLayout.piles.find((candidate) => candidate.domainId === "d");
     expect(pile).toBeDefined();
     expect(pile!.cardCount).toBe(4);
     const pileKey = hexToKey(pile!.coord);
     // On free ground inside the domain's territory, not on any entity hex.
-    expect(fallbackLayout.territoryByCellKey.get(pileKey)).toBe("d");
+    expect(domainLayout.territoryByCellKey.get(pileKey)).toBe("d");
     const entityKeys = new Set(
       state.positions.map((position) => hexToKey(createHex(position.q, position.r))),
     );
     expect(entityKeys.has(pileKey)).toBe(false);
-    // The preference order avoids other contexts' patches while unpatched
+    // The preference order avoids every context's patch while unpatched
     // territory remains (it does here).
-    expect(fallbackLayout.patchByCellKey.get(pileKey)).toBeUndefined();
-    expect(fallbackLayout.unplacedPiles).toHaveLength(0);
+    expect(domainLayout.patchByCellKey.get(pileKey)).toBeUndefined();
+    expect(domainLayout.unplacedPiles).toHaveLength(0);
   });
 
   it("reports an unplaced pile when the whole domain territory is occupied", () => {
@@ -373,8 +368,25 @@ describe("computeDomainViewLayout full-patch pile fallback (issue #9 carry-over)
         entityId: `prj-${index}`,
       })),
     };
-    const fullLayout = computeDomainViewLayout(state, cells, { strayCardCounts: { c: 2 } });
+    const fullLayout = computeDomainViewLayout(state, cells, { strayCardCounts: { d: 2 } });
     expect(fullLayout.piles).toHaveLength(0);
-    expect(fullLayout.unplacedPiles).toEqual([{ contextId: "c", cardCount: 2 }]);
+    expect(fullLayout.unplacedPiles).toEqual([{ domainId: "d", cardCount: 2 }]);
+  });
+
+  it("omits strays whose domainId is not a current map domain (edge — count stays in the input)", () => {
+    // Board domainId is required but need not match a map domain; strays v1
+    // drops such strays from the map rather than inventing a territory for
+    // them. The known domain still gets its pile.
+    const state: MapState = {
+      domains: [{ id: "d", name: "D", half: "work", region: { center: [0, -2], radius: 2 } }],
+      contexts: [{ id: "c", name: "C", domainId: "d" }],
+      entities: [],
+      positions: [],
+    };
+    const unknownLayout = computeDomainViewLayout(state, cells, {
+      strayCardCounts: { d: 1, ghost: 3 },
+    });
+    expect(unknownLayout.piles.map((pile) => pile.domainId)).toEqual(["d"]);
+    expect(unknownLayout.unplacedPiles).toHaveLength(0);
   });
 });

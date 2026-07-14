@@ -56,20 +56,19 @@ export type DomainViewTile = {
 };
 
 export type DomainViewPile = {
-  contextId: string;
+  domainId: string;
   coord: HexCoord;
   cardCount: number;
 };
 
 /**
- * A stray pile with no hex to stand on: every claimed patch cell holds an
- * entity tile AND the whole domain territory is occupied. The pile still
- * must not vanish — real board counts land here exactly when a context is
- * busiest — so the container renders these as a DOM badge instead of a
- * sprite (S2 full-patch fallback, issue #9 carry-over).
+ * A stray pile with no hex to stand on: every cell of the domain's territory
+ * is occupied. The pile still must not vanish — real board counts land here
+ * exactly when a domain is busiest — so the container renders these as a DOM
+ * badge instead of a sprite (full-territory fallback, issue #9 carry-over).
  */
 export type DomainViewUnplacedPile = {
-  contextId: string;
+  domainId: string;
   cardCount: number;
 };
 
@@ -108,9 +107,10 @@ export type DomainViewLayoutInternals = {
 
 export type DomainViewLayoutOptions = {
   /**
-   * Stray-card counts per context id — board cards joined to the context but
-   * to no project/system. V1 feeds a fixture stand-in; S1 derives this from
-   * the Info Hub board (plan §1.3: piles are derived, never positioned).
+   * Stray-card counts per domain id — board cards joined to no
+   * project/system, bucketed by their required `domainId` (strays v1). The
+   * fixture route feeds a stand-in; the Map tab derives this from the Info
+   * Hub board (plan §1.3: piles are derived, never positioned).
    */
   strayCardCounts?: Readonly<Record<string, number>>;
 };
@@ -422,59 +422,56 @@ export function computeDomainViewLayoutInternal(
     }
   }
 
-  // --- 6. Stray piles: one per context with stray cards, on the first
-  // claimed patch cell that holds no entity tile. Full-patch fallback (S2,
-  // issue #9 carry-over): when every claimed patch cell is occupied, the
-  // pile takes the nearest free cell of the domain's territory — preferring
-  // cells outside every other context's patch, then by hex distance from the
-  // patch's seed cell, then by cell key so hand-edits stay deterministic.
-  // Only when the whole territory is occupied does the pile fall through to
-  // `unplacedPiles` (rendered as a DOM badge, never dropped).
+  // --- 6. Stray piles (strays v1 — board card
+  // wo-map-stray-tasks-and-placement-v1): one pile per DOMAIN with stray
+  // board-cards (cards joined to no project/system). Strays now pile by their
+  // required `domainId`, not by context. The pile takes the free cell of the
+  // domain's territory nearest the domain center, preferring open ground
+  // outside every context patch so the loose pile reads apart from the placed
+  // work, then by hex distance from the center, then by cell key so hand-edits
+  // stay deterministic. Only when the whole territory is occupied does the pile
+  // fall through to `unplacedPiles` (rendered as a DOM badge, never dropped).
+  //
+  // Unknown-domain strays (a domainId not among the current map domains) are
+  // simply omitted from the map — board `domainId` is required, so this is an
+  // edge; the count stays available to callers in `strayCardCounts` itself
+  // rather than inventing an "unclaimed" territory for it in this v1.
   const piles: DomainViewPile[] = [];
   const unplacedPiles: DomainViewUnplacedPile[] = [];
-  for (const context of state.contexts) {
-    const cardCount = strayCardCounts[context.id] ?? 0;
+  for (const domain of state.domains) {
+    const cardCount = strayCardCounts[domain.id] ?? 0;
     if (cardCount <= 0) {
       continue;
     }
-    const claimed = patchCellKeysInClaimOrder.get(context.id) ?? [];
-    let pileKey = claimed.find((key) => !occupiedCellKeys.has(key));
-    if (pileKey == null) {
-      const anchor =
-        claimed.length > 0
-          ? cellByKey.get(claimed[0]!)!.coord
-          : (domainCenters.get(context.domainId) ?? createHex(0, 0));
-      let best: { key: string; inForeignPatch: boolean; distance: number } | null = null;
-      for (const cell of territoryCellsByDomainId.get(context.domainId) ?? []) {
-        if (occupiedCellKeys.has(cell.key)) {
-          continue;
-        }
-        const patchOwner = patchByCellKey.get(cell.key);
-        const candidate = {
-          key: cell.key,
-          inForeignPatch: patchOwner != null && patchOwner !== context.id,
-          distance: hexDistance(cell.coord, anchor),
-        };
-        const better =
-          best == null ||
-          (candidate.inForeignPatch ? 1 : 0) - (best.inForeignPatch ? 1 : 0) < 0 ||
-          (candidate.inForeignPatch === best.inForeignPatch &&
-            (candidate.distance < best.distance ||
-              (candidate.distance === best.distance && candidate.key < best.key)));
-        if (better) {
-          best = candidate;
-        }
+    const center = domainCenters.get(domain.id)!;
+    let best: { key: string; inPatch: boolean; distance: number } | null = null;
+    for (const cell of territoryCellsByDomainId.get(domain.id) ?? []) {
+      if (occupiedCellKeys.has(cell.key)) {
+        continue;
       }
-      pileKey = best?.key;
+      const candidate = {
+        key: cell.key,
+        inPatch: patchByCellKey.has(cell.key),
+        distance: hexDistance(cell.coord, center),
+      };
+      const better =
+        best == null ||
+        (candidate.inPatch ? 1 : 0) - (best.inPatch ? 1 : 0) < 0 ||
+        (candidate.inPatch === best.inPatch &&
+          (candidate.distance < best.distance ||
+            (candidate.distance === best.distance && candidate.key < best.key)));
+      if (better) {
+        best = candidate;
+      }
     }
-    if (pileKey == null) {
-      unplacedPiles.push({ contextId: context.id, cardCount });
+    if (best == null) {
+      unplacedPiles.push({ domainId: domain.id, cardCount });
       continue;
     }
-    occupiedCellKeys.add(pileKey);
+    occupiedCellKeys.add(best.key);
     piles.push({
-      contextId: context.id,
-      coord: cellByKey.get(pileKey)!.coord,
+      domainId: domain.id,
+      coord: cellByKey.get(best.key)!.coord,
       cardCount,
     });
   }

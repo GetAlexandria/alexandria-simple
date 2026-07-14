@@ -192,7 +192,7 @@ export type TileSignals = {
 
 /**
  * Cards bucketed by entityId, in ONE pass over the full list — mirrors
- * placement.ts's `strayCardCountsByContext`, which buckets by contextId for
+ * placement.ts's `strayCardCountsByDomain`, which buckets by domainId for
  * the same reason. `deriveTileSignalsByEntity` reads each entity's bucket
  * from this instead of rescanning every card once per entity, so the whole
  * needs-human/staleness pass is O(entities + cards), not O(entities × cards).

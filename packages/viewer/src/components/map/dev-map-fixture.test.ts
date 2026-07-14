@@ -96,10 +96,10 @@ describe("DEV_MAP_FIXTURE", () => {
     }
   });
 
-  it("references only fixture context ids from the stray-card counts", () => {
-    const contextIds = new Set<string>(DEV_MAP_FIXTURE.contexts.map((context) => context.id));
-    for (const contextId of Object.keys(DEV_MAP_STRAY_CARD_COUNTS)) {
-      expect(contextIds.has(contextId)).toBe(true);
+  it("references only fixture domain ids from the stray-card counts", () => {
+    const domainIds = new Set<string>(DEV_MAP_FIXTURE.domains.map((domain) => domain.id));
+    for (const domainId of Object.keys(DEV_MAP_STRAY_CARD_COUNTS)) {
+      expect(domainIds.has(domainId)).toBe(true);
     }
   });
 });

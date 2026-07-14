@@ -33,6 +33,7 @@ import {
   withStatus,
   type WorkOrderStatus,
 } from "../library/infohub/boardModel";
+import { buildDomainNameById } from "../library/infohub/WorkOrderCard";
 import { colleagueNeedsHumanCount, resolveColleagueIdentity } from "./colleague-overlay";
 import { ColleagueOverlay } from "./ColleagueOverlay";
 import { MAP_FALLBACK_COLORS } from "./colors";
@@ -57,7 +58,7 @@ import {
   placeableHexKeys,
   placedEntities as placedEntitiesFrom,
   positionedEntityIds as positionedEntityIdsFrom,
-  strayCardCountsByContext,
+  strayCardCountsByDomain,
   strayCountsEqual,
   unplacedEntities as unplacedEntitiesFrom,
   withEntityCreated,
@@ -330,8 +331,9 @@ export function MapTabView({
     () => (gridRadius == null ? [] : generateHexGrid(gridRadius)),
     [gridRadius],
   );
-  // The real board-derived stray counts (S2, plan §1.3): cards with a
-  // contextId, no entityId, and a non-terminal status, per context.
+  // The real board-derived stray counts (strays v1, plan §1.3): board cards
+  // with no entityId and a non-terminal status, bucketed by their required
+  // domainId (a card with no contextId still counts, in its domain).
   //
   // Held at a stable identity across board writes that don't change any pile
   // count: every card write (checklist toggle, status move) mints a new board
@@ -340,7 +342,7 @@ export function MapTabView({
   // recomputed counts are value-equal so `domainLayout`'s memo stays warm.
   const strayCountsRef = useRef<Readonly<Record<string, number>> | null>(null);
   const strayCardCounts = useMemo(() => {
-    const next = strayCardCountsByContext(board?.cards ?? []);
+    const next = strayCardCountsByDomain(board?.cards ?? []);
     const previous = strayCountsRef.current;
     if (previous != null && strayCountsEqual(previous, next)) {
       return previous;
@@ -437,6 +439,8 @@ export function MapTabView({
     () => new Map((state?.contexts ?? []).map((context) => [context.id, context.name])),
     [state],
   );
+  // Domain id → name for the domain-keyed stray piles' fallback panel (strays v1).
+  const domainNameById = useMemo(() => buildDomainNameById(state?.domains ?? []), [state]);
 
   const placingEntity = useMemo(
     () =>
@@ -755,9 +759,9 @@ export function MapTabView({
           )
         ) : null}
 
-        {/* Full-map fallback of the pile fallback chain: a context whose
-            whole domain territory is occupied still shows its stray count
-            here instead of silently dropping it (issue #9 carry-over). */}
+        {/* Full-map fallback of the pile fallback chain: a domain whose whole
+            territory is occupied still shows its stray count here instead of
+            silently dropping it (issue #9 carry-over). */}
         {viewMode === "domain" && (domainLayout?.unplacedPiles.length ?? 0) > 0 ? (
           <Panel className="pointer-events-auto w-64 px-3 py-2" testId="map-unplaced-piles">
             <p
@@ -768,17 +772,17 @@ export function MapTabView({
             </p>
             <ul className="mt-1 space-y-1">
               {domainLayout!.unplacedPiles.map((pile) => (
-                <li key={pile.contextId}>
+                <li key={pile.domainId}>
                   <button
                     type="button"
                     className="w-full rounded border px-2 py-1 text-left text-[11px]"
-                    onClick={() => openOverlay({ kind: "pile", contextId: pile.contextId })}
+                    onClick={() => openOverlay({ kind: "pile", domainId: pile.domainId })}
                     style={{
                       borderColor: MAP_FALLBACK_COLORS.border,
                       color: MAP_FALLBACK_COLORS.text,
                     }}
                   >
-                    {contextNameById.get(pile.contextId) ?? pile.contextId} · {pile.cardCount} loose{" "}
+                    {domainNameById.get(pile.domainId) ?? pile.domainId} · {pile.cardCount} loose{" "}
                     {pile.cardCount === 1 ? "card" : "cards"} — no free hex
                   </button>
                 </li>
@@ -851,7 +855,7 @@ export function MapTabView({
               // clicks and hover pass through to the cell (PR #20 gate).
               onPileClick={
                 placingEntityId == null
-                  ? (contextId) => openOverlay({ kind: "pile", contextId })
+                  ? (domainId) => openOverlay({ kind: "pile", domainId })
                   : undefined
               }
             />

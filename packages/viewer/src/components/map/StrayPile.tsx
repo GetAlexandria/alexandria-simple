@@ -1,10 +1,10 @@
 // New V1 code over a promoted asset + component: the stray task pile — one
-// crop-plot sprite per context for board cards joined to the context but to
-// no project/system (plan §1.1). The three crop-plot growth stages from
-// Lifebuild's prototype sprites (port-manifest: promoted asset) step with the
-// context's stray card count, and the sprite scales up a notch per stage.
-// Card counts were fixture-fed in V1; since S2 the Map tab derives them
-// from the Info Hub board (placement.ts strayCardCountsByContext).
+// crop-plot sprite per DOMAIN for board cards joined to no project/system
+// (strays v1). The three crop-plot growth stages from Lifebuild's prototype
+// sprites (port-manifest: promoted asset) step with the domain's stray card
+// count, and the sprite scales up a notch per stage. Card counts were
+// fixture-fed in V1; the Map tab derives them from the Info Hub board
+// (placement.ts strayCardCountsByDomain).
 
 import { MapSprite } from "./MapSprite";
 import type { HexCoord } from "./hex";
@@ -29,7 +29,7 @@ export function strayPileStage(cardCount: number): 1 | 2 | 3 {
 type StrayPileProps = {
   coord: HexCoord;
   cardCount: number;
-  /** S2: pile click opens the context's loose-cards overlay. */
+  /** S2: pile click opens the domain's loose-cards overlay (strays v1). */
   onClick?: () => void;
 };
 
