@@ -1248,6 +1248,7 @@ export const MapEntitySchema = Schema.Struct({
   cadence: Schema.optionalWith(Schema.String, { exact: true }),
   colleague: Schema.optionalWith(Schema.String, { exact: true }),
   contextId: Schema.String,
+  domainId: Schema.String,
   id: Schema.String,
   kind: MapEntityKindSchema,
   // Not a flat Schema.Literal because the vocabulary is per-kind — a

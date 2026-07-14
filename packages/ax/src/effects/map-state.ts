@@ -52,6 +52,7 @@ const ENTITY_FIELD_ORDER = [
   "kind",
   "name",
   "contextId",
+  "domainId",
   "colleague",
   "cadence",
   "lifecycle",
@@ -62,7 +63,14 @@ const STATE_FIELD_ORDER = ["domains", "contexts", "entities", "positions"] as co
 
 const REQUIRED_DOMAIN_FIELDS = ["id", "name", "half", "region"] as const;
 const REQUIRED_CONTEXT_FIELDS = ["id", "name", "domainId"] as const;
-const REQUIRED_ENTITY_FIELDS = ["id", "kind", "name", "contextId", "lifecycle"] as const;
+const REQUIRED_ENTITY_FIELDS = [
+  "id",
+  "kind",
+  "name",
+  "contextId",
+  "domainId",
+  "lifecycle",
+] as const;
 
 const ALLOWED_DOMAIN_FIELDS = new Set<string>(DOMAIN_FIELD_ORDER);
 const ALLOWED_CONTEXT_FIELDS = new Set<string>(CONTEXT_FIELD_ORDER);
@@ -104,6 +112,7 @@ export interface MapEntity {
   cadence?: string;
   colleague?: string;
   contextId: string;
+  domainId: string;
   id: string;
   kind: MapEntityKind;
   lifecycle: MapProjectLifecycle | MapSystemLifecycle;
@@ -354,6 +363,7 @@ function validateContexts(
 function validateEntities(
   value: unknown,
   contextIds: ReadonlySet<string>,
+  domainIds: ReadonlySet<string>,
 ): MapEntity[] | MapStateValidationError {
   if (!Array.isArray(value)) {
     return validationError("entities must be a list");
@@ -398,6 +408,13 @@ function validateEntities(
         `${ref} references unknown contextId ${rawEntity.contextId as string}`,
       );
     }
+    const domainIdError = requireString(rawEntity, "domainId", ref);
+    if (domainIdError != null) {
+      return domainIdError;
+    }
+    if (!domainIds.has(rawEntity.domainId as string)) {
+      return validationError(`${ref} references unknown domainId ${rawEntity.domainId as string}`);
+    }
 
     const kind = rawEntity.kind as MapEntityKind;
     const lifecycles = MAP_LIFECYCLES_BY_KIND[kind];
@@ -428,6 +445,7 @@ function validateEntities(
       kind,
       name: rawEntity.name as string,
       contextId: rawEntity.contextId as string,
+      domainId: rawEntity.domainId as string,
       ...(hasOwn(rawEntity, "colleague") ? { colleague: rawEntity.colleague as string } : {}),
       ...(hasOwn(rawEntity, "cadence") ? { cadence: rawEntity.cadence as string } : {}),
       lifecycle: rawEntity.lifecycle as MapEntity["lifecycle"],
@@ -553,11 +571,16 @@ export function validateMapState(value: unknown): MapState | MapStateValidationE
   if (domains instanceof MapStateValidationError) {
     return domains;
   }
-  const contexts = validateContexts(value.contexts, new Set(domains.map((domain) => domain.id)));
+  const domainIds = new Set(domains.map((domain) => domain.id));
+  const contexts = validateContexts(value.contexts, domainIds);
   if (contexts instanceof MapStateValidationError) {
     return contexts;
   }
-  const entities = validateEntities(value.entities, new Set(contexts.map((context) => context.id)));
+  const entities = validateEntities(
+    value.entities,
+    new Set(contexts.map((context) => context.id)),
+    domainIds,
+  );
   if (entities instanceof MapStateValidationError) {
     return entities;
   }

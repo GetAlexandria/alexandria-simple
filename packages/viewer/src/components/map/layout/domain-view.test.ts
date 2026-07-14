@@ -211,7 +211,14 @@ describe("computeDomainViewLayout tiles, piles, labels", () => {
       domains: [{ id: "d", name: "D", half: "work", region: { center: [0, -2], radius: 2 } }],
       contexts: [{ id: "c", name: "C", domainId: "d" }],
       entities: [
-        { id: "sys-gone", kind: "system", name: "Gone", contextId: "c", lifecycle: "uprooted" },
+        {
+          id: "sys-gone",
+          kind: "system",
+          name: "Gone",
+          contextId: "c",
+          domainId: "d",
+          lifecycle: "uprooted",
+        },
       ],
       positions: [{ q: 0, r: -2, entityType: "system", entityId: "sys-gone" }],
     };
@@ -269,10 +276,38 @@ describe("computeDomainViewLayout full-patch pile fallback (issue #9 carry-over)
         { id: "b", name: "B", domainId: "d" },
       ],
       entities: [
-        { id: "prj-a1", kind: "project", name: "A1", contextId: "a", lifecycle: "active" },
-        { id: "prj-a2", kind: "project", name: "A2", contextId: "a", lifecycle: "active" },
-        { id: "prj-a3", kind: "project", name: "A3", contextId: "a", lifecycle: "active" },
-        { id: "prj-b1", kind: "project", name: "B1", contextId: "b", lifecycle: "active" },
+        {
+          id: "prj-a1",
+          kind: "project",
+          name: "A1",
+          contextId: "a",
+          domainId: "d",
+          lifecycle: "active",
+        },
+        {
+          id: "prj-a2",
+          kind: "project",
+          name: "A2",
+          contextId: "a",
+          domainId: "d",
+          lifecycle: "active",
+        },
+        {
+          id: "prj-a3",
+          kind: "project",
+          name: "A3",
+          contextId: "a",
+          domainId: "d",
+          lifecycle: "active",
+        },
+        {
+          id: "prj-b1",
+          kind: "project",
+          name: "B1",
+          contextId: "b",
+          domainId: "d",
+          lifecycle: "active",
+        },
       ],
       positions: [
         { q: 1, r: -5, entityType: "project", entityId: "prj-a1" },
@@ -328,6 +363,7 @@ describe("computeDomainViewLayout full-patch pile fallback (issue #9 carry-over)
         kind: "project" as const,
         name: `P${index}`,
         contextId: "c",
+        domainId: "d",
         lifecycle: "active",
       })),
       positions: coords.map(([q, r], index) => ({

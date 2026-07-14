@@ -28,10 +28,25 @@ const BASE_STATE: MapState = {
     { half: "work", id: "software", name: "Software", region: { center: [0, 0], radius: 2 } },
   ],
   entities: [
-    { contextId: "ctx-a", id: "proj-1", kind: "project", lifecycle: "active", name: "Project One" },
-    { contextId: "ctx-a", id: "sys-1", kind: "system", lifecycle: "planted", name: "System One" },
     {
       contextId: "ctx-a",
+      domainId: "software",
+      id: "proj-1",
+      kind: "project",
+      lifecycle: "active",
+      name: "Project One",
+    },
+    {
+      contextId: "ctx-a",
+      domainId: "software",
+      id: "sys-1",
+      kind: "system",
+      lifecycle: "planted",
+      name: "System One",
+    },
+    {
+      contextId: "ctx-a",
+      domainId: "software",
       id: "sys-uprooted",
       kind: "system",
       lifecycle: "uprooted",
@@ -192,6 +207,7 @@ describe("withEntityCreated", () => {
       kind: "system",
       name: "Night watch",
       contextId: "ctx-a",
+      domainId: "software",
       lifecycle: "planted",
     });
     expect(next.entities.at(-1)).toEqual(entity);
@@ -227,6 +243,7 @@ describe("withEntityCreated", () => {
       kind: "project",
       name: "Spring clean",
       contextId: "ctx-a",
+      domainId: "software",
       lifecycle: "active",
     });
   });

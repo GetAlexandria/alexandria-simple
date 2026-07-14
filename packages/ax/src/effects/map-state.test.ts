@@ -239,6 +239,15 @@ describe("validateMapState", () => {
     expect((result as MapStateValidationError).message).toContain("unknown contextId");
   });
 
+  test("rejects an entity referencing an unknown domainId", () => {
+    const state = baseState();
+    ((state.entities as Record<string, unknown>[])[0] as Record<string, unknown>).domainId =
+      "marketing";
+    const result = validateMapState(state);
+    expect(result).toBeInstanceOf(MapStateValidationError);
+    expect((result as MapStateValidationError).message).toContain("unknown domainId");
+  });
+
   test("rejects a bad entity kind and a lifecycle from the wrong kind's vocabulary", () => {
     const badKind = baseState();
     ((badKind.entities as Record<string, unknown>[])[0] as Record<string, unknown>).kind = "quest";

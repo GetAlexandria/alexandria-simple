@@ -139,8 +139,19 @@ export function entityIdForDraft(
   return uniqueId(`${ENTITY_ID_PREFIX_BY_KIND[kind]}${slugify(name) || kind}`, existingIds);
 }
 
+/**
+ * The domain an entity inherits from its context. Entities carry a flat
+ * `domainId` tag alongside `contextId`; it is derived here at create/edit
+ * time from the selected context's domain (the map validator requires a
+ * known domain id, so a draft whose context is unknown yields "" and fails
+ * loudly server-side rather than inventing a domain).
+ */
+function domainIdForContextId(state: MapState, contextId: string): string {
+  return state.contexts.find((context) => context.id === contextId)?.domainId ?? "";
+}
+
 /** A canonical entity from a form draft: trimmed, optional fields omitted (never ""). */
-function entityFromDraft(id: string, draft: MapEntityDraft): MapEntity {
+function entityFromDraft(id: string, draft: MapEntityDraft, domainId: string): MapEntity {
   const cadence = draft.cadence?.trim() ?? "";
   const colleague = draft.colleague?.trim() ?? "";
   return {
@@ -148,6 +159,7 @@ function entityFromDraft(id: string, draft: MapEntityDraft): MapEntity {
     kind: draft.kind,
     name: draft.name.trim(),
     contextId: draft.contextId,
+    domainId,
     // cadence/colleague belong to systems only (the ax validator rejects
     // them on projects) and are omitted entirely when blank — the schema
     // twins reject empty strings.
@@ -169,6 +181,7 @@ export function withEntityCreated(
   const entity = entityFromDraft(
     entityIdForDraft(draft.kind, draft.name, new Set(state.entities.map((e) => e.id))),
     draft,
+    domainIdForContextId(state, draft.contextId),
   );
   return { next: { ...state, entities: [...state.entities, entity] }, entity };
 }
@@ -189,7 +202,11 @@ export function withEntityEdited(
   if (existing == null) {
     return state;
   }
-  const edited = entityFromDraft(entityId, { ...draft, kind: existing.kind });
+  const edited = entityFromDraft(
+    entityId,
+    { ...draft, kind: existing.kind },
+    domainIdForContextId(state, draft.contextId),
+  );
   const next = {
     ...state,
     entities: state.entities.map((entity) => (entity.id === entityId ? edited : entity)),

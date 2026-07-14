@@ -164,6 +164,7 @@ describe("InfoHubBoardView", () => {
               kind: "project",
               name: "Map tab",
               contextId: "viewer",
+              domainId: "software",
               lifecycle: "active",
             },
           ],
