@@ -492,11 +492,20 @@ export function MapTabView({
   // The free hexes of the placing entity's DOMAIN territory (not its context
   // patch — an entity with no contextId must still be placeable, and one
   // with a legacy contextId places exactly the same way, domain-keyed).
+  // Stray-pile hexes are excluded explicitly: piles are derived, never
+  // positioned, so they don't appear in occupiedKeys — but a tile dropped on
+  // a pile's hex would collide with the pile sprite and hide the stray work.
+  // (Context-patch keying used to exclude them by accident; domain keying
+  // must do it on purpose.)
   const placeableKeys = useMemo(() => {
     if (placingEntity == null || domainLayout == null) {
       return new Set<string>();
     }
-    return placeableHexKeys(domainLayout.territoryByCellKey, placingEntity.domainId, occupiedKeys);
+    const excludedKeys = new Set(occupiedKeys);
+    for (const pile of domainLayout.piles) {
+      excludedKeys.add(hexToKey(pile.coord));
+    }
+    return placeableHexKeys(domainLayout.territoryByCellKey, placingEntity.domainId, excludedKeys);
   }, [placingEntity, domainLayout, occupiedKeys]);
 
   const cellVisualStateByKey = useMemo(() => {
