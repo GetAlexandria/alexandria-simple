@@ -313,6 +313,130 @@
           "text": "Revisit after real use — v1 is expected to change"
         }
       ]
+    },
+    {
+      "id": "wo-work-system-contract",
+      "type": "improvement",
+      "status": "open",
+      "domainId": "alexandria",
+      "entityId": "prj-work-system-v1",
+      "priority": 15,
+      "source": "board:director",
+      "created": "2026-07-14",
+      "title": "Adopt the work-system contract: the Board is the system of record; the Map visualizes it",
+      "detail": "The Map and the Board now share one domain vocabulary, but the relationship between them was never ruled. Ruled today. This is the parent card; the concrete builds are the child cards joined to prj-work-system-v1.\n\nDecisions (director, 2026-07-14):\n- The Work Board is the work system of record and the QA surface — a known, simple, non-innovative primitive to generate the Map from. The Map is a reflection of the work system. This settles the open subsume-vs-federate question for now: federate. Deeper unification (less UI surface between board and map, or the map absorbing the board) stays a horizon option, not a plan.\n- Systems generate work; projects contain it. This ratifies the ported Lifebuild 'Planting Season' contract (docs/alexandria/plans/map-tab/plan.md §1.1) as the unified model: a System spawns cards on its rhythm (e.g. 'check and respond to customer emails' every 6 hours); a Project is stuffed with cards, still exists when half are done, and its membership changes over time (tasks removed, tasks added).\n- Every map entity gets a room: clicking a Project or System shows that entity's own populated view — its cards, their state, their history. The room already exists (the Map tile-click overlay renders joined cards via cardsJoinedToEntity), but it is starved: only 6 of 14 cards carry an entityId and both systems have zero.\n- Projects and Systems measure different things, so their rooms differ. Project room = progress: contains work, ends, victories stay visible. System room = health & performance: is work done on time and to spec, is the system reliable and maintained, what is queued for testing or improving it.\n\nScope:\n- This is the parent/contract card. Children: ungate the entity join (wo-board-ungate-entity-join), create-from-board + rooms on the board (wo-board-project-rooms), system generation v1 (wo-system-generation-v1).\n\nOut of scope:\n- Subsume (the Map absorbing the Board) — named horizon, not decided.\n- A single unified Project/System/Task work-item model with real parent/child ('one day we may be more unified').\n- The map filling-up visualization experiments (piles/aging/stomp) — still governed by the command-center test.",
+      "checklist": [
+        {
+          "done": false,
+          "text": "Entity join ungated and the existing backlog joined (child card)"
+        },
+        {
+          "done": false,
+          "text": "Projects creatable from the Board; entity rooms reachable from the Board (child card)"
+        },
+        {
+          "done": false,
+          "text": "System generation v1 lands (child card)"
+        },
+        {
+          "done": false,
+          "text": "Director places prj-work-system-v1 on the map (added unplaced; placement is director-only)"
+        }
+      ]
+    },
+    {
+      "id": "wo-board-ungate-entity-join",
+      "type": "task",
+      "status": "open",
+      "domainId": "alexandria",
+      "entityId": "prj-work-system-v1",
+      "priority": 15,
+      "source": "board:director",
+      "created": "2026-07-14",
+      "title": "Drop the Context picker; ungate the project/system join on the Board",
+      "detail": "The New Work Order form still shows 'map Context (optional)' and gates the project picker behind it — the form filters entities to entity.contextId === selectedContext, so with Context deprecated a card can't reach a project at all. This is why the director cannot assign a task to a project today. Child of wo-work-system-contract.\n\nDecisions (director, 2026-07-14):\n- Remove the Context picker from the work-order form; Context stays a latent data field only ('model it, don't render it' still stands).\n- Ungate the entity picker: a card can join any Project or System directly (optionally narrowed by the card's domainId, never by context).\n- Finish the context demotion in the map data model: packages/ax/src/effects/map-state.ts still requires contextId as a mandatory string referencing a known context on every entity, despite the demotion ruling — make it optional/nullable there and in the entity form.\n- Join the backlog: sweep the existing cards and join the ones that clearly belong to an entity (e.g. duty-loop-shaped cards to their systems), so the rooms stop rendering empty.\n\nScope:\n- Work-order form: remove the Context field; entity picker lists all projects and systems.\n- map-state.ts + MapEntityForm: contextId optional/nullable.\n- board-state.json: backlog join pass (data only, no shape change).\n\nOut of scope:\n- Creating entities from the Board and the board-side room view (wo-board-project-rooms).",
+      "checklist": [
+        {
+          "done": false,
+          "text": "Context picker removed from the New Work Order form"
+        },
+        {
+          "done": false,
+          "text": "Entity picker offers every project/system with no context gate"
+        },
+        {
+          "done": false,
+          "text": "map-state validation accepts entities without a contextId"
+        },
+        {
+          "done": false,
+          "text": "Existing backlog cards joined to their entities where they clearly belong"
+        }
+      ]
+    },
+    {
+      "id": "wo-board-project-rooms",
+      "type": "task",
+      "status": "open",
+      "domainId": "alexandria",
+      "entityId": "prj-work-system-v1",
+      "priority": 15,
+      "source": "board:director",
+      "created": "2026-07-14",
+      "title": "Create projects from the Board; give every entity a room on the Board",
+      "detail": "Today a Project or System can only be born by hand in map-state.json or via the Map's entity form, and the only per-entity view is the Map tile-click overlay. The Board — the system of record — can neither create an entity nor show one. This blocks 'create a project and build it out of tasks.' Child of wo-work-system-contract.\n\nDecisions (director, 2026-07-14):\n- 'New project' (and 'New system') actions on the Board create the map entity directly. The entity is born unplaced; placement stays director-only on the Map (the ported hard rule: agents and forms may add entities, only the director arranges the map).\n- Every entity gets a room reachable from the Board: the entity's cards, their state, and their history — the same entityId join the Map overlay already computes (cardsJoinedToEntity in packages/viewer/src/components/map/placement.ts). Done cards stay visible in the room: a project outlives its tasks, and its history is part of the room.\n- The project room reads as progress (open vs done, the contained set changing over time). The system room will diverge toward health/performance — designed in wo-system-generation-v1, not here.\n\nScope:\n- Board UI: New project / New system actions writing through the existing map-state save path.\n- Board UI: an entity room view (entity header + joined cards, open and done), shared-component with the Map overlay rather than duplicated.\n- Unplaced entities: confirm the Map renders/queues them sanely until the director places them.\n\nOut of scope:\n- Cadence generation and system health metrics (wo-system-generation-v1).\n- Any change to what the Map overlay shows (it already works; reuse, don't fork).",
+      "checklist": [
+        {
+          "done": false,
+          "text": "New project / New system can be created from the Board (born unplaced)"
+        },
+        {
+          "done": false,
+          "text": "Placement remains director-only; unplaced entities are visible somewhere until placed"
+        },
+        {
+          "done": false,
+          "text": "Entity room on the Board shows joined cards with state and history (done cards included)"
+        },
+        {
+          "done": false,
+          "text": "Room components shared with the Map overlay, not duplicated"
+        }
+      ]
+    },
+    {
+      "id": "wo-system-generation-v1",
+      "type": "task",
+      "status": "open",
+      "domainId": "alexandria",
+      "entityId": "prj-work-system-v1",
+      "priority": 15,
+      "source": "board:director",
+      "created": "2026-07-14",
+      "title": "Systems generate their work: cadence-spawned cards + a health-first system room v1",
+      "detail": "The contract says a System generates cards, but nothing generates today — both systems have zero joined cards, and system health derives only from duty-loop journal entries within the cadence window (plan §1.4). Lifebuild had recurring-task machinery (recurringTasks/taskExecutions) and the port deliberately left it behind as legacy AI-cron; this rebuilds the behavior natively on the Board, where the work system of record lives. Child of wo-work-system-contract.\n\nDecisions (director, 2026-07-14):\n- A System spawns a card on its cadence (e.g. 'check and respond to customer emails' every 6 hours), joined to the system via entityId, assigned to the system's assignee.\n- Spawned cards done or missed become the system's history, and the system room reads health and performance from it: done on time? to spec? what's the queue for testing or improving the system?\n- Flagged experimental like strays v1 — the director expects to iterate; ship something simple to start.\n\nOpen design (decide in-card, small):\n- Who spawns: the colleague duty loop writing cards as part of its rhythm, an ax runtime tick, or materialize-on-read when the board is loaded past a cadence boundary. v1 should pick the simplest that leaves a durable file trace (no server-owned state).\n- Missed-cadence semantics: does an unspawned/undone card mark the system overdue, and does that feed the existing coin/tile escalation glow?\n\nScope:\n- Card shape: a way to mark a card as system-generated (e.g. source: system:<id>) so history queries are cheap.\n- Generation v1 for the two duty-loop systems as the first real users.\n- System room v1: health summary (on-time rate over the recent window) + open queue + history, distinct from the project room's progress framing.\n\nOut of scope:\n- General recurring-task UI for arbitrary schedules; template libraries.\n- Reviving Lifebuild's recurringTasks/taskExecutions machinery as-is.",
+      "checklist": [
+        {
+          "done": false,
+          "text": "Spawn mechanism chosen and recorded (duty loop vs runtime tick vs materialize-on-read)"
+        },
+        {
+          "done": false,
+          "text": "Systems spawn cadence cards joined via entityId with the system's assignee"
+        },
+        {
+          "done": false,
+          "text": "Generated cards are marked as system-generated for cheap history queries"
+        },
+        {
+          "done": false,
+          "text": "System room v1 shows health (on-time), open queue, and history — distinct from project progress"
+        },
+        {
+          "done": false,
+          "text": "Missed-cadence semantics defined and wired to the existing escalation glow"
+        }
+      ]
     }
   ]
 }
