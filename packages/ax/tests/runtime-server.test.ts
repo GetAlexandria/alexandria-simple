@@ -13,7 +13,7 @@ import {
   writeFileSync,
 } from "fs";
 import { tmpdir } from "os";
-import { join, resolve } from "path";
+import { dirname, join, resolve } from "path";
 import {
   connectionPathForWorkspacePath,
   infoHubBoardPathForWorkspacePath,
@@ -29,6 +29,7 @@ import { RAVEN_VISION_SLOT_IDS } from "../src/domain/raven-vision.js";
 import { StateLogAccessError } from "../src/domain/state-store.js";
 import { NodeFileSystem } from "../src/effects/filesystem.js";
 import { loadLibraryCatalog } from "../src/effects/library-graph-loader.js";
+import { currentWindowStart } from "../src/effects/system-generation.js";
 import { loadAlexandriaProjectState } from "../src/effects/project-state-loader.js";
 import {
   libraryCardDetailHttpStatus,
@@ -4238,6 +4239,186 @@ exit 2
       expect(badEnum.status).toBe(400);
 
       expect(existsSync(infoHubBoardPathForWorkspacePath(workspacePath(cwd)))).toBeFalse();
+    } finally {
+      await Effect.runPromise(server.stop);
+    }
+  });
+
+  function writeMapStateFixture(cwd: string, state: Record<string, unknown>): void {
+    const statePath = mapStatePathForWorkspacePath(workspacePath(cwd));
+    mkdirSync(dirname(statePath), { recursive: true });
+    writeFileSync(statePath, `${JSON.stringify(state, null, 2)}\n`, "utf8");
+  }
+
+  // A planted system with a 2-rule pattern (1mo + 1q) plus a hibernating
+  // system with its own pattern — the hibernating system must never
+  // generate (work-system plan §2).
+  const ws2SystemGenerationFixture = {
+    domains: [
+      {
+        id: "alexandria",
+        name: "Alexandria",
+        half: "work",
+        region: { center: [0, -3], radius: 3 },
+      },
+    ],
+    contexts: [],
+    entities: [
+      {
+        id: "sys-ws2-test",
+        kind: "system",
+        name: "WS2 test system",
+        domainId: "alexandria",
+        assignee: "human:danvers",
+        lifecycle: "planted",
+        pattern: [
+          { id: "monthly", title: "Monthly rule card", every: "1mo" },
+          {
+            id: "quarterly",
+            title: "Quarterly rule card",
+            every: "1q",
+            detail: "Quarterly detail body",
+            assignee: "colleague:raven",
+          },
+        ],
+      },
+      {
+        id: "sys-ws2-hibernating",
+        kind: "system",
+        name: "Hibernating system",
+        domainId: "alexandria",
+        lifecycle: "hibernating",
+        pattern: [{ id: "daily", title: "Daily rule card", every: "1d" }],
+      },
+    ],
+    positions: [],
+  };
+
+  test("GET board materializes due generated cards from planted systems' patterns, excluding hibernating systems", async () => {
+    const cwd = makeProjectDir();
+    initProject(cwd);
+    writeMapStateFixture(cwd, ws2SystemGenerationFixture);
+    const server = await startApiServer(cwd);
+
+    try {
+      const boardPath = infoHubBoardPathForWorkspacePath(workspacePath(cwd));
+      expect(existsSync(boardPath)).toBeFalse();
+
+      const response = await fetch(new URL("/api/info-hub/board", server.url));
+      expect(response.status).toBe(200);
+      const board = (await response.json()) as {
+        cards: Array<{
+          id: string;
+          type: string;
+          status: string;
+          domainId: string;
+          entityId?: string;
+          assignee?: string;
+          priority: number;
+          source: string;
+          created: string;
+          title?: string;
+          detail?: string;
+          generatedBy?: { systemId: string; ruleId: string; window: string };
+        }>;
+      };
+
+      const generated = board.cards.filter((card) => card.generatedBy != null);
+      expect(generated).toHaveLength(2);
+      expect(generated.every((card) => card.generatedBy?.systemId === "sys-ws2-test")).toBeTrue();
+      // The hibernating system's rule never materializes.
+      expect(board.cards.some((card) => card.entityId === "sys-ws2-hibernating")).toBeFalse();
+
+      const now = new Date();
+      const monthlyWindow = currentWindowStart("1mo", now).toISOString();
+      const quarterlyWindow = currentWindowStart("1q", now).toISOString();
+
+      const monthly = generated.find((card) => card.generatedBy?.ruleId === "monthly");
+      if (monthly == null) {
+        throw new Error("expected a generated monthly card");
+      }
+      expect(monthly).toMatchObject({
+        type: "task",
+        status: "open",
+        domainId: "alexandria",
+        entityId: "sys-ws2-test",
+        assignee: "human:danvers",
+        priority: 15,
+        source: "system:sys-ws2-test",
+        title: "Monthly rule card",
+        generatedBy: { systemId: "sys-ws2-test", ruleId: "monthly", window: monthlyWindow },
+      });
+      expect(monthly?.detail).toBeUndefined();
+
+      const quarterly = generated.find((card) => card.generatedBy?.ruleId === "quarterly");
+      expect(quarterly).toMatchObject({
+        assignee: "colleague:raven",
+        detail: "Quarterly detail body",
+        generatedBy: { systemId: "sys-ws2-test", ruleId: "quarterly", window: quarterlyWindow },
+      });
+
+      // The board file was created on disk by the materializing GET.
+      expect(existsSync(boardPath)).toBeTrue();
+      const onDisk = JSON.parse(readFileSync(boardPath, "utf8")) as { cards: unknown[] };
+      expect(onDisk.cards).toHaveLength(2);
+
+      // A second GET is idempotent: same two generated cards, no duplicates.
+      const secondResponse = await fetch(new URL("/api/info-hub/board", server.url));
+      const secondBoard = (await secondResponse.json()) as {
+        cards: Array<{ id: string; generatedBy?: unknown }>;
+      };
+      expect(secondBoard.cards.filter((card) => card.generatedBy != null)).toHaveLength(2);
+      expect(secondBoard.cards.map((card) => card.id).sort()).toEqual(
+        board.cards.map((card) => card.id).sort(),
+      );
+
+      // Marking the monthly generated card done and re-fetching does not
+      // spawn a second card for the same (systemId, ruleId, window).
+      const doneCard = { ...monthly, status: "done" };
+      const postResponse = await fetch(new URL("/api/info-hub/board", server.url), {
+        body: JSON.stringify({ cards: [doneCard] }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      });
+      expect(postResponse.status).toBe(200);
+
+      const thirdResponse = await fetch(new URL("/api/info-hub/board", server.url));
+      const thirdBoard = (await thirdResponse.json()) as {
+        cards: Array<{ id: string; status: string; generatedBy?: { ruleId: string } }>;
+      };
+      const monthlyCards = thirdBoard.cards.filter(
+        (card) => card.generatedBy?.ruleId === "monthly",
+      );
+      expect(monthlyCards).toHaveLength(1);
+      expect(monthlyCards[0]?.status).toBe("done");
+      expect(thirdBoard.cards.filter((card) => card.generatedBy != null)).toHaveLength(2);
+    } finally {
+      await Effect.runPromise(server.stop);
+    }
+  });
+
+  test("GET board serves as-is (no materialization) when map state is missing or corrupt", async () => {
+    const cwd = makeProjectDir();
+    initProject(cwd);
+    const server = await startApiServer(cwd);
+
+    try {
+      // No map-state.json on disk at all.
+      const response = await fetch(new URL("/api/info-hub/board", server.url));
+      expect(response.status).toBe(200);
+      const board = (await response.json()) as { cards: unknown[] };
+      expect(board.cards).toEqual([]);
+      expect(existsSync(infoHubBoardPathForWorkspacePath(workspacePath(cwd)))).toBeFalse();
+
+      // A corrupt map-state.json must not break the board read either.
+      const statePath = mapStatePathForWorkspacePath(workspacePath(cwd));
+      mkdirSync(dirname(statePath), { recursive: true });
+      writeFileSync(statePath, "{not json", "utf8");
+
+      const secondResponse = await fetch(new URL("/api/info-hub/board", server.url));
+      expect(secondResponse.status).toBe(200);
+      const secondBoard = (await secondResponse.json()) as { cards: unknown[] };
+      expect(secondBoard.cards).toEqual([]);
     } finally {
       await Effect.runPromise(server.stop);
     }
