@@ -57,6 +57,7 @@ const ENTITY_FIELD_ORDER = [
   "lifecycle",
 ] as const;
 const POSITION_FIELD_ORDER = ["q", "r", "entityType", "entityId"] as const;
+const ORG_FIELD_ORDER = ["id", "name"] as const;
 const STATE_FIELD_ORDER = ["domains", "contexts", "entities", "positions"] as const;
 
 const REQUIRED_DOMAIN_FIELDS = ["id", "name", "half", "region"] as const;
@@ -67,8 +68,17 @@ const ALLOWED_DOMAIN_FIELDS = new Set<string>(DOMAIN_FIELD_ORDER);
 const ALLOWED_CONTEXT_FIELDS = new Set<string>(CONTEXT_FIELD_ORDER);
 const ALLOWED_ENTITY_FIELDS = new Set<string>(ENTITY_FIELD_ORDER);
 const ALLOWED_POSITION_FIELDS = new Set<string>(POSITION_FIELD_ORDER);
-const ALLOWED_STATE_FIELDS = new Set<string>(STATE_FIELD_ORDER);
+const ALLOWED_ORG_FIELDS = new Set<string>(ORG_FIELD_ORDER);
+// `org` is optional at the top level (a fresh/empty world has no org yet), so
+// it is allowed but deliberately kept out of STATE_FIELD_ORDER, which doubles
+// as the required-collection list.
+const ALLOWED_STATE_FIELDS = new Set<string>([...STATE_FIELD_ORDER, "org"]);
 const ALLOWED_REGION_FIELDS = new Set(["center", "radius"]);
+
+export interface MapOrg {
+  id: string;
+  name: string;
+}
 
 export interface MapDomainRegion {
   center: [number, number];
@@ -111,6 +121,7 @@ export interface MapState {
   contexts: MapContext[];
   domains: MapDomain[];
   entities: MapEntity[];
+  org?: MapOrg;
   positions: MapPosition[];
 }
 
@@ -185,6 +196,23 @@ function validateRegion(value: unknown, ref: string): MapStateValidationError | 
     return validationError(`${ref} region radius must be a positive integer`);
   }
   return null;
+}
+
+function validateOrg(value: unknown): MapOrg | MapStateValidationError {
+  if (!isRecord(value)) {
+    return validationError("org must be an object");
+  }
+  const unknownFields = unknownFieldsIn(value, ALLOWED_ORG_FIELDS);
+  if (unknownFields.length > 0) {
+    return validationError(`org has unknown fields: ${JSON.stringify(unknownFields.sort())}`);
+  }
+  for (const field of ORG_FIELD_ORDER) {
+    const fieldError = requireString(value, field, "org");
+    if (fieldError != null) {
+      return fieldError;
+    }
+  }
+  return { id: value.id as string, name: value.name as string };
 }
 
 function validateDomains(value: unknown): MapDomain[] | MapStateValidationError {
@@ -516,6 +544,15 @@ export function validateMapState(value: unknown): MapState | MapStateValidationE
     return validationError(`map state is missing fields: ${JSON.stringify(missing.sort())}`);
   }
 
+  let org: MapOrg | undefined;
+  if (hasOwn(value, "org")) {
+    const validatedOrg = validateOrg(value.org);
+    if (validatedOrg instanceof MapStateValidationError) {
+      return validatedOrg;
+    }
+    org = validatedOrg;
+  }
+
   const domains = validateDomains(value.domains);
   if (domains instanceof MapStateValidationError) {
     return domains;
@@ -533,7 +570,7 @@ export function validateMapState(value: unknown): MapState | MapStateValidationE
     return positions;
   }
 
-  return { domains, contexts, entities, positions };
+  return { ...(org ? { org } : {}), domains, contexts, entities, positions };
 }
 
 export function defaultMapState(): MapState {
@@ -542,6 +579,7 @@ export function defaultMapState(): MapState {
 
 function serializeMapState(state: MapState): string {
   const ordered = {
+    ...(state.org ? { org: state.org } : {}),
     domains: state.domains,
     contexts: state.contexts,
     entities: state.entities,

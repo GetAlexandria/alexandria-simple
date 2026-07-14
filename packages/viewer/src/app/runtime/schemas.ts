@@ -1273,10 +1273,18 @@ export const MapPositionSchema = Schema.Struct({
 
 export type MapPosition = Schema.Schema.Type<typeof MapPositionSchema>;
 
+export const MapOrgSchema = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String,
+});
+
+export type MapOrg = Schema.Schema.Type<typeof MapOrgSchema>;
+
 export const MapStateSchema = Schema.Struct({
   contexts: Schema.Array(MapContextSchema),
   domains: Schema.Array(MapDomainSchema),
   entities: Schema.Array(MapEntitySchema),
+  org: Schema.optionalWith(MapOrgSchema, { exact: true }),
   positions: Schema.Array(MapPositionSchema),
 });
 
