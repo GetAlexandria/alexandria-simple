@@ -14,6 +14,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { InfoHubCard, MapState } from "../../app/runtime/schemas";
 import { sortCardsByPriority, type WorkOrderStatus } from "../library/infohub/boardModel";
 import {
+  buildDomainNameById,
   WorkOrderCardFace,
   WorkOrderDetailModal,
   WorkOrderStatusActions,
@@ -65,6 +66,9 @@ export function MapOverlay({
   // Card detail is derived from the live card list by id so a status or
   // checklist save re-renders the open modal with the server-merged card.
   const [detailCardId, setDetailCardId] = useState<string | null>(null);
+
+  // domainId → display name for the card scope label, from the map's domains.
+  const domainNameById = useMemo(() => buildDomainNameById(state.domains), [state.domains]);
 
   const entity =
     target.kind === "entity"
@@ -158,6 +162,7 @@ export function MapOverlay({
           <div onClick={(event) => event.stopPropagation()} role="presentation">
             <WorkOrderDetailModal
               card={detailCard}
+              domainNameById={domainNameById}
               onClose={() => setDetailCardId(null)}
               onToggleChecklistItem={onToggleChecklistItem}
               readOnly={readOnly}
@@ -200,7 +205,11 @@ export function MapOverlay({
               data-type={card.type}
               key={card.id}
             >
-              <WorkOrderCardFace card={card} onOpen={() => setDetailCardId(card.id)} />
+              <WorkOrderCardFace
+                card={card}
+                domainNameById={domainNameById}
+                onOpen={() => setDetailCardId(card.id)}
+              />
               {readOnly ? null : (
                 <div className="info-hub-card-actions">
                   <WorkOrderStatusActions

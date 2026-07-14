@@ -32,6 +32,7 @@ import {
   type WorkOrderType,
 } from "./boardModel";
 import {
+  buildDomainNameById,
   cardScopeLabel,
   cardTitleLabel,
   WORK_ORDER_STATUS_LABELS,
@@ -67,11 +68,11 @@ function todayIso(): string {
 
 function createCardId(
   type: WorkOrderType,
-  area: string,
+  domainId: string,
   title: string,
   existingIds: ReadonlySet<string>,
 ): string {
-  const base = `wo-${slugify(area || "general")}-${slugify(type)}-${slugify(title || "card") || "card"}`;
+  const base = `wo-${slugify(domainId || "general")}-${slugify(type)}-${slugify(title || "card") || "card"}`;
   return uniqueId(base, existingIds);
 }
 
@@ -185,7 +186,7 @@ export function InfoHubBoardView({
       ? (initialStatusFilter as WorkOrderStatus)
       : "",
   );
-  const [areaFilter, setAreaFilter] = useState("");
+  const [domainFilter, setDomainFilter] = useState("");
   const [prioritySort, setPrioritySort] = useState<PrioritySortDirection>("urgent-first");
   const [maxPriority, setMaxPriority] = useState("");
   const [showArchived, setShowArchived] = useState(false);
@@ -193,7 +194,7 @@ export function InfoHubBoardView({
   const [archiveTypeFilter, setArchiveTypeFilter] = useState<"" | WorkOrderType>("");
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [cardType, setCardType] = useState<WorkOrderType>("improvement");
-  const [cardArea, setCardArea] = useState("");
+  const [cardDomainId, setCardDomainId] = useState("");
   const [cardPriority, setCardPriority] = useState(String(defaultPriorityForType("improvement")));
   const [cardTitle, setCardTitle] = useState("");
   const [cardDetail, setCardDetail] = useState("");
@@ -213,7 +214,14 @@ export function InfoHubBoardView({
 
   const mapContexts = useMemo(() => mapState?.contexts ?? [], [mapState]);
   const mapEntities = useMemo(() => mapState?.entities ?? [], [mapState]);
+  const mapDomains = useMemo(() => mapState?.domains ?? [], [mapState]);
   const joinUiAvailable = mapState != null && mapContexts.length > 0;
+  // The form's domain picker is sourced from the map's domain set; without it
+  // there is nothing to pick, so the form falls back to the raw stored value.
+  const domainPickerAvailable = mapDomains.length > 0;
+  // domainId → display name, for the card scope label and the domain filter.
+  // Falls back to the raw domainId when the map has no matching domain.
+  const domainNameById = useMemo(() => buildDomainNameById(mapDomains), [mapDomains]);
   // Stored joins are reconciled against the live map (PR #20 gate): an id
   // whose context/entity no longer exists (or whose entity moved contexts)
   // renders as unselected, and the SAVE writes exactly what the form shows —
@@ -258,15 +266,20 @@ export function InfoHubBoardView({
     () => cards.filter((card) => inWorkOrderArchive(card, now)),
     [cards, now],
   );
-  const areaOptions = useMemo(() => {
-    const areas = new Set<string>();
+  // The domain filter options are the domains actually present on cards
+  // (parallel to the old area filter), labelled from the map's domain set
+  // when available and falling back to the raw domainId otherwise.
+  const domainFilterOptions = useMemo(() => {
+    const ids = new Set<string>();
     for (const card of cards) {
-      if (card.area != null && card.area.trim().length > 0) {
-        areas.add(card.area);
+      if (card.domainId.length > 0) {
+        ids.add(card.domainId);
       }
     }
-    return [...areas].sort((left, right) => left.localeCompare(right));
-  }, [cards]);
+    return [...ids]
+      .map((id) => ({ id, name: domainNameById.get(id) ?? id }))
+      .sort((left, right) => left.name.localeCompare(right.name));
+  }, [cards, domainNameById]);
   const maxPriorityValue = useMemo(() => {
     const trimmed = maxPriority.trim();
     if (trimmed.length === 0) {
@@ -284,7 +297,7 @@ export function InfoHubBoardView({
         if (statusFilter.length > 0 && card.status !== statusFilter) {
           return false;
         }
-        if (areaFilter.length > 0 && card.area !== areaFilter) {
+        if (domainFilter.length > 0 && card.domainId !== domainFilter) {
           return false;
         }
         if (!passesPrioritySift(card, maxPriorityValue)) {
@@ -292,7 +305,7 @@ export function InfoHubBoardView({
         }
         return true;
       }),
-    [activeCards, areaFilter, maxPriorityValue, statusFilter, typeFilter],
+    [activeCards, domainFilter, maxPriorityValue, statusFilter, typeFilter],
   );
   // Derived view: re-order the filtered set by the chosen sort direction. The
   // stored `cards` order stays canonical (urgent-first); sorting never
@@ -323,7 +336,7 @@ export function InfoHubBoardView({
         entry.card.title ?? "",
         entry.card.detail ?? "",
         entry.card.id,
-        entry.card.area ?? "",
+        cardScopeLabel(entry.card, domainNameById),
         WORK_ORDER_TYPE_LABELS[entry.card.type],
         WORK_ORDER_STATUS_LABELS[entry.card.status],
       ]
@@ -331,12 +344,12 @@ export function InfoHubBoardView({
         .toLowerCase();
       return searchText.includes(search);
     });
-  }, [archiveEntries, archiveSearch, archiveTypeFilter]);
+  }, [archiveEntries, archiveSearch, archiveTypeFilter, domainNameById]);
 
   const resetForm = useCallback(() => {
     setEditingCardId(null);
     setCardType("improvement");
-    setCardArea("");
+    setCardDomainId("");
     setCardPriority(String(defaultPriorityForType("improvement")));
     setCardTitle("");
     setCardDetail("");
@@ -350,12 +363,18 @@ export function InfoHubBoardView({
     if (!Number.isInteger(priority)) {
       return "Priority must be a whole number.";
     }
+    // A card needs a domain (the shared Map/Board spine). Gate only when the
+    // picker can offer one — a board with no map can't pick, and the server
+    // still guards domainId, so the no-map path is a degraded fallback.
+    if (domainPickerAvailable && cardDomainId.trim().length === 0) {
+      return "Pick a domain.";
+    }
     return null;
-  }, [cardPriority]);
+  }, [cardDomainId, cardPriority, domainPickerAvailable]);
 
   const buildCardFromForm = useCallback(
     (existing: InfoHubCard | null): InfoHubCard => {
-      const area = cardArea.trim();
+      const domainId = cardDomainId.trim();
       const title = cardTitle.trim() || WORK_ORDER_TYPE_LABELS[cardType];
       const checklist = parseChecklist(cardChecklist);
       // Join fields ride through withCardJoin so ""/absent means "omit the
@@ -366,11 +385,13 @@ export function InfoHubBoardView({
       return withCardJoin(
         {
           ...(existing?.archived == null ? {} : { archived: existing.archived }),
-          ...(area.length > 0 ? { area } : {}),
           ...(checklist.length > 0 ? { checklist } : {}),
           created: existing?.created ?? todayIso(),
           detail: cardDetail,
-          id: existing?.id ?? createCardId(cardType, area, title, new Set(cards.map((c) => c.id))),
+          domainId,
+          id:
+            existing?.id ??
+            createCardId(cardType, domainId, title, new Set(cards.map((c) => c.id))),
           ...(existing?.pinned == null ? {} : { pinned: existing.pinned }),
           priority: Number.parseInt(cardPriority, 10),
           source: existing?.source ?? "board:director",
@@ -385,10 +406,10 @@ export function InfoHubBoardView({
       );
     },
     [
-      cardArea,
       cardChecklist,
       cardContextId,
       cardDetail,
+      cardDomainId,
       cardEntityId,
       cardPriority,
       cardTitle,
@@ -404,7 +425,7 @@ export function InfoHubBoardView({
     setEditingCardId(card.id);
     setDetailCard(null);
     setCardType(card.type);
-    setCardArea(card.area ?? "");
+    setCardDomainId(card.domainId);
     setCardPriority(String(card.priority));
     setCardTitle(card.title ?? "");
     setCardDetail(card.detail ?? "");
@@ -626,18 +647,18 @@ export function InfoHubBoardView({
               ))}
             </select>
           </label>
-          {areaOptions.length > 0 ? (
+          {domainFilterOptions.length > 0 ? (
             <label className="info-hub-filter-field">
-              Area
+              Domain
               <select
-                aria-label="Work order area filter"
-                onChange={(event) => setAreaFilter(event.target.value)}
-                value={areaFilter}
+                aria-label="Work order domain filter"
+                onChange={(event) => setDomainFilter(event.target.value)}
+                value={domainFilter}
               >
-                <option value="">All areas</option>
-                {areaOptions.map((area) => (
-                  <option key={area} value={area}>
-                    {area}
+                <option value="">All domains</option>
+                {domainFilterOptions.map((domain) => (
+                  <option key={domain.id} value={domain.id}>
+                    {domain.name}
                   </option>
                 ))}
               </select>
@@ -705,7 +726,11 @@ export function InfoHubBoardView({
                         data-type={card.type}
                         key={card.id}
                       >
-                        <WorkOrderCardFace card={card} onOpen={() => setDetailCard(card)} />
+                        <WorkOrderCardFace
+                          card={card}
+                          domainNameById={domainNameById}
+                          onOpen={() => setDetailCard(card)}
+                        />
                         <div className="info-hub-card-actions">
                           <WorkOrderStatusActions
                             card={card}
@@ -810,7 +835,9 @@ export function InfoHubBoardView({
                       </span>
                     </div>
                     <h3 className="info-hub-card-title">{cardTitleLabel(entry.card)}</h3>
-                    <p className="info-hub-card-scope">{cardScopeLabel(entry.card)}</p>
+                    <p className="info-hub-card-scope">
+                      {cardScopeLabel(entry.card, domainNameById)}
+                    </p>
                     {entry.date != null ? (
                       <p className="info-hub-card-checklist-progress">{entry.date}</p>
                     ) : null}
@@ -844,6 +871,7 @@ export function InfoHubBoardView({
         {detailCard != null ? (
           <WorkOrderDetailModal
             card={detailCard}
+            domainNameById={domainNameById}
             onClose={() => setDetailCard(null)}
             onToggleChecklistItem={toggleChecklistItem}
             footer={
@@ -951,13 +979,22 @@ export function InfoHubBoardView({
               </select>
             </label>
             <label className="info-hub-form-field">
-              Area
-              <input
-                aria-label="Work order area"
-                onChange={(event) => setCardArea(event.target.value)}
-                placeholder="library, viewer, runtime, ops…"
-                value={cardArea}
-              />
+              Domain
+              <select
+                aria-label="Work order domain"
+                disabled={!domainPickerAvailable}
+                onChange={(event) => setCardDomainId(event.target.value)}
+                value={cardDomainId}
+              >
+                <option value="">
+                  {domainPickerAvailable ? "Pick a domain…" : "No domains available"}
+                </option>
+                {mapDomains.map((domain) => (
+                  <option key={domain.id} value={domain.id}>
+                    {domain.name}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="info-hub-form-field">
               Priority

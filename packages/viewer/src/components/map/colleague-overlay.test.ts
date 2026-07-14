@@ -20,6 +20,7 @@ function card(overrides: Partial<InfoHubCard>): InfoHubCard {
     id: "wo-x",
     type: "task",
     status: "open",
+    domainId: "alexandria",
     priority: 10,
     source: "seed:test",
     created: "2026-07-01",

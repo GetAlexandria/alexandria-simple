@@ -6,7 +6,7 @@
 // over docs/alexandria/info-hub/board-state.json, never a second store).
 
 import type { ReactNode } from "react";
-import type { InfoHubCard } from "../../../app/runtime/schemas";
+import type { InfoHubCard, MapDomain } from "../../../app/runtime/schemas";
 import {
   isTerminalStatus,
   priorityLabel,
@@ -29,8 +29,30 @@ export const WORK_ORDER_STATUS_LABELS: Readonly<Record<WorkOrderStatus, string>>
   "wont-do": "Won't Do",
 };
 
-export function cardScopeLabel(card: InfoHubCard): string {
-  return card.area != null && card.area.trim().length > 0 ? card.area : "General";
+/**
+ * domainId → display name, from the map's domain set. Shared by every
+ * surface that renders `cardScopeLabel` against live map state
+ * (InfoHubBoardView, MapOverlay) so the lookup is built the same way once.
+ */
+export function buildDomainNameById(domains: readonly MapDomain[]): ReadonlyMap<string, string> {
+  return new Map(domains.map((domain) => [domain.id, domain.name]));
+}
+
+/**
+ * The card's domain, rendered as its map display name when known and falling
+ * back to the raw `domainId` (or "General" for a domain-less card). Callers on
+ * a surface with map state pass `domainNameById` (built from mapState.domains
+ * via `buildDomainNameById`); without it the raw id shows.
+ */
+export function cardScopeLabel(
+  card: InfoHubCard,
+  domainNameById?: ReadonlyMap<string, string>,
+): string {
+  const name = domainNameById?.get(card.domainId);
+  if (name != null && name.length > 0) {
+    return name;
+  }
+  return card.domainId.length > 0 ? card.domainId : "General";
 }
 
 export function cardTitleLabel(card: InfoHubCard): string {
@@ -38,7 +60,15 @@ export function cardTitleLabel(card: InfoHubCard): string {
 }
 
 /** The clickable card face: type tag, priority, title, status, scope, checklist progress. */
-export function WorkOrderCardFace({ card, onOpen }: { card: InfoHubCard; onOpen: () => void }) {
+export function WorkOrderCardFace({
+  card,
+  domainNameById,
+  onOpen,
+}: {
+  card: InfoHubCard;
+  domainNameById?: ReadonlyMap<string, string>;
+  onOpen: () => void;
+}) {
   return (
     <div
       className="info-hub-card-face"
@@ -61,7 +91,7 @@ export function WorkOrderCardFace({ card, onOpen }: { card: InfoHubCard; onOpen:
       </div>
       <h3 className="info-hub-card-title">{cardTitleLabel(card)}</h3>
       <div className="info-hub-card-status">{WORK_ORDER_STATUS_LABELS[card.status]}</div>
-      <p className="info-hub-card-scope">{cardScopeLabel(card)}</p>
+      <p className="info-hub-card-scope">{cardScopeLabel(card, domainNameById)}</p>
       {card.checklist != null && card.checklist.length > 0 ? (
         <p className="info-hub-card-checklist-progress">
           ✓ {card.checklist.filter((item) => item.done).length}/{card.checklist.length} steps
@@ -144,12 +174,14 @@ export function WorkOrderStatusActions({
  */
 export function WorkOrderDetailModal({
   card,
+  domainNameById,
   footer,
   onClose,
   onToggleChecklistItem,
   readOnly = false,
 }: {
   card: InfoHubCard;
+  domainNameById?: ReadonlyMap<string, string>;
   footer?: ReactNode;
   onClose: () => void;
   onToggleChecklistItem: (cardId: string, index: number) => void;
@@ -171,7 +203,7 @@ export function WorkOrderDetailModal({
           </button>
         </div>
         <h3 className="info-hub-card-title mt-3 text-[18px]">{cardTitleLabel(card)}</h3>
-        <p className="info-hub-card-scope">{cardScopeLabel(card)}</p>
+        <p className="info-hub-card-scope">{cardScopeLabel(card, domainNameById)}</p>
         {card.detail != null && card.detail.length > 0 ? (
           <p className="info-hub-card-scope mt-3 whitespace-pre-wrap">{card.detail}</p>
         ) : null}
