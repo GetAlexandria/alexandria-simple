@@ -239,19 +239,34 @@ export function isStrayCard(card: InfoHubCard): boolean {
   return card.entityId == null && !isTerminalStatus(card.status);
 }
 
-/** Stray-card counts per domain id — the Domain-view layout's pile input. */
-export function strayCardCountsByDomain(
+/**
+ * Stray-card counts keyed by an arbitrary per-card key — the shared shape
+ * behind strayCardCountsByDomain and strayCardCountsByAssignee (they differ
+ * only in how a card's bucket key is derived).
+ */
+function strayCardCountsByKey(
   cards: readonly InfoHubCard[],
+  keyOf: (card: InfoHubCard) => string,
 ): Readonly<Record<string, number>> {
   const counts: Record<string, number> = {};
   for (const card of cards) {
     if (isStrayCard(card)) {
-      // domainId is required on every board card (M1 schema), so every stray
-      // buckets under a real key — no `??`-guarded fallback needed here.
-      counts[card.domainId] = (counts[card.domainId] ?? 0) + 1;
+      const key = keyOf(card);
+      counts[key] = (counts[key] ?? 0) + 1;
     }
   }
   return counts;
+}
+
+/**
+ * Stray-card counts per domain id — the Domain-view layout's pile input.
+ * domainId is required on every board card (M1 schema), so every stray
+ * buckets under a real key — no `??`-guarded fallback needed here.
+ */
+export function strayCardCountsByDomain(
+  cards: readonly InfoHubCard[],
+): Readonly<Record<string, number>> {
+  return strayCardCountsByKey(cards, (card) => card.domainId);
 }
 
 /**
@@ -277,12 +292,25 @@ export function cardsJoinedToEntity(
   return cards.filter((card) => card.entityId === entityId);
 }
 
+/**
+ * One key's loose cards — the shared shape behind looseCardsForDomain and
+ * looseCardsForAssignee (they differ only in how a card's bucket key is
+ * derived, the same split as strayCardCountsByKey).
+ */
+function looseCardsForKey(
+  cards: readonly InfoHubCard[],
+  key: string,
+  keyOf: (card: InfoHubCard) => string,
+): InfoHubCard[] {
+  return cards.filter((card) => isStrayCard(card) && keyOf(card) === key);
+}
+
 /** One domain's loose cards — exactly the cards its stray pile counts. */
 export function looseCardsForDomain(
   cards: readonly InfoHubCard[],
   domainId: string,
 ): InfoHubCard[] {
-  return cards.filter((card) => isStrayCard(card) && card.domainId === domainId);
+  return looseCardsForKey(cards, domainId, (card) => card.domainId);
 }
 
 /**
@@ -295,14 +323,7 @@ export function looseCardsForDomain(
 export function strayCardCountsByAssignee(
   cards: readonly InfoHubCard[],
 ): Readonly<Record<string, number>> {
-  const counts: Record<string, number> = {};
-  for (const card of cards) {
-    if (isStrayCard(card)) {
-      const key = assigneeKeyOf(card.assignee);
-      counts[key] = (counts[key] ?? 0) + 1;
-    }
-  }
-  return counts;
+  return strayCardCountsByKey(cards, (card) => assigneeKeyOf(card.assignee));
 }
 
 /**
@@ -314,7 +335,7 @@ export function looseCardsForAssignee(
   cards: readonly InfoHubCard[],
   assignee: string,
 ): InfoHubCard[] {
-  return cards.filter((card) => isStrayCard(card) && assigneeKeyOf(card.assignee) === assignee);
+  return looseCardsForKey(cards, assignee, (card) => assigneeKeyOf(card.assignee));
 }
 
 /**
