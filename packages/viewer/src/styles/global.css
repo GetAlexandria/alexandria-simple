@@ -2680,6 +2680,195 @@
     font-size: 11.5px;
   }
 
+  /* System room (work-system plan §3, WS3): PURPOSE/health, PATTERN,
+     HISTORY, and UPGRADE QUEUE — SystemRoomBody.tsx. Shares the info-hub-*
+     vocabulary above (lane-title, entity-chip-*, action-btn) rather than
+     inventing a parallel one; these are only the pieces with no existing
+     analog. */
+  .info-hub-system-purpose {
+    color: var(--viewer-canvas-fg-dim);
+    font-family: var(--viewer-font-ui);
+    font-size: 13px;
+    font-style: italic;
+    margin: 4px 0 0;
+  }
+
+  .info-hub-health-row {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .info-hub-health-dots {
+    display: flex;
+    gap: 4px;
+  }
+
+  .info-hub-health-dot {
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid var(--viewer-canvas-rule);
+    border-radius: 999px;
+    display: inline-block;
+    height: 9px;
+    width: 9px;
+  }
+
+  .info-hub-health-dot[data-filled="true"] {
+    background: var(--viewer-canvas-success);
+    border-color: var(--viewer-canvas-success);
+  }
+
+  .info-hub-health-dot[data-neutral="true"] {
+    background: transparent;
+    border-color: var(--viewer-canvas-fg-dimmer);
+    border-style: dashed;
+  }
+
+  .info-hub-health-status {
+    color: var(--viewer-canvas-fg-dim);
+    font-family: var(--viewer-font-ui);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .info-hub-health-status[data-warning="true"] {
+    color: color-mix(in srgb, var(--viewer-canvas-danger) 46%, var(--viewer-canvas-fg-bright));
+  }
+
+  .info-hub-lifecycle-chip {
+    border: 1px solid var(--viewer-canvas-panel-bd);
+    border-radius: 3px;
+    color: var(--viewer-canvas-fg-dim);
+    font-family: var(--viewer-font-ui);
+    font-size: 9.5px;
+    letter-spacing: 0.06em;
+    padding: 2px 6px;
+    text-transform: uppercase;
+  }
+
+  .info-hub-hibernating-note {
+    color: var(--viewer-canvas-fg-dimmer);
+    font-family: var(--viewer-font-ui);
+    font-size: 11px;
+    font-style: italic;
+  }
+
+  /* The room's three section lists share one flex-column, no-bullet shape. */
+  .info-hub-pattern-list,
+  .info-hub-history-list,
+  .info-hub-upgrade-project-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+  }
+
+  .info-hub-pattern-row {
+    align-items: center;
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid var(--viewer-canvas-rule);
+    border-radius: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    font-family: var(--viewer-font-ui);
+    gap: 10px;
+    padding: 7px 10px;
+  }
+
+  .info-hub-pattern-title {
+    color: var(--viewer-canvas-fg-bright);
+    flex: 1 1 auto;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .info-hub-cadence-chip {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--viewer-canvas-panel-bd);
+    border-radius: 999px;
+    color: var(--viewer-canvas-amber-glow);
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+
+  .info-hub-pattern-delegate,
+  .info-hub-pattern-next-due {
+    color: var(--viewer-canvas-fg-dim);
+    font-size: 10.5px;
+  }
+
+  .info-hub-card-provenance {
+    color: var(--viewer-canvas-fg-dimmer);
+    font-family: var(--viewer-font-ui);
+    font-size: 10px;
+    font-style: italic;
+    margin: 4px 0 0;
+  }
+
+  .info-hub-history-row {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    font-family: var(--viewer-font-ui);
+    gap: 8px;
+  }
+
+  .info-hub-history-rule-title {
+    color: var(--viewer-canvas-fg-dim);
+    font-size: 11px;
+    min-width: 140px;
+  }
+
+  .info-hub-history-marks {
+    display: flex;
+    gap: 2px;
+    letter-spacing: 0.02em;
+  }
+
+  .info-hub-history-mark {
+    color: var(--viewer-canvas-fg-dimmer);
+    font-size: 11px;
+  }
+
+  .info-hub-history-mark[data-hit="true"] {
+    color: var(--viewer-canvas-success);
+  }
+
+  .info-hub-history-mark[data-hit="false"] {
+    color: color-mix(in srgb, var(--viewer-canvas-danger) 46%, var(--viewer-canvas-fg-bright));
+  }
+
+  .info-hub-history-missed {
+    color: var(--viewer-canvas-fg-dimmer);
+    font-size: 10px;
+  }
+
+  .info-hub-upgrade-project {
+    align-items: center;
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid var(--viewer-canvas-rule);
+    border-radius: 4px;
+    display: flex;
+    font-family: var(--viewer-font-ui);
+    gap: 10px;
+    padding: 6px 10px;
+    text-align: left;
+    width: 100%;
+  }
+
+  button.info-hub-upgrade-project {
+    cursor: pointer;
+  }
+
+  button.info-hub-upgrade-project:hover {
+    border-color: var(--viewer-canvas-amber-dim);
+  }
+
   .vision-builder-shell {
     margin: 0 auto;
     max-width: 1180px;

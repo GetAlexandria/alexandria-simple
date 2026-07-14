@@ -932,6 +932,7 @@ export function MapTabView({
           onToggleChecklistItem={toggleChecklistItem}
           onEditEntity={(entityId) => openEntityForm(entityId)}
           onClose={() => setOverlayTarget(null)}
+          onOpenEntity={(entityId) => openOverlay({ kind: "entity", entityId })}
         />
       ) : null}
 

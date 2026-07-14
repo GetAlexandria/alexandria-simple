@@ -262,7 +262,15 @@ export function InfoHubBoardView({
   );
   // New project/system from the board (board-project-rooms): null closes the
   // form; a kind opens it pre-set to that kind (MapEntityForm's defaultKind).
-  const [entityFormKind, setEntityFormKind] = useState<MapEntityKind | null>(null);
+  // The system room's "Create upgrade project" (work-system plan §3, WS3)
+  // opens the exact same form with `upgradePreset` set, pre-picking the new
+  // project's domain and upgrades-system fields from the system it was
+  // launched from — one state object, so opening a plain "New project" later
+  // can never inherit a stale preset.
+  const [entityForm, setEntityForm] = useState<{
+    kind: MapEntityKind;
+    upgradePreset?: { domainId: string; systemId: string };
+  } | null>(null);
   const [entityCreateError, setEntityCreateError] = useState<PromoteFailure | null>(null);
   const [entityCreating, setEntityCreating] = useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -664,7 +672,7 @@ export function InfoHubBoardView({
         setEntityCreateError(mapSaveFailureToPromoteFailure(failure, "Couldn't create the entity"));
         return false;
       }
-      setEntityFormKind(null);
+      setEntityForm(null);
       // The room continues the "create a project, then build it out of
       // tasks" flow — open it straight away, empty and unplaced.
       openRoom(entity.id);
@@ -689,6 +697,22 @@ export function InfoHubBoardView({
       });
     },
     [closeRoom, mapEntities, resetForm],
+  );
+
+  /**
+   * The system room's "Create upgrade project" (work-system plan §3, WS3):
+   * closes the room and opens the same "New project" form the entity strip
+   * uses, pre-set to this system's domain and upgrades join — the director
+   * only needs to name it. Mirrors addTaskForEntity's "close the room, open
+   * the target form" shape.
+   */
+  const createUpgradeProjectForSystem = useCallback(
+    (systemId: string, domainId: string) => {
+      closeRoom();
+      setEntityCreateError(null);
+      setEntityForm({ kind: "project", upgradePreset: { domainId, systemId } });
+    },
+    [closeRoom],
   );
 
   if (roomEntityId != null) {
@@ -726,7 +750,11 @@ export function InfoHubBoardView({
               mapState={mapState}
               onAddTask={addTaskForEntity}
               onBack={closeRoom}
+              onCreateUpgradeProject={
+                onSaveMapState != null ? createUpgradeProjectForSystem : undefined
+              }
               onMoveStatus={moveCardStatus}
+              onOpenEntity={openRoom}
               onToggleChecklistItem={toggleChecklistItem}
             />
           )}
@@ -773,28 +801,39 @@ export function InfoHubBoardView({
             cards={cards}
             domainNameById={domainNameById}
             entities={mapEntities}
-            onCreateEntity={onSaveMapState != null ? (kind) => setEntityFormKind(kind) : undefined}
+            onCreateEntity={onSaveMapState != null ? (kind) => setEntityForm({ kind }) : undefined}
             onOpenRoom={openRoom}
           />
         ) : null}
 
-        {entityFormKind != null ? (
+        {entityForm != null ? (
           <div className="info-hub-form mt-3" data-testid="entity-create-form">
             <h3 className="info-hub-form-title">
-              {entityFormKind === "project" ? "New project" : "New system"}
+              {entityForm.upgradePreset != null
+                ? "New upgrade project"
+                : entityForm.kind === "project"
+                  ? "New project"
+                  : "New system"}
             </h3>
             <MapEntityForm
               contexts={mapContexts}
-              defaultKind={entityFormKind}
+              defaultKind={entityForm.kind}
               domains={mapDomains}
               entity={null}
               entities={mapEntities}
-              key={entityFormKind}
+              // Remount whenever the kind OR the upgrade-project preset
+              // changes (not just the kind) — otherwise switching from an
+              // open "Create upgrade project" draft straight into a plain
+              // "New project" click would leave the old preset's values
+              // sitting in the still-mounted form's own state.
+              key={`${entityForm.kind}-${entityForm.upgradePreset?.systemId ?? ""}`}
               onCancel={() => {
-                setEntityFormKind(null);
+                setEntityForm(null);
                 setEntityCreateError(null);
               }}
               onSubmit={createEntity}
+              presetDomainId={entityForm.upgradePreset?.domainId}
+              presetUpgrades={entityForm.upgradePreset?.systemId}
               saving={entityCreating || mapSaving}
             />
             {entityCreateError != null ? (

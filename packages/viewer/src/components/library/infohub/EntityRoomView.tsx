@@ -37,6 +37,10 @@ export type EntityRoomViewProps = {
   /** Opens the existing "New work order" form with this entity pre-picked. */
   onAddTask: (entityId: string) => void;
   onEditEntity?: (entityId: string) => void;
+  /** System room upgrade-queue project links — opens that project's own room (see SystemRoomBody's doc). */
+  onOpenEntity?: (entityId: string) => void;
+  /** System room's "Create upgrade project" (board-only) — see SystemRoomBody's doc. */
+  onCreateUpgradeProject?: (systemId: string, domainId: string) => void;
 };
 
 export function EntityRoomView({
@@ -50,6 +54,8 @@ export function EntityRoomView({
   onBack,
   onAddTask,
   onEditEntity,
+  onOpenEntity,
+  onCreateUpgradeProject,
 }: EntityRoomViewProps) {
   const [detailCardId, setDetailCardId] = useState<string | null>(null);
   // A fresh room per entity starts with no card detail open — otherwise a
@@ -130,8 +136,10 @@ export function EntityRoomView({
           entityId={entity.id}
           mapState={mapState}
           onCloseCard={() => setDetailCardId(null)}
+          onCreateUpgradeProject={onCreateUpgradeProject}
           onMoveStatus={onMoveStatus}
           onOpenCard={(cardId) => setDetailCardId(cardId)}
+          onOpenEntity={onOpenEntity}
           onToggleChecklistItem={onToggleChecklistItem}
           testIdPrefix="entity-room"
         />

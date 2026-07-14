@@ -37,6 +37,19 @@ export function initialFixtureMapState(): MapState {
         domainId: "software",
         assignee: "colleague:raven",
         cadence: "30m",
+        // Work-system plan §3 (WS3): a PATTERN rule so the e2e suite can
+        // exercise the system room's health/PATTERN/HISTORY sections against
+        // the generated cards below (board-entity-rooms.spec.ts). `cadence`
+        // stays the duty-loop wake rhythm; `pattern` is the separate
+        // generation-rule concept the system room reads.
+        pattern: [
+          {
+            id: "monthly-check-in",
+            title: "Run the monthly check-in",
+            every: "1mo",
+            assignee: "colleague:raven",
+          },
+        ],
         lifecycle: "planted",
       },
       {
@@ -135,6 +148,46 @@ export function initialFixtureInfoHubCards(): InfoHubCard[] {
       source: "seed:fixture",
       created: "2026-07-06",
       title: "Card with no map join",
+    },
+    // Work-system plan §3 (WS3) fixture: sys-raven-duty-loop's
+    // monthly-check-in rule has one completed (hit) window and one open
+    // current-window card, so board-entity-rooms.spec.ts can assert the
+    // system room's PATTERN/health/OPEN QUEUE provenance/HISTORY sections
+    // against real generated cards.
+    {
+      id: "wo-gen-raven-duty-loop-monthly-check-in-2026-06-01",
+      type: "task",
+      status: "done",
+      domainId: "software",
+      entityId: "sys-raven-duty-loop",
+      assignee: "colleague:raven",
+      priority: 15,
+      source: "system:sys-raven-duty-loop",
+      created: "2026-06-01",
+      terminalAt: "2026-06-05",
+      title: "Run the monthly check-in",
+      generatedBy: {
+        systemId: "sys-raven-duty-loop",
+        ruleId: "monthly-check-in",
+        window: "2026-06-01T00:00:00.000Z",
+      },
+    },
+    {
+      id: "wo-gen-raven-duty-loop-monthly-check-in-2026-07-01",
+      type: "task",
+      status: "open",
+      domainId: "software",
+      entityId: "sys-raven-duty-loop",
+      assignee: "colleague:raven",
+      priority: 15,
+      source: "system:sys-raven-duty-loop",
+      created: "2026-07-01",
+      title: "Run the monthly check-in",
+      generatedBy: {
+        systemId: "sys-raven-duty-loop",
+        ruleId: "monthly-check-in",
+        window: "2026-07-01T00:00:00.000Z",
+      },
     },
   ];
 }

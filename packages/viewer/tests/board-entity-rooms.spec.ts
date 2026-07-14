@@ -118,3 +118,82 @@ test("an unrecognized ?entity= deep link shows the room's not-found fallback wit
   await page.getByTestId("entity-room-back").click();
   await expect(page.getByTestId("entity-strip")).toBeVisible();
 });
+
+// WS3 (work-system plan §3): the health-first system room — PATTERN, health,
+// a generated card's provenance line, HISTORY, and the "Create upgrade
+// project" flow. sys-raven-duty-loop's monthly-check-in rule carries one
+// completed (hit) window and one open current-window card (map-board-fixture.ts).
+
+test("the system room shows PATTERN, health, and a generated card's provenance line", async ({
+  page,
+}) => {
+  await page.request.post("/__fixture/reset-map-board");
+  await page.goto("/info?entity=sys-raven-duty-loop");
+
+  await expect(page.getByTestId("entity-room-title")).toContainText("Raven duty loop");
+
+  await expect(page.getByTestId("entity-room-pattern-rule-monthly-check-in")).toContainText(
+    "every 1mo",
+  );
+  await expect(page.getByTestId("entity-room-pattern-rule-monthly-check-in")).toContainText(
+    "Raven",
+  );
+
+  // One hit window (2026-06) puts the rule at a 100% trailing on-time rate —
+  // "On time", not "Behind" or "No history yet".
+  await expect(page.getByTestId("entity-room-health-status")).toContainText("On time");
+
+  // The current window's open card sits in the open queue with its
+  // provenance line; the completed 2026-06 window is a HISTORY mark instead.
+  await expect(
+    page.getByTestId("entity-room-card-wo-gen-raven-duty-loop-monthly-check-in-2026-07-01"),
+  ).toBeVisible();
+  await expect(
+    page.getByTestId(
+      "entity-room-card-wo-gen-raven-duty-loop-monthly-check-in-2026-07-01-provenance",
+    ),
+  ).toContainText("Generated · Run the monthly check-in · window 2026-07");
+  await expect(
+    page.locator(
+      '[data-testid="entity-room-card-wo-gen-raven-duty-loop-monthly-check-in-2026-06-01"]',
+    ),
+  ).toHaveCount(0);
+
+  await expect(page.getByTestId("entity-room-history-rule-monthly-check-in")).toBeVisible();
+});
+
+test("Create upgrade project opens the entity form preset to this system, and the new project joins the upgrade queue", async ({
+  page,
+}) => {
+  await page.request.post("/__fixture/reset-map-board");
+  await page.goto("/info?entity=sys-raven-duty-loop");
+
+  await page.getByTestId("entity-room-create-upgrade-project").click();
+
+  await expect(page.getByTestId("entity-create-form")).toBeVisible();
+  await expect(page.getByLabel("Entity kind")).toHaveValue("project");
+  await expect(page.getByLabel("Entity domain")).toHaveValue("software");
+  await expect(page.getByLabel("Project upgrades system")).toHaveValue("sys-raven-duty-loop");
+
+  await page.getByLabel("Entity name").fill("Automate the duty-loop digest");
+  await page.getByTestId("map-entity-form-submit").click();
+
+  // The flow continues into the new (empty) room, same as plain "New project".
+  await expect(page.getByTestId("entity-room-title")).toContainText(
+    "Automate the duty-loop digest",
+  );
+
+  const state = (await (await page.request.get("/api/map/state")).json()) as {
+    entities: { id: string; name: string; upgrades?: string; domainId: string }[];
+  };
+  const created = state.entities.find((entity) => entity.name === "Automate the duty-loop digest");
+  expect(created?.upgrades).toBe("sys-raven-duty-loop");
+  expect(created?.domainId).toBe("software");
+
+  // Back on the system room, the new project shows in the upgrade queue.
+  await page.getByTestId("entity-room-back").click();
+  await page.goto("/info?entity=sys-raven-duty-loop");
+  await expect(page.getByTestId(`entity-room-upgrade-project-${created!.id}`)).toContainText(
+    "Automate the duty-loop digest",
+  );
+});

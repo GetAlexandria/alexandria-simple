@@ -11,11 +11,18 @@
 // header (name/kind/lifecycle/domain/context) or any chrome (scrim, page
 // layout, back-to-board control): those differ enough between a floating map
 // overlay and a full board page that each caller renders its own.
+//
+// Work-system plan §3 (WS3): a "system" kind entity diverges enough from the
+// flat open+done card grid below (terminal generated cards fold into a
+// HISTORY ✓/✗ row rather than staying in the grid) that this component
+// delegates entirely to SystemRoomBody for that kind, rather than growing a
+// system branch inline — the project-room behavior below is untouched.
 
 import { useMemo } from "react";
 import type { InfoHubCard, MapEntity, MapState } from "../../../app/runtime/schemas";
 import { cardsJoinedToEntity } from "../../map/placement";
 import { sortCardsByPriority, type WorkOrderStatus } from "./boardModel";
+import { SystemRoomBody } from "./SystemRoomBody";
 import {
   buildDomainNameById,
   WorkOrderCardFace,
@@ -57,6 +64,20 @@ export type EntityRoomBodyProps = {
    * the e2e suite depends on them); the board room passes "entity-room".
    */
   testIdPrefix: string;
+  /**
+   * Injected clock for the system room's health controls (work-system plan
+   * §3) — ignored for a project entity. Defaults to `new Date()` here at the
+   * shared body's edge (both MapOverlay and EntityRoomView route through
+   * this component) so a caller only needs to pass it to pin the clock in a
+   * test. The default is memoized per mount (a room is transient UI) so it
+   * keeps a stable identity — a bare `new Date()` per render would defeat
+   * SystemRoomBody's `useMemo` over the health controls.
+   */
+  now?: Date;
+  /** System room upgrade-queue project links — see SystemRoomBody's doc. */
+  onOpenEntity?: (entityId: string) => void;
+  /** System room's board-only "Create upgrade project" — see SystemRoomBody's doc. */
+  onCreateUpgradeProject?: (systemId: string, domainId: string) => void;
 };
 
 export function EntityRoomBody({
@@ -73,9 +94,16 @@ export function EntityRoomBody({
   onMoveStatus,
   onToggleChecklistItem,
   testIdPrefix,
+  now,
+  onOpenEntity,
+  onCreateUpgradeProject,
 }: EntityRoomBodyProps) {
   const domainNameById = useMemo(() => buildDomainNameById(mapState.domains), [mapState.domains]);
   const readOnly = entity != null && isEntityRoomReadOnly(entity);
+  // See the prop doc — a stable default clock, and a hook that must run on
+  // every render (before the system-room branch) to keep hook order fixed
+  // even if the same mounted body switches entity kinds.
+  const effectiveNow = useMemo(() => now ?? new Date(), [now]);
 
   const roomCards = useMemo(() => {
     if (cards == null) {
@@ -83,6 +111,28 @@ export function EntityRoomBody({
     }
     return sortCardsByPriority(cardsJoinedToEntity(cards, entityId));
   }, [cards, entityId]);
+
+  if (entity != null && entity.kind === "system") {
+    return (
+      <SystemRoomBody
+        boardError={boardError}
+        boardSaveError={boardSaveError}
+        boardSaving={boardSaving}
+        cards={cards}
+        detailCardId={detailCardId}
+        mapState={mapState}
+        now={effectiveNow}
+        onCloseCard={onCloseCard}
+        onCreateUpgradeProject={onCreateUpgradeProject}
+        onMoveStatus={onMoveStatus}
+        onOpenCard={onOpenCard}
+        onOpenEntity={onOpenEntity}
+        onToggleChecklistItem={onToggleChecklistItem}
+        system={entity}
+        testIdPrefix={testIdPrefix}
+      />
+    );
+  }
 
   const detailCard =
     detailCardId == null ? null : (roomCards.find((card) => card.id === detailCardId) ?? null);

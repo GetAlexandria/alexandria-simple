@@ -55,6 +55,18 @@ type MapEntityFormProps = {
   onCancel: () => void;
   /** Resolves true when the save landed; the form then closes upstream. */
   onSubmit: (draft: MapEntityDraft) => Promise<boolean>;
+  /**
+   * Create-only preset domainId (work-system plan §3: the system room's
+   * "Create upgrade project" defaults the new project's domain from the
+   * system it upgrades). Ignored once `entity` is set — an edit's domain
+   * always comes from the entity itself.
+   */
+  presetDomainId?: string;
+  /**
+   * Create-only preset "Upgrades system" (same origin as presetDomainId).
+   * Ignored once `entity` is set.
+   */
+  presetUpgrades?: string;
   saving: boolean;
 };
 
@@ -66,6 +78,8 @@ export function MapEntityForm({
   defaultKind,
   onCancel,
   onSubmit,
+  presetDomainId,
+  presetUpgrades,
   saving,
 }: MapEntityFormProps) {
   const [name, setName] = useState(entity?.name ?? "");
@@ -74,10 +88,13 @@ export function MapEntityForm({
   // entity defaults to no context, same as a new board card.
   const [contextId, setContextId] = useState(entity?.contextId ?? "");
   // Domain is required and no longer derived from context at read time: it
-  // defaults to the entity's own domain on edit, else the first domain on
-  // the map for a new entity (a new entity starts with no context picked,
-  // so there is no context to derive an initial domain from).
-  const [domainId, setDomainId] = useState(entity?.domainId ?? domains[0]?.id ?? "");
+  // defaults to the entity's own domain on edit, a create-only preset when
+  // one is handed in (Create upgrade project), else the first domain on the
+  // map for a new entity (a new entity starts with no context picked, so
+  // there is no context to derive an initial domain from).
+  const [domainId, setDomainId] = useState(
+    entity?.domainId ?? presetDomainId ?? domains[0]?.id ?? "",
+  );
   const [lifecycle, setLifecycle] = useState(entity?.lifecycle ?? lifecyclesForKind(kind)[0]!);
   const [cadence, setCadence] = useState(entity?.cadence ?? "");
   // Prefill the bare colleague id from the entity's assignee when it is
@@ -94,8 +111,10 @@ export function MapEntityForm({
       assignee: rule.assignee ?? "",
     })) ?? [],
   );
-  // Project-only (work-system plan §1): the system this project upgrades.
-  const [upgrades, setUpgrades] = useState(entity?.upgrades ?? "");
+  // Project-only (work-system plan §1): the system this project upgrades —
+  // a create-only preset (Create upgrade project) wins over the default
+  // blank, same as presetDomainId above.
+  const [upgrades, setUpgrades] = useState(entity?.upgrades ?? presetUpgrades ?? "");
 
   const systemOptions = entities.filter((candidate) => candidate.kind === "system");
 
