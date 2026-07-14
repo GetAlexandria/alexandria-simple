@@ -72,11 +72,19 @@ import {
 import { VisionOnboardingView } from "./vision/VisionOnboardingView";
 import { MapMessagePanel } from "../map/MapMessagePanel";
 import { ParchmentActionButton } from "../map/panel-buttons";
+// Pure, three.js-free rollup (same guarantee as map/colors and
+// map/MapMessagePanel above) — importing it here does NOT pull the lazy map
+// chunk into the main bundle.
+import { escalationByColleagueId } from "../map/colleague-overlay";
 
 interface LibraryBrowserAppProps {
   initialCatalog?: LibraryCatalog;
   initialGraph?: LibraryGraph;
 }
+
+// A stable empty escalation map for the surfaces that don't load the data
+// behind the coin-tray glow — reused so those renders never mint a fresh Map.
+const EMPTY_ESCALATION: ReadonlyMap<string, boolean> = new Map();
 
 function activeViewForRoute(route: ViewerRoute): LibraryBrowserView {
   switch (route.surface) {
@@ -456,6 +464,27 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
   // map document and board. Only loaded on the map surface, and the map
   // degrades gracefully (neutral health) when it is unavailable.
   const colleagueJournals = useColleagueJournals(runtimeClient, route.surface === "map");
+  // The coin tray's escalation glow (Map Glow Up): a per-colleague rollup of
+  // "needs a human" — a needs-a-human card on one of their systems, or a system
+  // that has gone quiet. It reuses the SAME joined state the board + map already
+  // load, so it costs no new fetch. v1 scope: computed ONLY where that data is
+  // present — the info + map surfaces (boardOrMapOpen). The journals behind the
+  // health/overdue half load on the map surface alone (useColleagueJournals
+  // above), so on the info surface only the needs-a-human half fires (matching
+  // the map's own graceful degradation). Every OTHER surface gets an empty map
+  // (no glow); we deliberately do NOT broaden any fetch to light the glow
+  // app-wide — that polling cost is a later call, not this PR's.
+  const colleagueEscalation = useMemo<ReadonlyMap<string, boolean>>(() => {
+    if (!boardOrMapOpen || mapState.state == null) {
+      return EMPTY_ESCALATION;
+    }
+    return escalationByColleagueId({
+      state: mapState.state,
+      cards: infoHubBoard.board?.cards ?? [],
+      journals: colleagueJournals.journals,
+      nowMs: Date.now(),
+    });
+  }, [boardOrMapOpen, mapState.state, infoHubBoard.board, colleagueJournals.journals]);
   const {
     connectionState: ravenConnectionState,
     disconnectConnection: disconnectRavenConnection,
@@ -809,8 +838,26 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
       builderUnknownBundleId={
         resolvedBuilderBundle?.kind === "unknown" ? resolvedBuilderBundle.requestedId : undefined
       }
+      escalationByColleagueId={colleagueEscalation}
       mode={mode}
       onAgent={(agentId) => navigate(agentRoute(agentId))}
+      // Colleague coin "Journal" → the colleague's map overlay (which shows the
+      // journal), via a `?colleague=` deep-link the Map tab reads on mount.
+      onColleagueJournal={(colleagueId) =>
+        navigate({
+          surface: "map",
+          searchParams: new URLSearchParams({ colleague: colleagueId }),
+        })
+      }
+      // Colleague coin "Needs a Human" → the board's whole needs-a-human lane
+      // (cards carry no colleague field to filter by) — the SAME deep-link the
+      // Map tab's colleague overlay uses.
+      onColleagueNeedsHuman={() =>
+        navigate({
+          surface: "info",
+          searchParams: new URLSearchParams({ status: "needs-a-human" }),
+        })
+      }
       onBundleSelect={selectBuilderBundle}
       onFrameProblem={requestFrameProblem}
       onHome={() => navigate(homeRoute())}
@@ -945,6 +992,10 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
                 // The bench quick-bar link: the colleague's per-agent page.
                 onOpenAgentPage={(colleagueId) => navigate(agentRoute(colleagueId))}
                 journals={colleagueJournals.journals}
+                // Deep-link from a colleague coin's "Journal" action
+                // (/map?colleague=<id>): open that colleague's overlay on
+                // mount. Read once, mirroring the board's initialStatusFilter.
+                initialColleagueId={route.searchParams.get("colleague") ?? undefined}
               />
             </Suspense>
           </MapChunkErrorBoundary>

@@ -1,10 +1,19 @@
 import { describe, expect, it } from "bun:test";
-import type { InfoHubCard, MapState, RuntimeAgent } from "../../app/runtime/schemas";
+import type {
+  ColleagueJournal,
+  InfoHubCard,
+  MapEntity,
+  MapState,
+  RuntimeAgent,
+} from "../../app/runtime/schemas";
 import {
+  colleagueEscalated,
   colleagueNeedsHumanCount,
+  escalationByColleagueId,
   resolveColleagueIdentity,
   topJournalEntries,
 } from "./colleague-overlay";
+import type { TileSignals } from "./signals";
 
 function agent(id: string, name: string, jobTitle: string): RuntimeAgent {
   return { id, name, jobTitle, knowledgeBankAreaIds: [], status: "available" };
@@ -24,6 +33,28 @@ function card(overrides: Partial<InfoHubCard>): InfoHubCard {
     priority: 10,
     source: "seed:test",
     created: "2026-07-01",
+    ...overrides,
+  };
+}
+
+function systemEntity(overrides: Partial<MapEntity> & { id: string }): MapEntity {
+  return {
+    kind: "system",
+    contextId: "colleagues",
+    domainId: "alexandria",
+    lifecycle: "planted",
+    name: overrides.name ?? overrides.id,
+    ...overrides,
+  };
+}
+
+function tileSignals(overrides: Partial<TileSignals>): TileSignals {
+  return {
+    needsHuman: false,
+    stale: false,
+    filledDots: 3,
+    overdue: false,
+    healthKnown: false,
     ...overrides,
   };
 }
@@ -103,5 +134,147 @@ describe("topJournalEntries", () => {
 
   it("clamps a negative limit to empty", () => {
     expect(topJournalEntries([1, 2, 3], -1)).toEqual([]);
+  });
+});
+
+describe("colleagueEscalated", () => {
+  const NO_SIGNALS: ReadonlyMap<string, TileSignals> = new Map();
+
+  it("escalates when a needs-a-human card is joined to the colleague's system", () => {
+    const cards = [card({ id: "a", status: "needs-a-human", entityId: "sys-raven-duty-loop" })];
+    expect(
+      colleagueEscalated({
+        state: STATE,
+        cards,
+        signalsByEntityId: NO_SIGNALS,
+        colleagueId: "raven",
+      }),
+    ).toBe(true);
+  });
+
+  it("escalates when one of the colleague's systems is overdue", () => {
+    const signalsByEntityId = new Map<string, TileSignals>([
+      ["sys-raven-duty-loop", tileSignals({ overdue: true, filledDots: 0, healthKnown: true })],
+    ]);
+    expect(
+      colleagueEscalated({ state: STATE, cards: [], signalsByEntityId, colleagueId: "raven" }),
+    ).toBe(true);
+  });
+
+  it("escalates when a system's health is known and fully drained (0 dots)", () => {
+    const signalsByEntityId = new Map<string, TileSignals>([
+      ["sys-raven-duty-loop", tileSignals({ overdue: false, filledDots: 0, healthKnown: true })],
+    ]);
+    expect(
+      colleagueEscalated({ state: STATE, cards: [], signalsByEntityId, colleagueId: "raven" }),
+    ).toBe(true);
+  });
+
+  it("does NOT escalate on drained dots whose health is UNKNOWN (never-beaten)", () => {
+    const signalsByEntityId = new Map<string, TileSignals>([
+      ["sys-raven-duty-loop", tileSignals({ overdue: false, filledDots: 0, healthKnown: false })],
+    ]);
+    expect(
+      colleagueEscalated({ state: STATE, cards: [], signalsByEntityId, colleagueId: "raven" }),
+    ).toBe(false);
+  });
+
+  it("does NOT escalate a healthy system with no needs-a-human cards", () => {
+    const signalsByEntityId = new Map<string, TileSignals>([
+      ["sys-raven-duty-loop", tileSignals({ filledDots: 3, overdue: false, healthKnown: true })],
+    ]);
+    expect(
+      colleagueEscalated({ state: STATE, cards: [], signalsByEntityId, colleagueId: "raven" }),
+    ).toBe(false);
+  });
+
+  it("does not let one colleague's overdue system escalate another colleague", () => {
+    const signalsByEntityId = new Map<string, TileSignals>([
+      ["sys-raven-duty-loop", tileSignals({ overdue: true, filledDots: 0, healthKnown: true })],
+    ]);
+    // damien runs no system in STATE, so raven's overdue system must not leak.
+    expect(
+      colleagueEscalated({ state: STATE, cards: [], signalsByEntityId, colleagueId: "damien" }),
+    ).toBe(false);
+  });
+});
+
+describe("escalationByColleagueId", () => {
+  const NOW = Date.parse("2026-07-13T14:00:00Z");
+  const escalationState: MapState = {
+    domains: [],
+    contexts: [],
+    entities: [
+      systemEntity({ id: "sys-raven", colleague: "raven", cadence: "30m" }),
+      systemEntity({ id: "sys-damien", colleague: "damien", cadence: "30m" }),
+    ],
+    positions: [],
+  };
+  // raven beat minutes ago (healthy); damien last beat on July 1 (overdue).
+  const journals: ColleagueJournal[] = [
+    {
+      colleague: "raven",
+      entries: [{ timestamp: "2026-07-13T13:45:00Z", title: "beat", body: "" }],
+    },
+    {
+      colleague: "damien",
+      entries: [{ timestamp: "2026-07-01T00:00:00Z", title: "beat", body: "" }],
+    },
+  ];
+
+  it("keys one entry per colleague with a map entity; true only for the escalated one", () => {
+    // A needs-a-human card joined to raven's system → raven escalated; damien calm
+    // (journals omitted so no health signal fires for either).
+    const cards = [card({ id: "n", status: "needs-a-human", entityId: "sys-raven" })];
+    const result = escalationByColleagueId({
+      state: escalationState,
+      cards,
+      journals: [],
+      nowMs: NOW,
+    });
+    expect(result.get("raven")).toBe(true);
+    expect(result.get("damien")).toBe(false);
+  });
+
+  it("escalates a colleague whose system has gone overdue (journal lapsed)", () => {
+    const result = escalationByColleagueId({
+      state: escalationState,
+      cards: [],
+      journals,
+      nowMs: NOW,
+    });
+    expect(result.get("damien")).toBe(true);
+    expect(result.get("raven")).toBe(false);
+  });
+
+  it("leaves the health/overdue half inert when journals are unavailable (info surface)", () => {
+    // journals == null → no system reads overdue, so nobody escalates on health…
+    const calm = escalationByColleagueId({
+      state: escalationState,
+      cards: [],
+      journals: null,
+      nowMs: NOW,
+    });
+    expect(calm.get("raven")).toBe(false);
+    expect(calm.get("damien")).toBe(false);
+    // …but a needs-a-human card still escalates without any journal data.
+    const withCard = escalationByColleagueId({
+      state: escalationState,
+      cards: [card({ id: "n", status: "needs-a-human", entityId: "sys-damien" })],
+      journals: null,
+      nowMs: NOW,
+    });
+    expect(withCard.get("damien")).toBe(true);
+  });
+
+  it("omits colleagues with no map entity (absent from the map = no glow)", () => {
+    const result = escalationByColleagueId({
+      state: escalationState,
+      cards: [],
+      journals: [],
+      nowMs: NOW,
+    });
+    expect(result.has("nova")).toBe(false);
+    expect([...result.keys()].sort()).toEqual(["damien", "raven"]);
   });
 });

@@ -40,6 +40,8 @@ function ShellStory({
       onLibrary={() => setActiveView("library")}
       onMap={() => setActiveView("map")}
       onAgent={() => setActiveView("agent")}
+      onColleagueJournal={() => setActiveView("map")}
+      onColleagueNeedsHuman={() => setActiveView("info")}
       onFrameProblem={() => {}}
       onKnowledgeBank={() => setActiveView("knowledge-bank")}
       onLedger={() => setActiveView("ledger")}

@@ -3,7 +3,13 @@
 // they can do). Three.js- and React-free so it unit-tests under bun; the
 // overlay component (ColleagueOverlay) is the only renderer of these.
 
-import type { InfoHubCard, MapState, RuntimeAgent } from "../../app/runtime/schemas";
+import type {
+  ColleagueJournal,
+  InfoHubCard,
+  MapState,
+  RuntimeAgent,
+} from "../../app/runtime/schemas";
+import { deriveTileSignalsByEntity, type TileSignals } from "./signals";
 import { capitalize } from "./vocabulary";
 
 /** The colleague's name/role line, resolved from the agent roster. */
@@ -62,4 +68,86 @@ export function colleagueNeedsHumanCount(
  */
 export function topJournalEntries<Entry>(entries: readonly Entry[], limit: number): Entry[] {
   return entries.slice(0, Math.max(0, limit));
+}
+
+/**
+ * Whether a colleague's coin should carry the escalation glow (Map Glow Up):
+ * the director needs to step in on this colleague's work. True when EITHER a
+ * `needs-a-human` board card is joined to one of their systems
+ * (colleagueNeedsHumanCount > 0), OR one of their systems has gone quiet — its
+ * per-entity signal is `overdue`, or its health is KNOWN and fully drained
+ * (`healthKnown && filledDots === 0`). It reuses the exact same building blocks
+ * the map tiles read (colleagueNeedsHumanCount + the per-entity TileSignals),
+ * so the coin glow and the tile treatments can never disagree.
+ *
+ * The per-entity signals are passed in (not recomputed here) so a whole-tray
+ * rollup derives them ONCE — see escalationByColleagueId. A signal absent from
+ * the map (unknown entity id) contributes nothing.
+ */
+export function colleagueEscalated(options: {
+  state: MapState;
+  cards: readonly InfoHubCard[];
+  signalsByEntityId: ReadonlyMap<string, TileSignals>;
+  colleagueId: string;
+}): boolean {
+  if (colleagueNeedsHumanCount(options.state, options.cards, options.colleagueId) > 0) {
+    return true;
+  }
+  return options.state.entities.some((entity) => {
+    if (entity.colleague !== options.colleagueId) {
+      return false;
+    }
+    const signals = options.signalsByEntityId.get(entity.id);
+    if (signals == null) {
+      return false;
+    }
+    return signals.overdue || (signals.healthKnown && signals.filledDots === 0);
+  });
+}
+
+/**
+ * The whole coin tray's escalation rollup, keyed by bare colleague id — one
+ * entry for every colleague that runs at least one map entity, `true` when that
+ * colleague is escalated (see colleagueEscalated). A colleague with no map
+ * entity is absent from the map (the coin reads that as not escalated). The
+ * per-entity signals are derived ONCE here (the same deriveTileSignalsByEntity
+ * the map tiles use) and shared across the rollup, so the pass is
+ * O(entities + cards) rather than re-deriving them per colleague.
+ *
+ * `journals == null` — the journal path is unavailable on this surface (e.g. the
+ * Info Hub surface loads the board + map state but NOT the journals) — leaves
+ * the health/overdue half inert (every system reads UNKNOWN: never overdue, and
+ * `healthKnown` false), so only the needs-a-human half contributes there. That
+ * mirrors the map's own graceful degradation, and it is deliberate: the caller
+ * does not broaden journal fetching, keeping the glow's data cost bounded (v1).
+ */
+export function escalationByColleagueId(options: {
+  state: MapState;
+  cards: readonly InfoHubCard[];
+  journals: readonly ColleagueJournal[] | null;
+  nowMs: number;
+}): Map<string, boolean> {
+  const signalsByEntityId = deriveTileSignalsByEntity({
+    entities: options.state.entities,
+    cards: options.cards,
+    journals: options.journals,
+    nowMs: options.nowMs,
+  });
+  const byColleague = new Map<string, boolean>();
+  for (const entity of options.state.entities) {
+    const colleagueId = entity.colleague;
+    if (colleagueId == null || byColleague.has(colleagueId)) {
+      continue;
+    }
+    byColleague.set(
+      colleagueId,
+      colleagueEscalated({
+        state: options.state,
+        cards: options.cards,
+        signalsByEntityId,
+        colleagueId,
+      }),
+    );
+  }
+  return byColleague;
 }
