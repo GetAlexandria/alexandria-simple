@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { MAP_DOMAIN_TINTS, domainWashColors, mixHexColors } from "./colors";
+import { MAP_DOMAIN_TINTS, MAP_LABEL_COLORS, domainWashColors, mixHexColors } from "./colors";
 
 describe("domainWashColors", () => {
   it("assigns every id a palette pigment, distinct up to the palette size", () => {
@@ -37,6 +37,21 @@ describe("domainWashColors", () => {
     for (const color of colors.values()) {
       expect(MAP_DOMAIN_TINTS).toContain(color);
     }
+  });
+});
+
+describe("MAP_LABEL_COLORS.plate", () => {
+  it("defines a semi-opaque rgba backing plate for the region/owner labels", () => {
+    // The plate composites over the map, so it must carry an alpha strictly
+    // between 0 and 1 (a solid or fully transparent plate would defeat the
+    // point). The visual itself is e2e/canvas-only; this guards the token.
+    const match = /^rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(0|1|0?\.\d+)\s*\)$/.exec(
+      MAP_LABEL_COLORS.plate,
+    );
+    expect(match).not.toBeNull();
+    const alpha = Number(match![1]);
+    expect(alpha).toBeGreaterThan(0);
+    expect(alpha).toBeLessThan(1);
   });
 });
 

@@ -57,6 +57,12 @@ type MapLabelProps = {
   color: string;
   /** Parchment-cream stroke behind the glyphs. */
   haloColor?: string;
+  /**
+   * Optional filled rounded-rect backing plate drawn UNDER the halo+glyphs
+   * for contrast against a busy map. Any CSS color; use an rgba() so the map
+   * composites through it. Omit to keep the plain stroke-halo treatment.
+   */
+  plateColor?: string;
   opacity?: number;
   italic?: boolean;
   /** Extra tracking (em fraction), for cartographic uppercase region names. */
@@ -69,6 +75,7 @@ function createLabelTexture(
   text: string,
   color: string,
   haloColor: string,
+  plateColor: string,
   italic: boolean,
   letterSpacingEm: number,
 ): LabelTexture {
@@ -91,7 +98,13 @@ function createLabelTexture(
         spacing * Math.max(0, characters.length - 1);
 
   const pad = FONT_PX * 0.45;
-  canvas.width = Math.max(2, Math.ceil(textWidth + pad * 2));
+  // A backing plate wants breathing room around the glyphs. Grow the WIDTH
+  // (not the height): the plane's world height comes from the `height` prop,
+  // so widening only changes the aspect and leaves the on-screen glyph size
+  // unchanged, while extra height would shrink the text. The existing 1.5×
+  // height already leaves vertical margin the plate reuses.
+  const plateExtraX = plateColor ? FONT_PX * 0.35 : 0;
+  canvas.width = Math.max(2, Math.ceil(textWidth + (pad + plateExtraX) * 2));
   canvas.height = Math.ceil(FONT_PX * 1.5);
 
   // Resizing resets context state; reconfigure before drawing.
@@ -116,7 +129,10 @@ function createLabelTexture(
       return;
     }
     context.textAlign = "left";
-    let x = pad;
+    // Same left margin baked into canvas.width above: `pad` alone when
+    // unplated (identical to the pre-plate start position), plus
+    // `plateExtraX` once a plate has widened the canvas.
+    let x = pad + plateExtraX;
     for (const character of text) {
       if (mode === "stroke") {
         context.strokeText(character, x, y);
@@ -126,6 +142,27 @@ function createLabelTexture(
       x += context.measureText(character).width + spacing;
     }
   };
+
+  // Backing plate first, UNDER the halo + glyphs. A rounded rect inset a
+  // little from the texture edge so it reads as a floating nameplate, not a
+  // full-bleed fill. arcTo (not roundRect) keeps the path portable.
+  if (plateColor) {
+    const plateMargin = FONT_PX * 0.06;
+    const plateX = plateMargin;
+    const plateY = plateMargin;
+    const plateWidth = canvas.width - plateMargin * 2;
+    const plateHeight = canvas.height - plateMargin * 2;
+    const radius = Math.min(plateHeight * 0.32, plateWidth / 2, plateHeight / 2);
+    context.beginPath();
+    context.moveTo(plateX + radius, plateY);
+    context.arcTo(plateX + plateWidth, plateY, plateX + plateWidth, plateY + plateHeight, radius);
+    context.arcTo(plateX + plateWidth, plateY + plateHeight, plateX, plateY + plateHeight, radius);
+    context.arcTo(plateX, plateY + plateHeight, plateX, plateY, radius);
+    context.arcTo(plateX, plateY, plateX + plateWidth, plateY, radius);
+    context.closePath();
+    context.fillStyle = plateColor;
+    context.fill();
+  }
 
   if (haloColor) {
     context.strokeStyle = haloColor;
@@ -149,6 +186,7 @@ export function MapLabel({
   height,
   color,
   haloColor = MAP_LABEL_COLORS.halo,
+  plateColor = "",
   opacity = 1,
   italic = false,
   letterSpacingEm = 0,
@@ -171,9 +209,9 @@ export function MapLabel({
   }, [fontsReady]);
 
   const label = useMemo(
-    () => createLabelTexture(text, color, haloColor, italic, letterSpacingEm),
+    () => createLabelTexture(text, color, haloColor, plateColor, italic, letterSpacingEm),
     // fontsReady re-rasterizes the same text once Cormorant Garamond lands.
-    [color, haloColor, italic, letterSpacingEm, text, fontsReady],
+    [color, haloColor, plateColor, italic, letterSpacingEm, text, fontsReady],
   );
 
   useEffect(() => {
