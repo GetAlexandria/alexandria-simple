@@ -92,7 +92,15 @@ describe("validateMapState", () => {
       "prj-map-glow-up",
       "prj-work-system-v1",
       "sys-llc-administration",
+      "prj-get-human-bookkeeper-hired-to-own-some-of-this",
     ]);
+    // The first real upgrade project (director, via the board): a bounded
+    // improvement linked to the system it upgrades.
+    expect(
+      state.entities.find(
+        (entity) => entity.id === "prj-get-human-bookkeeper-hired-to-own-some-of-this",
+      )?.upgrades,
+    ).toBe("sys-llc-administration");
     // The WS5 pilot: a planted system in operations with a three-rule
     // pattern (1mo/1q/1y) and NO contextId (WS1 made it optional) —
     // the first real generator.
