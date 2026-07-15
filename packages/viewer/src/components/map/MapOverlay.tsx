@@ -44,13 +44,17 @@ type MapOverlayProps = {
   onClose: () => void;
   /**
    * System room upgrade-queue project links (work-system plan §3):
-   * re-targets this same overlay at another entity's room. The map surface
-   * has no "Create upgrade project" entry point yet (no entity-creation form
-   * mounted here to hand a preset to — board-project-rooms owns that flow),
-   * so SystemRoomBody's create action is omitted here on purpose; a director
-   * on the map who wants to create an upgrade project uses the Board room.
+   * re-targets this same overlay at another entity's room.
    */
   onOpenEntity?: (entityId: string) => void;
+  /**
+   * System room's "Create upgrade project" (map-upgrade-deeplink): the map
+   * surface has no entity-creation form mounted to hand a preset to, so
+   * instead of opening a form in place (the board room's behavior) this
+   * navigates to the Info Hub board with the preset upgrade-project form
+   * already open — see LibraryBrowserApp's `?upgrade=<systemId>` wiring.
+   */
+  onCreateUpgradeProject?: (systemId: string, domainId: string) => void;
 };
 
 /** `contextName` null → the entity has no context (latent data) — the segment is omitted, never "undefined". */
@@ -76,6 +80,7 @@ export function MapOverlay({
   onEditEntity,
   onClose,
   onOpenEntity,
+  onCreateUpgradeProject,
 }: MapOverlayProps) {
   // Card detail is derived from the live card list by id so a status or
   // checklist save re-renders the open modal with the server-merged card.
@@ -210,6 +215,7 @@ export function MapOverlay({
           entityId={target.entityId}
           mapState={state}
           onCloseCard={() => setDetailCardId(null)}
+          onCreateUpgradeProject={onCreateUpgradeProject}
           onMoveStatus={onMoveStatus}
           onOpenCard={(cardId) => setDetailCardId(cardId)}
           onOpenEntity={onOpenEntity}

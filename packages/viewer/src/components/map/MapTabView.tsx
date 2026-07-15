@@ -123,6 +123,13 @@ export type MapTabViewProps = {
    * follow-up that removes colleagues from the map owns closing that gap.
    */
   initialColleagueId?: string;
+  /**
+   * The system room's "Create upgrade project" (map-upgrade-deeplink): the
+   * map surface has no entity-creation form mounted, so this navigates to
+   * the Info Hub board with the preset upgrade-project form already open,
+   * rather than opening a form in place the way the board room does.
+   */
+  onCreateUpgradeProject?: (systemId: string, domainId: string) => void;
 };
 
 /** The entity form's open state: create, or edit a specific entity. */
@@ -326,6 +333,7 @@ export function MapTabView({
   onOpenAgentPage,
   journals,
   initialColleagueId,
+  onCreateUpgradeProject,
 }: MapTabViewProps) {
   const [hasWebGLSupport] = useState(
     () => supportsWebGL() && !isWebGLForcedOff(window.location.search),
@@ -930,6 +938,7 @@ export function MapTabView({
           boardSaving={boardSaving}
           onMoveStatus={moveCardStatus}
           onToggleChecklistItem={toggleChecklistItem}
+          onCreateUpgradeProject={onCreateUpgradeProject}
           onEditEntity={(entityId) => openEntityForm(entityId)}
           onClose={() => setOverlayTarget(null)}
           onOpenEntity={(entityId) => openOverlay({ kind: "entity", entityId })}

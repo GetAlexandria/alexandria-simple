@@ -59,6 +59,8 @@ import {
   homeRoute,
   infoEntityIdFromRoute,
   infoRouteWithEntityId,
+  infoRouteWithUpgradeSystemId,
+  infoUpgradeSystemIdFromRoute,
   libraryCatalogRoute,
   libraryFoldersRoute,
   librarySectionDefaultRoute,
@@ -942,6 +944,11 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
             // unlike the one-way initialStatusFilter seed above.
             initialEntityId={infoEntityIdFromRoute(route) ?? undefined}
             onEntityRoomChange={(entityId) => navigate(infoRouteWithEntityId(route, entityId))}
+            // Upgrade-project creation deep link (map-upgrade-deeplink): the
+            // Map tab's system room "Create upgrade project" action has no
+            // form of its own to open, so it lands here instead with
+            // `?upgrade=<systemId>` and the board opens the preset form.
+            initialUpgradeSystemId={infoUpgradeSystemIdFromRoute(route) ?? undefined}
           />
         )
       ) : activeView === "ledger" ? (
@@ -993,6 +1000,14 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
                 // (/map?colleague=<id>): open that colleague's overlay on
                 // mount. Read once, mirroring the board's initialStatusFilter.
                 initialColleagueId={route.searchParams.get("colleague") ?? undefined}
+                // System room "Create upgrade project" (map-upgrade-deeplink):
+                // the map surface has no entity-creation form to open in
+                // place, so it navigates to the board with the preset form
+                // already open — domainId isn't needed here, since the board
+                // re-derives it from the system on arrival.
+                onCreateUpgradeProject={(systemId) =>
+                  navigate(infoRouteWithUpgradeSystemId(route, systemId))
+                }
               />
             </Suspense>
           </MapChunkErrorBoundary>

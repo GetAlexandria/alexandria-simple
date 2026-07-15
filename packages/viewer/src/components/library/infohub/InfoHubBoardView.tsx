@@ -165,6 +165,19 @@ export interface InfoHubBoardViewProps {
    * bookmarkable/shareable link, unlike the one-way initialStatusFilter seed.
    */
   onEntityRoomChange?: (entityId: string | null) => void;
+  /**
+   * Upgrade-project creation deep link, from the route's `?upgrade=` param
+   * (map-upgrade-deeplink): the Map tab's system room has no
+   * entity-creation form of its own, so its "Create upgrade project" action
+   * lands here instead. Resolved once, at this view's first render, against
+   * whatever `mapState` the caller already has on hand — the shared
+   * useMapState instance the Map tab itself just rendered from, so in the
+   * intended flow (a click on the map) it is already loaded. A system id
+   * that doesn't resolve against that map state (not yet loaded, unknown id,
+   * or a non-system entity) is a no-op: the director lands on the plain
+   * board, not a crash.
+   */
+  initialUpgradeSystemId?: string;
 }
 
 /**
@@ -207,6 +220,35 @@ function mapSaveFailureToPromoteFailure(
       };
 }
 
+/**
+ * Resolves the `?upgrade=<systemId>` deep link (map-upgrade-deeplink) against
+ * the map state available at mount, mirroring createUpgradeProjectForSystem's
+ * preset shape. Null for every "can't apply" case — no id, no map state yet,
+ * an id that isn't a system on the map, or no map write path mounted — so the
+ * caller falls through to the plain board rather than a dead-end form.
+ * Pulled out as a pure function (not a hook) so both of entityForm's and
+ * roomEntityId's `useState` initializers can share one resolution without
+ * computing it twice per render.
+ */
+function upgradePresetFromDeepLink(
+  initialUpgradeSystemId: string | undefined,
+  mapState: MapState | null | undefined,
+  onSaveMapState: unknown,
+): { domainId: string; systemId: string } | null {
+  if (
+    initialUpgradeSystemId == null ||
+    initialUpgradeSystemId.length === 0 ||
+    mapState == null ||
+    onSaveMapState == null
+  ) {
+    return null;
+  }
+  const system = mapState.entities.find(
+    (entity) => entity.id === initialUpgradeSystemId && entity.kind === "system",
+  );
+  return system == null ? null : { domainId: system.domainId, systemId: system.id };
+}
+
 export function InfoHubBoardView({
   board,
   onSaveCards,
@@ -219,6 +261,7 @@ export function InfoHubBoardView({
   initialStatusFilter,
   initialEntityId,
   onEntityRoomChange,
+  initialUpgradeSystemId,
 }: InfoHubBoardViewProps) {
   const [detailCard, setDetailCard] = useState<InfoHubCard | null>(null);
   const [typeFilter, setTypeFilter] = useState<"" | WorkOrderType>("");
@@ -256,21 +299,35 @@ export function InfoHubBoardView({
   // Entity room (board-project-rooms): the open room, seeded once from the
   // `?entity=` deep link (mirrors statusFilter's initialStatusFilter seed).
   // Every open/close/switch also calls onEntityRoomChange so the caller can
-  // keep the URL in sync — see the type's doc.
-  const [roomEntityId, setRoomEntityId] = useState<string | null>(() =>
-    initialEntityId != null && initialEntityId.length > 0 ? initialEntityId : null,
-  );
+  // keep the URL in sync — see the type's doc. The `?upgrade=` deep link
+  // (map-upgrade-deeplink) wins when both are present on the URL: it opens
+  // entityForm below instead, so the room seed is skipped here rather than
+  // opening a room this same mount is about to close.
+  const [roomEntityId, setRoomEntityId] = useState<string | null>(() => {
+    if (upgradePresetFromDeepLink(initialUpgradeSystemId, mapState, onSaveMapState) != null) {
+      return null;
+    }
+    return initialEntityId != null && initialEntityId.length > 0 ? initialEntityId : null;
+  });
   // New project/system from the board (board-project-rooms): null closes the
   // form; a kind opens it pre-set to that kind (MapEntityForm's defaultKind).
   // The system room's "Create upgrade project" (work-system plan §3, WS3)
   // opens the exact same form with `upgradePreset` set, pre-picking the new
   // project's domain and upgrades-system fields from the system it was
   // launched from — one state object, so opening a plain "New project" later
-  // can never inherit a stale preset.
+  // can never inherit a stale preset. Also seeded once, straight into that
+  // same shape, from the `?upgrade=<systemId>` deep link (map-upgrade-
+  // deeplink) — the Map tab's system room hands off here since the map
+  // surface has no entity-creation form of its own to open in place; an
+  // unresolvable id (map state not loaded yet, or not a system) leaves this
+  // null, same as visiting the board with no deep link at all.
   const [entityForm, setEntityForm] = useState<{
     kind: MapEntityKind;
     upgradePreset?: { domainId: string; systemId: string };
-  } | null>(null);
+  } | null>(() => {
+    const preset = upgradePresetFromDeepLink(initialUpgradeSystemId, mapState, onSaveMapState);
+    return preset == null ? null : { kind: "project", upgradePreset: preset };
+  });
   const [entityCreateError, setEntityCreateError] = useState<PromoteFailure | null>(null);
   const [entityCreating, setEntityCreating] = useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);

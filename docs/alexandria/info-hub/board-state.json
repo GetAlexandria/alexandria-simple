@@ -572,6 +572,19 @@
         "ruleId": "annual-report",
         "window": "2026-01-01T00:00:00.000Z"
       }
+    },
+    {
+      "id": "wo-map-upgrade-deeplink",
+      "type": "improvement",
+      "status": "done",
+      "domainId": "alexandria",
+      "entityId": "prj-work-system-v1",
+      "priority": 20,
+      "source": "board:director",
+      "created": "2026-07-14",
+      "title": "Map system room links to pre-filled upgrade-project creation",
+      "detail": "Director feedback (2026-07-14): creating an upgrade project from the map's system room was very hard to figure out — the action existed only on the board. The map-side upgrade queue now deep-links to /info?upgrade=<systemId>, landing on the board with the project form open and pre-filled (kind, upgrades link, domain).\n\nStatus: delivered in this PR.",
+      "terminalAt": "2026-07-14"
     }
   ]
 }

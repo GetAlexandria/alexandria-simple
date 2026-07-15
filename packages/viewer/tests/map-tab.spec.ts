@@ -288,6 +288,33 @@ test("tile click opens the entity overlay with its joined board cards; hover sho
   await expect(page.locator('[data-testid="map-overlay"]')).toHaveCount(0);
 });
 
+// map-upgrade-deeplink: the system room's "Create upgrade project" action has
+// no form of its own on the map surface, so it hands off to the Board with
+// `?upgrade=<systemId>` and lands on the preset "New project" form already
+// open — the board-side equivalent (opening the form in place) is covered by
+// board-entity-rooms.spec.ts's "Create upgrade project opens the entity form
+// preset to this system" test.
+test("the system room's Create upgrade project deep-links to the board with the preset form open", async ({
+  page,
+}) => {
+  await openMapTab(page);
+
+  const tile = tileWorldPoint("sys-raven-duty-loop");
+  const point = await canvasPointForWorld(page, tile.x, tile.y, tile.z);
+  await hoverUntilPointer(page, point);
+  await page.mouse.click(point.x, point.y);
+
+  await expect(page.getByTestId("map-overlay")).toBeVisible();
+  await expect(page.getByTestId("map-overlay-title")).toHaveText("Raven duty loop");
+  await page.getByTestId("map-overlay-create-upgrade-project").click();
+
+  await expect(page).toHaveURL(/\/info\?upgrade=sys-raven-duty-loop/);
+  await expect(page.getByTestId("entity-create-form")).toBeVisible();
+  await expect(page.getByLabel("Entity kind")).toHaveValue("project");
+  await expect(page.getByLabel("Entity domain")).toHaveValue("software");
+  await expect(page.getByLabel("Project upgrades system")).toHaveValue("sys-raven-duty-loop");
+});
+
 // Skipped: colleague buildings no longer render on the map in EITHER view — the
 // landmark row moved to the coin tray in the Map Glow Up, and Owner view is now
 // the Domain-view work layout labelled by owner (no colleague furniture). The
