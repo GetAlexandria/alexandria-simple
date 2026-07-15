@@ -159,6 +159,14 @@
         }
       ],
       "lifecycle": "planted"
+    },
+    {
+      "id": "prj-get-human-bookkeeper-hired-to-own-some-of-this",
+      "kind": "project",
+      "name": "get human bookkeeper hired to own some of this",
+      "domainId": "operations",
+      "upgrades": "sys-llc-administration",
+      "lifecycle": "active"
     }
   ],
   "positions": [
