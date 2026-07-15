@@ -39,7 +39,7 @@ export type EntityRoomViewProps = {
   onEditEntity?: (entityId: string) => void;
   /** System room upgrade-queue project links — opens that project's own room (see SystemRoomBody's doc). */
   onOpenEntity?: (entityId: string) => void;
-  /** System room's "Create upgrade project" (board-only) — see SystemRoomBody's doc. */
+  /** System room's "Create upgrade project" — see SystemRoomBody's doc. */
   onCreateUpgradeProject?: (systemId: string, domainId: string) => void;
 };
 

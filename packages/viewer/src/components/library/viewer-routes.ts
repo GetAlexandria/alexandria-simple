@@ -586,6 +586,44 @@ export function infoRouteWithEntityId(route: ViewerRoute, entityId: string | nul
   return { searchParams, surface: "info" };
 }
 
+// The Map tab's system room "Create upgrade project" deep link (map-upgrade-
+// deeplink): `?upgrade=<systemId>` on the "info" surface opens the board with
+// that system's upgrade-project form already open and preset (kind=project,
+// upgrades=<systemId>, domain=<systemId>'s domainId) — the map surface has no
+// entity-creation form of its own, so its system room hands the director off
+// here instead of leaving "create an upgrade project" undiscoverable. Mirrors
+// infoEntityIdFromRoute/infoRouteWithEntityId immediately above; kept as a
+// distinct param (not folded into `entity`) so a room deep link and an
+// upgrade-creation deep link can never be confused for each other. The two
+// are allowed to coexist on the same URL (harmless) — the info surface reads
+// `upgrade` first and lets it win, since creating a NEW project is the more
+// specific ask than opening an existing entity's room.
+export function infoUpgradeSystemIdFromRoute(route: ViewerRoute): string | null {
+  if (route.surface !== "info") {
+    return null;
+  }
+  const systemId = route.searchParams.get("upgrade");
+  return systemId != null && systemId.length > 0 ? systemId : null;
+}
+
+// Re-points the info surface at (or away from, when `systemId` is null) the
+// upgrade-project creation deep link, preserving every other search param
+// already on the route (mirrors infoRouteWithEntityId's preserve-the-rest
+// pattern). Always returns an "info" route — the deep link lives only on
+// that surface.
+export function infoRouteWithUpgradeSystemId(
+  route: ViewerRoute,
+  systemId: string | null,
+): ViewerRoute {
+  const searchParams = cloneSearchParams(route.surface === "info" ? route.searchParams : undefined);
+  if (systemId == null || systemId.length === 0) {
+    searchParams.delete("upgrade");
+  } else {
+    searchParams.set("upgrade", systemId);
+  }
+  return { searchParams, surface: "info" };
+}
+
 export function surfaceRoute(
   surface: Exclude<ViewerRoute["surface"], "agent" | "library" | "not-found">,
 ): ViewerRoute {

@@ -3,8 +3,10 @@
 // delegation and next-due), OPEN QUEUE (non-terminal joined cards,
 // generated cards first with a provenance line), HISTORY (a compact ✓/✗ row
 // per rule over its completed windows), and UPGRADE QUEUE (linked upgrade
-// projects plus queued improvement cards, with a board-only "Create upgrade
-// project" action). EntityRoomBody delegates here for kind "system" —
+// projects plus queued improvement cards, with a "Create upgrade project"
+// action available from both the board room and the map's system room, see
+// onCreateUpgradeProject below). EntityRoomBody delegates here for kind
+// "system" —
 // systems diverge enough from the project room (terminal cards fold into
 // HISTORY marks rather than staying in a flat card grid) that this is a
 // sibling body, not a branch inside EntityRoomBody's own render.
@@ -56,11 +58,10 @@ export type SystemRoomBodyProps = {
    */
   onOpenEntity?: (entityId: string) => void;
   /**
-   * "Create upgrade project" (board-only — MapOverlay omits this; the map
-   * surface has no entity-creation form mounted to hand a preset to, so its
-   * upgrade queue never shows the button. TODO(WS4/later): wire an
-   * equivalent creation entry point from the map surface if that gap
-   * matters in practice).
+   * "Create upgrade project": EntityRoomView (board) opens the preset form
+   * in place; MapOverlay (map-upgrade-deeplink) instead navigates to the
+   * board with that same preset form already open, since the map surface
+   * has no entity-creation form of its own to hand the preset to.
    */
   onCreateUpgradeProject?: (systemId: string, domainId: string) => void;
 };

@@ -213,6 +213,23 @@ const roomMapState: MapState = {
   positions: [{ entityId: "prj-map-tab", entityType: "project", q: 0, r: -1 }],
 };
 
+// roomMapState plus one system entity (map-upgrade-deeplink) — kept separate
+// from roomMapState so the existing entity-room tests above are untouched.
+const systemMapState: MapState = {
+  ...roomMapState,
+  entities: [
+    ...roomMapState.entities,
+    {
+      id: "sys-raven-duty-loop",
+      kind: "system",
+      name: "Raven duty loop",
+      contextId: "viewer",
+      domainId: "software",
+      lifecycle: "planted",
+    },
+  ],
+};
+
 const roomBoard: InfoHubBoard = {
   comment: "fixture board",
   updated: "2026-07-01",
@@ -357,6 +374,85 @@ describe("InfoHubBoardView entity rooms (board-project-rooms)", () => {
     // static markup can't simulate) — assert the join note's link affordance
     // is available as a real button rather than plain text, so it's wireable.
     expect(markup).toContain('data-testid="work-order-card-wo-room-open"');
+  });
+
+  test("?upgrade= deep-link (initialUpgradeSystemId) opens the preset upgrade-project form for that system", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(InfoHubBoardView, {
+        board: roomBoard,
+        onSaveCards: noopSave,
+        saveError: null,
+        saving: false,
+        mapState: systemMapState,
+        onSaveMapState: async () => null,
+        mapSaving: false,
+        initialUpgradeSystemId: "sys-raven-duty-loop",
+      }),
+    );
+
+    expect(markup).toContain('data-testid="entity-create-form"');
+    expect(markup).toContain("New upgrade project");
+    // The room stays closed — the deep link opens the create form, not a room.
+    expect(markup).not.toContain('data-testid="entity-room"');
+    // Preset kind=project, domain=software (the system's domainId), and
+    // upgrades=sys-raven-duty-loop — a controlled <select value> SSRs as
+    // `selected=""` on the matching <option>.
+    expect(markup).toContain('<option value="project" selected="">Project</option>');
+    expect(markup).toContain('<option value="software" selected="">Software</option>');
+    expect(markup).toContain(
+      '<option value="sys-raven-duty-loop" selected="">Raven duty loop</option>',
+    );
+  });
+
+  test("an unresolvable ?upgrade= id (unknown, or not a system) renders the plain board with no form", () => {
+    const unknownMarkup = renderToStaticMarkup(
+      React.createElement(InfoHubBoardView, {
+        board: roomBoard,
+        onSaveCards: noopSave,
+        saveError: null,
+        saving: false,
+        mapState: systemMapState,
+        onSaveMapState: async () => null,
+        mapSaving: false,
+        initialUpgradeSystemId: "sys-does-not-exist",
+      }),
+    );
+    expect(unknownMarkup).not.toContain('data-testid="entity-create-form"');
+    expect(unknownMarkup).toContain('data-testid="info-hub-board"');
+
+    const nonSystemMarkup = renderToStaticMarkup(
+      React.createElement(InfoHubBoardView, {
+        board: roomBoard,
+        onSaveCards: noopSave,
+        saveError: null,
+        saving: false,
+        mapState: systemMapState,
+        onSaveMapState: async () => null,
+        mapSaving: false,
+        // prj-map-tab exists but isn't a system — not a valid upgrade target.
+        initialUpgradeSystemId: "prj-map-tab",
+      }),
+    );
+    expect(nonSystemMarkup).not.toContain('data-testid="entity-create-form"');
+  });
+
+  test("?upgrade= wins over a simultaneous ?entity= (initialEntityId) on the same URL", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(InfoHubBoardView, {
+        board: roomBoard,
+        onSaveCards: noopSave,
+        saveError: null,
+        saving: false,
+        mapState: systemMapState,
+        onSaveMapState: async () => null,
+        mapSaving: false,
+        initialEntityId: "prj-map-tab",
+        initialUpgradeSystemId: "sys-raven-duty-loop",
+      }),
+    );
+
+    expect(markup).toContain('data-testid="entity-create-form"');
+    expect(markup).not.toContain('data-testid="entity-room"');
   });
 
   test("the New project / New system entry points create through the map save path with no card, born unplaced", () => {

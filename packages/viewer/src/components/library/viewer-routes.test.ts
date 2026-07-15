@@ -18,6 +18,8 @@ import {
   folderKeyFromCard,
   infoEntityIdFromRoute,
   infoRouteWithEntityId,
+  infoRouteWithUpgradeSystemId,
+  infoUpgradeSystemIdFromRoute,
   isLegacyLibraryPath,
   libraryCatalogRoute,
   libraryConstellationRoute,
@@ -677,6 +679,57 @@ describe("the Info Hub board's ?entity= room deep link (board-project-rooms)", (
   test("a ?entity= deep link round-trips through parse/serialize", () => {
     const route = parseViewerRoute("/info", "?entity=prj-map-tab");
     expect(serializeViewerRoute(route)).toBe("/info?entity=prj-map-tab");
+  });
+});
+
+describe("the Info Hub board's ?upgrade= create-upgrade-project deep link (map-upgrade-deeplink)", () => {
+  test("infoUpgradeSystemIdFromRoute reads the upgrade param on the info surface, null when absent", () => {
+    expect(infoUpgradeSystemIdFromRoute(surfaceRoute("info"))).toBeNull();
+    expect(
+      infoUpgradeSystemIdFromRoute(parseViewerRoute("/info", "?upgrade=sys-raven-duty-loop")),
+    ).toBe("sys-raven-duty-loop");
+  });
+
+  test("infoUpgradeSystemIdFromRoute is null on a non-info surface even if it carries an upgrade param", () => {
+    expect(
+      infoUpgradeSystemIdFromRoute(parseViewerRoute("/map", "?upgrade=sys-raven-duty-loop")),
+    ).toBeNull();
+  });
+
+  test("infoRouteWithUpgradeSystemId sets the upgrade param and preserves other params", () => {
+    const route = parseViewerRoute("/info", "?status=needs-a-human");
+    const withUpgrade = infoRouteWithUpgradeSystemId(route, "sys-raven-duty-loop");
+    const url = new URL(`https://viewer.test${serializeViewerRoute(withUpgrade)}`);
+
+    expect(url.pathname).toBe("/info");
+    expect(url.searchParams.get("upgrade")).toBe("sys-raven-duty-loop");
+    expect(url.searchParams.get("status")).toBe("needs-a-human");
+  });
+
+  test("infoRouteWithUpgradeSystemId(route, null) clears the upgrade param", () => {
+    const route = parseViewerRoute("/info", "?upgrade=sys-raven-duty-loop&status=open");
+    const cleared = infoRouteWithUpgradeSystemId(route, null);
+    const url = new URL(`https://viewer.test${serializeViewerRoute(cleared)}`);
+
+    expect(url.searchParams.has("upgrade")).toBe(false);
+    expect(url.searchParams.get("status")).toBe("open");
+  });
+
+  test("infoRouteWithUpgradeSystemId always returns an info route, even from a different surface", () => {
+    const withUpgrade = infoRouteWithUpgradeSystemId(surfaceRoute("map"), "sys-raven-duty-loop");
+    expect(withUpgrade.surface).toBe("info");
+    expect(serializeViewerRoute(withUpgrade)).toBe("/info?upgrade=sys-raven-duty-loop");
+  });
+
+  test("a ?upgrade= deep link round-trips through parse/serialize", () => {
+    const route = parseViewerRoute("/info", "?upgrade=sys-raven-duty-loop");
+    expect(serializeViewerRoute(route)).toBe("/info?upgrade=sys-raven-duty-loop");
+  });
+
+  test("?upgrade= and ?entity= can coexist on the URL without either helper clobbering the other", () => {
+    const route = parseViewerRoute("/info", "?entity=prj-map-tab&upgrade=sys-raven-duty-loop");
+    expect(infoEntityIdFromRoute(route)).toBe("prj-map-tab");
+    expect(infoUpgradeSystemIdFromRoute(route)).toBe("sys-raven-duty-loop");
   });
 });
 
