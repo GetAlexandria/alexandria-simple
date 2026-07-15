@@ -225,15 +225,16 @@ function mapSaveFailureToPromoteFailure(
  * the map state available at mount, mirroring createUpgradeProjectForSystem's
  * preset shape. Null for every "can't apply" case — no id, no map state yet,
  * an id that isn't a system on the map, or no map write path mounted — so the
- * caller falls through to the plain board rather than a dead-end form.
- * Pulled out as a pure function (not a hook) so both of entityForm's and
- * roomEntityId's `useState` initializers can share one resolution without
- * computing it twice per render.
+ * caller falls through to the plain board rather than a dead-end form. Pulled
+ * out as a pure function (not a hook) so it's called exactly once at mount,
+ * from a single `useState` initializer — see `initialUpgradePreset` below —
+ * whose result both `roomEntityId` and `entityForm` read, keeping the
+ * `?entity=` vs `?upgrade=` precedence in one place.
  */
 function upgradePresetFromDeepLink(
   initialUpgradeSystemId: string | undefined,
   mapState: MapState | null | undefined,
-  onSaveMapState: unknown,
+  onSaveMapState: InfoHubBoardViewProps["onSaveMapState"],
 ): { domainId: string; systemId: string } | null {
   if (
     initialUpgradeSystemId == null ||
@@ -296,6 +297,14 @@ export function InfoHubBoardView({
   const [promoteError, setPromoteError] = useState<PromoteFailure | null>(null);
   const [promoting, setPromoting] = useState(false);
   const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
+  // The `?upgrade=<systemId>` deep link (map-upgrade-deeplink), resolved once
+  // at mount against whatever `mapState` is already on hand — see
+  // upgradePresetFromDeepLink's doc. Read by both roomEntityId's and
+  // entityForm's initializers below so the `?entity=` vs `?upgrade=`
+  // precedence between them is decided in exactly one place.
+  const [initialUpgradePreset] = useState(() =>
+    upgradePresetFromDeepLink(initialUpgradeSystemId, mapState, onSaveMapState),
+  );
   // Entity room (board-project-rooms): the open room, seeded once from the
   // `?entity=` deep link (mirrors statusFilter's initialStatusFilter seed).
   // Every open/close/switch also calls onEntityRoomChange so the caller can
@@ -304,7 +313,7 @@ export function InfoHubBoardView({
   // entityForm below instead, so the room seed is skipped here rather than
   // opening a room this same mount is about to close.
   const [roomEntityId, setRoomEntityId] = useState<string | null>(() => {
-    if (upgradePresetFromDeepLink(initialUpgradeSystemId, mapState, onSaveMapState) != null) {
+    if (initialUpgradePreset != null) {
       return null;
     }
     return initialEntityId != null && initialEntityId.length > 0 ? initialEntityId : null;
@@ -324,10 +333,9 @@ export function InfoHubBoardView({
   const [entityForm, setEntityForm] = useState<{
     kind: MapEntityKind;
     upgradePreset?: { domainId: string; systemId: string };
-  } | null>(() => {
-    const preset = upgradePresetFromDeepLink(initialUpgradeSystemId, mapState, onSaveMapState);
-    return preset == null ? null : { kind: "project", upgradePreset: preset };
-  });
+  } | null>(() =>
+    initialUpgradePreset == null ? null : { kind: "project", upgradePreset: initialUpgradePreset },
+  );
   const [entityCreateError, setEntityCreateError] = useState<PromoteFailure | null>(null);
   const [entityCreating, setEntityCreating] = useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
