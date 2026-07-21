@@ -8,6 +8,7 @@ altLabels:
 evidence:
   - "packages/ax/src/domain/plays.ts:130"
   - packages/viewer/src/components/library/viewer-routes.ts
+  - docs/alexandria/sources/2026-07-14-work-systems-and-map-first-inversion.md
 links:
   contains:
     - Entity - Play
@@ -33,12 +34,21 @@ links:
 
 ## WHAT
 
-The registry of plays a team can reliably run — one of the two innovations at
-the heart of the product: work processes made atomic and accessible to
-agents. The Playbook is the registry, not the page: a company has
-plays divided up by role; agents fill role seats and get access to
-plays. The playbook page in the viewer is a derived view of the
-playbook-as-registry.
+The registry of plays a team can reliably run — work processes made
+atomic and accessible to agents. The Playbook is the registry, not the
+page: a company has plays divided up by role; agents fill role seats
+and get access to plays. The playbook page in the viewer is a derived
+view of the playbook-as-registry.
+
+Its standing changed with the map-first inversion: when Alexandria was
+heading to market, plays-and-playbooks were the intended "game" of the
+product; after the Skillmaker pivot the director ruled the game is
+building your company on the map, and the playbook became a third-class
+citizen as product surface — the seat the map itself used to occupy.
+Nothing is retired: plays remain the internal tooling that builds and
+maintains the library, thought out and tested, and the director's
+ruling was explicit that they could fire back up at any time. Demoted
+in priority, not in truth.
 
 ## WHY
 

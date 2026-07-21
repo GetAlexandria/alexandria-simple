@@ -19,7 +19,7 @@ links:
   relegates:
     - Entity - Cards
   related_to:
-    - Domain - Playmaker's Studio Library
+    - Domain - Skillmaker.Studio Library
     - Capability - Source Scan
     - Capability - Vision Drafting
     - Surface - Inbox
@@ -52,7 +52,7 @@ planes: the work of that division, strategy, and learning; the Company
 Library is the planned federation of all division libraries. The first
 library being built is Product — describing Alexandria itself. An older,
 larger library remains as a legacy reference for QA until this build
-supersedes it; the Playmaker's Studio Library belongs to a separate
+supersedes it; the Skillmaker.Studio Library (formerly Playmaker's Studio) belongs to a separate
 product.
 
 ## WHY
@@ -101,7 +101,7 @@ atomization, and a [[Capability - Atomize]] drafts and publishes each
 it, citing the [[Principle - Director Ruling]] it answers. The library
 root declares its card-format contract — current, or legacy kept for
 QA against the retiring 208-card library — and relates to the
-federated [[Domain - Playmaker's Studio Library]] pointer. This whole
+federated [[Domain - Skillmaker.Studio Library]] pointer. This whole
 pipeline is one running instance of the product's continuous
 [[Pattern - Updating the Library]], new material arriving and worked
 toward finished knowledge, again and again.
