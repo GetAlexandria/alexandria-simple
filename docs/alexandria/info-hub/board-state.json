@@ -510,14 +510,15 @@
     {
       "id": "wo-ws6-library-mission",
       "type": "task",
-      "status": "open",
+      "status": "done",
       "domainId": "alexandria",
       "entityId": "prj-work-system-v1",
       "priority": 15,
       "source": "board:director",
       "created": "2026-07-14",
       "title": "WS6 \u2014 library mission: atomize the work-systems source",
-      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md \u00a76 (WS6), source \u00a77. Atomizes docs/alexandria/sources/2026-07-14-work-systems-and-map-first-inversion.md into library cards once the work-systems capability ships \u2014 the Work System anatomy, the Work Project, the Work Board, the systems-generate/projects-contain pattern, and multi-level ownership."
+      "detail": "Child of wo-system-generation-v1; plan: docs/alexandria/plans/work-system/plan.md \u00a76 (WS6), source \u00a77. Atomizes docs/alexandria/sources/2026-07-14-work-systems-and-map-first-inversion.md into library cards once the work-systems capability ships \u2014 the Work System anatomy, the Work Project, the Work Board, the systems-generate/projects-contain pattern, and multi-level ownership.\n\nStatus: delivered \u2014 stale five updated (#59: post-pivot domains with Operations returned unowned, Bet - Map-First graduated to charter, Skillmaker rename, Project disambiguation, playbook demotion note) and the work-system context authored (9 cards: lead + System/Work Project/Work Board/Work Item/Work Map + both patterns + materialize-on-read), story lint zero orphans, product-English gate honored. William/Rob colleague cards parked per director.",
+      "terminalAt": "2026-07-14"
     },
     {
       "id": "wo-gen-llc-administration-monthly-bookkeeping-2026-07-01",
@@ -583,7 +584,7 @@
       "source": "board:director",
       "created": "2026-07-14",
       "title": "Map system room links to pre-filled upgrade-project creation",
-      "detail": "Director feedback (2026-07-14): creating an upgrade project from the map's system room was very hard to figure out — the action existed only on the board. The map-side upgrade queue now deep-links to /info?upgrade=<systemId>, landing on the board with the project form open and pre-filled (kind, upgrades link, domain).\n\nStatus: delivered in this PR.",
+      "detail": "Director feedback (2026-07-14): creating an upgrade project from the map's system room was very hard to figure out \u2014 the action existed only on the board. The map-side upgrade queue now deep-links to /info?upgrade=<systemId>, landing on the board with the project form open and pre-filled (kind, upgrades link, domain).\n\nStatus: delivered in this PR.",
       "terminalAt": "2026-07-14"
     }
   ]
