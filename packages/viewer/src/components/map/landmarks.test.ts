@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import type { MapState } from "../../app/runtime/schemas";
-import { mapLandmarks } from "./landmarks";
+import { buildingLandmarks, mapLandmarks } from "./landmarks";
 
 function stateWith(overrides: Partial<MapState>): MapState {
   return {
@@ -45,5 +45,49 @@ describe("mapLandmarks", () => {
     );
 
     expect(landmarks).toEqual([{ kind: "colleague", id: "raven", coord: { q: 0, r: 0, s: 0 } }]);
+  });
+
+  it("parses the two S1 room buildings and drops an unrecognized building id", () => {
+    const landmarks = mapLandmarks(
+      stateWith({
+        positions: [
+          { q: 0, r: -4, entityType: "landmark", entityId: "building:strategy-center" },
+          { q: 1, r: -3, entityType: "landmark", entityId: "building:learning-lab" },
+          { q: 2, r: -3, entityType: "landmark", entityId: "building:foo" },
+        ],
+      }),
+    );
+
+    expect(landmarks).toEqual([
+      { kind: "building", roomId: "strategy-center", coord: { q: 0, r: -4, s: 4 } },
+      { kind: "building", roomId: "learning-lab", coord: { q: 1, r: -3, s: 2 } },
+    ]);
+  });
+});
+
+describe("buildingLandmarks", () => {
+  it("filters mapLandmarks' output down to building-kind landmarks only", () => {
+    const state = stateWith({
+      positions: [
+        { q: 0, r: 0, entityType: "landmark", entityId: "colleague:raven" },
+        { q: 1, r: 0, entityType: "landmark", entityId: "campfire:hearth" },
+        { q: 2, r: 0, entityType: "landmark", entityId: "seat:bench-1" },
+        { q: 0, r: -4, entityType: "landmark", entityId: "building:strategy-center" },
+        { q: 1, r: -3, entityType: "landmark", entityId: "building:learning-lab" },
+      ],
+    });
+
+    expect(buildingLandmarks(state)).toEqual([
+      { kind: "building", roomId: "strategy-center", coord: { q: 0, r: -4, s: 4 } },
+      { kind: "building", roomId: "learning-lab", coord: { q: 1, r: -3, s: 2 } },
+    ]);
+  });
+
+  it("returns an empty list when the state has no building landmarks", () => {
+    const state = stateWith({
+      positions: [{ q: 0, r: 0, entityType: "landmark", entityId: "colleague:raven" }],
+    });
+
+    expect(buildingLandmarks(state)).toEqual([]);
   });
 });

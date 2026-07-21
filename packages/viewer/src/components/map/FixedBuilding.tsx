@@ -13,8 +13,9 @@
 import { LANDMARK_SPRITE_COLORS } from "./colors";
 import type { HexCoord } from "./hex";
 import { LandmarkSprite } from "./LandmarkSprite";
+import type { MapRoomSpriteKind } from "./vocabulary";
 
-export type LandmarkKind = "colleague" | "human" | "vacant-plot" | "locked-seat";
+export type LandmarkKind = "colleague" | "human" | "vacant-plot" | "locked-seat" | "building";
 
 type SpriteSource = {
   textureUrl: string;
@@ -48,6 +49,17 @@ const LOCKED_SEAT_SPRITE: SpriteSource = {
   textureAspect: 539 / 516,
 };
 
+// Room buildings (Strategy Center / Learning Lab, S1) repurpose these same
+// two sprite assets at full brightness (LANDMARK_SPRITE_COLORS.building)
+// instead of minting new art: statue.png already renders as the Owner-view
+// "human" marker, and sanctuary.png as the ghosted locked-seat — both sit
+// unused as fixed map furniture otherwise. MapRoomSpriteKind (vocabulary.ts,
+// alongside the room registry) selects which one a given room renders.
+const BUILDING_SPRITES: Record<MapRoomSpriteKind, SpriteSource> = {
+  statue: STATUE_SPRITE,
+  sanctuary: LOCKED_SEAT_SPRITE,
+};
+
 export function colleagueSpriteFor(ownerId: string): SpriteSource {
   let hash = 0;
   for (let index = 0; index < ownerId.length; index += 1) {
@@ -63,7 +75,11 @@ type LandmarkTheme = SpriteSource & {
   elevation?: number;
 };
 
-function landmarkThemeFor(kind: LandmarkKind, ownerId: string | undefined): LandmarkTheme {
+function landmarkThemeFor(
+  kind: LandmarkKind,
+  ownerId: string | undefined,
+  buildingSpriteKind: MapRoomSpriteKind | undefined,
+): LandmarkTheme {
   switch (kind) {
     case "colleague":
       return {
@@ -82,6 +98,15 @@ function landmarkThemeFor(kind: LandmarkKind, ownerId: string | undefined): Land
       };
     case "locked-seat":
       return { ...LOCKED_SEAT_SPRITE, height: 0.72, ...LANDMARK_SPRITE_COLORS.lockedSeat };
+    case "building":
+      // Statue is the fallback for a room registry entry that somehow names
+      // no sprite kind (should not happen — MAP_ROOMS is a fixed, exhaustive
+      // catalog) rather than an undefined-texture crash.
+      return {
+        ...BUILDING_SPRITES[buildingSpriteKind ?? "statue"],
+        height: 0.95,
+        ...LANDMARK_SPRITE_COLORS.building,
+      };
   }
 }
 
@@ -90,6 +115,8 @@ type FixedBuildingProps = {
   coord: HexCoord;
   /** Bare owner id (e.g. "raven"); picks the colleague house sprite. */
   ownerId?: string;
+  /** Which sprite a "building" kind renders (Strategy Center / Learning Lab). Ignored for other kinds. */
+  buildingSpriteKind?: MapRoomSpriteKind;
   /** L2 activation: a colleague building opens the colleague overlay. */
   onClick?: () => void;
   /** L2 hover (locked-seat tooltip); independent of clickability. */
@@ -100,10 +127,11 @@ export function FixedBuilding({
   kind,
   coord,
   ownerId,
+  buildingSpriteKind,
   onClick,
   onHoverChange,
 }: FixedBuildingProps) {
-  const theme = landmarkThemeFor(kind, ownerId);
+  const theme = landmarkThemeFor(kind, ownerId, buildingSpriteKind);
 
   return (
     <LandmarkSprite

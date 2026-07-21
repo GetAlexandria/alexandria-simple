@@ -150,6 +150,14 @@ export const LANDMARK_SPRITE_COLORS = {
   human: { tint: "#f4ede1", opacity: 0.96 },
   vacantPlot: { tint: "#c9b493", opacity: 0.78 },
   lockedSeat: { tint: "#8d8478", opacity: 0.38 },
+  /**
+   * Room buildings (Strategy Center / Learning Lab, S1) render at the same
+   * full "owned" brightness as a colleague building — a live clickable
+   * destination, not a demand signal (vacantPlot) or a ghosted future seat
+   * (lockedSeat) — even though a room reuses the lockedSeat sprite's
+   * sanctuary.png asset for Learning Lab.
+   */
+  building: { tint: "#ffffff", opacity: 0.96 },
 } as const;
 
 // --- Domain view (V1) ------------------------------------------------------

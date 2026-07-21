@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import {
   ASSIGNEE_OPTIONS,
+  MAP_ROOMS,
   UNASSIGNED_ASSIGNEE_KEY,
   UNASSIGNED_ASSIGNEE_LABEL,
   assigneeColleagueId,
@@ -145,6 +146,31 @@ describe("parseLandmarkId", () => {
     expect(parseLandmarkId("statue-of-jess")).toEqual({
       kind: "unknown",
       raw: "statue-of-jess",
+    });
+  });
+
+  it("parses the two S1 room buildings", () => {
+    expect(parseLandmarkId("building:strategy-center")).toEqual({
+      kind: "building",
+      roomId: "strategy-center",
+    });
+    expect(parseLandmarkId("building:learning-lab")).toEqual({
+      kind: "building",
+      roomId: "learning-lab",
+    });
+  });
+
+  it("drops an empty or unrecognized building id as unknown, not a crash", () => {
+    expect(parseLandmarkId("building:")).toEqual({ kind: "unknown", raw: "building:" });
+    expect(parseLandmarkId("building:foo")).toEqual({ kind: "unknown", raw: "building:foo" });
+  });
+});
+
+describe("MAP_ROOMS", () => {
+  it("names the two S1 rooms and their sprite", () => {
+    expect(MAP_ROOMS).toEqual({
+      "strategy-center": { name: "Strategy Center", spriteKind: "statue" },
+      "learning-lab": { name: "Learning Lab", spriteKind: "sanctuary" },
     });
   });
 });

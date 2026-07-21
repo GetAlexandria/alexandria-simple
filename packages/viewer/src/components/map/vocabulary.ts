@@ -20,6 +20,39 @@ export const COLLEAGUE_LANDMARK_PREFIX = COLLEAGUE_OWNER_PREFIX;
 /** Landmark-position id prefix for the decorative campfire (L2 — one hearth). */
 export const CAMPFIRE_LANDMARK_PREFIX = "campfire:";
 
+/**
+ * Landmark-position id prefix for a Map-tab room building (Strategy Center /
+ * Learning Lab, S1). Unlike the other landmark prefixes, the id after the
+ * colon is not free-form — it must name one of MAP_ROOMS' fixed slots, so a
+ * hand-authored `building:foo` drops the same way an unknown prefix does
+ * (parseLandmarkId), rather than opening a room that doesn't exist.
+ */
+export const BUILDING_LANDMARK_PREFIX = "building:";
+
+/**
+ * The fixed catalog of rooms a `building:` landmark can open. A "room" is a
+ * Map-tab-level MapScrimPanel overlay (RoomOverlay.tsx) — a sibling of the
+ * per-entity work overlay and the colleague overlay, but keyed to one of
+ * these two fixed slots instead of an entity or colleague id. `spriteKind`
+ * names which of the two unused watercolor sprites (statue.png /
+ * sanctuary.png — see FixedBuilding.tsx) the building renders; assigned by
+ * hand here since there are only two rooms, not derived by any formula.
+ */
+export type MapRoomId = "strategy-center" | "learning-lab";
+
+/** Which watercolor sprite (FixedBuilding.tsx) a room's building renders. */
+export type MapRoomSpriteKind = "statue" | "sanctuary";
+
+export const MAP_ROOMS: Record<MapRoomId, { name: string; spriteKind: MapRoomSpriteKind }> = {
+  "strategy-center": { name: "Strategy Center", spriteKind: "statue" },
+  "learning-lab": { name: "Learning Lab", spriteKind: "sanctuary" },
+};
+
+/** Whether a string names a known room — the `building:` prefix's allowlist. */
+function isMapRoomId(value: string): value is MapRoomId {
+  return Object.hasOwn(MAP_ROOMS, value);
+}
+
 export type DomainOwnerKind = "colleague" | "human";
 
 export type DomainOwner = {
@@ -172,12 +205,16 @@ export type ParsedLandmarkId =
   | { kind: "colleague"; id: string }
   | { kind: "seat"; id: string }
   | { kind: "campfire"; id: string }
+  | { kind: "building"; roomId: MapRoomId }
   | { kind: "unknown"; raw: string };
 
 /**
  * Parse a landmark position's entityId ("colleague:raven" | "seat:bench-1" |
- * "campfire:hearth"). The prefixes are disjoint, so the check order does not
- * matter; an empty id after any known prefix falls through to "unknown".
+ * "campfire:hearth" | "building:strategy-center"). The prefixes are disjoint,
+ * so the check order does not matter; an empty id after any known prefix
+ * falls through to "unknown" — and for `building:`, so does a non-empty id
+ * that isn't one of MAP_ROOMS' fixed slots (a hand-authored "building:foo"
+ * drops rather than crashing or opening a room that doesn't exist).
  */
 export function parseLandmarkId(entityId: string): ParsedLandmarkId {
   if (entityId.startsWith(COLLEAGUE_LANDMARK_PREFIX)) {
@@ -196,6 +233,12 @@ export function parseLandmarkId(entityId: string): ParsedLandmarkId {
     const id = entityId.slice(CAMPFIRE_LANDMARK_PREFIX.length);
     if (id.length > 0) {
       return { kind: "campfire", id };
+    }
+  }
+  if (entityId.startsWith(BUILDING_LANDMARK_PREFIX)) {
+    const roomId = entityId.slice(BUILDING_LANDMARK_PREFIX.length);
+    if (isMapRoomId(roomId)) {
+      return { kind: "building", roomId };
     }
   }
   return { kind: "unknown", raw: entityId };
