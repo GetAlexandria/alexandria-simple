@@ -48,6 +48,7 @@ import { MapMessagePanel } from "./MapMessagePanel";
 import { MapLegend } from "./MapLegend";
 import { MapOverlay, type MapOverlayTarget } from "./MapOverlay";
 import { MapScene } from "./MapScene";
+import type { RoomOrigin } from "./MapScrimPanel";
 import { Panel, PanelButton, ParchmentActionButton } from "./panel-buttons";
 import {
   entityKindLabel,
@@ -342,6 +343,11 @@ export function MapTabView({
   const [placingEntityId, setPlacingEntityId] = useState<string | null>(null);
   const [entityForm, setEntityForm] = useState<EntityFormState | null>(null);
   const [overlayTarget, setOverlayTarget] = useState<MapOverlayTarget | null>(null);
+  // The last pointerdown's viewport position, captured on the tab root: tile
+  // clicks arrive through three.js raycasting with no DOM event to read, so
+  // the room overlay's grow-from-hex origin is snapshotted here instead.
+  const lastPointerRef = useRef<RoomOrigin | null>(null);
+  const [overlayOrigin, setOverlayOrigin] = useState<RoomOrigin | null>(null);
   // The open colleague landmark overlay (L2), by bare colleague id, or null.
   // Seeded once from the `?colleague=` deep-link (Map Glow Up) — the colleague
   // coin's "Journal" action — so the Map tab mounts with that overlay already
@@ -660,6 +666,7 @@ export function MapTabView({
         return;
       }
       setOpenColleagueId(null);
+      setOverlayOrigin(lastPointerRef.current);
       setOverlayTarget(target);
     },
     [placingEntityId, cancelPlacement],
@@ -745,7 +752,13 @@ export function MapTabView({
         `${ownerLayout?.tiles.length ?? 0} tiles${hasUnassignedRegion ? " · unassigned region" : ""}`;
 
   return (
-    <div className="relative h-full w-full" data-testid="map-tab">
+    <div
+      className="relative h-full w-full"
+      data-testid="map-tab"
+      onPointerDownCapture={(event) => {
+        lastPointerRef.current = { x: event.clientX, y: event.clientY };
+      }}
+    >
       <Panel className="pointer-events-none absolute left-4 top-4 z-10 px-3 py-2">
         <p className="text-xs font-semibold" style={{ color: MAP_FALLBACK_COLORS.heading }}>
           Map — {VIEW_MODES.find(({ mode }) => mode === viewMode)!.label}
@@ -932,6 +945,7 @@ export function MapTabView({
         <MapOverlay
           target={overlayTarget}
           state={state}
+          origin={overlayOrigin}
           cards={board?.cards ?? null}
           boardError={boardError}
           boardSaveError={boardSaveError}

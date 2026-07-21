@@ -6,7 +6,7 @@
 // conflict Refresh).
 
 import type { ReactNode } from "react";
-import { MAP_FALLBACK_COLORS } from "./colors";
+import { MAP_FALLBACK_COLORS, MAP_ROOM_COLORS } from "./colors";
 
 /**
  * The map surfaces' shared panel-box shell: rounded parchment border +
@@ -132,6 +132,45 @@ export function ParchmentActionButton({
         backgroundColor: MAP_FALLBACK_COLORS.field,
         borderColor: MAP_FALLBACK_COLORS.border,
         color: MAP_FALLBACK_COLORS.subtext,
+      }}
+      onClick={onClick}
+    >
+      {label}
+    </button>
+  );
+}
+
+/**
+ * The room overlays' night-ink sibling of ParchmentActionButton: same shape
+ * and slots, MAP_ROOM_COLORS chrome. Only for content rendered inside the
+ * MapScrimPanel room shell — the parchment HUD panels on the map keep
+ * ParchmentActionButton.
+ */
+export function RoomActionButton({
+  className = "",
+  disabled = false,
+  label,
+  onClick,
+  testId,
+  type = "button",
+}: {
+  className?: string;
+  disabled?: boolean;
+  label: string;
+  onClick?: () => void;
+  testId?: string;
+  type?: "button" | "submit";
+}) {
+  return (
+    <button
+      type={type}
+      data-testid={testId}
+      disabled={disabled}
+      className={`rounded border px-2 py-1 text-xs font-semibold disabled:opacity-50 ${className}`.trim()}
+      style={{
+        backgroundColor: MAP_ROOM_COLORS.buttonBg,
+        borderColor: MAP_ROOM_COLORS.border,
+        color: MAP_ROOM_COLORS.heading,
       }}
       onClick={onClick}
     >
