@@ -468,6 +468,13 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
   // map document and board. Only loaded on the map surface, and the map
   // degrades gracefully (neutral health) when it is unavailable.
   const colleagueJournals = useColleagueJournals(runtimeClient, route.surface === "map");
+  // The Map tab's room dashboards (S2, Strategy Center / Learning Lab) read
+  // the SAME library catalog the viewer section reads — its own fetch,
+  // scoped to the map surface only, since `catalog` above is gated to
+  // `route.surface === "library"` and the map is a different surface
+  // entirely. No request override: rooms read the server-default root, like
+  // the viewer section's own default.
+  const mapLibraryCatalog = useLibraryCatalog(runtimeClient, undefined, route.surface === "map");
   // The coin tray's escalation glow (Map Glow Up): a per-colleague rollup of
   // "needs a human" — a needs-a-human card on one of their systems, or a system
   // that has gone quiet. It reuses the SAME joined state the board + map already
@@ -996,6 +1003,9 @@ export function LibraryBrowserApp({ initialCatalog, initialGraph }: LibraryBrows
                 // The bench quick-bar link: the colleague's per-agent page.
                 onOpenAgentPage={(colleagueId) => navigate(agentRoute(colleagueId))}
                 journals={colleagueJournals.journals}
+                // Strategy Center / Learning Lab room dashboards (S2).
+                catalog={mapLibraryCatalog.catalog}
+                catalogError={mapLibraryCatalog.error}
                 // Deep-link from a colleague coin's "Journal" action
                 // (/map?colleague=<id>): open that colleague's overlay on
                 // mount. Read once, mirroring the board's initialStatusFilter.

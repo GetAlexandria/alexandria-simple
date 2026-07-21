@@ -23,6 +23,7 @@ import type {
   ColleagueJournal,
   InfoHubBoard,
   InfoHubCard,
+  LibraryCatalog,
   MapEntity,
   MapState,
   RuntimeAgent,
@@ -120,6 +121,14 @@ export type MapTabViewProps = {
    * flicker) and the overlay reads as "reading journals…".
    */
   journals: readonly ColleagueJournal[] | null;
+  /**
+   * The library catalog (S2, room dashboards): Strategy Center's Bet/Measure
+   * cards and Learning Lab's Experiment/Arc cards both read from here. Null
+   * while loading or unavailable on this surface — RoomOverlay reads that as
+   * "catalog unavailable", never as "empty catalog".
+   */
+  catalog: LibraryCatalog | null;
+  catalogError: string | null;
   /**
    * Deep-link entry (Map Glow Up): a colleague coin's "Journal" action
    * navigates to /map?colleague=<id>, and LibraryBrowserApp forwards that id
@@ -344,6 +353,8 @@ export function MapTabView({
   onOpenNeedsHumanBoard,
   onOpenAgentPage,
   journals,
+  catalog,
+  catalogError,
   initialColleagueId,
   onCreateUpgradeProject,
 }: MapTabViewProps) {
@@ -1034,6 +1045,10 @@ export function MapTabView({
           roomId={openRoomId}
           agents={agents}
           origin={roomOrigin}
+          catalog={catalog}
+          catalogError={catalogError}
+          state={state}
+          board={board}
           onOpenAgentPage={onOpenAgentPage}
           onClose={() => setOpenRoomId(null)}
         />

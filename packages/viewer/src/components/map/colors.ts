@@ -109,6 +109,14 @@ export const MAP_ROOM_COLORS = {
   subtext: "#b3a48d", // --viewer-canvas-fg-dim
   accent: "#4fb8a8", // --viewer-accent (raven teal)
   glow: "#e8b86d", // --viewer-accent-glow (amber)
+  /**
+   * Learning Lab's "denies" verdict badge (S2): the one place a room needs a
+   * third bioluminescence tone alongside teal/amber — a warm coral-red kept
+   * in the same warm-ink family as the rest of this palette rather than a
+   * saturated stoplight red, so it reads as "this verdict landed" rather than
+   * an error state.
+   */
+  deny: "#d9705a",
   /** Action-button field (--viewer-canvas-slate). */
   buttonBg: "rgba(20, 14, 8, 0.55)",
 } as const;
