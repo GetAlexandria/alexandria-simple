@@ -15,17 +15,26 @@ under `packages/alexandria-plugin`.
 
 ```bash
 pnpm install
-./scripts/dev-viewer
+./scripts/dev-up
 ```
 
-`./scripts/dev-viewer` (also `pnpm run dev:viewer`) starts the viewer
-straight from this checkout's source via `bun`, killing anything already on
-the port first. Always use this — or the equivalent
-`bun packages/ax/src/cli/main.ts start viewer` — rather than a globally
-installed `ax` binary. A machine-global `ax` (from `install.sh`, or a manual
-`bun build --compile`) is shared across every worktree on the box and will
-silently go stale relative to whichever branch you're actually on; running
-from source means there is no compiled artifact that can drift out of date.
+`./scripts/dev-up` (also `pnpm run dev:up`) is the one command to bring this
+checkout up: it runs `ax init` (idempotent), `ax doctor` (surfaces
+orchestration readiness — degraded is a warning here, not a hard stop),
+starts the viewer via `scripts/dev-viewer`, and checks whether the
+duty-loop cron (below) is registered on this machine, flagging it if not.
+It does not open a chat session — talk to Raven separately for the greeting
+and Vision onboarding.
+
+If you only want the viewer, `./scripts/dev-viewer` (also `pnpm run
+dev:viewer`) starts it alone, straight from this checkout's source via
+`bun`, killing anything already on the port first. Always use one of these
+— or the equivalent `bun packages/ax/src/cli/main.ts start viewer` —
+rather than a globally installed `ax` binary. A machine-global `ax` (from
+`install.sh`, or a manual `bun build --compile`) is shared across every
+worktree on the box and will silently go stale relative to whichever
+branch you're actually on; running from source means there is no compiled
+artifact that can drift out of date.
 
 The viewer runs at `http://localhost:4321` and renders the library
 (`docs/alexandria/library/`) and the Info Hub board
@@ -36,7 +45,8 @@ the natural next file-lens to add.
 
 To have a colleague (Raven, Damien, or a future addition) run on its
 30-minute cron duty loop instead of only responding when you talk to it
-directly, set up the cron job described in `docs/alexandria/duty-loop.md`.
+directly, set up the cron job described in `docs/alexandria/duty-loop.md`
+(`./scripts/dev-up` tells you if this machine is missing it).
 See `docs/alexandria/colleagues.md` for how the colleagues themselves are
 defined and how to add a new one.
 
