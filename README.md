@@ -15,8 +15,17 @@ under `packages/alexandria-plugin`.
 
 ```bash
 pnpm install
-bun packages/ax/src/cli/main.ts start viewer
+./scripts/dev-viewer
 ```
+
+`./scripts/dev-viewer` (also `pnpm run dev:viewer`) starts the viewer
+straight from this checkout's source via `bun`, killing anything already on
+the port first. Always use this — or the equivalent
+`bun packages/ax/src/cli/main.ts start viewer` — rather than a globally
+installed `ax` binary. A machine-global `ax` (from `install.sh`, or a manual
+`bun build --compile`) is shared across every worktree on the box and will
+silently go stale relative to whichever branch you're actually on; running
+from source means there is no compiled artifact that can drift out of date.
 
 The viewer runs at `http://localhost:4321` and renders the library
 (`docs/alexandria/library/`) and the Info Hub board
