@@ -26,12 +26,7 @@
 // overlay's own onClose); the shell only wires the scrim's click-away.
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import {
-  MAP_OVERLAY_SCRIM_INK,
-  MAP_ROOM_COLORS,
-  MAP_ROOM_PANEL_SHADOW,
-  withAlpha,
-} from "./colors";
+import { MAP_OVERLAY_SCRIM_INK, MAP_ROOM_COLORS, MAP_ROOM_PANEL_SHADOW, withAlpha } from "./colors";
 import { RoomActionButton } from "./panel-buttons";
 
 /** A viewport point (clientX/clientY) the room panel grows out of. */

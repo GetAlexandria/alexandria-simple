@@ -117,10 +117,7 @@ export function ColleagueOverlay({
               data-testid="colleague-overlay-entry"
               style={{ borderColor: MAP_ROOM_COLORS.rule }}
             >
-              <p
-                className="text-[11px] font-semibold"
-                style={{ color: MAP_ROOM_COLORS.heading }}
-              >
+              <p className="text-[11px] font-semibold" style={{ color: MAP_ROOM_COLORS.heading }}>
                 {entry.title || "Untitled entry"}
                 {entry.timestamp.length > 0 ? (
                   <span className="ml-1 font-normal" style={{ color: MAP_ROOM_COLORS.subtext }}>
