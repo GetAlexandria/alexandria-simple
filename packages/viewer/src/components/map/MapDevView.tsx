@@ -39,6 +39,12 @@ import { isWebGLForcedOff, supportsWebGL } from "./webgl";
 // roster the fixture route has no runtime for).
 const noopColleagueClick = (): void => {};
 
+// The dev fixture carries no `building:` landmark position (S1's two rooms
+// are seeded only in the real docs/alexandria/map/map-state.json), so this
+// handler is never actually invoked here — kept as a real no-op, like its
+// colleague sibling above, rather than an inline arrow at the call site.
+const noopBuildingClick = (): void => {};
+
 export function MapDevView() {
   const [hasWebGLSupport] = useState(
     () => supportsWebGL() && !isWebGLForcedOff(window.location.search),
@@ -135,7 +141,11 @@ export function MapDevView() {
         {viewMode === "domain" ? (
           <>
             <DomainView layout={domainLayout} />
-            <MapLandmarks landmarks={landmarks} onColleagueClick={noopColleagueClick} />
+            <MapLandmarks
+              landmarks={landmarks}
+              onColleagueClick={noopColleagueClick}
+              onBuildingClick={noopBuildingClick}
+            />
           </>
         ) : (
           // Owner view mirrors the real Map tab: the same work regrouped by

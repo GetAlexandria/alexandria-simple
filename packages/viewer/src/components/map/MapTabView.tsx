@@ -23,6 +23,7 @@ import type {
   ColleagueJournal,
   InfoHubBoard,
   InfoHubCard,
+  LibraryCatalog,
   MapEntity,
   MapState,
   RuntimeAgent,
@@ -40,10 +41,12 @@ import { MAP_FALLBACK_COLORS } from "./colors";
 import { DomainView } from "./DomainView";
 import { generateHexGrid, hexToKey, type HexCoord } from "./hex";
 import type { HexCellVisualState } from "./HexCell";
+import { buildingLandmarks } from "./landmarks";
 import { computeDomainViewLayout } from "./layout/domain-view";
 import { computeOwnerViewLayout, groupWorkByAssignee, workItemEntities } from "./layout/owner-view";
 import { mapStateGridRadius } from "./map-grid";
 import { MapEntityForm } from "./MapEntityForm";
+import { MapLandmarks } from "./MapLandmarks";
 import { MapMessagePanel } from "./MapMessagePanel";
 import { MapLegend } from "./MapLegend";
 import { MapOverlay, type MapOverlayTarget } from "./MapOverlay";
@@ -66,9 +69,18 @@ import {
   withEntityRemoved,
   type MapEntityDraft,
 } from "./placement";
+import { RoomOverlay } from "./RoomOverlay";
 import { deriveTileSignalsByEntity, tileSignalsByEntityEqual, type TileSignals } from "./signals";
 import { type MapViewMode, VIEW_MODES } from "./view-mode";
+import type { MapRoomId } from "./vocabulary";
 import { isWebGLForcedOff, supportsWebGL } from "./webgl";
+
+// Buildings are the only landmark kind the shipped Map tab renders (Map Glow
+// Up declutter — colleague/seat/campfire furniture stays in the coin tray,
+// per DomainView's mount comment below); MapLandmarks' onColleagueClick is
+// therefore never actually invoked here, but the prop is still required by
+// MapLandmarksProps. A real no-op, like MapDevView's own noopColleagueClick.
+const noopColleagueClick = (): void => {};
 
 export type MapTabViewProps = {
   error: string | null;
@@ -109,6 +121,14 @@ export type MapTabViewProps = {
    * flicker) and the overlay reads as "reading journals…".
    */
   journals: readonly ColleagueJournal[] | null;
+  /**
+   * The library catalog (S2, room dashboards): Strategy Center's Bet/Measure
+   * cards and Learning Lab's Experiment/Arc cards both read from here. Null
+   * while loading or unavailable on this surface — RoomOverlay reads that as
+   * "catalog unavailable", never as "empty catalog".
+   */
+  catalog: LibraryCatalog | null;
+  catalogError: string | null;
   /**
    * Deep-link entry (Map Glow Up): a colleague coin's "Journal" action
    * navigates to /map?colleague=<id>, and LibraryBrowserApp forwards that id
@@ -333,6 +353,8 @@ export function MapTabView({
   onOpenNeedsHumanBoard,
   onOpenAgentPage,
   journals,
+  catalog,
+  catalogError,
   initialColleagueId,
   onCreateUpgradeProject,
 }: MapTabViewProps) {
@@ -355,6 +377,14 @@ export function MapTabView({
   const [openColleagueId, setOpenColleagueId] = useState<string | null>(() =>
     initialColleagueId != null && initialColleagueId.length > 0 ? initialColleagueId : null,
   );
+  // The open room overlay (S1, Strategy Center / Learning Lab): parallel to
+  // openColleagueId, but with its OWN grow-from-hex origin rather than
+  // reusing overlayOrigin — a room is a third overlay slot alongside the
+  // tile/pile MapOverlay and the colleague overlay, not a repaint of either,
+  // so it needs its own origin snapshot to grow from its own clicked
+  // building rather than whatever hex a DIFFERENT overlay last opened from.
+  const [openRoomId, setOpenRoomId] = useState<MapRoomId | null>(null);
+  const [roomOrigin, setRoomOrigin] = useState<RoomOrigin | null>(null);
 
   // Key the grid memo on the derived radius NUMBER, not the state object:
   // every save/refresh produces a new state identity, and regenerating the
@@ -470,6 +500,15 @@ export function MapTabView({
     signalsRef.current = next;
     return next;
   }, [state, board, journals]);
+
+  // The building landmarks Domain view renders (S1): buildingLandmarks
+  // already filters mapLandmarks' output down to building-kind entries, so
+  // the colleague/seat/campfire furniture the Map Glow Up moved off the map
+  // never comes back here — see the DomainView mount comment below.
+  const buildingLandmarksList = useMemo(
+    () => (state == null ? [] : buildingLandmarks(state)),
+    [state],
+  );
 
   // Every stored position occupies its hex — entity tiles and landmark
   // hexes alike (landmark hexes are the reserved ones, plan §1.3).
@@ -653,6 +692,7 @@ export function MapTabView({
     setPlacingEntityId(null);
     setOverlayTarget(null);
     setOpenColleagueId(null);
+    setOpenRoomId(null);
   }, []);
 
   // --- Tile/pile overlay (S2): a tile or pile click opens that target's work
@@ -666,8 +706,28 @@ export function MapTabView({
         return;
       }
       setOpenColleagueId(null);
+      setOpenRoomId(null);
       setOverlayOrigin(lastPointerRef.current);
       setOverlayTarget(target);
+    },
+    [placingEntityId, cancelPlacement],
+  );
+
+  // --- Room overlay (S1): a building click opens its room, closing whatever
+  // OTHER overlay was open (mirroring openOverlay's own closes) — the three
+  // overlay kinds (tile/pile, colleague, room) are mutually exclusive on this
+  // surface. During placement a building click is click-away (cancel), same
+  // as a tile click.
+  const openRoom = useCallback(
+    (roomId: MapRoomId) => {
+      if (placingEntityId != null) {
+        cancelPlacement();
+        return;
+      }
+      setOverlayTarget(null);
+      setOpenColleagueId(null);
+      setRoomOrigin(lastPointerRef.current);
+      setOpenRoomId(roomId);
     },
     [placingEntityId, cancelPlacement],
   );
@@ -907,24 +967,34 @@ export function MapTabView({
         onPointerMissed={placingEntityId == null ? undefined : cancelPlacement}
       >
         {viewMode === "domain" && domainLayout != null ? (
-          // Work-geography only (Map Glow Up declutter): the colleague-building
-          // / campfire / locked-seat landmark row renders in neither view now —
-          // colleagues moved to the coin tray.
-          <DomainView
-            layout={domainLayout}
-            signalsByEntityId={signalsByEntityId}
-            onTileClick={(entity) => openOverlay({ kind: "entity", entityId: entity.id })}
-            // Undefined during placement: a pile by construction sits on a
-            // free (placeable) patch cell, and a clickable sprite would
-            // swallow the placement click (stopPropagation) and cancel the
-            // mode. With no onClick the sprite reverts to raycast-inert, so
-            // clicks and hover pass through to the cell (PR #20 gate).
-            onPileClick={
-              placingEntityId == null
-                ? (domainId) => openOverlay({ kind: "pile", domainId })
-                : undefined
-            }
-          />
+          <>
+            {/* Work-geography, plus room buildings only (Map Glow Up
+                declutter, S1 addendum): the colleague-building / campfire /
+                locked-seat landmark row still renders in neither view —
+                colleagues stay in the coin tray — but buildingLandmarksList
+                (landmarks.ts' buildingLandmarks) is new furniture the
+                declutter never touched, so it renders here. */}
+            <DomainView
+              layout={domainLayout}
+              signalsByEntityId={signalsByEntityId}
+              onTileClick={(entity) => openOverlay({ kind: "entity", entityId: entity.id })}
+              // Undefined during placement: a pile by construction sits on a
+              // free (placeable) patch cell, and a clickable sprite would
+              // swallow the placement click (stopPropagation) and cancel the
+              // mode. With no onClick the sprite reverts to raycast-inert, so
+              // clicks and hover pass through to the cell (PR #20 gate).
+              onPileClick={
+                placingEntityId == null
+                  ? (domainId) => openOverlay({ kind: "pile", domainId })
+                  : undefined
+              }
+            />
+            <MapLandmarks
+              landmarks={buildingLandmarksList}
+              onColleagueClick={noopColleagueClick}
+              onBuildingClick={openRoom}
+            />
+          </>
         ) : viewMode === "owner" && ownerLayout != null ? (
           // Owner view = the same work regrouped by assignee: each assignee's
           // tiles and stray pile in that assignee's computed territory, the
@@ -967,6 +1037,20 @@ export function MapTabView({
           onOpenAgentPage={() => onOpenAgentPage(openColleagueId)}
           onOpenBoard={onOpenNeedsHumanBoard}
           onClose={() => setOpenColleagueId(null)}
+        />
+      ) : null}
+
+      {openRoomId != null ? (
+        <RoomOverlay
+          roomId={openRoomId}
+          agents={agents}
+          origin={roomOrigin}
+          catalog={catalog}
+          catalogError={catalogError}
+          state={state}
+          board={board}
+          onOpenAgentPage={onOpenAgentPage}
+          onClose={() => setOpenRoomId(null)}
         />
       ) : null}
     </div>

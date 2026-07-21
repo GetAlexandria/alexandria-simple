@@ -109,6 +109,14 @@ export const MAP_ROOM_COLORS = {
   subtext: "#b3a48d", // --viewer-canvas-fg-dim
   accent: "#4fb8a8", // --viewer-accent (raven teal)
   glow: "#e8b86d", // --viewer-accent-glow (amber)
+  /**
+   * Learning Lab's "denies" verdict badge (S2): the one place a room needs a
+   * third bioluminescence tone alongside teal/amber — a warm coral-red kept
+   * in the same warm-ink family as the rest of this palette rather than a
+   * saturated stoplight red, so it reads as "this verdict landed" rather than
+   * an error state.
+   */
+  deny: "#d9705a",
   /** Action-button field (--viewer-canvas-slate). */
   buttonBg: "rgba(20, 14, 8, 0.55)",
 } as const;
@@ -150,6 +158,14 @@ export const LANDMARK_SPRITE_COLORS = {
   human: { tint: "#f4ede1", opacity: 0.96 },
   vacantPlot: { tint: "#c9b493", opacity: 0.78 },
   lockedSeat: { tint: "#8d8478", opacity: 0.38 },
+  /**
+   * Room buildings (Strategy Center / Learning Lab, S1) render at the same
+   * full "owned" brightness as a colleague building — a live clickable
+   * destination, not a demand signal (vacantPlot) or a ghosted future seat
+   * (lockedSeat) — even though a room reuses the lockedSeat sprite's
+   * sanctuary.png asset for Learning Lab.
+   */
+  building: { tint: "#ffffff", opacity: 0.96 },
 } as const;
 
 // --- Domain view (V1) ------------------------------------------------------

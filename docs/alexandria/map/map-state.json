@@ -253,6 +253,18 @@
       "r": -3,
       "entityType": "project",
       "entityId": "prj-work-system-v1"
+    },
+    {
+      "q": 0,
+      "r": -4,
+      "entityType": "landmark",
+      "entityId": "building:strategy-center"
+    },
+    {
+      "q": 1,
+      "r": -3,
+      "entityType": "landmark",
+      "entityId": "building:learning-lab"
     }
   ]
 }

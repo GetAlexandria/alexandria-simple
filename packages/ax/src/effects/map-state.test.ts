@@ -59,9 +59,10 @@ const seedPath = join(import.meta.dir, "../../../..", "docs/alexandria/map/map-s
 // Operations — its unclaimed nameplate is the admin-colleague demand signal)
 // under the SocioTechnica
 // org, three contexts, the two duty-loop systems plus three projects (Map tab,
-// the Gmail/Calendar connectors, Map Glow Up), and the L2 landmark bench (two
-// colleague landmarks, the campfire, and four locked future-seat plots) —
-// loaded from the seed file so it stays the single source of truth.
+// the Gmail/Calendar connectors, Map Glow Up), the L2 landmark bench (two
+// colleague landmarks, the campfire, and four locked future-seat plots), and
+// the S1 Strategy Center / Learning Lab room buildings — loaded from the
+// seed file so it stays the single source of truth.
 // Each call parses fresh, so tests that mutate the returned document stay
 // independent.
 function baseState(): Record<string, unknown> {
@@ -111,8 +112,9 @@ describe("validateMapState", () => {
     expect(llc?.pattern?.map((rule) => rule.every)).toEqual(["1mo", "1q", "1y"]);
     // Seven placed entity positions (the director placed prj-work-system-v1
     // and sys-llc-administration on 2026-07-14) + the L2 landmark bench
-    // (2 colleagues, 1 campfire, 4 locked seats).
-    expect(state.positions).toHaveLength(14);
+    // (2 colleagues, 1 campfire, 4 locked seats) + the S1 Strategy Center /
+    // Learning Lab room buildings (2 more landmarks).
+    expect(state.positions).toHaveLength(16);
     // The fold: each duty-loop system carries a colleague-kind assignee (its
     // former bare `colleague`), and the projects carry a human one.
     expect(state.entities.find((entity) => entity.id === "sys-raven-duty-loop")?.assignee).toBe(
