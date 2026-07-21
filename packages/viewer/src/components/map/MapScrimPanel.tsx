@@ -80,10 +80,12 @@ export function MapScrimPanel({
   // Entrance: scale up from the opening click's position. Mount-only by
   // design — re-targeting an already-open overlay (e.g. the system room's
   // upgrade-queue links) swaps content without re-playing the entrance.
-  const originRef = useRef(origin);
+  // useState's initializer is the mount snapshot; later `origin` values are
+  // deliberately ignored.
+  const [entranceOrigin] = useState(origin);
   useLayoutEffect(() => {
     const panel = panelRef.current;
-    const from = originRef.current;
+    const from = entranceOrigin;
     if (panel == null || from == null || typeof panel.animate !== "function") {
       return;
     }
@@ -100,7 +102,9 @@ export function MapScrimPanel({
       ],
       { duration: 280, easing: "cubic-bezier(0.2, 0.9, 0.25, 1)" },
     );
-  }, []);
+    // entranceOrigin never changes after mount (no setter), so this still
+    // runs exactly once.
+  }, [entranceOrigin]);
 
   return (
     <div
