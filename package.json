@@ -9,6 +9,8 @@
     "setup:worktree": "./scripts/setup-worktree",
     "subtrees:update": "git subtree pull --prefix=repos/effect https://github.com/Effect-TS/effect.git main --squash",
     "ax": "bun packages/ax/src/cli/main.ts",
+    "dev:viewer": "./scripts/dev-viewer",
+    "dev:up": "./scripts/dev-up",
     "eval": "bun packages/ax/src/tools/el5-eval.ts",
     "test": "bun test --path-ignore-patterns=\"repos/**\" --path-ignore-patterns=\"packages/viewer/tests/**\"",
     "check": "pnpm run lint && pnpm run format:check && pnpm run typecheck",
@@ -16,10 +18,10 @@
     "lint": "pnpm run lint:workspace && pnpm run lint:shell && pnpm run lint:markdown",
     "lint:workspace": "pnpm --filter @alexandria/ax run lint && pnpm --filter @alexandria/viewer run check",
     "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#**/node_modules\" \"#repos\" \"#**/repos\" \"#dist\" \"#.tmp\" \"#.var\" \"#.claude\"",
-    "lint:shell": "shellcheck -x install.sh setup scripts/ensure-shell-tools scripts/setup-dev scripts/setup-worktree",
+    "lint:shell": "shellcheck -x install.sh setup scripts/ensure-shell-tools scripts/setup-dev scripts/setup-worktree scripts/dev-viewer scripts/dev-up",
     "format:check": "pnpm run format:check:prettier && pnpm run format:check:shell",
     "format:check:prettier": "pnpm --filter @alexandria/library-card-resolver run format:check && pnpm --filter @alexandria/ax run format:check && pnpm --filter @alexandria/viewer run format:check",
-    "format:check:shell": "shfmt -d install.sh setup scripts/ensure-shell-tools scripts/setup-dev scripts/setup-worktree",
+    "format:check:shell": "shfmt -d install.sh setup scripts/ensure-shell-tools scripts/setup-dev scripts/setup-worktree scripts/dev-viewer scripts/dev-up",
     "typecheck": "pnpm --filter @alexandria/library-card-resolver run typecheck && pnpm --filter @alexandria/ax run typecheck"
   },
   "devDependencies": {

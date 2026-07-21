@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+# Start (or restart) the Alexandria viewer straight from this checkout's
+# current source, bypassing the globally installed `ax` binary entirely.
+#
+# Why this exists: the global `ax` (installed once by install.sh, or by a
+# manual local rebuild) is a single binary shared across every worktree on
+# the machine. It silently drifts stale relative to whatever branch a given
+# Conductor workspace/worktree happens to be on — in this repo the Map tab
+# was invisible for days because the global binary predated the feature by
+# three days and the branch by ten. Running from source via `bun` removes
+# the staleness question entirely: there is no compiled artifact to go out
+# of date, so whatever's checked out here is what gets served.
+#
+# This mirrors the worktree-safety convention already used elsewhere in this
+# repo (see scripts/setup-worktree, scripts/setup-dev): a linked worktree
+# should not mutate machine-global state, because doing so affects every
+# other checkout on the box, not just this one.
+#
+# Usage:
+#   ./scripts/dev-viewer                 # start/restart on the default port
+#   ./scripts/dev-viewer --port 4322     # start/restart on another port
+#   ./scripts/dev-viewer 4322            # same, positional
+#   ./scripts/dev-viewer --help
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+CLI_ENTRY="$REPO_ROOT/packages/ax/src/cli/main.ts"
+
+PORT="4321"
+
+usage() {
+	cat <<'EOF'
+Usage: ./scripts/dev-viewer [--port N]
+
+Restarts the Alexandria viewer from this checkout's live source (bun, no
+compile step) on the given port (default 4321). Kills whatever is currently
+listening on that port first, whether a previous dev-viewer run or a stale
+globally-installed `ax`.
+
+Logs: .tmp/dev-viewer.log
+PID:  .tmp/dev-viewer.pid
+EOF
+}
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+	--port)
+		if [ $# -lt 2 ]; then
+			echo "Error: --port requires a value" >&2
+			exit 1
+		fi
+		PORT="$2"
+		shift 2
+		;;
+	--port=*)
+		PORT="${1#--port=}"
+		shift
+		;;
+	--help | -h)
+		usage
+		exit 0
+		;;
+	[0-9]*)
+		PORT="$1"
+		shift
+		;;
+	*)
+		echo "Unknown option: $1" >&2
+		usage >&2
+		exit 1
+		;;
+	esac
+done
+
+RUN_DIR="$REPO_ROOT/.tmp"
+LOG_FILE="$RUN_DIR/dev-viewer.log"
+PID_FILE="$RUN_DIR/dev-viewer.pid"
+
+info() { echo "  → $1"; }
+success() { echo "  ✓ $1"; }
+warn() { echo "  ⚠ $1"; }
+error() { echo "  ✗ $1" >&2; }
+
+mkdir -p "$RUN_DIR"
+
+if ! command -v bun >/dev/null 2>&1; then
+	error "bun is required on PATH (see scripts/setup-worktree)"
+	exit 127
+fi
+
+existing_pids="$(lsof -ti ":$PORT" 2>/dev/null || true)"
+if [ -n "$existing_pids" ]; then
+	info "Stopping existing process(es) on port $PORT: $existing_pids"
+	# shellcheck disable=SC2086
+	kill $existing_pids 2>/dev/null || true
+	for _ in $(seq 1 10); do
+		lsof -ti ":$PORT" >/dev/null 2>&1 || break
+		sleep 0.5
+	done
+fi
+
+: >"$LOG_FILE"
+info "Starting viewer from source on port $PORT"
+(
+	cd "$REPO_ROOT"
+	nohup bun "$CLI_ENTRY" start viewer --port "$PORT" >"$LOG_FILE" 2>&1 &
+	echo $! >"$PID_FILE"
+	disown 2>/dev/null || true
+)
+
+for _ in $(seq 1 20); do
+	if grep -q "Alexandria viewer running at" "$LOG_FILE" 2>/dev/null; then
+		success "$(grep "Alexandria viewer running at" "$LOG_FILE" | tail -1 | sed 's/^ *//')"
+		exit 0
+	fi
+	if ! kill -0 "$(cat "$PID_FILE" 2>/dev/null)" 2>/dev/null; then
+		error "Viewer process exited early — see $LOG_FILE"
+		tail -n 20 "$LOG_FILE" >&2 || true
+		exit 1
+	fi
+	sleep 0.5
+done
+
+warn "Viewer did not confirm startup within 10s — check $LOG_FILE"
+exit 1

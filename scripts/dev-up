@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# One command to bring this alexandria-simple checkout up: initialize if
+# needed, surface orchestration readiness, start the viewer from live
+# source, and flag whether the duty-loop cron is registered.
+#
+# Context: there was never an old `alxndr`-era command that did all of this
+# in one shot — that muscle memory is actually the `/wizard` skill (a
+# conversation, not a CLI bootstrap). Today the pieces exist but are three
+# disconnected entry points: the `ax-start` chat skill (config + Raven
+# greeting, no server), `ax doctor` (orchestration readiness only, no
+# cron/MCP check), and `scripts/dev-viewer` (the viewer). This script
+# chains the shell-side pieces so "get everything going" is one command;
+# the chat-side greeting still happens by talking to Raven separately.
+#
+# Usage:
+#   ./scripts/dev-up                 # bring everything up on the default port
+#   ./scripts/dev-up --port 4322
+#   ./scripts/dev-up --help
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+CLI_ENTRY="$REPO_ROOT/packages/ax/src/cli/main.ts"
+
+PORT="4321"
+
+usage() {
+	cat <<'EOF'
+Usage: ./scripts/dev-up [--port N]
+
+Brings this checkout up in one shot:
+  1. ax init            (idempotent — creates config/workspace if missing)
+  2. ax doctor          (surfaces orchestration readiness; degraded is a
+                          warning here, not a hard stop)
+  3. scripts/dev-viewer (the viewer, always served from live source)
+  4. duty-loop cron check (informational — nothing registers it for you;
+                            see docs/alexandria/duty-loop.md)
+
+This does not open a chat session with Raven. Talk to Raven separately
+(the ax-start skill, or `claude --plugin-dir ./packages/alexandria-plugin
+--agent alexandria:raven`) for the greeting and Vision onboarding.
+EOF
+}
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+	--port)
+		if [ $# -lt 2 ]; then
+			echo "Error: --port requires a value" >&2
+			exit 1
+		fi
+		PORT="$2"
+		shift 2
+		;;
+	--port=*)
+		PORT="${1#--port=}"
+		shift
+		;;
+	--help | -h)
+		usage
+		exit 0
+		;;
+	*)
+		echo "Unknown option: $1" >&2
+		usage >&2
+		exit 1
+		;;
+	esac
+done
+
+info() { echo "  → $1"; }
+success() { echo "  ✓ $1"; }
+warn() { echo "  ⚠ $1"; }
+error() { echo "  ✗ $1" >&2; }
+step() {
+	echo ""
+	echo "── $1 ──"
+}
+
+if ! command -v bun >/dev/null 2>&1; then
+	error "bun is required on PATH (see scripts/setup-worktree)"
+	exit 127
+fi
+
+cd "$REPO_ROOT"
+
+step "1/4 ax init"
+if bun "$CLI_ENTRY" init; then
+	success "Project config ready"
+else
+	error "ax init failed — see output above"
+	exit 1
+fi
+
+step "2/4 ax doctor"
+if bun "$CLI_ENTRY" doctor; then
+	success "Orchestration ready"
+else
+	warn "Orchestration degraded (see above) — continuing anyway; Fabro-orchestrated plays may not work until this is fixed"
+fi
+
+step "3/4 viewer"
+"$SCRIPT_DIR/dev-viewer" --port "$PORT"
+
+step "4/4 duty-loop cron"
+if crontab -l 2>/dev/null | grep -q "duty-loop skill"; then
+	success "Duty-loop cron entry found"
+else
+	warn "No duty-loop cron entry found on this machine — colleagues only respond when you talk to them directly, not on their 30-minute rhythm. See docs/alexandria/duty-loop.md to add one."
+fi
+
+echo ""
+success "alexandria-simple is up. Viewer: http://127.0.0.1:$PORT/"
