@@ -144,6 +144,32 @@ function firstMatchingDerivedFrom(
   return null;
 }
 
+/**
+ * Bucket `items` by their resolved anchor id, filing anything that resolves
+ * to no anchor under `unattached` instead of dropping it — the shared shape
+ * behind both the nested-bets-by-anchor and measures-by-anchor groupings
+ * below.
+ */
+function groupByAnchor<T, Row>(
+  items: readonly T[],
+  resolveAnchorId: (item: T) => string | null,
+  toRow: (item: T) => Row,
+): { byAnchor: Map<string, Row[]>; unattached: Row[] } {
+  const byAnchor = new Map<string, Row[]>();
+  const unattached: Row[] = [];
+  for (const item of items) {
+    const anchorId = resolveAnchorId(item);
+    if (anchorId == null) {
+      unattached.push(toRow(item));
+      continue;
+    }
+    const bucket = byAnchor.get(anchorId) ?? [];
+    bucket.push(toRow(item));
+    byAnchor.set(anchorId, bucket);
+  }
+  return { byAnchor, unattached };
+}
+
 export function buildStrategyDashboard(cards: readonly LibraryCatalogCard[]): StrategyDashboard {
   const bets = cards.filter((card) => card.type === "Bet");
   const measures = cards.filter((card) => card.type === "Measure");
@@ -178,31 +204,17 @@ export function buildStrategyDashboard(cards: readonly LibraryCatalogCard[]): St
     return null;
   }
 
-  const nestedBetsByAnchor = new Map<string, StrategyBetRow[]>();
-  const otherBets: StrategyBetRow[] = [];
-  for (const bet of nonAnchorBets) {
-    const anchorId = anchorIdByBetId.get(bet.id) ?? null;
-    if (anchorId == null) {
-      otherBets.push(betRow(bet));
-      continue;
-    }
-    const bucket = nestedBetsByAnchor.get(anchorId) ?? [];
-    bucket.push(betRow(bet));
-    nestedBetsByAnchor.set(anchorId, bucket);
-  }
+  const { byAnchor: nestedBetsByAnchor, unattached: otherBets } = groupByAnchor(
+    nonAnchorBets,
+    (bet) => anchorIdByBetId.get(bet.id) ?? null,
+    betRow,
+  );
 
-  const measuresByAnchor = new Map<string, StrategyMeasureRow[]>();
-  const unattachedMeasures: StrategyMeasureRow[] = [];
-  for (const measure of measures) {
-    const anchorId = resolveAnchorId(measure);
-    if (anchorId == null) {
-      unattachedMeasures.push(measureRow(measure));
-      continue;
-    }
-    const bucket = measuresByAnchor.get(anchorId) ?? [];
-    bucket.push(measureRow(measure));
-    measuresByAnchor.set(anchorId, bucket);
-  }
+  const { byAnchor: measuresByAnchor, unattached: unattachedMeasures } = groupByAnchor(
+    measures,
+    resolveAnchorId,
+    measureRow,
+  );
 
   const anchors: StrategyAnchorGroup[] = anchorCards.map((card) => ({
     anchor: betRow(card),

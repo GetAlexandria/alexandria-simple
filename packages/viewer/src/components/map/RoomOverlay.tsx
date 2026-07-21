@@ -35,6 +35,7 @@ import {
   type LearningExperimentRow,
   type LearningLanes,
   type VerdictBadge,
+  type VerdictTone,
 } from "./room-learning-model";
 import {
   buildStrategyDashboard,
@@ -111,14 +112,14 @@ function ReadingBadge({ state }: { state: ReadingState }) {
   );
 }
 
+const VERDICT_TONE_COLOR: Record<VerdictTone, string> = {
+  confirms: MAP_ROOM_COLORS.accent,
+  denies: MAP_ROOM_COLORS.deny,
+  mixed: MAP_ROOM_COLORS.glow,
+};
+
 function VerdictChip({ verdict }: { verdict: VerdictBadge }) {
-  const color =
-    verdict.tone === "confirms"
-      ? MAP_ROOM_COLORS.accent
-      : verdict.tone === "denies"
-        ? MAP_ROOM_COLORS.deny
-        : MAP_ROOM_COLORS.glow;
-  return <AccentChip label={verdict.label} color={color} />;
+  return <AccentChip label={verdict.label} color={VERDICT_TONE_COLOR[verdict.tone]} />;
 }
 
 function SectionLabel({ children }: { children: ReactNode }) {
@@ -426,6 +427,11 @@ function RelatedBoardWork({
   );
 }
 
+/** The dashboard section's one computed shape per room kind (avoids re-checking `roomId` at every read site). */
+type RoomDashboard =
+  | { kind: "strategy-center"; dashboard: StrategyDashboard }
+  | { kind: "learning-lab"; lanes: LearningLanes; arcs: readonly LearningArcRow[] };
+
 type RoomOverlayProps = {
   roomId: MapRoomId;
   /** Agent roster (name/role) for the advisor block, same source as ColleagueOverlay. */
@@ -475,18 +481,12 @@ export function RoomOverlay({
   const room = MAP_ROOMS[roomId];
   const advisor = agents.find((agent) => agent.id === RAVEN_AGENT_ID) ?? FALLBACK_RAVEN_IDENTITY;
 
-  const strategyDashboard = useMemo(
-    () => (roomId === "strategy-center" ? buildStrategyDashboard(catalog?.cards ?? []) : null),
-    [roomId, catalog],
-  );
-  const learningLanes = useMemo(
-    () => (roomId === "learning-lab" ? buildLearningLanes(catalog?.cards ?? []) : null),
-    [roomId, catalog],
-  );
-  const learningArcs = useMemo(
-    () => (roomId === "learning-lab" ? buildArcRows(catalog?.cards ?? []) : []),
-    [roomId, catalog],
-  );
+  const roomDashboard = useMemo((): RoomDashboard => {
+    const cards = catalog?.cards ?? [];
+    return roomId === "strategy-center"
+      ? { kind: "strategy-center", dashboard: buildStrategyDashboard(cards) }
+      : { kind: "learning-lab", lanes: buildLearningLanes(cards), arcs: buildArcRows(cards) };
+  }, [roomId, catalog]);
 
   const domainNameById = useMemo(() => buildDomainNameById(state?.domains ?? []), [state]);
   const relatedBoardCards = useMemo(
@@ -554,10 +554,10 @@ export function RoomOverlay({
               <p className="text-[11px]" style={{ color: MAP_ROOM_COLORS.subtext }}>
                 {catalogError ?? "Reading the library catalog…"}
               </p>
-            ) : roomId === "strategy-center" ? (
-              <StrategyCenterDashboard dashboard={strategyDashboard!} />
+            ) : roomDashboard.kind === "strategy-center" ? (
+              <StrategyCenterDashboard dashboard={roomDashboard.dashboard} />
             ) : (
-              <LearningLabDashboard lanes={learningLanes!} arcs={learningArcs} />
+              <LearningLabDashboard lanes={roomDashboard.lanes} arcs={roomDashboard.arcs} />
             )}
           </div>
         </div>
