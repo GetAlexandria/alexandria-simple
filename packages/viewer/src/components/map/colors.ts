@@ -88,6 +88,35 @@ export const MAP_FALLBACK_COLORS = {
  */
 export const MAP_OVERLAY_SCRIM_INK = "#1c1712";
 
+/**
+ * Room (overlay panel) chrome — the heliofuturism palette the branded viewer
+ * surfaces already carry, mirrored from global.css's --viewer-* tokens
+ * (canvas night-ink, raven teal, amber glow) as literals per this module's
+ * no-var convention. The map field itself stays plain parchment; the rooms
+ * that open OVER it take the site's night-ink + bioluminescence look, which
+ * also puts the dark info-hub cards back on the background they were styled
+ * for.
+ */
+export const MAP_ROOM_COLORS = {
+  /** Near-opaque night ink (--viewer-canvas-slate family, deepened). */
+  panel: "rgba(30, 22, 14, 0.95)",
+  /** Teal-tinged panel border (--viewer-panel-bd). */
+  border: "rgba(79, 184, 168, 0.28)",
+  /** Warm hairline for interior rules (--viewer-canvas-rule). */
+  rule: "rgba(212, 165, 116, 0.22)",
+  heading: "#f4ecdc", // --viewer-canvas-fg-bright
+  text: "#e8e0d4", // --viewer-canvas-fg
+  subtext: "#b3a48d", // --viewer-canvas-fg-dim
+  accent: "#4fb8a8", // --viewer-accent (raven teal)
+  glow: "#e8b86d", // --viewer-accent-glow (amber)
+  /** Action-button field (--viewer-canvas-slate). */
+  buttonBg: "rgba(20, 14, 8, 0.55)",
+} as const;
+
+/** Bioluminescent halo behind a room panel: teal rim glow over a deep drop. */
+export const MAP_ROOM_PANEL_SHADOW =
+  "0 0 28px rgba(79, 184, 168, 0.18), 0 18px 60px rgba(0, 0, 0, 0.5)";
+
 /** Per-visual-state cylinder materials: top rim and side wall tints. */
 export const HEX_CELL_MATERIAL_COLORS: Record<HexCellVisualState, { rim: string; side: string }> = {
   default: { rim: "#ab8f72", side: "#cfb693" },

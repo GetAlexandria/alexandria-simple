@@ -4,16 +4,16 @@
 // the source of truth), and what they can do (a quick bar mirroring
 // RavenBench: open their workspace, and a jump to their needs-a-human cards on
 // the board). It shares MapOverlay's shell (the MapScrimPanel primitive: scrim
-// + centered parchment panel + click-away) but keeps its own close-on-Escape
+// + centered night-ink room panel + click-away) but keeps its own close-on-Escape
 // and narrower width — this lens shows a journal, not cards.
 
 import { useEffect, type CSSProperties } from "react";
 import type { JournalEntry } from "../../app/runtime/schemas";
 import type { ColleagueIdentity } from "./colleague-overlay";
 import { topJournalEntries } from "./colleague-overlay";
-import { MAP_FALLBACK_COLORS } from "./colors";
+import { MAP_ROOM_COLORS } from "./colors";
 import { MapScrimPanel } from "./MapScrimPanel";
-import { ParchmentActionButton } from "./panel-buttons";
+import { RoomActionButton } from "./panel-buttons";
 
 /** How many journal entries the overlay shows (plan §1.1 "top ~3"). */
 const JOURNAL_ENTRY_LIMIT = 3;
@@ -76,7 +76,7 @@ export function ColleagueOverlay({
           <p
             className="text-sm font-semibold"
             data-testid="colleague-overlay-title"
-            style={{ color: MAP_FALLBACK_COLORS.heading }}
+            style={{ color: MAP_ROOM_COLORS.heading }}
           >
             {identity.name}
           </p>
@@ -84,28 +84,28 @@ export function ColleagueOverlay({
             <p
               className="mt-0.5 text-[11px]"
               data-testid="colleague-overlay-role"
-              style={{ color: MAP_FALLBACK_COLORS.subtext }}
+              style={{ color: MAP_ROOM_COLORS.subtext }}
             >
               {identity.role}
             </p>
           ) : null}
         </div>
       }
-      headerActions={<ParchmentActionButton label="Close" onClick={onClose} />}
+      headerActions={<RoomActionButton label="Close" onClick={onClose} />}
     >
       <p
         className="text-[10px] font-semibold uppercase tracking-wide"
-        style={{ color: MAP_FALLBACK_COLORS.subtext }}
+        style={{ color: MAP_ROOM_COLORS.subtext }}
       >
         Recent journal
       </p>
 
       {journalLoading ? (
-        <p className="mt-1 text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+        <p className="mt-1 text-xs" style={{ color: MAP_ROOM_COLORS.subtext }}>
           Reading {identity.name}&apos;s journal…
         </p>
       ) : topEntries.length === 0 ? (
-        <p className="mt-1 text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+        <p className="mt-1 text-xs" style={{ color: MAP_ROOM_COLORS.subtext }}>
           No journal entries yet — {identity.name} hasn&apos;t written a beat.
         </p>
       ) : (
@@ -115,15 +115,12 @@ export function ColleagueOverlay({
               key={`${entry.timestamp}:${entry.title}:${index}`}
               className="rounded border px-2 py-1.5"
               data-testid="colleague-overlay-entry"
-              style={{ borderColor: MAP_FALLBACK_COLORS.border }}
+              style={{ borderColor: MAP_ROOM_COLORS.rule }}
             >
-              <p
-                className="text-[11px] font-semibold"
-                style={{ color: MAP_FALLBACK_COLORS.heading }}
-              >
+              <p className="text-[11px] font-semibold" style={{ color: MAP_ROOM_COLORS.heading }}>
                 {entry.title || "Untitled entry"}
                 {entry.timestamp.length > 0 ? (
-                  <span className="ml-1 font-normal" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+                  <span className="ml-1 font-normal" style={{ color: MAP_ROOM_COLORS.subtext }}>
                     · {entry.timestamp}
                   </span>
                 ) : null}
@@ -131,7 +128,7 @@ export function ColleagueOverlay({
               {entry.body.length > 0 ? (
                 <p
                   className="mt-0.5 text-[11px]"
-                  style={{ ...ENTRY_BODY_CLAMP, color: MAP_FALLBACK_COLORS.text }}
+                  style={{ ...ENTRY_BODY_CLAMP, color: MAP_ROOM_COLORS.text }}
                 >
                   {entry.body}
                 </p>
@@ -143,7 +140,7 @@ export function ColleagueOverlay({
 
       <div
         className="mt-3 flex flex-col gap-2 border-t pt-3"
-        style={{ borderColor: MAP_FALLBACK_COLORS.border }}
+        style={{ borderColor: MAP_ROOM_COLORS.rule }}
       >
         {/* The count is colleague-scoped (cards joined to the systems this
                 colleague runs); the action opens the board's whole
@@ -153,15 +150,15 @@ export function ColleagueOverlay({
         <p
           className="text-[11px]"
           data-testid="colleague-overlay-needs-human-count"
-          style={{ color: MAP_FALLBACK_COLORS.subtext }}
+          style={{ color: MAP_ROOM_COLORS.subtext }}
         >
           {needsHumanCount === 1
             ? `1 of ${identity.name}'s cards needs a human`
             : `${needsHumanCount} of ${identity.name}'s cards need a human`}
         </p>
         <div className="flex flex-wrap items-center gap-2">
-          <ParchmentActionButton label={`${identity.name}'s workspace`} onClick={onOpenAgentPage} />
-          <ParchmentActionButton
+          <RoomActionButton label={`${identity.name}'s workspace`} onClick={onOpenAgentPage} />
+          <RoomActionButton
             label="Open the board's needs-a-human lane"
             onClick={onOpenBoard}
             testId="colleague-overlay-needs-human"

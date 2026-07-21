@@ -20,9 +20,9 @@ import {
   WorkOrderDetailModal,
   WorkOrderStatusActions,
 } from "../library/infohub/WorkOrderCard";
-import { MAP_FALLBACK_COLORS } from "./colors";
-import { MapScrimPanel } from "./MapScrimPanel";
-import { ParchmentActionButton } from "./panel-buttons";
+import { MAP_ROOM_COLORS } from "./colors";
+import { MapScrimPanel, type RoomOrigin } from "./MapScrimPanel";
+import { RoomActionButton } from "./panel-buttons";
 import { entityKindLabel, looseCardsForDomain } from "./placement";
 
 export type MapOverlayTarget =
@@ -32,6 +32,12 @@ export type MapOverlayTarget =
 type MapOverlayProps = {
   target: MapOverlayTarget;
   state: MapState;
+  /**
+   * The opening click's viewport position — the room shell grows from the
+   * clicked tile/pile instead of fading in from nowhere. Null when there is
+   * no opening click to anchor to.
+   */
+  origin?: RoomOrigin | null;
   /** Board cards, or null while the board is unavailable on this surface. */
   cards: readonly InfoHubCard[] | null;
   boardError: string | null;
@@ -71,6 +77,7 @@ function entityMetaLine(
 export function MapOverlay({
   target,
   state,
+  origin = null,
   cards,
   boardError,
   boardSaveError,
@@ -153,23 +160,25 @@ export function MapOverlay({
       testId="map-overlay"
       maxWidthClass="max-w-xl"
       onClose={onClose}
+      origin={origin}
+      expandable
       title={
         <div>
           <p
             className="text-sm font-semibold"
             data-testid="map-overlay-title"
-            style={{ color: MAP_FALLBACK_COLORS.heading }}
+            style={{ color: MAP_ROOM_COLORS.heading }}
           >
             {title}
           </p>
-          <p className="mt-0.5 text-[11px]" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+          <p className="mt-0.5 text-[11px]" style={{ color: MAP_ROOM_COLORS.subtext }}>
             {subtitle}
           </p>
           {readOnly ? (
             <p
               className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide"
               data-testid="map-overlay-readonly"
-              style={{ color: MAP_FALLBACK_COLORS.subtext }}
+              style={{ color: MAP_ROOM_COLORS.subtext }}
             >
               Completed — read-only, victories stay visible
             </p>
@@ -179,9 +188,9 @@ export function MapOverlay({
       headerActions={
         <div className="flex shrink-0 items-center gap-2">
           {entity != null && !readOnly ? (
-            <ParchmentActionButton label="Edit entity" onClick={() => onEditEntity(entity.id)} />
+            <RoomActionButton label="Edit entity" onClick={() => onEditEntity(entity.id)} />
           ) : null}
-          <ParchmentActionButton label="Close" onClick={onClose} />
+          <RoomActionButton label="Close" onClick={onClose} />
         </div>
       }
       afterPanel={
@@ -231,20 +240,20 @@ export function MapOverlay({
               className="mb-3 text-xs font-semibold"
               data-testid="map-overlay-save-error"
               role="alert"
-              style={{ color: MAP_FALLBACK_COLORS.heading }}
+              style={{ color: MAP_ROOM_COLORS.heading }}
             >
               The card change didn&apos;t save:{" "}
-              <span className="font-normal" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+              <span className="font-normal" style={{ color: MAP_ROOM_COLORS.subtext }}>
                 {boardSaveError}
               </span>
             </p>
           ) : null}
           {cards == null ? (
-            <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+            <p className="text-xs" style={{ color: MAP_ROOM_COLORS.subtext }}>
               {boardError ?? "Loading the Info Hub board…"}
             </p>
           ) : pileCards.length === 0 ? (
-            <p className="text-xs" style={{ color: MAP_FALLBACK_COLORS.subtext }}>
+            <p className="text-xs" style={{ color: MAP_ROOM_COLORS.subtext }}>
               No loose cards left in this domain.
             </p>
           ) : (
